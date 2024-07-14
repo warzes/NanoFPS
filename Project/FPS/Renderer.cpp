@@ -104,7 +104,7 @@ bool initVulkan()
 	Instance = vkbInst.instance;
 	DebugMessenger = vkbInst.debug_messenger;
 
-	volkLoadInstance(Instance);
+	volkLoadInstanceOnly(Instance);
 
 	result = glfwCreateWindowSurface(Instance, Window::GetWindow(), nullptr, &Surface);
 	if (result != VK_SUCCESS)
