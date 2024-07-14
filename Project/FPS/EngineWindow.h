@@ -20,7 +20,6 @@ namespace Window
 
 	bool ShouldClose();
 	void Update();
-	void Swap();
 
 	GLFWwindow* GetWindow();
 	uint32_t GetWidth();

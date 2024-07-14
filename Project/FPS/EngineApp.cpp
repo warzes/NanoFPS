@@ -54,7 +54,6 @@ void EngineApp::BeginFrame()
 
 void EngineApp::EndFrame()
 {
-	Window::Swap();
 }
 
 float EngineApp::GetDeltaTime()

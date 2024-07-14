@@ -49,14 +49,7 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 	}
 	glfwSetErrorCallback([](int, const char* desc) noexcept { Fatal("GLFW error: " + std::string(desc)); });
 
-//#if defined(_DEBUG)
-//	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-//#endif
-//	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-//	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-//	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-//	glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-//	glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_MAXIMIZED, createInfo.maximize);
 	glfwWindowHint(GLFW_DECORATED, createInfo.decorate);
 
@@ -89,7 +82,7 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 		videoMode->width / 2 - static_cast<int>(WindowWidth) / 2 + monitorLeft, 
 		videoMode->height / 2 - static_cast<int>(WindowHeight) / 2 + monitorTop);
 
-	glfwSwapInterval(createInfo.vsync ? 1 : 0);
+	//glfwSwapInterval(createInfo.vsync ? 1 : 0);
 
 	glfwSetInputMode(WindowContext, GLFW_STICKY_KEYS, GLFW_TRUE); // сохраняет событие клавиши до его опроса через glfwGetKey()
 	glfwSetInputMode(WindowContext, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE); // сохраняет событие кнопки мыши до его опроса через glfwGetMouseButton()
@@ -121,11 +114,6 @@ void Window::Update()
 
 	MouseState.delta = MouseState.position - MouseState.lastPosition;
 	MouseState.lastPosition = MouseState.position;
-}
-
-void Window::Swap()
-{
-	glfwSwapBuffers(WindowContext);
 }
 
 GLFWwindow* Window::GetWindow()
