@@ -5,6 +5,21 @@
     <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
       <Filter>3rdparty\VkBootstrap</Filter>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\stb\stb.cpp">
+      <Filter>3rdparty\stb</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineWindow.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineApp.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -16,6 +31,12 @@
     <Filter Include="3rdparty\VkBootstrap">
       <UniqueIdentifier>{ac830a5f-6758-4d09-a979-ae5fc8724288}</UniqueIdentifier>
     </Filter>
+    <Filter Include="NanoEngineVK\impl">
+      <UniqueIdentifier>{e08afc9e-6e26-46c1-a86d-3aef9c1b79ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\stb">
+      <UniqueIdentifier>{2fb80955-0f42-41ab-a450-458a04b3293a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
@@ -23,6 +44,30 @@
     </ClInclude>
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h">
       <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="Base.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineMath.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineWindow.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="NanoEngineVK.h">
+      <Filter>NanoEngineVK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\stb\stb_image.h">
+      <Filter>3rdparty\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineApp.h">
+      <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

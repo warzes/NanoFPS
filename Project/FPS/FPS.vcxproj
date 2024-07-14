@@ -93,15 +93,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\3rdparty\stb\stb.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
+    <ClCompile Include="Core.cpp" />
+    <ClCompile Include="EngineApp.cpp" />
+    <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\3rdparty\stb\stb_image.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h" />
+    <ClInclude Include="Base.h" />
+    <ClInclude Include="Core.h" />
+    <ClInclude Include="EngineApp.h" />
+    <ClInclude Include="EngineMath.h" />
+    <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="NanoEngineVK.h" />
+    <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
