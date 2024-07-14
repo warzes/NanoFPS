@@ -20,6 +20,12 @@
     <ClCompile Include="EngineApp.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\volk\volk.c">
+      <Filter>3rdparty\volk</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -36,6 +42,9 @@
     </Filter>
     <Filter Include="3rdparty\stb">
       <UniqueIdentifier>{2fb80955-0f42-41ab-a450-458a04b3293a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\volk">
+      <UniqueIdentifier>{4273520d-665c-492a-9233-b65e96db1fc9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +76,12 @@
       <Filter>3rdparty\stb</Filter>
     </ClInclude>
     <ClInclude Include="EngineApp.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\volk\volk.h">
+      <Filter>3rdparty\volk</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>

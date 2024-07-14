@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <span>
 
+#include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
 
 #define GLFW_INCLUDE_NONE

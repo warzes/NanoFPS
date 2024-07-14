@@ -101,9 +101,14 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\volk\volk.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
+    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
@@ -111,11 +116,13 @@
     <ClInclude Include="..\3rdparty\stb\stb_image.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h" />
+    <ClInclude Include="..\3rdparty\volk\volk.h" />
     <ClInclude Include="Base.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="EngineMath.h" />
     <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="Renderer.h" />
   </ItemGroup>

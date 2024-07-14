@@ -54,6 +54,7 @@ void EngineApp::BeginFrame()
 
 void EngineApp::EndFrame()
 {
+	Renderer::Draw();
 }
 
 float EngineApp::GetDeltaTime()

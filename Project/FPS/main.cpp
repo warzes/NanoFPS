@@ -1,4 +1,5 @@
 ﻿#include "NanoEngineVK.h"
+// TODO: написать VK_CHECK
 //-----------------------------------------------------------------------------
 int main(
 	[[maybe_unused]] int   argc,
