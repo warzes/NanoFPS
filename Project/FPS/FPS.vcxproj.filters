@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{ab47c5c8-a361-4ca5-af03-0d46e8bba946}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NanoEngineVK">
+      <UniqueIdentifier>{7b6a06d7-05e8-4a5d-ae8a-d23350e79297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\VkBootstrap">
+      <UniqueIdentifier>{ac830a5f-6758-4d09-a979-ae5fc8724288}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
