@@ -1,0 +1,1 @@
+﻿вместо glfw - https://github.com/ColleagueRiley/RGFW
