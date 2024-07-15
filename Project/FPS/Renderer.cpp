@@ -275,6 +275,8 @@ namespace
 	VkDevice Device;                         // Vulkan device for commands
 	VkSurfaceKHR Surface;                    // Vulkan window surface
 
+	VmaAllocator Allocator;
+
 	VkSwapchainKHR Swapchain;
 	VkFormat SwapchainImageFormat;
 	std::vector<VkImage> SwapchainImages;
@@ -297,6 +299,19 @@ namespace
 	uint32_t GraphicsQueueFamily;
 
 	DeletionQueue mainDeletionQueue;
+
+	struct AllocatedImage 
+	{
+		VkImage image;
+		VkImageView imageView;
+		VmaAllocation allocation;
+		VkExtent3D imageExtent;
+		VkFormat imageFormat;
+	};
+
+	//draw resources
+	AllocatedImage DrawImage;
+	VkExtent2D DrawExtent;
 }
 
 #define VK_CHECK_AND_FALSE(x)                                                     \
@@ -384,6 +399,37 @@ bool initVulkan()
 	GraphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
 	GraphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
+	// initialize the memory allocator
+
+	VmaVulkanFunctions vmaVulkanFunc{};
+	vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
+	vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
+	vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
+	vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
+	vmaVulkanFunc.vkCreateImage = vkCreateImage;
+	vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
+	vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
+	vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+	vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
+	vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+	vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+	vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+	vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+	vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+	vmaVulkanFunc.vkMapMemory = vkMapMemory;
+	vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
+	vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
+
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = ChosenGPU;
+	allocatorInfo.device = Device;
+	allocatorInfo.instance = Instance;
+	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+	allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
+	vmaCreateAllocator(&allocatorInfo, &Allocator);
+
+	mainDeletionQueue.push_function([&]() { vmaDestroyAllocator(Allocator); });
+
 	return true;
 }
 
@@ -424,6 +470,45 @@ void destroySwapChain()
 bool initSwapChain()
 {
 	createSwapChain(Window::GetWidth(), Window::GetHeight());
+
+	//draw image size will match the window
+	VkExtent3D drawImageExtent = {
+		Window::GetWidth(), Window::GetHeight(),
+		1
+	};
+
+	//hardcoding the draw format to 32 bit float
+	DrawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+	DrawImage.imageExtent = drawImageExtent;
+
+	VkImageUsageFlags drawImageUsages{};
+	drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	VkImageCreateInfo rimg_info = Vulkan::ImageCreateInfo(DrawImage.imageFormat, drawImageUsages, drawImageExtent);
+
+	//for the draw image, we want to allocate it from gpu local memory
+	VmaAllocationCreateInfo rimg_allocinfo = {};
+	rimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	//allocate and create the image
+	vmaCreateImage(Allocator, &rimg_info, &rimg_allocinfo, &DrawImage.image, &DrawImage.allocation, nullptr);
+
+	//build a image-view for the draw image to use for rendering
+	VkImageViewCreateInfo rview_info = Vulkan::ImageviewCreateInfo(DrawImage.imageFormat, DrawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VK_CHECK_AND_FALSE(vkCreateImageView(Device, &rview_info, nullptr, &DrawImage.imageView));
+
+	//add to deletion queues
+	mainDeletionQueue.push_function([=]() {
+		vkDestroyImageView(Device, DrawImage.imageView, nullptr);
+		vmaDestroyImage(Allocator, DrawImage.image, DrawImage.allocation);
+		});
+
+
 	return true;
 }
 
@@ -486,6 +571,40 @@ void transitionImage(VkCommandBuffer cmd, VkImage image, VkImageLayout currentLa
 	vkCmdPipelineBarrier2(cmd, &depInfo);
 }
 
+void copyImagetoImage(VkCommandBuffer cmd, VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize)
+{
+	VkImageBlit2 blitRegion{ .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2, .pNext = nullptr };
+
+	blitRegion.srcOffsets[1].x = srcSize.width;
+	blitRegion.srcOffsets[1].y = srcSize.height;
+	blitRegion.srcOffsets[1].z = 1;
+
+	blitRegion.dstOffsets[1].x = dstSize.width;
+	blitRegion.dstOffsets[1].y = dstSize.height;
+	blitRegion.dstOffsets[1].z = 1;
+
+	blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	blitRegion.srcSubresource.baseArrayLayer = 0;
+	blitRegion.srcSubresource.layerCount = 1;
+	blitRegion.srcSubresource.mipLevel = 0;
+
+	blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	blitRegion.dstSubresource.baseArrayLayer = 0;
+	blitRegion.dstSubresource.layerCount = 1;
+	blitRegion.dstSubresource.mipLevel = 0;
+
+	VkBlitImageInfo2 blitInfo{ .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2, .pNext = nullptr };
+	blitInfo.dstImage = destination;
+	blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	blitInfo.srcImage = source;
+	blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	blitInfo.filter = VK_FILTER_LINEAR;
+	blitInfo.regionCount = 1;
+	blitInfo.pRegions = &blitRegion;
+
+	vkCmdBlitImage2(cmd, &blitInfo);
+}
+
 bool Renderer::Init()
 {
 #ifdef _DEBUG
@@ -517,7 +636,11 @@ void Renderer::Close()
 			vkDestroyFence(Device, Frames[i].renderFence, nullptr);
 			vkDestroySemaphore(Device, Frames[i].renderSemaphore, nullptr);
 			vkDestroySemaphore(Device, Frames[i].swapchainSemaphore, nullptr);
+
+			Frames[i].deletionQueue.flush();
 		}
+
+		mainDeletionQueue.flush();
 
 		destroySwapChain();
 
@@ -533,24 +656,32 @@ void Renderer::Close()
 	volkFinalize();
 }
 
+void drawBackground(VkCommandBuffer cmd)
+{
+	//make a clear-color from frame number. This will flash with a 120 frame period.
+	VkClearColorValue clearValue;
+	float flash = std::abs(std::sin(FrameNumber / 120.f));
+	clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+
+	VkImageSubresourceRange clearRange = Vulkan::ImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+
+	//clear image
+	vkCmdClearColorImage(cmd, DrawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+}
+
 void Renderer::Draw()
 {
-	//> draw_1
 	// wait until the gpu has finished rendering the last frame. Timeout of 1 second
 	VK_CHECK(vkWaitForFences(Device, 1, &getCurrentFrame().renderFence, true, 1000000000));
 
 	getCurrentFrame().deletionQueue.flush();
 
 	VK_CHECK(vkResetFences(Device, 1, &getCurrentFrame().renderFence));
-	//< draw_1
 
-	//> draw_2
 	//request image from the swapchain
 	uint32_t swapchainImageIndex;
 	VK_CHECK(vkAcquireNextImageKHR(Device, Swapchain, 1000000000, getCurrentFrame().swapchainSemaphore, nullptr, &swapchainImageIndex));
-	//< draw_2
 
-	//> draw_3
 	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = getCurrentFrame().mainCommandBuffer;
 
@@ -562,31 +693,30 @@ void Renderer::Draw()
 	VkCommandBufferBeginInfo cmdBeginInfo = Vulkan::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	//start the command buffer recording
+	DrawExtent.width = DrawImage.imageExtent.width;
+	DrawExtent.height = DrawImage.imageExtent.height;
+
 	VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
-	//< draw_3
 
-	//> draw_4
+	// transition our main draw image into general layout so we can write into it
+	// we will overwrite it all so we dont care about what was the older layout
+	transitionImage(cmd, DrawImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-	//make the swapchain image into writeable mode before rendering
-	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+	drawBackground(cmd);
 
-	//make a clear-color from frame number. This will flash with a 120 frame period.
-	VkClearColorValue clearValue;
-	float flash = std::abs(std::sin(FrameNumber / 120.f));
-	clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+	//transition the draw image and the swapchain image into their correct transfer layouts
+	transitionImage(cmd, DrawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	VkImageSubresourceRange clearRange = Vulkan::ImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+	// execute a copy from the draw image into the swapchain
+	copyImagetoImage(cmd, DrawImage.image, SwapchainImages[swapchainImageIndex], DrawExtent, SwapchainExtent);
 
-	//clear image
-	vkCmdClearColorImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
-
-	//make the swapchain image into presentable mode
-	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	// set swapchain image layout to Present so we can show it on the screen
+	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
 	
-	//> draw_5
 	//prepare the submission to the queue. 
 	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
 	//we will signal the _renderSemaphore, to signal that rendering has finished
@@ -601,9 +731,7 @@ void Renderer::Draw()
 	//submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
 	VK_CHECK(vkQueueSubmit2(GraphicsQueue, 1, &submit, getCurrentFrame().renderFence));
-	//< draw_5
 
-	//> draw_6
 	//prepare present
 	// this will put the image we just rendered to into the visible window.
 	// we want to wait on the _renderSemaphore for that, 
@@ -623,8 +751,6 @@ void Renderer::Draw()
 
 	//increase the number of frames drawn
 	FrameNumber++;
-
-	//< draw_6
 }
 
 #pragma endregion
