@@ -5,6 +5,7 @@
 #if defined(_MSC_VER)
 #	pragma warning(disable : 4514)
 #	pragma warning(disable : 4820)
+#	pragma warning(disable : 5045)
 #	pragma warning(push, 3)
 #	pragma warning(disable : 4191)
 #endif
@@ -16,9 +17,11 @@
 #include <string_view>
 #include <filesystem>
 #include <span>
+#include <deque>
 
 #include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
