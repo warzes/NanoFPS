@@ -128,6 +128,9 @@
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="Renderer.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\bin\Data\Shaders\gradient.comp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
