@@ -11,6 +11,7 @@
 #endif
 
 #define _USE_MATH_DEFINES
+#define _CRT_SECURE_NO_WARNINGS// TODO: потом удалить когда удалю vulkan.hpp
 
 #include <chrono>
 #include <string>
@@ -20,9 +21,11 @@
 #include <span>
 #include <deque>
 
+
 #include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan.hpp> // TODO: потом удалить
 
 #include <vk_mem_alloc.h>
 

@@ -110,6 +110,7 @@
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NewRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="vk_mem_alloc.cpp" />
   </ItemGroup>
@@ -126,7 +127,9 @@
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
+    <ClInclude Include="NewRenderer.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="SoftRender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\bin\Data\Shaders\gradient.comp" />

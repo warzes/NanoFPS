@@ -52,6 +52,7 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_MAXIMIZED, createInfo.maximize);
 	glfwWindowHint(GLFW_DECORATED, createInfo.decorate);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	if (monitor == nullptr)

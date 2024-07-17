@@ -29,6 +29,9 @@
     <ClCompile Include="vk_mem_alloc.cpp">
       <Filter>3rdparty\vma</Filter>
     </ClCompile>
+    <ClCompile Include="NewRenderer.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -92,6 +95,12 @@
     </ClInclude>
     <ClInclude Include="..\3rdparty\vk_mem_alloc.h">
       <Filter>3rdparty\vma</Filter>
+    </ClInclude>
+    <ClInclude Include="NewRenderer.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="SoftRender.h">
+      <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
