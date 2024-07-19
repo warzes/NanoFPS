@@ -110,8 +110,11 @@
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="NewRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="_LessonRenderer.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="vk_mem_alloc.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -127,9 +130,8 @@
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
-    <ClInclude Include="NewRenderer.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="SoftRender.h" />
+    <ClInclude Include="_LessonRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\bin\Data\Shaders\gradient.comp" />

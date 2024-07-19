@@ -11,7 +11,7 @@
     <ClCompile Include="Core.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer.cpp">
+    <ClCompile Include="_LessonRenderer.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
     <ClCompile Include="EngineWindow.cpp">
@@ -29,7 +29,7 @@
     <ClCompile Include="vk_mem_alloc.cpp">
       <Filter>3rdparty\vma</Filter>
     </ClCompile>
-    <ClCompile Include="NewRenderer.cpp">
+    <ClCompile Include="Renderer.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
   </ItemGroup>
@@ -75,7 +75,7 @@
     <ClInclude Include="EngineWindow.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h">
+    <ClInclude Include="_LessonRenderer.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
     <ClInclude Include="NanoEngineVK.h">
@@ -96,10 +96,7 @@
     <ClInclude Include="..\3rdparty\vk_mem_alloc.h">
       <Filter>3rdparty\vma</Filter>
     </ClInclude>
-    <ClInclude Include="NewRenderer.h">
-      <Filter>NanoEngineVK\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="SoftRender.h">
+    <ClInclude Include="Renderer.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>

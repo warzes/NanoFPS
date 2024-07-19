@@ -1,6 +1,6 @@
 ﻿#include "Base.h"
 #include "Core.h"
-#include "NewRenderer.h"
+#include "Renderer.h"
 #include "EngineWindow.h"
 #include "EngineApp.h"
 
@@ -24,7 +24,7 @@ void AppEnd()
 bool EngineApp::Create()
 {
 	Window::Create({});
-	NewRenderer::Init();
+	Renderer::Init();
 
 	LastFrameTime = static_cast<float>(glfwGetTime());
 
@@ -34,7 +34,7 @@ bool EngineApp::Create()
 
 void EngineApp::Destroy()
 {
-	NewRenderer::Close();
+	Renderer::Close();
 	Window::Destroy();
 }
 
@@ -54,7 +54,7 @@ void EngineApp::BeginFrame()
 
 void EngineApp::EndFrame()
 {
-	NewRenderer::Draw();
+	Renderer::Draw();
 }
 
 float EngineApp::GetDeltaTime()
