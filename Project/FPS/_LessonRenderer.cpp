@@ -546,7 +546,7 @@ bool _initVulkan()
 	return true;
 }
 
-void createSwapChain(uint32_t width, uint32_t height)
+void _createSwapChain(uint32_t width, uint32_t height)
 {
 	vkb::SwapchainBuilder swapchainBuilder{ ChosenGPU,Device,Surface };
 
@@ -568,7 +568,7 @@ void createSwapChain(uint32_t width, uint32_t height)
 	SwapchainImageViews = vkbSwapchain.get_image_views().value();
 }
 
-void destroySwapChain()
+void _destroySwapChain()
 {
 	if (Device && Swapchain)
 	{
@@ -580,9 +580,9 @@ void destroySwapChain()
 	SwapchainImageViews.clear();
 }
 
-bool initSwapChain()
+bool _initSwapChain()
 {
-	createSwapChain(Window::GetWidth(), Window::GetHeight());
+	_createSwapChain(Window::GetWidth(), Window::GetHeight());
 
 	//draw image size will match the window
 	VkExtent3D drawImageExtent = {
@@ -860,7 +860,7 @@ bool _LessonRenderer::Init()
 #endif
 
 	if (!_initVulkan()) return false;
-	if (!initSwapChain()) return false;
+	if (!_initSwapChain()) return false;
 	if (!initCommands()) return false;
 	if (!initSyncStructures()) return false;
 	if (!initDescriptors()) return false;
@@ -892,7 +892,7 @@ void _LessonRenderer::Close()
 
 		mainDeletionQueue.flush();
 
-		destroySwapChain();
+		_destroySwapChain();
 
 		vkDestroySurfaceKHR(Instance, Surface, nullptr);
 		vkDestroyDevice(Device, nullptr);
