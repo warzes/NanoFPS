@@ -43,10 +43,11 @@ Left handed
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_XYZW_ONLY
 #define GLM_FORCE_SILENT_WARNINGS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE // Depth buffer range, OpenGL default -1.0 to 1.0, but Vulkan default as 0.0 to 1.0
 #include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 //#include <glm/gtc/type_ptr.hpp>
-//#include <glm/gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 //#include <glm/gtx/rotate_vector.hpp>
 //#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/quaternion.hpp>

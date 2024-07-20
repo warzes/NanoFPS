@@ -54,6 +54,8 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 	glfwWindowHint(GLFW_DECORATED, createInfo.decorate);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
+	// TODO: в примерах кроноса есть как сделать фулскрины
+
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	if (monitor == nullptr)
 	{

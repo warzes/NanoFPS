@@ -82,7 +82,7 @@ bool initVulkan()
 	VkResult result = volkInitialize();
 	if (result != VK_SUCCESS)
 	{
-		Fatal("volkInitialize failed!");
+		Fatal("Failed to initialize volk.");
 		return false;
 	}
 
@@ -210,7 +210,12 @@ bool initVulkan()
 		allocatorInfo.instance = Instance;
 		allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
-		vmaCreateAllocator(&allocatorInfo, &Allocator);
+		result = vmaCreateAllocator(&allocatorInfo, &Allocator);
+		if (result != VK_SUCCESS)
+		{
+			Fatal("Cannot create allocator");
+			return false;
+		}
 	}
 
 	return true;
@@ -287,8 +292,7 @@ bool createRenderPass()
 	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	VkRenderPassCreateInfo renderPassInfo = { .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
 	renderPassInfo.attachmentCount = 1;
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
@@ -489,6 +493,8 @@ bool createFramebuffers()
 bool createCommandPool()
 {
 	VkCommandPoolCreateInfo poolInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolInfo.queueFamilyIndex = GraphicsQueueFamily;
 
 	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 	{
@@ -652,7 +658,15 @@ void Renderer::Close()
 
 	destroySwapChain();
 
-	if (Allocator) vmaDestroyAllocator(Allocator);
+	if (Allocator)
+	{
+		VmaTotalStatistics stats;
+		vmaCalculateStatistics(Allocator, &stats);
+		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
+		vmaDestroyAllocator(Allocator);
+		Allocator = VK_NULL_HANDLE;
+
+	}
 	if (Device) vkDestroyDevice(Device, nullptr);
 
 	if (Instance)
@@ -665,7 +679,6 @@ void Renderer::Close()
 	Surface = nullptr;
 	Device = nullptr;
 	Instance = nullptr;
-	Allocator = nullptr;
 	volkFinalize();
 }
 

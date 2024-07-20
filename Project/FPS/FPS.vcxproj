@@ -135,9 +135,6 @@
     <ClInclude Include="RenderResource.h" />
     <ClInclude Include="_LessonRenderer.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\bin\Data\Shaders\gradient.comp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -106,7 +106,4 @@
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\bin\Data\Shaders\gradient.comp" />
-  </ItemGroup>
 </Project>
