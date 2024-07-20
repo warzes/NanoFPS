@@ -111,6 +111,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RenderResource.cpp" />
     <ClCompile Include="_LessonRenderer.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
@@ -131,6 +132,7 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RenderResource.h" />
     <ClInclude Include="_LessonRenderer.h" />
   </ItemGroup>
   <ItemGroup>

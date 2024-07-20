@@ -32,6 +32,9 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="RenderResource.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -97,6 +100,9 @@
       <Filter>3rdparty\vma</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderResource.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
