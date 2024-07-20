@@ -11,7 +11,6 @@
 #endif
 
 #define _USE_MATH_DEFINES
-#define _CRT_SECURE_NO_WARNINGS// TODO: потом удалить когда удалю vulkan.hpp
 
 #include <chrono>
 #include <memory>
@@ -27,10 +26,6 @@
 #include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
 #include <vulkan/vk_enum_string_helper.h>
-//#define VK_USE_PLATFORM_WIN32_KHR 1
-#include <vulkan/vulkan.hpp> // TODO: потом удалить
-#include <vulkan/vulkan_raii.hpp>
-
 #include <vk_mem_alloc.h>
 
 #define GLFW_INCLUDE_NONE
