@@ -23,7 +23,6 @@
 #include <array>
 #include <deque>
 
-
 #include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
 #include <vulkan/vk_enum_string_helper.h>
@@ -45,6 +44,7 @@ Left handed
 #define GLM_FORCE_XYZW_ONLY
 #define GLM_FORCE_SILENT_WARNINGS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // Depth buffer range, OpenGL default -1.0 to 1.0, but Vulkan default as 0.0 to 1.0
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 //#include <glm/gtc/type_ptr.hpp>
