@@ -271,17 +271,17 @@ namespace
 	VkInstance Instance;                     // Vulkan library handle
 	bool UseValidationLayers = false;
 	VkDebugUtilsMessengerEXT DebugMessenger; // Vulkan debug output handle
-	VkPhysicalDevice ChosenGPU;              // GPU chosen as the default device
+	VkPhysicalDevice PhysicalDevice;              // GPU chosen as the default device
 	VkDevice Device;                         // Vulkan device for commands
 	VkSurfaceKHR Surface;                    // Vulkan window surface
 
 	VmaAllocator Allocator;
 
-	VkSwapchainKHR Swapchain;
-	VkFormat SwapchainImageFormat;
-	std::vector<VkImage> SwapchainImages;
-	std::vector<VkImageView> SwapchainImageViews;
-	VkExtent2D SwapchainExtent;
+	VkSwapchainKHR SwapChain;
+	VkFormat SwapChainImageFormat;
+	std::vector<VkImage> SwapChainImages;
+	std::vector<VkImageView> SwapChainImageViews;
+	VkExtent2D SwapChainExtent;
 
 	struct FrameData 
 	{
@@ -503,7 +503,7 @@ bool _initVulkan()
 
 	// Get the VkDevice handle used in the rest of a vulkan application
 	Device = vkbDevice.device;
-	ChosenGPU = physicalDevice.physical_device;
+	PhysicalDevice = physicalDevice.physical_device;
 
 	volkLoadDevice(Device);
 
@@ -534,7 +534,7 @@ bool _initVulkan()
 	vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
 	VmaAllocatorCreateInfo allocatorInfo = {};
-	allocatorInfo.physicalDevice = ChosenGPU;
+	allocatorInfo.physicalDevice = PhysicalDevice;
 	allocatorInfo.device = Device;
 	allocatorInfo.instance = Instance;
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
@@ -548,13 +548,13 @@ bool _initVulkan()
 
 void _createSwapChain(uint32_t width, uint32_t height)
 {
-	vkb::SwapchainBuilder swapchainBuilder{ ChosenGPU,Device,Surface };
+	vkb::SwapchainBuilder swapchainBuilder{ PhysicalDevice,Device,Surface };
 
-	SwapchainImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	SwapChainImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
 
 	vkb::Swapchain vkbSwapchain = swapchainBuilder
 		//.use_default_format_selection()
-		.set_desired_format(VkSurfaceFormatKHR{ .format = SwapchainImageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
+		.set_desired_format(VkSurfaceFormatKHR{ .format = SwapChainImageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
 		//use vsync present mode
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
 		.set_desired_extent(width, height)
@@ -562,22 +562,22 @@ void _createSwapChain(uint32_t width, uint32_t height)
 		.build()
 		.value();
 
-	SwapchainExtent = vkbSwapchain.extent;
-	Swapchain = vkbSwapchain.swapchain;
-	SwapchainImages = vkbSwapchain.get_images().value();
-	SwapchainImageViews = vkbSwapchain.get_image_views().value();
+	SwapChainExtent = vkbSwapchain.extent;
+	SwapChain = vkbSwapchain.swapchain;
+	SwapChainImages = vkbSwapchain.get_images().value();
+	SwapChainImageViews = vkbSwapchain.get_image_views().value();
 }
 
 void _destroySwapChain()
 {
-	if (Device && Swapchain)
+	if (Device && SwapChain)
 	{
-		vkDestroySwapchainKHR(Device, Swapchain, nullptr);
-		for (int i = 0; i < SwapchainImageViews.size(); i++)
-			vkDestroyImageView(Device, SwapchainImageViews[i], nullptr);
+		vkDestroySwapchainKHR(Device, SwapChain, nullptr);
+		for (int i = 0; i < SwapChainImageViews.size(); i++)
+			vkDestroyImageView(Device, SwapChainImageViews[i], nullptr);
 	}
-	Swapchain = nullptr;
-	SwapchainImageViews.clear();
+	SwapChain = nullptr;
+	SwapChainImageViews.clear();
 }
 
 bool _initSwapChain()
@@ -944,7 +944,7 @@ void _LessonRenderer::Draw()
 
 	//request image from the swapchain
 	uint32_t swapchainImageIndex;
-	VK_CHECK(vkAcquireNextImageKHR(Device, Swapchain, 1000000000, getCurrentFrame().swapchainSemaphore, nullptr, &swapchainImageIndex));
+	VK_CHECK(vkAcquireNextImageKHR(Device, SwapChain, 1000000000, getCurrentFrame().swapchainSemaphore, nullptr, &swapchainImageIndex));
 
 	//naming it cmd for shorter writing
 	VkCommandBuffer cmd = getCurrentFrame().mainCommandBuffer;
@@ -970,13 +970,13 @@ void _LessonRenderer::Draw()
 
 	//transition the draw image and the swapchain image into their correct transfer layouts
 	transitionImage(cmd, DrawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	transitionImage(cmd, SwapChainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	// execute a copy from the draw image into the swapchain
-	copyImagetoImage(cmd, DrawImage.image, SwapchainImages[swapchainImageIndex], DrawExtent, SwapchainExtent);
+	copyImagetoImage(cmd, DrawImage.image, SwapChainImages[swapchainImageIndex], DrawExtent, SwapChainExtent);
 
 	// set swapchain image layout to Present so we can show it on the screen
-	transitionImage(cmd, SwapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	transitionImage(cmd, SwapChainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	//finalize the command buffer (we can no longer add commands, but it can now be executed)
 	VK_CHECK(vkEndCommandBuffer(cmd));
@@ -1003,7 +1003,7 @@ void _LessonRenderer::Draw()
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext = nullptr;
-	presentInfo.pSwapchains = &Swapchain;
+	presentInfo.pSwapchains = &SwapChain;
 	presentInfo.swapchainCount = 1;
 
 	presentInfo.pWaitSemaphores = &getCurrentFrame().renderSemaphore;
