@@ -35,7 +35,7 @@ namespace
 	std::vector<VkImageView> SwapChainImageViews;
 	VkExtent2D SwapChainExtent{};
 
-	std::vector<VkFramebuffer> Framebuffers;
+	std::vector<VkFramebuffer> SwapChainFramebuffers;
 	bool FramebufferResized = false; // TODO: менять если изменилось разрешение экрана
 
 	VkCommandPool CommandPool{ nullptr };
@@ -43,16 +43,15 @@ namespace
 
 	constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 	size_t CurrentFrame{ 0 };
-	uint32_t ImageIndex{ 0 };
 	std::vector<VkSemaphore> ImageAvailableSemaphores;
 	std::vector<VkSemaphore> RenderFinishedSemaphores;
 	std::vector<VkFence> InFlightFences;
 
-	std::vector<VkRenderPass> RenderPasses;
-	std::vector<VkPipelineLayout> PipelineLayouts;
-	std::vector<VkPipeline> GraphicsPipelines;
+	//std::vector<VkRenderPass> RenderPasses;
+	//std::vector<VkPipelineLayout> PipelineLayouts;
+	//std::vector<VkPipeline> GraphicsPipelines;
 
-	std::vector<VkDescriptorSetLayout> DescriptorSetLayouts;
+	//std::vector<VkDescriptorSetLayout> DescriptorSetLayouts;
 
 	// temp: render resources
 	VkRenderPass RenderPass{ nullptr };
@@ -308,7 +307,7 @@ void destroySwapChain()
 {
 	if (Device && SwapChain)
 	{
-		for (auto framebuffer : Framebuffers)
+		for (auto framebuffer : SwapChainFramebuffers)
 			vkDestroyFramebuffer(Device, framebuffer, nullptr);
 
 		for (auto imageView : SwapChainImageViews)
@@ -335,7 +334,7 @@ bool createCommandPool()
 
 bool createCommandBuffers()
 {
-	CommandBuffers.resize(SwapChainImages.size());
+	CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo AllocateInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
 	AllocateInfo.commandPool = CommandPool;
@@ -598,7 +597,7 @@ bool createGraphicsPipeline()
 
 bool createFramebuffers()
 {
-	Framebuffers.resize(SwapChainImageViews.size());
+	SwapChainFramebuffers.resize(SwapChainImageViews.size());
 
 	for (size_t i = 0; i < SwapChainImageViews.size(); i++)
 	{
@@ -612,7 +611,7 @@ bool createFramebuffers()
 		framebufferInfo.height = SwapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &Framebuffers[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &SwapChainFramebuffers[i]) != VK_SUCCESS)
 		{
 			Fatal("failed to create framebuffer!");
 			return false;
@@ -633,7 +632,7 @@ bool recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 
 	VkRenderPassBeginInfo renderPassInfo = { .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 	renderPassInfo.renderPass = RenderPass;
-	renderPassInfo.framebuffer = Framebuffers[imageIndex];
+	renderPassInfo.framebuffer = SwapChainFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = SwapChainExtent;
 
@@ -642,25 +641,25 @@ bool recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	renderPassInfo.pClearValues = &clearColor;
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	{
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline);
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GraphicsPipeline);
+		VkViewport viewport = {};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)SwapChainExtent.width;
+		viewport.height = (float)SwapChainExtent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-	VkViewport viewport = {};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)SwapChainExtent.width;
-	viewport.height = (float)SwapChainExtent.height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		VkRect2D scissor = {};
+		scissor.offset = { 0, 0 };
+		scissor.extent = SwapChainExtent;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	VkRect2D scissor = {};
-	scissor.offset = { 0, 0 };
-	scissor.extent = SwapChainExtent;
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	}
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -719,24 +718,26 @@ void Renderer::Close()
 
 	destroySwapChain();
 
-	// delete resources
-	{	
-		if (GraphicsPipeline) vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
-		if (PipelineLayout) vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
-		if (RenderPass) vkDestroyRenderPass(Device, RenderPass, nullptr);
-	}
-
 	if (Device)
 	{
+		// delete resources
+		{
+			if (GraphicsPipeline) vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
+			if (PipelineLayout) vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+			if (RenderPass) vkDestroyRenderPass(Device, RenderPass, nullptr);
+		}
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			vkDestroySemaphore(Device, RenderFinishedSemaphores[i], nullptr);
 			vkDestroySemaphore(Device, ImageAvailableSemaphores[i], nullptr);
 			vkDestroyFence(Device, InFlightFences[i], nullptr);
 		}
-	}
 
-	if (Device && CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
+		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
+
+		vkDestroyDevice(Device, nullptr);
+	}
 
 	if (Allocator)
 	{
@@ -745,9 +746,7 @@ void Renderer::Close()
 		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
 		vmaDestroyAllocator(Allocator);
 		Allocator = VK_NULL_HANDLE;
-
 	}
-	if (Device) vkDestroyDevice(Device, nullptr);
 
 	if (Instance)
 	{
