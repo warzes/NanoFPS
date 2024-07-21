@@ -36,11 +36,17 @@ struct Vertex
 	}
 };
 
-const std::vector<Vertex> vertices =
+const std::vector<Vertex> vertices = 
 {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices =
+{
+	0, 1, 2, 2, 3, 0
 };
 
 // temp
@@ -53,6 +59,8 @@ namespace
 
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
+	VkBuffer indexBuffer;
+	VkDeviceMemory indexBufferMemory;
 }
 
 namespace
@@ -325,11 +333,13 @@ bool createSwapChain(uint32_t width, uint32_t height)
 {
 	vkb::SwapchainBuilder swapChainBuilder{ PhysicalDevice, Device, Surface };
 
-	SwapChainImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	SwapChainImageFormat = VK_FORMAT_B8G8R8A8_SRGB; // TODO: VK_FORMAT_B8G8R8A8_UNORM ???
+
+	VkSurfaceFormatKHR surfaceFormat{ .format = SwapChainImageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
 	auto swapChainRet = swapChainBuilder
 		//.use_default_format_selection()
-		.set_desired_format(VkSurfaceFormatKHR{ .format = SwapChainImageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
+		.set_desired_format(surfaceFormat)
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // TODO:   эффективней но пока крашится
 		.set_desired_extent(width, height)
 		.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
@@ -714,7 +724,9 @@ bool recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 	}
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -765,37 +777,122 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 	return 0;
 }
 
-bool createVertexBuffer()
+bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
 	VkBufferCreateInfo bufferInfo{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(Device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+	if (vkCreateBuffer(Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 	{
-		Fatal("failed to create vertex buffer!");
+		Fatal("failed to create buffer!");
 		return false;
 	}
 
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(Device, vertexBuffer, &memRequirements);
+	vkGetBufferMemoryRequirements(Device, buffer, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo{ .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
-	allocInfo;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(Device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate vertex buffer memory!");
+	if (vkAllocateMemory(Device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+	{
+		Fatal("failed to allocate buffer memory!");
+		return false;
 	}
 
-	vkBindBufferMemory(Device, vertexBuffer, vertexBufferMemory, 0);
+	vkBindBufferMemory(Device, buffer, bufferMemory, 0);
+	return true;
+}
+
+void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo allocInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = CommandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	vkAllocateCommandBuffers(Device, &allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+	VkBufferCopy copyRegion{};
+	copyRegion.size = size;
+	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(GraphicsQueue);
+
+	vkFreeCommandBuffers(Device, CommandPool, 1, &commandBuffer);
+}
+
+bool createVertexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+#if 0 // более медленный буфер
+	if (!createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory))
+		return false;
 
 	void* data;
-	vkMapMemory(Device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+	vkMapMemory(Device, vertexBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferSize);
 	vkUnmapMemory(Device, vertexBufferMemory);
+
+#else // создание промежуточного буфера на cpu которое копируется в буфер на gpu
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(Device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+	copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+	vkDestroyBuffer(Device, stagingBuffer, nullptr);
+	vkFreeMemory(Device, stagingBufferMemory, nullptr);
+#endif
+
+	return true;
+}
+
+bool createIndexBuffer()
+{
+	VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	if (!createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory))
+		return false;
+
+	void* data;
+	vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, indices.data(), (size_t)bufferSize);
+	vkUnmapMemory(Device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+	copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+	vkDestroyBuffer(Device, stagingBuffer, nullptr);
+	vkFreeMemory(Device, stagingBufferMemory, nullptr);
 
 	return true;
 }
@@ -817,6 +914,8 @@ bool Renderer::Init()
 	if (!createGraphicsPipeline()) return false;
 	if (!createFramebuffers()) return false;
 	if (!createVertexBuffer()) return false;
+	if (!createIndexBuffer()) return false;
+
 
 	return true;
 }
@@ -831,8 +930,11 @@ void Renderer::Close()
 	{
 		// delete resources
 		{
+			vkDestroyBuffer(Device, indexBuffer, nullptr);
+			vkFreeMemory(Device, indexBufferMemory, nullptr);
 			vkDestroyBuffer(Device, vertexBuffer, nullptr);
 			vkFreeMemory(Device, vertexBufferMemory, nullptr);
+
 			if (GraphicsPipeline) vkDestroyPipeline(Device, GraphicsPipeline, nullptr);
 			if (PipelineLayout) vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 			if (RenderPass) vkDestroyRenderPass(Device, RenderPass, nullptr);
