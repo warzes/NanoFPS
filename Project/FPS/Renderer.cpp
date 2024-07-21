@@ -639,6 +639,7 @@ bool recreateSwapchain()
 	return true;
 }
 
+
 bool Renderer::Init()
 {
 #ifdef _DEBUG
@@ -657,7 +658,6 @@ bool Renderer::Init()
 	if (!createFramebuffers()) return false;
 	if (!setCommandBuffers()) return false;
 
-
 	return true;
 }
 
@@ -666,8 +666,7 @@ void Renderer::Close()
 	if (Device) vkDeviceWaitIdle(Device);
 
 	// delete resources
-	{
-	
+	{	
 		for (auto framebuffer : Framebuffers)
 		{
 			vkDestroyFramebuffer(Device, framebuffer, nullptr);
