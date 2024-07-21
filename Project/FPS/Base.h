@@ -22,6 +22,7 @@
 #include <span>
 #include <array>
 #include <deque>
+#include <unordered_map>
 
 #include <volk/volk.h>
 #include <VkBootstrap/VkBootstrap.h>
@@ -57,6 +58,8 @@ Left handed
 //#include <glm/gtx/normal.hpp>
 
 #include <stb/stb_image.h>
+
+#include <tiny_obj_loader.h>
 
 #if defined(_MSC_VER)
 #	pragma warning(pop)

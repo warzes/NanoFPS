@@ -35,6 +35,9 @@
     <ClCompile Include="RenderResource.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp">
+      <Filter>3rdparty\tiny_obj_loader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -57,6 +60,9 @@
     </Filter>
     <Filter Include="3rdparty\vma">
       <UniqueIdentifier>{507e3df7-24bc-4e05-8e5c-117281267ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\tiny_obj_loader">
+      <UniqueIdentifier>{b2415d16-f7f3-4093-97df-82b5de38e5fd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -104,6 +110,9 @@
     </ClInclude>
     <ClInclude Include="RenderResource.h">
       <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\tiny_obj_loader.h">
+      <Filter>3rdparty\tiny_obj_loader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
