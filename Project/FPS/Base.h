@@ -20,6 +20,7 @@
 #include <fstream>
 #include <bitset>
 #include <span>
+#include <array>
 #include <deque>
 
 
