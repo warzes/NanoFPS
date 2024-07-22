@@ -1,5 +1,16 @@
 ﻿#pragma once
 
+[[nodiscard]] constexpr size_t RoundUp(size_t numberToRoundUp, size_t multipleOf)
+{
+	assert(multipleOf);
+	return ((numberToRoundUp + multipleOf - 1) / multipleOf) * multipleOf;
+}
+
+[[nodiscard]] inline int NumMipmap(int width, int height)
+{
+	return static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+}
+
 class AABB final
 {
 public:

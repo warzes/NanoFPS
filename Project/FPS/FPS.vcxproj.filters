@@ -23,9 +23,6 @@
     <ClCompile Include="Graphics.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
-    <ClCompile Include="vk_mem_alloc.cpp">
-      <Filter>3rdparty\vma</Filter>
-    </ClCompile>
     <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp">
       <Filter>3rdparty\tiny_obj_loader</Filter>
     </ClCompile>
@@ -37,6 +34,9 @@
     </ClCompile>
     <ClCompile Include="GameApp.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\vk_mem_alloc.cpp">
+      <Filter>3rdparty\vma</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

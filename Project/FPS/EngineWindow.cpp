@@ -9,7 +9,7 @@ namespace
 	GLFWwindow* WindowContext = nullptr;
 	uint32_t WindowWidth = 0;
 	uint32_t WindowHeight = 0;
-	bool IsResize = true;
+	bool IsWindowResize = true;
 
 	struct
 	{
@@ -29,7 +29,7 @@ static void framesizeCallback([[maybe_unused]] GLFWwindow* window, int width, in
 	height = std::max(height, 1);
 
 	if (WindowWidth != static_cast<uint32_t>(width) || WindowHeight != static_cast<uint32_t>(height))
-		IsResize = true;
+		IsWindowResize = true;
 
 	WindowWidth = static_cast<uint32_t>(width);
 	WindowHeight = static_cast<uint32_t>(height);
@@ -112,7 +112,7 @@ bool Window::ShouldClose()
 
 void Window::Update()
 {
-	::IsResize = false;
+	IsWindowResize = false;
 	glfwPollEvents();
 
 	MouseState.delta = MouseState.position - MouseState.lastPosition;
@@ -136,7 +136,7 @@ uint32_t Window::GetHeight()
 
 bool Window::IsResize()
 {
-	return ::IsResize;
+	return IsWindowResize;
 }
 
 #pragma endregion

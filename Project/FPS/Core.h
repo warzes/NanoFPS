@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#pragma region Container
+
 class CopyableByteSpan final : public std::span<const std::byte>
 {
 public:
@@ -12,6 +14,10 @@ public:
 	template<typename T> requires std::is_trivially_copyable_v<T>
 	CopyableByteSpan(std::span<T> t) : std::span<const std::byte>(std::as_bytes(t)) {}
 };
+
+#pragma endregion
+
+#pragma region Time
 
 class Time final
 {
@@ -85,9 +91,17 @@ private:
 	ClockImpl::time_point m_stopPoint;
 };
 
+#pragma endregion
+
 #pragma region Log
 void Print(const std::string& text);
 void Warning(const std::string& text);
 void Error(const std::string& text);
 void Fatal(const std::string& text);
+#pragma endregion
+
+#pragma region IO
+
+[[nodiscard]] std::optional<std::string> LoadTextFile(const std::filesystem::path& path);
+
 #pragma endregion
