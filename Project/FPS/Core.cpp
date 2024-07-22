@@ -50,7 +50,10 @@ inline Time Clock::Reset()
 
 #pragma region Log
 
-extern void AppEnd();
+namespace EngineApp
+{
+	extern void Exit();
+}
 
 void Print(const std::string& text)
 {
@@ -70,7 +73,7 @@ void Error(const std::string& text)
 void Fatal(const std::string& text)
 {
 	Print("FATAL: " + text);
-	AppEnd();
+	EngineApp::Exit();
 }
 #pragma endregion
 

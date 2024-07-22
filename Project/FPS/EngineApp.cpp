@@ -1,6 +1,6 @@
 ﻿#include "Base.h"
 #include "Core.h"
-#include "RenderDevice.h"
+#include "RenderContext.h"
 #include "EngineWindow.h"
 #include "EngineApp.h"
 
@@ -16,25 +16,21 @@ namespace
 	bool IsAppEnd = false;
 }
 
-void AppEnd()
+bool EngineApp::Create(const EngineCreateInfo& createInfo)
 {
-	IsAppEnd = true;
-}
+	IsAppEnd = false;
+	if (!Window::Create(createInfo.window)) return false;
+	if (!RenderContext::Create(createInfo.renderContext)) return false;
 
-bool EngineApp::Create()
-{
-	Window::Create({});
-	Renderer::Init();
+	if (IsAppEnd) return false; // произошли фатальные ошибки
 
 	LastFrameTime = static_cast<float>(glfwGetTime());
-
-	IsAppEnd = false;
 	return true;
 }
 
 void EngineApp::Destroy()
 {
-	Renderer::Close();
+	RenderContext::Destroy();
 	Window::Destroy();
 }
 
@@ -43,7 +39,7 @@ bool EngineApp::ShouldClose()
 	return Window::ShouldClose() || IsAppEnd;
 }
 
-void EngineApp::BeginFrame()
+void EngineApp::Update()
 {
 	float currentFrame = static_cast<float>(glfwGetTime());
 	DeltaTime = currentFrame - LastFrameTime;
@@ -52,12 +48,22 @@ void EngineApp::BeginFrame()
 	Window::Update();
 }
 
+void EngineApp::BeginFrame()
+{
+	RenderContext::BeginFrame();
+}
+
 void EngineApp::EndFrame()
 {
-	Renderer::Draw();
+	RenderContext::EndFrame();
 }
 
 float EngineApp::GetDeltaTime()
 {
 	return DeltaTime;
+}
+
+void EngineApp::Exit()
+{
+	IsAppEnd = true;
 }
