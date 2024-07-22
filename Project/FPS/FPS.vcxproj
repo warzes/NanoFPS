@@ -109,13 +109,13 @@
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineApp.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
+    <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="RenderResource.cpp" />
+    <ClCompile Include="RenderDevice.cpp" />
     <ClCompile Include="_LessonRenderer.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="vk_mem_alloc.cpp" />
   </ItemGroup>
@@ -131,11 +131,11 @@
     <ClInclude Include="EngineApp.h" />
     <ClInclude Include="EngineMath.h" />
     <ClInclude Include="EngineWindow.h" />
+    <ClInclude Include="GameApp.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="RenderResource.h" />
-    <ClInclude Include="_LessonRenderer.h" />
+    <ClInclude Include="RenderDevice.h" />
+    <ClInclude Include="_lessonRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

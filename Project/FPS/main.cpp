@@ -1,5 +1,5 @@
 ﻿#include "NanoEngineVK.h"
-// TODO: написать VK_CHECK
+#include "GameApp.h"
 //-----------------------------------------------------------------------------
 int main(
 	[[maybe_unused]] int   argc,
@@ -7,12 +7,18 @@ int main(
 {
 	if (EngineApp::Create())
 	{
-		while (!EngineApp::ShouldClose())
+		if (GameApp::Create())
 		{
-			EngineApp::BeginFrame();
+			while (!EngineApp::ShouldClose())
+			{
+				GameApp::Update();
 
-			EngineApp::EndFrame();
+				EngineApp::BeginFrame();
+				GameApp::Frame();
+				EngineApp::EndFrame();
+			}
 		}
+		GameApp::Destroy();
 	}
 	EngineApp::Destroy();
 }
