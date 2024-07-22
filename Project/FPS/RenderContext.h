@@ -13,6 +13,8 @@ struct RenderContextCreateInfo
 	} vulkan;
 };
 
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 class VulkanInstance final
 {
 public:
@@ -38,9 +40,63 @@ public:
 	uint32_t ComputeQueueFamily{ 0 };
 
 	VmaAllocator Allocator{ nullptr };
+
+	VkCommandPool CommandPool{ nullptr };
+
 private:
 	bool getQueues(vkb::Device& vkbDevice);
+	bool createCommandPool();
 };
+
+class VulkanSwapChain final
+{
+public:
+	bool Create();
+	void Destroy();
+
+	bool Resize();
+
+	void BeginFrame();
+	void EndFrame();
+
+	VkSwapchainKHR SwapChain{ nullptr };
+	VkFormat SwapChainImageFormat{ VK_FORMAT_B8G8R8A8_SRGB }; // TODO: VK_FORMAT_B8G8R8A8_UNORM ???
+	std::vector<VkImage> SwapChainImages;
+	std::vector<VkImageView> SwapChainImageViews;
+	VkExtent2D SwapChainExtent{};
+	std::vector<VkFramebuffer> SwapChainFramebuffers;
+	bool FramebufferResized = false; // TODO: менять если изменилось разрешение экрана
+
+	VkImage DepthImage{ nullptr };
+	VkDeviceMemory DepthImageMemory{ nullptr };
+	VkImageView DepthImageView{ nullptr };
+
+	VkRenderPass MainRenderPass{ nullptr };
+
+	std::vector<VkCommandBuffer> CommandBuffers;
+
+	size_t CurrentFrame{ 0 };
+	std::vector<VkSemaphore> ImageAvailableSemaphores;
+	std::vector<VkSemaphore> RenderFinishedSemaphores;
+	std::vector<VkFence> InFlightFences;
+
+private:
+	bool createSwapChain(uint32_t width, uint32_t height);
+	bool createDepthResources();
+	std::optional<VkFormat> findDepthFormat();
+	bool createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory); // TODO: вынести в отдельный класс
+	std::optional<VkImageView> createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels); // TODO: вынести в отдельный класс
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties); // TODO: вынести в отдельный класс
+	bool createFramebuffers();
+	bool createRenderPass();
+	void destroySwapChain();
+
+	bool createCommandBuffers();
+	bool createSyncObjects();
+
+	uint32_t m_imageIndex = 0;
+};
+
 
 namespace RenderContext
 {
@@ -50,4 +106,5 @@ namespace RenderContext
 	void EndFrame();
 
 	[[nodiscard]] VulkanInstance& GetInstance();
+	[[nodiscard]] VulkanSwapChain& GetSwapChain();
 }
