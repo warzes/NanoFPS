@@ -93,10 +93,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\3rdparty\stb\stb.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
+    <ClCompile Include="..\3rdparty\stb\stb.cpp" />
     <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp" />
     <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
