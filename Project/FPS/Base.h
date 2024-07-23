@@ -61,6 +61,8 @@ Left handed
 
 #include <tiny_obj_loader.h>
 
+#include <simdjson/simdjson.h>
+
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif

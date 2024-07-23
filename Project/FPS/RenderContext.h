@@ -43,8 +43,10 @@ public:
 
 	VkCommandPool CommandPool{ nullptr };
 
+	// TODO: обновить
 	VkFence ImmediateFence{ nullptr };
 	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
+	VkDescriptorPool DescriptorPool;
 
 private:
 	bool getQueues(vkb::Device& vkbDevice);

@@ -6,6 +6,7 @@
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "glfw3.lib" )
+#	pragma comment( lib, "simdjson.lib" )
 #endif
 
 namespace

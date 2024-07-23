@@ -3,6 +3,19 @@
 #include "RenderResources.h"
 #include "RenderContext.h"
 
+struct sBufferingObjects
+{
+	VkFence RenderFence;
+	VkSemaphore PresentSemaphore;
+	VkSemaphore RenderSemaphore;
+	VkCommandBuffer CommandBuffer;
+};
+
+namespace
+{
+	std::array<sBufferingObjects, 3> BufferingObjects;
+}
+
 #pragma region VulkanImage
 
 VulkanImage::VulkanImage(VmaAllocator allocator, VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers)
@@ -275,7 +288,221 @@ void VulkanTexture::createSampler(VkFilter filter, VkSamplerAddressMode addressM
 
 #pragma endregion
 
+#pragma region VulkanUniformBufferSet
+
+VulkanUniformBufferSet::VulkanUniformBufferSet(const std::initializer_list<VulkanUniformBufferInfo>& uniformBufferInfos)
+{
+	const size_t numBuffering = Render::GetNumBuffering();
+	const size_t numUniformBuffers = uniformBufferInfos.size();
+
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+	bindings.reserve(numUniformBuffers);
+	for (const auto& uniformBufferInfo : uniformBufferInfos)
+	{
+		bindings.emplace_back(uniformBufferInfo.Binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, uniformBufferInfo.Stage);
+	}
+	m_descriptorSetLayout = Render::CreateDescriptorSetLayout(bindings);
+	m_descriptorSet = Render::AllocateDescriptorSet(m_descriptorSetLayout);
+
+	m_uniformBufferSizes.reserve(numUniformBuffers);
+	m_uniformBuffers.reserve(numUniformBuffers);
+	for (const auto& uniformBufferInfo : uniformBufferInfos) {
+		m_uniformBufferSizes.push_back(uniformBufferInfo.Size);
+
+		VulkanBuffer uniformBuffer = Render::CreateBuffer(
+			numBuffering * uniformBufferInfo.Size,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+			VMA_MEMORY_USAGE_AUTO_PREFER_HOST
+		);
+
+		Render::WriteDynamicUniformBufferToDescriptorSet(uniformBuffer.Get(), uniformBufferInfo.Size, m_descriptorSet, uniformBufferInfo.Binding);
+
+		m_uniformBuffers.push_back(std::move(uniformBuffer));
+	}
+
+	m_dynamicOffsets.reserve(numBuffering);
+	for (int i = 0; i < numBuffering; i++)
+	{
+		std::vector<uint32_t> dynamicOffsets;
+		dynamicOffsets.reserve(numUniformBuffers);
+		for (int j = 0; j < numUniformBuffers; j++)
+		{
+			dynamicOffsets.push_back(i * m_uniformBufferSizes[j]);
+		}
+		m_dynamicOffsets.push_back(dynamicOffsets);
+	}
+}
+
+VulkanUniformBufferSet::VulkanUniformBufferSet(VulkanUniformBufferSet&& other) noexcept
+{
+	Swap(other);
+}
+
+VulkanUniformBufferSet::~VulkanUniformBufferSet()
+{
+	Release();
+}
+
+VulkanUniformBufferSet& VulkanUniformBufferSet::operator=(VulkanUniformBufferSet&& other) noexcept
+{
+	if (this != &other)
+	{
+		Release();
+		Swap(other);
+	}
+	return *this;
+}
+
+void VulkanUniformBufferSet::Release()
+{
+	Render::FreeDescriptorSet(m_descriptorSet);
+	Render::DestroyDescriptorSetLayout(m_descriptorSetLayout);
+
+	m_descriptorSetLayout = VK_NULL_HANDLE;
+	m_uniformBufferSizes.clear();
+	m_uniformBuffers.clear();
+	m_descriptorSet = VK_NULL_HANDLE;
+	m_dynamicOffsets.clear();
+}
+
+void VulkanUniformBufferSet::Swap(VulkanUniformBufferSet& other) noexcept
+{
+	std::swap(m_descriptorSetLayout, other.m_descriptorSetLayout);
+	std::swap(m_descriptorSet, other.m_descriptorSet);
+	std::swap(m_uniformBufferSizes, other.m_uniformBufferSizes);
+	std::swap(m_uniformBuffers, other.m_uniformBuffers);
+	std::swap(m_dynamicOffsets, other.m_dynamicOffsets);
+}
+
+void VulkanUniformBufferSet::UpdateAllBuffers(uint32_t bufferingIndex, const std::initializer_list<const void*>& allBuffersData)
+{
+	int i = 0;
+	for (const void* bufferData : allBuffersData)
+	{
+		const uint32_t size = m_uniformBufferSizes[i];
+		const uint32_t offset = bufferingIndex * size;
+		m_uniformBuffers[i].UploadRange(offset, size, bufferData);
+		i++;
+	}
+}
+
+#pragma endregion
+
+#pragma region VulkanPipeline
+
+VkPrimitiveTopology TopologyFromString(const std::string& topology) {
+	if (topology == "point_list") {
+		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+	}
+	else if (topology == "line_list") {
+		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	}
+	else if (topology == "line_strip") {
+		return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+	}
+	else if (topology == "triangle_list") {
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	}
+	else if (topology == "triangle_strip") {
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+	}
+	else if (topology == "triangle_fan") {
+		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+	}
+	Fatal("Invalid topology: " + topology);
+	return {}; // TODO: optional
+}
+
+VkPolygonMode PolygonModeFromString(const std::string& polygonMode)
+{
+	if (polygonMode == "fill") {
+		return VK_POLYGON_MODE_FILL;
+	}
+	else if (polygonMode == "line") {
+		return VK_POLYGON_MODE_LINE;
+	}
+	else if (polygonMode == "point") {
+		return VK_POLYGON_MODE_POINT;
+	}
+	Fatal("Invalid polygon mode: " + polygonMode);
+	return {}; // TODO: optional
+}
+
+VkCullModeFlags CullModeFromString(const std::string& cullMode)
+{
+	if (cullMode == "none") {
+		return VK_CULL_MODE_NONE;
+	}
+	else if (cullMode == "back") {
+		return VK_CULL_MODE_BACK_BIT;
+	}
+	else if (cullMode == "front") {
+		return VK_CULL_MODE_FRONT_BIT;
+	}
+	else if (cullMode == "front_and_back") {
+		return VK_CULL_MODE_FRONT_AND_BACK;
+	}
+	Fatal("Invalid cull mode: " + cullMode);
+	return {};
+}
+
+VkCompareOp CompareOpFromString(const std::string& compareOp) {
+	if (compareOp == "never") {
+		return VK_COMPARE_OP_NEVER;
+	}
+	else if (compareOp == "less") {
+		return VK_COMPARE_OP_LESS;
+	}
+	else if (compareOp == "equal") {
+		return VK_COMPARE_OP_EQUAL;
+	}
+	else if (compareOp == "less_or_equal") {
+		return VK_COMPARE_OP_LESS_OR_EQUAL;
+	}
+	else if (compareOp == "greater") {
+		return VK_COMPARE_OP_GREATER;
+	}
+	else if (compareOp == "not_equal") {
+		return VK_COMPARE_OP_NOT_EQUAL;
+	}
+	else if (compareOp == "greater_or_equal") {
+		return VK_COMPARE_OP_GREATER_OR_EQUAL;
+	}
+	else if (compareOp == "always") {
+		return VK_COMPARE_OP_ALWAYS;
+	}
+	Fatal("Invalid compare op: " + compareOp);
+	return {};
+}
+
+VulkanPipelineConfig::VulkanPipelineConfig(const std::string& jsonFilename)
+{
+	JsonFile pipelineJson(jsonFilename);
+	VertexShader = pipelineJson.GetString("vertex");
+	GeometryShader = pipelineJson.GetString("geometry", {});
+	FragmentShader = pipelineJson.GetString("fragment");
+	const std::string topology = pipelineJson.GetString("topology", {});
+	Options.Topology = topology.empty() ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST : TopologyFromString(topology);
+	const std::string polygonMode = pipelineJson.GetString("polygon_mode", {});
+	Options.PolygonMode = polygonMode.empty() ? VK_POLYGON_MODE_FILL : PolygonModeFromString(polygonMode);
+	const std::string cullMode = pipelineJson.GetString("cull_mode", {});
+	Options.CullMode = cullMode.empty() ? VK_CULL_MODE_BACK_BIT : CullModeFromString(cullMode);
+	Options.DepthTestEnable = pipelineJson.GetBoolean("depth_test", true) ? VK_TRUE : VK_FALSE;
+	Options.DepthWriteEnable = pipelineJson.GetBoolean("depth_write", true) ? VK_TRUE : VK_FALSE;
+	const std::string compareOp = pipelineJson.GetString("compare_op", {});
+	Options.DepthCompareOp = compareOp.empty() ? VK_COMPARE_OP_LESS : CompareOpFromString(compareOp);
+}
+
+
+#pragma endregion
+
 #pragma region Renderer
+
+size_t Render::GetNumBuffering()
+{
+	return BufferingObjects.size();
+}
 
 VulkanImage Render::CreateImage(VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers)
 {
@@ -327,6 +554,37 @@ VkSampler Render::CreateSampler(VkFilter filter, VkSamplerAddressMode addressMod
 VulkanBuffer Render::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
 {
 	return { RenderContext::GetInstance().Allocator, size, bufferUsage, flags, memoryUsage};
+}
+
+VkDescriptorSetLayout Render::CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings)
+{
+	VkDescriptorSetLayoutCreateInfo layoutInfo{ .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	layoutInfo.pBindings = bindings.data();
+
+	VkDescriptorSetLayout descriptorSetLayout;
+	if (vkCreateDescriptorSetLayout(RenderContext::GetInstance().Device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan descriptor set layout.");
+		return {}; // TODO: return optional<VkDescriptorSetLayout>
+	}
+	return descriptorSetLayout;
+}
+
+VkDescriptorSet Render::AllocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout)
+{
+	VkDescriptorSetAllocateInfo allocateInfo{ .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+	allocateInfo.descriptorPool = RenderContext::GetInstance().DescriptorPool;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.pSetLayouts = &descriptorSetLayout;
+
+	VkDescriptorSet descriptorSet;
+	if (vkAllocateDescriptorSets(RenderContext::GetInstance().Device, &allocateInfo, &descriptorSet) != VK_SUCCESS)
+	{
+		Fatal("Failed to allocate Vulkan descriptor set.");
+		return {}; // TODO: return optional<VkDescriptorSet>
+	}
+	return descriptorSet;
 }
 
 void Render::BeginImmediateSubmit()
@@ -402,6 +660,23 @@ void Render::WriteCombinedImageSamplerToDescriptorSet(VkSampler sampler, VkImage
 	vkUpdateDescriptorSets(RenderContext::GetInstance().Device, 1, &writeDescriptorSet, 0, nullptr);
 }
 
+void Render::WriteDynamicUniformBufferToDescriptorSet(VkBuffer buffer, VkDeviceSize size, VkDescriptorSet descriptorSet, uint32_t binding)
+{
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = buffer;
+	bufferInfo.offset = 0;
+	bufferInfo.range = size;
+
+	VkWriteDescriptorSet writeDescSet{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+	writeDescSet.dstSet = descriptorSet;
+	writeDescSet.dstBinding = binding;
+	writeDescSet.dstArrayElement = 0;
+	writeDescSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	writeDescSet.descriptorCount = 1;
+	writeDescSet.pBufferInfo = &bufferInfo;
+	writeDescriptorSet(writeDescSet);
+}
+
 void Render::DestroySampler(VkSampler sampler)
 {
 	vkDestroySampler(RenderContext::GetInstance().Device, sampler, nullptr);
@@ -410,6 +685,16 @@ void Render::DestroySampler(VkSampler sampler)
 void Render::DestroyImageView(VkImageView imageView)
 {
 	vkDestroyImageView(RenderContext::GetInstance().Device, imageView, nullptr);
+}
+
+void Render::FreeDescriptorSet(VkDescriptorSet descriptorSet)
+{
+	vkFreeDescriptorSets(RenderContext::GetInstance().Device, RenderContext::GetInstance().DescriptorPool, 1, &descriptorSet);
+}
+
+void Render::DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+{
+	vkDestroyDescriptorSetLayout(RenderContext::GetInstance().Device, descriptorSetLayout, nullptr);
 }
 
 #pragma endregion

@@ -92,16 +92,89 @@ private:
 
 #pragma endregion
 
+#pragma region VulkanUniformBufferSet
+
+struct VulkanUniformBufferInfo final
+{
+	uint32_t Binding;
+	VkShaderStageFlags Stage;
+	size_t Size;
+};
+
+class VulkanUniformBufferSet final
+{
+public:
+	VulkanUniformBufferSet() = default;
+	VulkanUniformBufferSet(const std::initializer_list<VulkanUniformBufferInfo>& uniformBufferInfos);
+	VulkanUniformBufferSet(const VulkanUniformBufferSet&) = delete;
+	VulkanUniformBufferSet(VulkanUniformBufferSet&& other) noexcept;
+	~VulkanUniformBufferSet();
+
+	VulkanUniformBufferSet& operator=(const VulkanUniformBufferSet&) = delete;
+	VulkanUniformBufferSet& operator=(VulkanUniformBufferSet&& other) noexcept;
+
+	void Release();
+
+	void Swap(VulkanUniformBufferSet& other) noexcept;
+
+	[[nodiscard]] const VkDescriptorSetLayout& GetDescriptorSetLayout() const { return m_descriptorSetLayout; }
+
+	[[nodiscard]] const VkDescriptorSet& GetDescriptorSet() const { return m_descriptorSet; }
+
+	[[nodiscard]] const std::vector<uint32_t>& GetDynamicOffsets(uint32_t bufferingIndex) const { return m_dynamicOffsets[bufferingIndex]; }
+
+	void UpdateAllBuffers(uint32_t bufferingIndex, const std::initializer_list<const void*>& allBuffersData);
+
+private:
+	VkDescriptorSetLayout m_descriptorSetLayout{ nullptr };
+	VkDescriptorSet m_descriptorSet{ nullptr };
+	std::vector<uint32_t> m_uniformBufferSizes;
+	std::vector<VulkanBuffer> m_uniformBuffers;
+	std::vector<std::vector<uint32_t>> m_dynamicOffsets;
+};
+
+#pragma endregion
+
+#pragma region VulkanPipeline
+
+struct VulkanPipelineOptions
+{
+	VkPrimitiveTopology Topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	VkPolygonMode PolygonMode = VK_POLYGON_MODE_FILL;
+	VkCullModeFlags CullMode = VK_CULL_MODE_BACK_BIT;
+	VkBool32 DepthTestEnable = VK_TRUE;
+	VkBool32 DepthWriteEnable = VK_TRUE;
+	VkCompareOp DepthCompareOp = VK_COMPARE_OP_LESS;
+};
+
+struct VulkanPipelineConfig 
+{
+	explicit VulkanPipelineConfig(const std::string& jsonFilename);
+
+	std::string VertexShader;
+	std::string GeometryShader;
+	std::string FragmentShader;
+	VulkanPipelineOptions Options;
+};
+
+#pragma endregion
 
 #pragma region Renderer
 
 namespace Render
 {
+	[[nodiscard]] size_t GetNumBuffering();
+
+
 	VulkanImage CreateImage(VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers = 1);
 	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectMask, uint32_t layers = 1);
 	VkSampler CreateSampler(VkFilter filter, VkSamplerAddressMode addressMode, VkBool32 compareEnable = VK_FALSE, VkCompareOp compareOp = VK_COMPARE_OP_NEVER);
 
 	VulkanBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags bufferUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage);
+
+	VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+
+	VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout);
 
 	void BeginImmediateSubmit();
 	void EndImmediateSubmit();
@@ -112,9 +185,12 @@ namespace Render
 	void WaitAndResetFence(VkFence fence, uint64_t timeout = 100'000'000);
 
 	void WriteCombinedImageSamplerToDescriptorSet(VkSampler sampler, VkImageView imageView, VkDescriptorSet descriptorSet, uint32_t binding);
+	void WriteDynamicUniformBufferToDescriptorSet(VkBuffer buffer, VkDeviceSize size, VkDescriptorSet descriptorSet, uint32_t binding);
 
 	void DestroySampler(VkSampler sampler);
 	void DestroyImageView(VkImageView imageView);
+	void FreeDescriptorSet(VkDescriptorSet descriptorSet);
+	void DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 }
 
 #pragma endregion

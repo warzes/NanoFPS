@@ -123,4 +123,64 @@ std::optional<std::string> LoadTextFile(const std::filesystem::path& path)
 	return shaderCode;
 }
 
+std::string FileSystem::Read(const std::string& filename)
+{
+	// TODO: пока так, а потом через physfs
+	return LoadTextFile(filename).value();
+}
+
+JsonFile::JsonFile(const std::string& filename)
+{
+	const simdjson::error_code result = m_parser.parse(FileSystem::Read(filename)).get(m_document);
+	if (result != simdjson::SUCCESS)
+		Fatal("Failed to load json document: " + std::string(simdjson::error_message(result)));
+}
+
+template<class T>
+T JsonFile::getCriticalField(const std::string& key)
+{
+	T value{};
+	const simdjson::error_code result = m_document.at_key(key).get(value);
+	if (result != simdjson::SUCCESS)
+		Fatal("Failed to find key '" + key + "': " + std::string(simdjson::error_message(result)));
+	return value;
+}
+
+template<class T>
+T JsonFile::getField(const std::string& key, const T& fallback)
+{
+	T value{};
+	const simdjson::error_code error = m_document.at_key(key).get(value);
+	return error == simdjson::SUCCESS ? value : fallback;
+}
+
+std::string JsonFile::GetString(const std::string& key)
+{
+	return std::string(getCriticalField<std::string_view>(key));
+}
+
+std::string JsonFile::GetString(const std::string& key, const std::string& fallback)
+{
+	return std::string(getField<std::string_view>(key, fallback));
+}
+
+int JsonFile::GetInteger(const std::string& key)
+{
+	return static_cast<int>(getCriticalField<double>(key));
+}
+
+int JsonFile::GetInteger(const std::string& key, int fallback) {
+	return static_cast<int>(getField<double>(key, fallback));
+}
+
+bool JsonFile::GetBoolean(const std::string& key)
+{
+	return getCriticalField<bool>(key);
+}
+
+bool JsonFile::GetBoolean(const std::string& key, bool fallback)
+{
+	return getField(key, fallback);
+}
+
 #pragma endregion

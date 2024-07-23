@@ -104,4 +104,40 @@ void Fatal(const std::string& text);
 
 [[nodiscard]] std::optional<std::string> LoadTextFile(const std::filesystem::path& path);
 
+namespace FileSystem {
+	std::string Read(const std::string& filename);
+} // namespace FileSystem
+
+class JsonFile final
+{
+public:
+	explicit JsonFile(const std::string& filename);
+	JsonFile(const JsonFile&) = delete;
+	JsonFile(JsonFile&&) = delete;
+
+	JsonFile& operator=(const JsonFile&) = delete;
+	JsonFile& operator=(JsonFile&&) = delete;
+
+	std::string GetString(const std::string& key);
+	std::string GetString(const std::string& key, const std::string& fallback);
+
+	int GetInteger(const std::string& key);
+	int GetInteger(const std::string& key, int fallback);
+
+	bool GetBoolean(const std::string& key);
+	bool GetBoolean(const std::string& key, bool fallback);
+
+private:
+	template<class T>
+	T getCriticalField(const std::string& key);
+
+	template<class T>
+	T getField(const std::string& key, const T& fallback);
+
+	simdjson::dom::parser m_parser;
+	simdjson::dom::element m_document;
+};
+
+
+
 #pragma endregion
