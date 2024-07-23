@@ -38,6 +38,9 @@
     <ClCompile Include="..\3rdparty\vk_mem_alloc.cpp">
       <Filter>3rdparty\vma</Filter>
     </ClCompile>
+    <ClCompile Include="RenderResources.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -119,6 +122,9 @@
     </ClInclude>
     <ClInclude Include="GameApp.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderResources.h">
+      <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

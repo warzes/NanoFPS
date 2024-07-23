@@ -43,6 +43,9 @@ public:
 
 	VkCommandPool CommandPool{ nullptr };
 
+	VkFence ImmediateFence{ nullptr };
+	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
+
 private:
 	bool getQueues(vkb::Device& vkbDevice);
 	bool createCommandPool();
@@ -96,7 +99,6 @@ private:
 
 	uint32_t m_imageIndex = 0;
 };
-
 
 namespace RenderContext
 {
