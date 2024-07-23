@@ -13,9 +13,9 @@ namespace
 
 	struct
 	{
-		glm::ivec2 position;
-		glm::ivec2 lastPosition;
-		glm::ivec2 delta;
+		glm::ivec2 position{};
+		glm::ivec2 lastPosition{};
+		glm::ivec2 delta{};
 	} MouseState;
 }
 
@@ -42,12 +42,13 @@ static void mouseCallback([[maybe_unused]] GLFWwindow* window, double xPosIn, do
 
 bool Window::Create(const WindowCreateInfo& createInfo)
 {
+	glfwSetErrorCallback([](int, const char* desc) noexcept { Fatal("GLFW error: " + std::string(desc)); });
+
 	if (!glfwInit())
 	{
 		Fatal("Failed to initialize GLFW");
 		return false;
 	}
-	glfwSetErrorCallback([](int, const char* desc) noexcept { Fatal("GLFW error: " + std::string(desc)); });
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_MAXIMIZED, createInfo.maximize);
@@ -67,7 +68,7 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 	WindowContext = glfwCreateWindow(createInfo.width, createInfo.height, createInfo.title.data(), nullptr, nullptr);
 	if (!WindowContext)
 	{
-		Fatal("Failed to create window");
+		Fatal("Failed to create GLFW window.");
 		return false;
 	}
 
@@ -151,17 +152,17 @@ bool Keyboard::IsPressed(int key)
 	return glfwGetKey(WindowContext, key) == GLFW_PRESS;
 }
 
-bool Mouse::IsPressed(Button button)
+bool Mouse::IsButtonDown(Button button)
 {
 	return glfwGetMouseButton(WindowContext, static_cast<int>(button)) == GLFW_PRESS;
 }
 
-glm::ivec2 Mouse::GetPosition()
+const glm::ivec2 Mouse::GetPosition()
 {
 	return MouseState.position;
 }
 
-glm::ivec2 Mouse::GetDelta()
+const glm::ivec2 Mouse::GetDeltaPosition()
 {
 	return MouseState.delta;
 }

@@ -157,105 +157,151 @@ class Transform final
 {
 public:
 	Transform() = default;
-	Transform(const glm::vec3& position, const glm::mat3& orientation);
-	Transform(const glm::vec3& position, const glm::quat& orientation);
 
-	[[nodiscard]] const glm::vec3& GetPosition() const;
-	[[nodiscard]] const glm::quat& GetOrientation() const;
+	Transform& SetPosition(const glm::vec3& position);
+	Transform& SetEulerAngles(const glm::vec3& eulerAngles);
+	Transform& Translate(const glm::vec3& translation);
+	Transform& RotateX(const float radians);
+	Transform& RotateY(const float radians);
+	Transform& RotateZ(const float radians);
 
-	void SetIdentity();
-	void SetPosition(const glm::vec3& position);
-	void SetOrientation(const glm::quat& orientation);
+	Transform& ClampPitch();
 
-	[[nodiscard]] Transform GetInverse() const;
+	[[nodiscard]] const glm::vec3& GetPosition() const { return m_position; }
 
-	glm::vec3 operator*(const glm::vec3& v) const;
-	Transform operator*(const Transform& tr) const;
+	[[nodiscard]] const glm::vec3& GetEulerAngles() const { return m_eulerAngles; }
+
+	[[nodiscard]] const glm::mat4& GetTranslationMatrix() const;
+	[[nodiscard]] const glm::mat4& GetRotationMatrix() const;
+
+	[[nodiscard]] glm::vec3 GetRightVector() const;
+	[[nodiscard]] glm::vec3 GetUpVector() const;
+	[[nodiscard]] glm::vec3 GetForwardVector() const;
+	[[nodiscard]] glm::vec3 GetHorizontalRightVector() const;
+	[[nodiscard]] glm::vec3 GetHorizontalForwardVector() const;
+
+	[[nodiscard]] glm::mat4 GetMatrix() const { return GetTranslationMatrix() * GetRotationMatrix(); }
+	[[nodiscard]] glm::mat4 GetInverseMatrix() const { return inverse(GetMatrix()); }
 
 private:
+	static float clampPitch(const float radians) { return glm::clamp(radians, -glm::half_pi<float>(), glm::half_pi<float>()); }
+
+	// Wrap to (-PI..PI]
+	static float wrapAngle(const float radians) { return std::remainder(radians, glm::two_pi<float>()); }
+
 	glm::vec3 m_position = glm::vec3(0.0f);
-	glm::quat m_orientation = glm::quat::wxyz(1.0f, 0.0f, 0.0f, 0.0f);
+	glm::vec3 m_eulerAngles = glm::vec3(0.0f);
+
+	mutable glm::mat4 m_translationMatrix{ 1.0f };
+	mutable glm::mat4 m_rotationMatrix{ 1.0f };
+
+	mutable bool m_translationDirty = true;
+	mutable bool m_rotationDirty = true;
+
 };
 
 #pragma region inline Transform
 
-inline Transform::Transform(const glm::vec3& position, const glm::mat3& orientation)
-	: m_position(position)
-	, m_orientation(glm::quat(orientation))
+inline Transform& Transform::SetPosition(const glm::vec3& position)
 {
-}
-
-inline Transform::Transform(const glm::vec3& position, const glm::quat& orientation)
-	: m_position(position)
-	, m_orientation(orientation)
-{
-}
-
-inline const glm::vec3& Transform::GetPosition() const
-{
-	return m_position;
-}
-
-inline const glm::quat& Transform::GetOrientation() const
-{
-	return m_orientation;
-}
-
-inline void Transform::SetIdentity()
-{
-	m_position = glm::vec3(0.0f);
-	m_orientation = glm::quat::wxyz(1.0f, 0.0f, 0.0f, 0.0f);
-}
-
-inline void Transform::SetPosition(const glm::vec3& position)
-{
+	m_translationDirty = true;
 	m_position = position;
+	return *this;
 }
 
-inline void Transform::SetOrientation(const glm::quat& orientation)
+inline Transform& Transform::SetEulerAngles(const glm::vec3& eulerAngles)
 {
-	m_orientation = orientation;
+	m_rotationDirty = true;
+	m_eulerAngles.x = wrapAngle(eulerAngles.x);
+	m_eulerAngles.y = wrapAngle(eulerAngles.y);
+	m_eulerAngles.z = wrapAngle(eulerAngles.z);
+	return *this;
 }
 
-inline Transform Transform::GetInverse() const
+inline Transform& Transform::Translate(const glm::vec3& translation)
 {
-	const glm::quat invOrientation = glm::inverse(m_orientation);
-	return Transform(invOrientation * (-m_position), invOrientation);
+	m_translationDirty = true;
+	m_position += translation;
+	return *this;
 }
 
-inline glm::vec3 Transform::operator*(const glm::vec3& v) const
+inline Transform& Transform::RotateX(const float radians)
 {
-	return (m_orientation * v) + m_position;
+	m_rotationDirty = true;
+	m_eulerAngles.x = wrapAngle(m_eulerAngles.x + radians);
+	return *this;
 }
 
-inline Transform Transform::operator*(const Transform& transform2) const
+inline Transform& Transform::RotateY(const float radians)
 {
-	// The following code is equivalent to this
-	//return Transform(mPosition + mOrientation * transform2.mPosition,
-	//                 mOrientation * transform2.mOrientation);
+	m_rotationDirty = true;
+	m_eulerAngles.y = wrapAngle(m_eulerAngles.y + radians);
+	return *this;
+}
 
-	const float prodX = m_orientation.w * transform2.m_position.x + m_orientation.y * transform2.m_position.z
-		- m_orientation.z * transform2.m_position.y;
-	const float prodY = m_orientation.w * transform2.m_position.y + m_orientation.z * transform2.m_position.x
-		- m_orientation.x * transform2.m_position.z;
-	const float prodZ = m_orientation.w * transform2.m_position.z + m_orientation.x * transform2.m_position.y
-		- m_orientation.y * transform2.m_position.x;
-	const float prodW = -m_orientation.x * transform2.m_position.x - m_orientation.y * transform2.m_position.y
-		- m_orientation.z * transform2.m_position.z;
+inline Transform& Transform::RotateZ(const float radians)
+{
+	m_rotationDirty = true;
+	m_eulerAngles.z = wrapAngle(m_eulerAngles.z + radians);
+	return *this;
+}
 
-	return Transform(glm::vec3(
-		m_position.x + m_orientation.w * prodX - prodY * m_orientation.z + prodZ * m_orientation.y - prodW * m_orientation.x,
-		m_position.y + m_orientation.w * prodY - prodZ * m_orientation.x + prodX * m_orientation.z - prodW * m_orientation.y,
-		m_position.z + m_orientation.w * prodZ - prodX * m_orientation.y + prodY * m_orientation.x - prodW * m_orientation.z),
+inline Transform& Transform::ClampPitch()
+{
+	m_rotationDirty = true;
+	m_eulerAngles.x = clampPitch(m_eulerAngles.x);
+	return *this;
+}
 
-		glm::quat::wxyz(m_orientation.w * transform2.m_orientation.x + transform2.m_orientation.w * m_orientation.x
-			+ m_orientation.y * transform2.m_orientation.z - m_orientation.z * transform2.m_orientation.y,
-			m_orientation.w * transform2.m_orientation.y + transform2.m_orientation.w * m_orientation.y
-			+ m_orientation.z * transform2.m_orientation.x - m_orientation.x * transform2.m_orientation.z,
-			m_orientation.w * transform2.m_orientation.z + transform2.m_orientation.w * m_orientation.z
-			+ m_orientation.x * transform2.m_orientation.y - m_orientation.y * transform2.m_orientation.x,
-			m_orientation.w * transform2.m_orientation.w - m_orientation.x * transform2.m_orientation.x
-			- m_orientation.y * transform2.m_orientation.y - m_orientation.z * transform2.m_orientation.z));
+inline const glm::mat4& Transform::GetTranslationMatrix() const
+{
+	if (m_translationDirty)
+	{
+		static constexpr glm::mat4 IDENTITY(1.0f);
+		m_translationMatrix = translate(IDENTITY, m_position);
+		m_translationDirty = false;
+	}
+	return m_translationMatrix;
+}
+
+inline const glm::mat4& Transform::GetRotationMatrix() const
+{
+	if (m_rotationDirty)
+	{
+		m_rotationMatrix = glm::eulerAngleYXZ(m_eulerAngles.y, m_eulerAngles.x, m_eulerAngles.z);
+		m_rotationDirty = false;
+	}
+	return m_rotationMatrix;
+}
+
+inline glm::vec3 Transform::GetRightVector() const
+{
+	static constexpr glm::vec4 RIGHT{ 1, 0, 0, 0 };
+	return GetRotationMatrix() * RIGHT;
+}
+
+inline glm::vec3 Transform::GetUpVector() const
+{
+	static constexpr glm::vec4 UP{ 0, 1, 0, 0 };
+	return GetRotationMatrix() * UP;
+}
+
+inline glm::vec3 Transform::GetForwardVector() const
+{
+	static constexpr glm::vec4 FORWARD{ 0, 0, 1, 0 };
+	return GetRotationMatrix() * FORWARD;
+}
+
+inline glm::vec3 Transform::GetHorizontalRightVector() const
+{
+	const float yaw = m_eulerAngles.y;
+	return { glm::cos(yaw), 0, -glm::sin(yaw) };
+}
+
+inline glm::vec3 Transform::GetHorizontalForwardVector() const
+{
+	const float yaw = m_eulerAngles.y;
+	return { glm::sin(yaw), 0, glm::cos(yaw) };
 }
 
 #pragma endregion

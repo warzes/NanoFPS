@@ -52,9 +52,9 @@ namespace Mouse
 		Normal
 	};
 
-	bool IsPressed(Button button);
-	glm::ivec2 GetPosition();
-	glm::ivec2 GetDelta();
+	[[nodiscard]] bool IsButtonDown(Button button);
+	[[nodiscard]] const glm::ivec2 GetPosition();
+	[[nodiscard]] const glm::ivec2 GetDeltaPosition();
 	void SetPosition(const glm::ivec2& position);
 
 	void SetCursorMode(CursorMode mode);
