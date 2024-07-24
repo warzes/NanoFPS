@@ -255,6 +255,18 @@ namespace Render
 		const std::vector<VkPushConstantRange>& pushConstantRanges
 	);
 
+	VkShaderModule CreateShaderModule(const std::vector<uint32_t>& spirv);
+
+	VkPipeline CreatePipeline(
+		VkPipelineLayout pipelineLayout,
+		const VkPipelineVertexInputStateCreateInfo* vertexInput,
+		const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
+		const VulkanPipelineOptions& options,
+		const std::vector<VkPipelineColorBlendAttachmentState>& attachmentColorBlends,
+		VkRenderPass renderPass,
+		uint32_t subpass
+	);
+
 	void BeginImmediateSubmit();
 	void EndImmediateSubmit();
 

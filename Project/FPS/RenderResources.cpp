@@ -637,34 +637,50 @@ VulkanPipeline::VulkanPipeline(
 
 	const VulkanPipelineConfig pipelineConfig(pipelineConfigFile);
 
-	const std::vector<uint32_t> vertexSpirv = compiler.CompileFromFile(vk::ShaderStageFlagBits::eVertex, pipelineConfig.VertexShader);
-	m_vertexShaderModule = m_device->CreateShaderModule(vertexSpirv);
+	const std::vector<uint32_t> vertexSpirv = compiler.CompileFromFile(VK_SHADER_STAGE_VERTEX_BIT, pipelineConfig.VertexShader);
+	m_vertexShaderModule = Render::CreateShaderModule(vertexSpirv);
 	if (!pipelineConfig.GeometryShader.empty())
 	{
-		const std::vector<uint32_t> geometrySpirv = compiler.CompileFromFile(vk::ShaderStageFlagBits::eGeometry, pipelineConfig.GeometryShader);
-		m_geometryShaderModule = m_device->CreateShaderModule(geometrySpirv);
+		const std::vector<uint32_t> geometrySpirv = compiler.CompileFromFile(VK_SHADER_STAGE_GEOMETRY_BIT, pipelineConfig.GeometryShader);
+		m_geometryShaderModule = Render::CreateShaderModule(geometrySpirv);
 	}
-	const std::vector<uint32_t> fragmentSpirv = compiler.CompileFromFile(vk::ShaderStageFlagBits::eFragment, pipelineConfig.FragmentShader);
-	m_fragmentShaderModule = m_device->CreateShaderModule(fragmentSpirv);
+	const std::vector<uint32_t> fragmentSpirv = compiler.CompileFromFile(VK_SHADER_STAGE_FRAGMENT_BIT, pipelineConfig.FragmentShader);
+	m_fragmentShaderModule = Render::CreateShaderModule(fragmentSpirv);
+
 
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-	shaderStages.emplace_back(VkPipelineShaderStageCreateFlags{}, vk::ShaderStageFlagBits::eVertex, m_vertexShaderModule, "main");
-	if (!pipelineConfig.GeometryShader.empty()) {
-		shaderStages.emplace_back(VkPipelineShaderStageCreateFlags{}, vk::ShaderStageFlagBits::eGeometry, m_geometryShaderModule, "main");
-	}
-	shaderStages.emplace_back(VkPipelineShaderStageCreateFlags{}, vk::ShaderStageFlagBits::eFragment, m_fragmentShaderModule, "main");
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.module = m_vertexShaderModule;
+	vertShaderStageInfo.pName = "main";
+	shaderStages.push_back(vertShaderStageInfo);
 
-	m_pipeline = m_device->CreatePipeline(m_pipelineLayout, vertexInput, shaderStages, pipelineConfig.Options, attachmentColorBlends, renderPass, subpass);
+	if (!pipelineConfig.GeometryShader.empty())
+	{
+		VkPipelineShaderStageCreateInfo geomShaderStageInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+		geomShaderStageInfo.module = m_geometryShaderModule;
+		geomShaderStageInfo.pName = "main";
+		shaderStages.push_back(geomShaderStageInfo);
+	}
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo = { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = m_fragmentShaderModule;
+	fragShaderStageInfo.pName = "main";
+	shaderStages.push_back(fragShaderStageInfo);
+
+	m_pipeline = Render::CreatePipeline(m_pipelineLayout, vertexInput, shaderStages, pipelineConfig.Options, attachmentColorBlends, renderPass, subpass);
 }
 
 void VulkanPipeline::Release()
 {
 	{
-		m_device->DestroyShaderModule(m_fragmentShaderModule);
-		m_device->DestroyShaderModule(m_geometryShaderModule);
-		m_device->DestroyShaderModule(m_vertexShaderModule);
-		m_device->DestroyPipelineLayout(m_pipelineLayout);
+		vkDestroyShaderModule(RenderContext::GetInstance().Device, m_fragmentShaderModule, nullptr);
+		vkDestroyShaderModule(RenderContext::GetInstance().Device, m_geometryShaderModule, nullptr);
+		vkDestroyShaderModule(RenderContext::GetInstance().Device, m_vertexShaderModule, nullptr);
+		vkDestroyPipelineLayout(RenderContext::GetInstance().Device, m_pipelineLayout, nullptr);
 	}
 
 	m_pipeline = VK_NULL_HANDLE;
@@ -790,6 +806,82 @@ VkPipelineLayout Render::CreatePipelineLayout(const std::vector<VkDescriptorSetL
 		return {}; // TODO: return optional
 	}
 	return pipelineLayout;
+}
+
+VkShaderModule Render::CreateShaderModule(const std::vector<uint32_t>& spirv)
+{
+	VkShaderModuleCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+	createInfo.codeSize = spirv.size() * sizeof(uint32_t);
+	createInfo.pCode = spirv.data();
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(RenderContext::GetInstance().Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan shader module.");
+		return {}; // TODO: optional
+	}
+}
+
+VkPipeline Render::CreatePipeline(VkPipelineLayout pipelineLayout, const VkPipelineVertexInputStateCreateInfo* vertexInput, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, const VulkanPipelineOptions& options, const std::vector<VkPipelineColorBlendAttachmentState>& attachmentColorBlends, VkRenderPass renderPass, uint32_t subpass)
+{
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+	inputAssemblyState.topology = options.Topology;
+
+	VkPipelineViewportStateCreateInfo viewportState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+	viewportState.viewportCount = 1;
+	viewportState.scissorCount = 1;
+
+	VkPipelineRasterizationStateCreateInfo rasterizationState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+	rasterizationState.depthClampEnable = VK_FALSE;
+	rasterizationState.rasterizerDiscardEnable = VK_FALSE;
+	rasterizationState.polygonMode = options.PolygonMode;
+	rasterizationState.cullMode = options.CullMode;
+	rasterizationState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizationState.depthBiasEnable = VK_FALSE;
+	rasterizationState.lineWidth = 1.0f;
+
+	VkPipelineMultisampleStateCreateInfo multisampleState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+	multisampleState.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilState{ .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+	depthStencilState.depthTestEnable = options.DepthTestEnable;
+	depthStencilState.depthWriteEnable = options.DepthWriteEnable;
+	depthStencilState.depthCompareOp = options.DepthCompareOp;
+
+	VkPipelineColorBlendStateCreateInfo colorBlendState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+	colorBlendState.logicOpEnable = VK_FALSE;
+	colorBlendState.logicOp = VK_LOGIC_OP_COPY;
+	colorBlendState.attachmentCount = attachmentColorBlends.size();
+	colorBlendState.pAttachments = attachmentColorBlends.data();
+
+	std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+	VkPipelineDynamicStateCreateInfo dynamicState = { .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
+
+	VkGraphicsPipelineCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+	createInfo.stageCount = shaderStages.size();
+	createInfo.pStages = shaderStages.data();
+	createInfo.pVertexInputState = vertexInput;
+	createInfo.pInputAssemblyState = &inputAssemblyState;
+	createInfo.pViewportState = &viewportState;
+	createInfo.pRasterizationState = &rasterizationState;
+	createInfo.pMultisampleState = &multisampleState;
+	createInfo.pColorBlendState = &colorBlendState;
+	createInfo.pDepthStencilState = &depthStencilState;
+	createInfo.pDynamicState = &dynamicState;
+	createInfo.layout = pipelineLayout;
+	createInfo.renderPass = renderPass;
+	createInfo.subpass = subpass;
+
+	VkPipeline pipeline;
+	if (vkCreateGraphicsPipelines(RenderContext::GetInstance().Device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan graphics pipeline.");
+		return {}; // TODO: optional
+	}
+	return pipeline;
 }
 
 void Render::BeginImmediateSubmit()
