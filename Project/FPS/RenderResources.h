@@ -186,6 +186,51 @@ struct VulkanPipelineConfig
 	VulkanPipelineOptions Options;
 };
 
+class VulkanPipeline final
+{
+public:
+	VulkanPipeline() = default;
+	VulkanPipeline(
+		ShaderCompiler& compiler,
+		const std::initializer_list<VkDescriptorSetLayout>& descriptorSetLayouts,
+		const std::initializer_list<VkPushConstantRange>& pushConstantRanges,
+		const VkPipelineVertexInputStateCreateInfo* vertexInput,
+		const std::string& pipelineConfigFile,
+		const std::initializer_list<VkPipelineColorBlendAttachmentState>& attachmentColorBlends,
+		VkRenderPass                                                        renderPass,
+		uint32_t                                                            subpass
+	);
+	VulkanPipeline(const VulkanPipeline&) = delete;
+	VulkanPipeline(VulkanPipeline&& other) noexcept { Swap(other); }
+	~VulkanPipeline() { Release(); }
+
+	VulkanPipeline& operator=(const VulkanPipeline&) = delete;
+	VulkanPipeline& operator=(VulkanPipeline&& other) noexcept
+	{
+		if (this != &other)
+		{
+			Release();
+			Swap(other);
+		}
+		return *this;
+	}
+
+	void Release();
+
+	void Swap(VulkanPipeline& other) noexcept;
+
+	[[nodiscard]] const VkPipelineLayout& GetLayout() const { return m_pipelineLayout; }
+
+	[[nodiscard]] const VkPipeline& Get() const { return m_pipeline; }
+
+private:
+	VkPipelineLayout m_pipelineLayout{ nullptr };
+	VkShaderModule m_vertexShaderModule{ nullptr };
+	VkShaderModule m_geometryShaderModule{ nullptr };
+	VkShaderModule m_fragmentShaderModule{ nullptr };
+	VkPipeline m_pipeline{ nullptr };
+};
+
 #pragma endregion
 
 #pragma region Renderer
@@ -204,6 +249,11 @@ namespace Render
 	VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
 
 	VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout);
+
+	VkPipelineLayout CreatePipelineLayout(
+		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+		const std::vector<VkPushConstantRange>& pushConstantRanges
+	);
 
 	void BeginImmediateSubmit();
 	void EndImmediateSubmit();
