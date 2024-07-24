@@ -7,6 +7,26 @@
 #if defined(_MSC_VER)
 #	pragma comment( lib, "glfw3.lib" )
 #	pragma comment( lib, "simdjson.lib" )
+
+#	if defined(_DEBUG)
+#		pragma comment( lib, "GenericCodeGend.lib" )
+#		pragma comment( lib, "glslangd.lib" )
+#		pragma comment( lib, "glslang-default-resource-limitsd.lib" )
+#		pragma comment( lib, "HLSLd.lib" )
+#		pragma comment( lib, "MachineIndependentd.lib" )
+#		pragma comment( lib, "OGLCompilerd.lib" )
+#		pragma comment( lib, "OSDependentd.lib" )
+#		pragma comment( lib, "SPIRVd.lib" )
+#	else
+#		pragma comment( lib, "GenericCodeGen.lib" )
+#		pragma comment( lib, "glslang.lib" )
+#		pragma comment( lib, "glslang-default-resource-limits.lib" )
+#		pragma comment( lib, "HLSL.lib" )
+#		pragma comment( lib, "MachineIndependent.lib" )
+#		pragma comment( lib, "OGLCompiler.lib" )
+#		pragma comment( lib, "OSDependent.lib" )
+#		pragma comment( lib, "SPIRV.lib" )
+#	endif
 #endif
 
 namespace

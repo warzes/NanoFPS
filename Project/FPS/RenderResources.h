@@ -135,6 +135,35 @@ private:
 
 #pragma endregion
 
+#pragma region ShaderCompiler
+
+struct ShaderIncluder;
+
+class ShaderCompiler
+{
+public:
+	explicit ShaderCompiler(const std::string& includesDir);
+
+	~ShaderCompiler();
+
+	ShaderCompiler(const ShaderCompiler&) = delete;
+
+	ShaderCompiler& operator=(const ShaderCompiler&) = delete;
+
+	ShaderCompiler(ShaderCompiler&&) = delete;
+
+	ShaderCompiler& operator=(ShaderCompiler&&) = delete;
+
+	std::vector<uint32_t> Compile(VkShaderStageFlagBits stage, const std::string& source);
+
+	std::vector<uint32_t> CompileFromFile(VkShaderStageFlagBits stage, const std::string& filename);
+
+private:
+	std::unique_ptr<ShaderIncluder> m_includer;
+};
+
+#pragma endregion
+
 #pragma region VulkanPipeline
 
 struct VulkanPipelineOptions

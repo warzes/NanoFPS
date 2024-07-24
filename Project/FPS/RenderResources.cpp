@@ -389,6 +389,134 @@ void VulkanUniformBufferSet::UpdateAllBuffers(uint32_t bufferingIndex, const std
 
 #pragma endregion
 
+#pragma region ShaderCompiler
+
+struct ShaderIncluder : glslang::TShader::Includer
+{
+	explicit ShaderIncluder(std::string includesDir) : m_includesDir(std::move(includesDir)) {}
+
+	IncludeResult* includeLocal(const char*, const char*, size_t) override
+	{
+		return nullptr;
+	}
+
+	IncludeResult* includeSystem(const char* headerName, const char*, size_t) override { return include(headerName); }
+
+	void releaseInclude(IncludeResult* result) override { delete result; }
+
+private:
+	IncludeResult* include(const std::string& headerName)
+	{
+		auto pair = m_headerFiles.find(headerName);
+		if (pair == m_headerFiles.end())
+		{
+			Print("Loading shader header file <" + headerName + "> into cache.");
+			pair = m_headerFiles.emplace(headerName, FileSystem::Read(m_includesDir + headerName)).first;
+		}
+		auto& content = pair->second;
+		return new IncludeResult(headerName, content.c_str(), content.length(), nullptr);
+	}
+
+	std::string m_includesDir;
+
+	std::map<std::string, std::string> m_headerFiles;
+};
+
+ShaderCompiler::ShaderCompiler(const std::string& includesDir)
+{
+	Print("glslang version: " + std::string(glslang::GetGlslVersionString()));
+	if (!glslang::InitializeProcess())
+	{
+		Fatal("Failed to initialize glslang.");
+		return;
+	}
+	m_includer = std::make_unique<ShaderIncluder>(includesDir);
+}
+
+ShaderCompiler::~ShaderCompiler()
+{
+	m_includer.reset();
+	glslang::FinalizeProcess();
+}
+
+static inline EShLanguage GetShaderStageLanguage(VkShaderStageFlagBits stage)
+{
+	switch (stage) {
+	case VK_SHADER_STAGE_VERTEX_BIT:
+		return EShLangVertex;
+	case VK_SHADER_STAGE_GEOMETRY_BIT:
+		return EShLangGeometry;
+	case VK_SHADER_STAGE_FRAGMENT_BIT:
+		return EShLangFragment;
+	case VK_SHADER_STAGE_COMPUTE_BIT:
+		return EShLangCompute;
+	default:
+		return EShLangCount;
+	}
+}
+
+static inline const char* GetShaderStageName(VkShaderStageFlagBits stage) {
+	switch (stage) {
+	case VK_SHADER_STAGE_VERTEX_BIT:
+		return "vertex";
+	case VK_SHADER_STAGE_GEOMETRY_BIT:
+		return "geometry";
+	case VK_SHADER_STAGE_FRAGMENT_BIT:
+		return "fragment";
+	case VK_SHADER_STAGE_COMPUTE_BIT:
+		return "compute";
+	default:
+		return "unsupported stage";
+	}
+}
+
+std::vector<uint32_t> ShaderCompiler::Compile(VkShaderStageFlagBits stage, const std::string& source)
+{
+	const EShLanguage glslStage = GetShaderStageLanguage(stage);
+	const char* stageName = GetShaderStageName(stage);
+
+	glslang::TShader shader(glslStage);
+	const char* sourceCStr = source.c_str();
+	shader.setStrings(&sourceCStr, 1);
+	shader.setPreamble("#extension GL_GOOGLE_include_directive : require\n");
+	shader.setEnvInput(glslang::EShSourceGlsl, glslStage, glslang::EShClientVulkan, 100);
+	shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3);
+	shader.setEnvTarget(glslang::EshTargetSpv, glslang::EShTargetSpv_1_0);
+
+	if (!shader.parse(GetDefaultResources(), 100, false, EShMsgDefault, *m_includer)) {
+		Fatal("Failed to parse " + std::string(stageName) + " shader: " + std::string(shader.getInfoLog()));
+		return {};
+	}
+	else {
+		const char* infoLog = shader.getInfoLog();
+		if (std::strlen(infoLog)) {
+			Warning("Shader compilation warning: " +  std::string(infoLog));
+		}
+	}
+
+	glslang::TProgram program;
+	program.addShader(&shader);
+
+	if (!program.link(EShMsgDefault))
+	{
+		Fatal("Failed to link " + std::string(stageName) + " shader program: " + std::string(program.getInfoLog()));
+		return {};
+	}
+
+	std::vector<uint32_t> spirv;
+	glslang::GlslangToSpv(*program.getIntermediate(glslStage), spirv);
+	return spirv;
+}
+
+std::vector<uint32_t> ShaderCompiler::CompileFromFile(VkShaderStageFlagBits stage, const std::string& filename)
+{
+	const char* stageName = GetShaderStageName(stage);
+	Print("Compiling " + std::string(stageName) + " shader: " + filename);
+	return Compile(stage, FileSystem::Read(filename));
+}
+
+#pragma endregion
+
 #pragma region VulkanPipeline
 
 VkPrimitiveTopology TopologyFromString(const std::string& topology) {

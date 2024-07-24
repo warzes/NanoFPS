@@ -63,6 +63,10 @@ Left handed
 
 #include <simdjson/simdjson.h>
 
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif
