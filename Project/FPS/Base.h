@@ -67,6 +67,11 @@ Left handed
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
+#include <spdlog/spdlog.h>
+
+#undef near
+#undef far
+
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif

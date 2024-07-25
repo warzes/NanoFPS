@@ -94,10 +94,56 @@ private:
 #pragma endregion
 
 #pragma region Log
+
+namespace EngineApp
+{
+	extern void Exit();
+}
+
 void Print(const std::string& text);
 void Warning(const std::string& text);
 void Error(const std::string& text);
 void Fatal(const std::string& text);
+
+template<typename... Args>
+inline void DebugVerbose(const spdlog::format_string_t<Args...>& format, Args... args)
+{
+	spdlog::trace(format, args...);
+}
+
+template<typename... Args>
+inline void DebugInfo(const spdlog::format_string_t<Args...>& format, Args... args)
+{
+	spdlog::info(format, args...);
+}
+
+template<typename... Args>
+inline void DebugWarning(const spdlog::format_string_t<Args...>& format, Args... args)
+{
+	spdlog::warn(format, args...);
+}
+
+template<typename... Args>
+inline void DebugError(const spdlog::format_string_t<Args...>& format, Args... args)
+{
+	spdlog::error(format, args...);
+}
+
+template<typename... Args>
+inline bool DebugCheck(const bool succeeded, const spdlog::format_string_t<Args...>& failMessage, Args... args)
+{
+	if (succeeded) return true;
+	DebugWarning(failMessage, args...);
+	return false;
+}
+
+template<typename... Args>
+inline void DebugCheckCritical(const bool succeeded, const spdlog::format_string_t<Args...>& failMessage, Args... args)
+{
+	if (succeeded) return;
+	DebugError(failMessage, args...);
+	EngineApp::Exit();
+}
 #pragma endregion
 
 #pragma region IO

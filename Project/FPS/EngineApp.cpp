@@ -17,6 +17,8 @@
 #		pragma comment( lib, "OGLCompilerd.lib" )
 #		pragma comment( lib, "OSDependentd.lib" )
 #		pragma comment( lib, "SPIRVd.lib" )
+
+#		pragma comment( lib, "spdlogd.lib" )
 #	else
 #		pragma comment( lib, "GenericCodeGen.lib" )
 #		pragma comment( lib, "glslang.lib" )
@@ -26,6 +28,8 @@
 #		pragma comment( lib, "OGLCompiler.lib" )
 #		pragma comment( lib, "OSDependent.lib" )
 #		pragma comment( lib, "SPIRV.lib" )
+
+#		pragma comment( lib, "spdlog.lib" )
 #	endif
 #endif
 

@@ -50,11 +50,6 @@ inline Time Clock::Reset()
 
 #pragma region Log
 
-namespace EngineApp
-{
-	extern void Exit();
-}
-
 void Print(const std::string& text)
 {
 	puts(text.c_str());
