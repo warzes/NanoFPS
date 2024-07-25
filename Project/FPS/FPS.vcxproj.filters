@@ -47,6 +47,9 @@
     <ClCompile Include="VulkanRender.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -133,6 +136,9 @@
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
     <ClInclude Include="VulkanRender.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>

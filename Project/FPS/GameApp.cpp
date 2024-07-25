@@ -1,5 +1,7 @@
 #include "GameApp.h"
 
+std::unique_ptr<PbrRenderer> Renderer;
+
 bool GameApp::Create()
 {
 	return true;

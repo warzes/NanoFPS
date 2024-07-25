@@ -114,6 +114,7 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderContext.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderResources.cpp" />
     <ClCompile Include="VulkanRender.cpp" />
     <ClCompile Include="_LessonRenderer.cpp">
@@ -137,6 +138,7 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="RenderContext.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderResources.h" />
     <ClInclude Include="VulkanRender.h" />
     <ClInclude Include="_lessonRenderer.h" />
