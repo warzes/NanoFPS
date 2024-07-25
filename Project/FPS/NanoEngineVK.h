@@ -5,6 +5,7 @@
 #include "EngineMath.h"
 #include "RenderResources.h"
 #include "RenderContext.h"
+#include "VulkanRender.h"
 #include "Graphics.h"
 #include "EngineWindow.h"
 #include "EngineApp.h"

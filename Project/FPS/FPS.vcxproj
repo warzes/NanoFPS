@@ -113,6 +113,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RenderContext.cpp" />
     <ClCompile Include="RenderResources.cpp" />
+    <ClCompile Include="VulkanRender.cpp" />
     <ClCompile Include="_LessonRenderer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -135,6 +136,7 @@
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="RenderContext.h" />
     <ClInclude Include="RenderResources.h" />
+    <ClInclude Include="VulkanRender.h" />
     <ClInclude Include="_lessonRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

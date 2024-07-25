@@ -44,6 +44,9 @@
     <ClCompile Include="EngineMath.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="VulkanRender.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -127,6 +130,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="RenderResources.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanRender.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
