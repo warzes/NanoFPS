@@ -106,6 +106,7 @@
     </ClCompile>
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="EngineApp.cpp" />
+    <ClCompile Include="EngineMath.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="Graphics.cpp" />

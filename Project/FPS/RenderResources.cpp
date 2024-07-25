@@ -14,6 +14,10 @@ struct sBufferingObjects
 namespace
 {
 	std::array<sBufferingObjects, 3> BufferingObjects;
+
+	std::map<std::string, VulkanTexture> TexturesCache;
+
+	std::map<std::string, VulkanMesh> MeshesCache;
 }
 
 #pragma region VulkanImage
@@ -701,6 +705,158 @@ void VulkanPipeline::Swap(VulkanPipeline& other) noexcept
 
 #pragma endregion
 
+#pragma region VulkanMesh
+
+VulkanMesh::VulkanMesh(size_t vertexCount, size_t vertexSize, const void* data)
+{
+	const VkDeviceSize size = vertexCount * vertexSize;
+
+	VulkanBuffer uploadBuffer = Render::CreateBuffer(
+		size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+		VMA_MEMORY_USAGE_AUTO_PREFER_HOST
+	);
+	uploadBuffer.Upload(size, data);
+
+	VulkanBuffer vertexBuffer = Render::CreateBuffer(
+		size,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		0,
+		VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+	);
+
+	Render::BeginImmediateSubmit();
+	{
+		VkBufferCopy copy{};
+		copy.size = size;
+		vkCmdCopyBuffer(RenderContext::GetInstance().ImmediateCommandBuffer, uploadBuffer.Get(), vertexBuffer.Get(), 1, &copy);
+	}
+	Render::EndImmediateSubmit();
+
+	m_vertexBuffer = std::move(vertexBuffer);
+	m_vertexCount = vertexCount;
+}
+
+void VulkanMesh::Release()
+{
+	m_vertexBuffer = {};
+	m_vertexCount = 0;
+}
+
+void VulkanMesh::Swap(VulkanMesh& other) noexcept
+{
+	std::swap(m_vertexBuffer, other.m_vertexBuffer);
+	std::swap(m_vertexCount, other.m_vertexCount);
+}
+
+void VulkanMesh::BindAndDraw(VkCommandBuffer commandBuffer) const
+{
+	const VkDeviceSize offset = 0;
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &m_vertexBuffer.Get(), &offset);
+	vkCmdDraw(commandBuffer, m_vertexCount, 1, 0, 0);
+}
+
+#pragma endregion
+
+#pragma region VertexFormats
+
+const VkPipelineVertexInputStateCreateInfo* VertexPositionOnly::GetPipelineVertexInputStateCreateInfo()
+{
+	VkVertexInputBindingDescription bindings{}; // TODO: static
+	bindings.binding = 0;
+	bindings.stride = sizeof(VertexPositionOnly);
+	bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	VkVertexInputAttributeDescription attrib;// TODO: static
+	attrib.binding = 0;
+	attrib.location = 0;
+	attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
+	attrib.offset = offsetof(VertexPositionOnly, Position);
+
+	std::vector<VkVertexInputAttributeDescription> attributes{ attrib };// TODO: static
+
+	VkPipelineVertexInputStateCreateInfo vertexInput = { .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };// TODO: static
+	vertexInput.vertexBindingDescriptionCount = 1;
+	vertexInput.pVertexBindingDescriptions = &bindings;
+	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+	vertexInput.pVertexAttributeDescriptions = attributes.data();
+
+	return &vertexInput;
+}
+
+const VkPipelineVertexInputStateCreateInfo* VertexCanvas::GetPipelineVertexInputStateCreateInfo()
+{
+	VkVertexInputBindingDescription bindings{}; // TODO: static
+	bindings.binding = 0;
+	bindings.stride = sizeof(VertexCanvas);
+	bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	VkVertexInputAttributeDescription attrib1;// TODO: static
+	attrib1.binding = 0;
+	attrib1.location = 0;
+	attrib1.format = VK_FORMAT_R32G32_SFLOAT;
+	attrib1.offset = offsetof(VertexCanvas, Position);
+	VkVertexInputAttributeDescription attrib2;// TODO: static
+	attrib2.binding = 0;
+	attrib2.location = 1;
+	attrib2.format = VK_FORMAT_R32G32_SFLOAT;
+	attrib2.offset = offsetof(VertexCanvas, TexCoord);
+
+	std::vector<VkVertexInputAttributeDescription> attributes{ attrib1, attrib2 };// TODO: static
+
+	VkPipelineVertexInputStateCreateInfo vertexInput = { .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };// TODO: static
+	vertexInput.vertexBindingDescriptionCount = 1;
+	vertexInput.pVertexBindingDescriptions = &bindings;
+	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+	vertexInput.pVertexAttributeDescriptions = attributes.data();
+
+	return &vertexInput;
+}
+
+const VkPipelineVertexInputStateCreateInfo* VertexBase::GetPipelineVertexInputStateCreateInfo()
+{
+	VkVertexInputBindingDescription bindings{}; // TODO: static
+	bindings.binding = 0;
+	bindings.stride = sizeof(VertexBase);
+	bindings.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	VkVertexInputAttributeDescription attrib1;// TODO: static
+	attrib1.binding = 0;
+	attrib1.location = 0;
+	attrib1.format = VK_FORMAT_R32G32B32_SFLOAT;
+	attrib1.offset = offsetof(VertexBase, Position);
+	VkVertexInputAttributeDescription attrib2;// TODO: static
+	attrib2.binding = 0;
+	attrib2.location = 1;
+	attrib2.format = VK_FORMAT_R32G32B32_SFLOAT;
+	attrib2.offset = offsetof(VertexBase, Normal);
+	VkVertexInputAttributeDescription attrib3;// TODO: static
+	attrib3.binding = 0;
+	attrib3.location = 2;
+	attrib3.format = VK_FORMAT_R32G32_SFLOAT;
+	attrib3.offset = offsetof(VertexBase, TexCoord);
+
+
+	std::vector<VkVertexInputAttributeDescription> attributes{ attrib1, attrib2, attrib3 };// TODO: static
+
+	VkPipelineVertexInputStateCreateInfo vertexInput = { .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };// TODO: static
+	vertexInput.vertexBindingDescriptionCount = 1;
+	vertexInput.pVertexBindingDescriptions = &bindings;
+	vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+	vertexInput.pVertexAttributeDescriptions = attributes.data();
+
+	return &vertexInput;
+}
+
+#pragma endregion
+
+#pragma region TextureCache
+
+
+#pragma endregion
+
 #pragma region Renderer
 
 size_t Render::GetNumBuffering()
@@ -882,6 +1038,82 @@ VkPipeline Render::CreatePipeline(VkPipelineLayout pipelineLayout, const VkPipel
 		return {}; // TODO: optional
 	}
 	return pipeline;
+}
+
+VulkanTexture* Render::LoadTexture(const std::string& filename, VkFilter filter, VkSamplerAddressMode addressMode)
+{
+	auto pair = TexturesCache.find(filename);
+	if (pair == TexturesCache.end())
+	{
+		Print("Caching texture " + filename);
+		const ImageFile image(filename);
+		pair = TexturesCache.emplace(filename, VulkanTexture(image.GetWidth(), image.GetHeight(), image.GetData(), filter, addressMode)).first;
+	}
+	return &pair->second;
+}
+
+std::vector<VertexBase> loadObj(const std::string& filename)
+{
+	tinyobj::ObjReader reader;
+
+	if (!reader.ParseFromString(FileSystem::Read(filename), ""))
+	{
+		Fatal("Failed to load OBJ file " + filename + ": " + reader.Error());
+		return {}; // TODO: return optional
+	}
+
+	if (reader.Warning().empty())
+	{
+		Warning("Warning when loading OBJ file " + filename + ": " + reader.Warning());
+	}
+
+	const tinyobj::attrib_t& attrib = reader.GetAttrib();
+	const std::vector<tinyobj::real_t>& positions = attrib.vertices;
+	const std::vector<tinyobj::real_t>& normals = attrib.normals;
+	const std::vector<tinyobj::real_t>& texCoords = attrib.texcoords;
+
+	std::vector<VertexBase> vertices;
+	for (const tinyobj::shape_t& shape : reader.GetShapes())
+	{
+		const tinyobj::mesh_t& mesh = shape.mesh;
+		Print("Loading OBJ shape " + shape.name);
+
+		size_t i = 0;
+		for (const size_t f : mesh.num_face_vertices)
+		{
+			if (f != 3)
+			{
+				Fatal("All polygons must be triangle.");
+				return {}; // TODO: return optional
+			}
+
+			for (size_t v = 0; v < f; v++)
+			{
+				const tinyobj::index_t& index = mesh.indices[i + v];
+
+				// X axis is flipped because Blender uses right-handed coordinates
+				vertices.emplace_back(
+					glm::vec3{ -positions[3 * index.vertex_index + 0], positions[3 * index.vertex_index + 1], positions[3 * index.vertex_index + 2] },
+					glm::vec3{ -normals[3 * index.normal_index + 0], normals[3 * index.normal_index + 1], normals[3 * index.normal_index + 2] },
+					glm::vec2{ texCoords[2 * index.texcoord_index + 0], texCoords[2 * index.texcoord_index + 1] }
+				);
+			}
+			i += f;
+		}
+	}
+	return vertices;
+}
+
+VulkanMesh* Render::LoadObjMesh(const std::string& filename)
+{
+	auto pair = MeshesCache.find(filename);
+	if (pair == MeshesCache.end())
+	{
+		Print("Caching OBJ mesh " + filename);
+		const std::vector<VertexBase> vertices = loadObj(filename);
+		pair = MeshesCache.emplace(filename, VulkanMesh(vertices.size(), sizeof(VertexBase), vertices.data())).first;
+	}
+	return &pair->second;
 }
 
 void Render::BeginImmediateSubmit()

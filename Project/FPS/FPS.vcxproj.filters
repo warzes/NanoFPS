@@ -41,6 +41,9 @@
     <ClCompile Include="RenderResources.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="EngineMath.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">

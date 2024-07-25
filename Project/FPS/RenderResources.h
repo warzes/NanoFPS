@@ -40,7 +40,15 @@ public:
 	~VulkanBuffer();
 
 	VulkanBuffer& operator=(const VulkanBuffer&) = delete;
-	VulkanBuffer& operator=(VulkanBuffer&& other) noexcept;
+	VulkanBuffer& operator=(VulkanBuffer&& other) noexcept
+	{
+		if (this != &other)
+		{
+			Release();
+			Swap(other);
+		}
+		return *this;
+	}
 
 	void Release();
 
@@ -233,6 +241,84 @@ private:
 
 #pragma endregion
 
+#pragma region VulkanMesh
+
+class VulkanMesh final
+{
+public:
+	VulkanMesh() = default;
+	VulkanMesh(size_t vertexCount, size_t vertexSize, const void* data);
+	VulkanMesh(const VulkanMesh&) = delete;
+	VulkanMesh(VulkanMesh&& other) noexcept { Swap(other); }
+	~VulkanMesh() { Release(); }
+
+	VulkanMesh& operator=(const VulkanMesh&) = delete;
+	VulkanMesh& operator=(VulkanMesh&& other) noexcept
+	{
+		if (this != &other)
+		{
+			Release();
+			Swap(other);
+		}
+		return *this;
+	}
+
+	void Release();
+
+	void Swap(VulkanMesh& other) noexcept;
+
+	void BindAndDraw(VkCommandBuffer commandBuffer) const;
+
+private:
+	VulkanBuffer m_vertexBuffer;
+	uint32_t m_vertexCount = 0;
+};
+
+#pragma endregion
+
+#pragma region VertexFormats
+
+struct VertexPositionOnly
+{
+	glm::vec3 Position;
+
+	VertexPositionOnly() = default;
+
+	explicit VertexPositionOnly(const glm::vec3& position) : Position(position) {}
+
+	static const VkPipelineVertexInputStateCreateInfo* GetPipelineVertexInputStateCreateInfo();
+};
+
+struct VertexCanvas
+{
+	VertexCanvas() = default;
+	VertexCanvas(const glm::vec2& position, const glm::vec2& texCoord)
+		: Position(position)
+		, TexCoord(texCoord) {}
+
+	static const VkPipelineVertexInputStateCreateInfo* GetPipelineVertexInputStateCreateInfo();
+
+	glm::vec2 Position;
+	glm::vec2 TexCoord;
+};
+
+struct VertexBase
+{
+	VertexBase() = default;
+	VertexBase(const glm::vec3& position, const glm::vec3& normal, const glm::vec2& texCoord)
+		: Position(position)
+		, Normal(normal)
+		, TexCoord(texCoord) {}
+
+	static const VkPipelineVertexInputStateCreateInfo* GetPipelineVertexInputStateCreateInfo();
+
+	glm::vec3 Position;
+	glm::vec3 Normal;
+	glm::vec2 TexCoord;
+};
+
+#pragma endregion
+
 #pragma region Renderer
 
 namespace Render
@@ -266,6 +352,14 @@ namespace Render
 		VkRenderPass renderPass,
 		uint32_t subpass
 	);
+
+	VulkanTexture* LoadTexture(
+		const std::string& filename,
+		VkFilter filter = VK_FILTER_NEAREST,
+		VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT
+	);
+
+	VulkanMesh* LoadObjMesh(const std::string& filename);
 
 	void BeginImmediateSubmit();
 	void EndImmediateSubmit();
