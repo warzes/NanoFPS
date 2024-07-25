@@ -3,20 +3,9 @@
 #include "RenderResources.h"
 #include "RenderContext.h"
 
-struct sBufferingObjects
-{
-	VkFence RenderFence;
-	VkSemaphore PresentSemaphore;
-	VkSemaphore RenderSemaphore;
-	VkCommandBuffer CommandBuffer;
-};
-
 namespace
 {
-	std::array<sBufferingObjects, 3> BufferingObjects;
-
 	std::map<std::string, VulkanTexture> TexturesCache;
-
 	std::map<std::string, VulkanMesh> MeshesCache;
 }
 
@@ -861,7 +850,7 @@ const VkPipelineVertexInputStateCreateInfo* VertexBase::GetPipelineVertexInputSt
 
 size_t Render::GetNumBuffering()
 {
-	return BufferingObjects.size();
+	return RenderContext::GetInstance().BufferingObjects.size();
 }
 
 VulkanImage Render::CreateImage(VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers)

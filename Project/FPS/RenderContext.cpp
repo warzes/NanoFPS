@@ -78,6 +78,8 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	// vulkan 1.0 features
 	VkPhysicalDeviceFeatures features10{};
 	features10.samplerAnisotropy = VK_TRUE;
+	features10.geometryShader = VK_TRUE;
+	features10.fillModeNonSolid = VK_TRUE;
 
 	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
 	auto physicalDeviceRet = physicalDeviceSelector
@@ -116,61 +118,18 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 
 	Print("GPU Used: " + std::string(PhysicalDeviceProperties.deviceName));
 
-	if (!getQueues(vkbDevice))
-		return false;
-
-	// initialize the memory allocator
-	{
-		VmaVulkanFunctions vmaVulkanFunc{};
-		vmaVulkanFunc.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-		vmaVulkanFunc.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
-		vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
-		vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
-		vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
-		vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
-		vmaVulkanFunc.vkCreateImage = vkCreateImage;
-		vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
-		vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
-		vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
-		vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
-		vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
-		vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
-		vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-		vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
-		vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
-		vmaVulkanFunc.vkMapMemory = vkMapMemory;
-		vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
-		vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
-
-		VmaAllocatorCreateInfo allocatorInfo = {};
-		allocatorInfo.vulkanApiVersion = createInfo.vulkan.requireVersion;
-		allocatorInfo.physicalDevice = PhysicalDevice;
-		allocatorInfo.device = Device;
-		allocatorInfo.instance = Instance;
-		//allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-		allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
-
-		if (vmaCreateAllocator(&allocatorInfo, &Allocator) != VK_SUCCESS)
-		{
-			Fatal("Failed to create Vulkan Memory Allocator.");
-			return false;
-		}
-	}
-
+	if (!getQueues(vkbDevice)) return false;
 	if (!createCommandPool()) return false;
+	if (!createDescriptorPool()) return false;
+	if (!createAllocator(createInfo.vulkan.requireVersion)) return false;
+	if (!createImmediateContext()) return false;
+	if (!createBufferingObjects()) return false;
 
 	return true;
 }
 
 void VulkanInstance::Destroy()
 {
-	if (Device)
-	{
-		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
-
-		vkDestroyDevice(Device, nullptr);
-	}
-
 	if (Allocator)
 	{
 		VmaTotalStatistics stats;
@@ -178,6 +137,14 @@ void VulkanInstance::Destroy()
 		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
 		vmaDestroyAllocator(Allocator);
 		Allocator = VK_NULL_HANDLE;
+	}
+
+	if (Device)
+	{
+		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
+		if (DescriptorPool) vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
+
+		vkDestroyDevice(Device, nullptr);
 	}
 
 	if (Instance)
@@ -195,9 +162,15 @@ void VulkanInstance::Destroy()
 	volkFinalize();
 }
 
-void VulkanInstance::Finish()
+void VulkanInstance::WaitIdle()
 {
-	if (Device) vkDeviceWaitIdle(Device);
+	if (Device)
+	{
+		if (vkDeviceWaitIdle(Device) != VK_SUCCESS)
+		{
+			Fatal("Failed when waiting for Vulkan device to be idle.");
+		}
+	}
 }
 
 bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
@@ -261,10 +234,183 @@ bool VulkanInstance::createCommandPool()
 
 	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &CommandPool) != VK_SUCCESS)
 	{
-		Fatal("Failed to Create Command Pool");
+		Fatal("Failed to create Vulkan command pool.");
 		return false;
 	}
 	return true;
+}
+
+bool VulkanInstance::createDescriptorPool()
+{
+	const std::vector<VkDescriptorPoolSize> poolSizes{
+		{VK_DESCRIPTOR_TYPE_SAMPLER,                1024},
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
+		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1024},
+		{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1024}
+	};
+
+	VkDescriptorPoolCreateInfo createInfo{ .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	createInfo.maxSets = 1024;
+	createInfo.poolSizeCount = poolSizes.size();
+	createInfo.pPoolSizes = poolSizes.data();
+
+	if (vkCreateDescriptorPool(Device, &createInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan descriptor pool.");
+		return false;
+	}
+
+	return true;
+}
+
+bool VulkanInstance::createAllocator(uint32_t vulkanApiVersion)
+{
+	// initialize the memory allocator
+	VmaVulkanFunctions vmaVulkanFunc{};
+	vmaVulkanFunc.vkGetInstanceProcAddr               = vkGetInstanceProcAddr;
+	vmaVulkanFunc.vkGetDeviceProcAddr                 = vkGetDeviceProcAddr;
+	vmaVulkanFunc.vkAllocateMemory                    = vkAllocateMemory;
+	vmaVulkanFunc.vkBindBufferMemory                  = vkBindBufferMemory;
+	vmaVulkanFunc.vkBindImageMemory                   = vkBindImageMemory;
+	vmaVulkanFunc.vkCreateBuffer                      = vkCreateBuffer;
+	vmaVulkanFunc.vkCreateImage                       = vkCreateImage;
+	vmaVulkanFunc.vkDestroyBuffer                     = vkDestroyBuffer;
+	vmaVulkanFunc.vkDestroyImage                      = vkDestroyImage;
+	vmaVulkanFunc.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
+	vmaVulkanFunc.vkFreeMemory                        = vkFreeMemory;
+	vmaVulkanFunc.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
+	vmaVulkanFunc.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
+	vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+	vmaVulkanFunc.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
+	vmaVulkanFunc.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
+	vmaVulkanFunc.vkMapMemory                         = vkMapMemory;
+	vmaVulkanFunc.vkUnmapMemory                       = vkUnmapMemory;
+	vmaVulkanFunc.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
+
+	VmaAllocatorCreateInfo allocatorInfo{};
+	allocatorInfo.vulkanApiVersion = vulkanApiVersion;
+	allocatorInfo.physicalDevice   = PhysicalDevice;
+	allocatorInfo.device           = Device;
+	allocatorInfo.instance         = Instance;
+	//allocatorInfo.flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+	allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
+
+	if (vmaCreateAllocator(&allocatorInfo, &Allocator) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan Memory Allocator.");
+		return false;
+	}
+	return true;
+}
+
+bool VulkanInstance::createImmediateContext()
+{
+	auto fence = createFence();
+	if (!fence)
+	{
+		Fatal("Failed to create Vulkan Immediate Fence.");
+		return false;
+	}
+	ImmediateFence = fence.value();
+
+	auto commandBuffer = allocateCommandBuffer();
+	if (!commandBuffer)
+	{
+		Fatal("Failed to create Vulkan Immediate Command Buffer.");
+		return false;
+	}
+	ImmediateCommandBuffer = commandBuffer.value();
+
+	return true;
+}
+
+std::optional<VkFence> VulkanInstance::createFence(VkFenceCreateFlags flags)
+{
+	VkFenceCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+	createInfo.flags = flags;
+
+	VkFence fence;
+	if (vkCreateFence(Device, &createInfo, nullptr, &fence) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan fence.");
+		return std::nullopt;
+	}
+	return fence;
+}
+
+std::optional<VkCommandBuffer> VulkanInstance::allocateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+	allocateInfo.commandPool = CommandPool;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	if (vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer) != VK_SUCCESS)
+	{
+		Fatal("Failed to allocate Vulkan command buffer.");
+		return std::nullopt;
+	}
+	return commandBuffer;
+}
+
+bool VulkanInstance::createBufferingObjects()
+{
+	for (sBufferingObjects& bufferingObject : BufferingObjects)
+	{
+		auto fence = createFence(VK_FENCE_CREATE_SIGNALED_BIT);
+		if (!fence)
+		{
+			Fatal("Failed to create Vulkan Fence.");
+			return false;
+		}
+		bufferingObject.RenderFence = fence.value();
+
+		auto semaphore = createSemaphore();
+		if (!semaphore)
+		{
+			Fatal("Failed to create Vulkan Semaphore.");
+			return false;
+		}
+		bufferingObject.PresentSemaphore = semaphore.value();
+		semaphore = createSemaphore();
+		if (!semaphore)
+		{
+			Fatal("Failed to create Vulkan Semaphore.");
+			return false;
+		}
+		bufferingObject.RenderSemaphore = semaphore.value();
+
+		auto commandBuffer = allocateCommandBuffer();
+		if (!commandBuffer)
+		{
+			Fatal("Failed to create Vulkan Command Buffer.");
+			return false;
+		}
+		bufferingObject.CommandBuffer = commandBuffer.value();
+	}
+	return true;
+}
+
+std::optional<VkSemaphore> VulkanInstance::createSemaphore()
+{
+	VkSemaphoreCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+	VkSemaphore semaphore;
+	if (vkCreateSemaphore(Device, &createInfo, nullptr, &semaphore) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan semaphore.");
+		return std::nullopt;
+	}
+	return semaphore;
 }
 
 #pragma endregion
@@ -274,6 +420,10 @@ bool VulkanInstance::createCommandPool()
 bool VulkanSwapChain::Create()
 {
 	if (!createSwapChain(Window::GetWidth(), Window::GetHeight())) return false;
+	if (!createPrimaryRenderPass()) return false;
+	if (!createPrimaryFramebuffers()) return false;
+
+
 
 	if (!createCommandBuffers()) return false;
 	if (!createSyncObjects()) return false;
@@ -421,6 +571,67 @@ bool VulkanSwapChain::createSwapChain(uint32_t width, uint32_t height)
 
 	return true;
 }
+
+bool VulkanSwapChain::createPrimaryRenderPass()
+{
+	VulkanRenderPassOptions options;
+	options.ForPresentation = true;
+
+	auto renderPass = Render::CreateRenderPass({ SwapChainImageFormat }, VK_FORMAT_UNDEFINED, options);
+	if (!renderPass)
+	{
+		Fatal("Failed to create Render Pass");
+		return false;
+	}
+	PrimaryRenderPass = renderPass.value();
+
+	return true;
+}
+
+bool VulkanSwapChain::createPrimaryFramebuffers()
+{
+	const size_t numSwapchainImages = SwapChainImageViews.size();
+	for (int i = 0; i < numSwapchainImages; i++)
+	{
+		auto fb = Render::CreateFramebuffer(PrimaryRenderPass, { SwapChainImageViews[i] }, SwapChainExtent); // TODO: зачем-то создаю снова вектор, хотя оно и так в векторе
+		if (!fb)
+		{
+			Fatal("Failed to create Framebuffer");
+			return false;
+		}
+		PrimaryFramebuffers.push_back(fb.value());
+	}
+
+	VkRect2D renderArea{};
+	renderArea.offset = { 0, 0 };
+	renderArea.extent = SwapChainExtent;
+
+	VkClearValue clearValues{};
+	clearValues.color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	clearValues.depthStencil = { 1.0f, 0 };
+
+	VkRenderPassBeginInfo beginInfo = { .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+	beginInfo.renderPass = PrimaryRenderPass;
+	beginInfo.renderArea = renderArea;
+	beginInfo.clearValueCount = 1;
+	beginInfo.pClearValues = &clearValues;
+	for (const VkFramebuffer& framebuffer : PrimaryFramebuffers)
+	{
+		beginInfo.framebuffer = framebuffer;
+		PrimaryRenderPassBeginInfos.push_back(beginInfo);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
 
 bool VulkanSwapChain::createDepthResources()
 {
@@ -707,7 +918,7 @@ bool RenderContext::Create(const RenderContextCreateInfo& createInfo)
 
 void RenderContext::Destroy()
 {
-	Instance.Finish();
+	Instance.WaitIdle();
 	//...
 	SwapChain.Destroy();
 	Instance.Destroy();
@@ -715,12 +926,12 @@ void RenderContext::Destroy()
 
 void RenderContext::BeginFrame()
 {
-	SwapChain.BeginFrame();
+	//SwapChain.BeginFrame();
 }
 
 void RenderContext::EndFrame()
 {
-	SwapChain.EndFrame();
+	//SwapChain.EndFrame();
 }
 
 VulkanInstance& RenderContext::GetInstance()

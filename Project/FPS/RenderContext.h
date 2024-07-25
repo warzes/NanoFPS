@@ -15,12 +15,28 @@ struct RenderContextCreateInfo
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
+struct sBufferingObjects
+{
+	VkFence RenderFence{ nullptr };
+	VkSemaphore PresentSemaphore{ nullptr };
+	VkSemaphore RenderSemaphore{ nullptr };
+	VkCommandBuffer CommandBuffer{ nullptr };
+};
+
+struct VulkanRenderPassOptions
+{
+	bool ForPresentation = false;
+	bool PreserveDepth = false;
+	bool ShaderReadsDepth = false;
+};
+
 class VulkanInstance final
 {
 public:
 	bool Create(const RenderContextCreateInfo& createInfo);
 	void Destroy();
-	void Finish();
+
+	void WaitIdle();
 
 	VkInstance Instance{ nullptr };
 	VkDebugUtilsMessengerEXT DebugMessenger{ nullptr };
@@ -42,15 +58,21 @@ public:
 	VmaAllocator Allocator{ nullptr };
 
 	VkCommandPool CommandPool{ nullptr };
-
-	// TODO: обновить
+	VkDescriptorPool DescriptorPool{ nullptr };
 	VkFence ImmediateFence{ nullptr };
 	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
-	VkDescriptorPool DescriptorPool;
+	std::array<sBufferingObjects, 3> BufferingObjects;
 
 private:
 	bool getQueues(vkb::Device& vkbDevice);
 	bool createCommandPool();
+	bool createDescriptorPool();
+	bool createAllocator(uint32_t vulkanApiVersion);
+	bool createImmediateContext();
+	std::optional<VkFence> createFence(VkFenceCreateFlags flags = {});
+	std::optional<VkCommandBuffer> allocateCommandBuffer();
+	bool createBufferingObjects();
+	std::optional<VkSemaphore> createSemaphore();
 };
 
 class VulkanSwapChain final
@@ -69,17 +91,21 @@ public:
 	std::vector<VkImage> SwapChainImages;
 	std::vector<VkImageView> SwapChainImageViews;
 	VkExtent2D SwapChainExtent{};
-	std::vector<VkFramebuffer> SwapChainFramebuffers;
+
+	VkRenderPass PrimaryRenderPass{ nullptr };
+
+	std::vector<VkFramebuffer> PrimaryFramebuffers;
 	bool FramebufferResized = false; // TODO: менять если изменилось разрешение экрана
+
+	std::vector<VkRenderPassBeginInfo> PrimaryRenderPassBeginInfos;
+
+
+
 
 	VkImage DepthImage{ nullptr };
 	VkDeviceMemory DepthImageMemory{ nullptr };
 	VkImageView DepthImageView{ nullptr };
-
-	VkRenderPass MainRenderPass{ nullptr };
-
 	std::vector<VkCommandBuffer> CommandBuffers;
-
 	size_t CurrentFrame{ 0 };
 	std::vector<VkSemaphore> ImageAvailableSemaphores;
 	std::vector<VkSemaphore> RenderFinishedSemaphores;
@@ -87,6 +113,13 @@ public:
 
 private:
 	bool createSwapChain(uint32_t width, uint32_t height);
+	bool createPrimaryRenderPass();
+	bool createPrimaryFramebuffers();
+
+
+
+
+
 	bool createDepthResources();
 	std::optional<VkFormat> findDepthFormat();
 	bool createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory); // TODO: вынести в отдельный класс
@@ -111,4 +144,6 @@ namespace RenderContext
 
 	[[nodiscard]] VulkanInstance& GetInstance();
 	[[nodiscard]] VulkanSwapChain& GetSwapChain();
+
+
 }
