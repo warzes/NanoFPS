@@ -285,7 +285,7 @@ void VulkanTexture::createSampler(VkFilter filter, VkSamplerAddressMode addressM
 
 VulkanUniformBufferSet::VulkanUniformBufferSet(const std::initializer_list<VulkanUniformBufferInfo>& uniformBufferInfos)
 {
-	const size_t numBuffering = Render::GetNumBuffering();
+	const size_t numBuffering = RenderContext::GetInstance().GetNumBuffering();
 	const size_t numUniformBuffers = uniformBufferInfos.size();
 
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
@@ -841,17 +841,102 @@ const VkPipelineVertexInputStateCreateInfo* VertexBase::GetPipelineVertexInputSt
 
 #pragma endregion
 
-#pragma region TextureCache
-
-
-#pragma endregion
-
 #pragma region Renderer
 
-size_t Render::GetNumBuffering()
+std::optional<VkRenderPass> Render::CreateRenderPass(const std::vector<VkFormat>& colorAttachmentFormats, VkFormat depthStencilAttachmentFormat, const VulkanRenderPassOptions& options)
 {
-	return RenderContext::GetInstance().BufferingObjects.size();
+	std::vector<VkAttachmentDescription> attachments;
+	std::vector<VkAttachmentReference> colorAttachmentRefs;
+	VkAttachmentReference depthStencilAttachmentRef;
+
+	uint32_t attachmentIndex = 0;
+	for (const VkFormat& colorAttachmentFormat : colorAttachmentFormats)
+	{
+		VkAttachmentDescription colorAttachment = {};
+		colorAttachment.format = colorAttachmentFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = options.ForPresentation ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		attachments.emplace_back(colorAttachment);
+
+		VkAttachmentReference colorAttachmentRef = {};
+		colorAttachmentRef.attachment = attachmentIndex++;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		colorAttachmentRefs.emplace_back(colorAttachmentRef);
+	}
+
+	if (depthStencilAttachmentFormat != VK_FORMAT_UNDEFINED)
+	{
+		VkAttachmentDescription depthAttachment{};
+		depthAttachment.format = depthStencilAttachmentFormat;
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = options.PreserveDepth ? VK_ATTACHMENT_LOAD_OP_LOAD :
+			VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = options.PreserveDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = options.ShaderReadsDepth ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		attachments.emplace_back(depthAttachment);
+
+		depthStencilAttachmentRef.attachment = attachmentIndex;
+		depthStencilAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	}
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = colorAttachmentRefs.size();
+	subpass.pColorAttachments = colorAttachmentRefs.data();
+	if (depthStencilAttachmentFormat != VK_FORMAT_UNDEFINED)
+		subpass.pDepthStencilAttachment = &depthStencilAttachmentRef;
+
+	VkRenderPassCreateInfo renderPassInfo = { .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	renderPassInfo.pAttachments = attachments.data();
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	VkRenderPass renderPass;
+	if (vkCreateRenderPass(RenderContext::GetInstance().Device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan render pass.");
+		return std::nullopt;
+	}
+	return renderPass;
 }
+
+std::optional<VkFramebuffer> Render::CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent, uint32_t layers)
+{
+	VkFramebufferCreateInfo framebufferInfo = { .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+	framebufferInfo.renderPass = renderPass;
+	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	framebufferInfo.pAttachments = attachments.data();
+	framebufferInfo.width = extent.width;
+	framebufferInfo.height = extent.height;
+	framebufferInfo.layers = layers;
+
+	VkFramebuffer framebuffer;
+	if (vkCreateFramebuffer(RenderContext::GetInstance().Device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan framebuffer.");
+		return std::nullopt;
+	}
+	return framebuffer;
+}
+
+void Render::DestroyRenderPass(VkRenderPass renderPass)
+{
+	if (renderPass) vkDestroyRenderPass(RenderContext::GetInstance().Device, renderPass, nullptr);
+}
+
+
+
+
+
 
 VulkanImage Render::CreateImage(VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers)
 {

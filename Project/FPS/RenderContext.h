@@ -23,11 +23,11 @@ struct sBufferingObjects
 	VkCommandBuffer CommandBuffer{ nullptr };
 };
 
-struct VulkanRenderPassOptions
+struct VulkanFrameInfo
 {
-	bool ForPresentation = false;
-	bool PreserveDepth = false;
-	bool ShaderReadsDepth = false;
+	const VkRenderPassBeginInfo* PrimaryRenderPassBeginInfo = nullptr;
+	uint32_t BufferingIndex = 0;
+	VkCommandBuffer CommandBuffer{ nullptr };
 };
 
 class VulkanInstance final
@@ -37,6 +37,8 @@ public:
 	void Destroy();
 
 	void WaitIdle();
+
+	[[nodiscard]] size_t GetNumBuffering();
 
 	VkInstance Instance{ nullptr };
 	VkDebugUtilsMessengerEXT DebugMessenger{ nullptr };
@@ -81,9 +83,7 @@ public:
 	bool Create();
 	void Destroy();
 
-	bool Resize();
-
-	void BeginFrame();
+	VulkanFrameInfo BeginFrame();
 	void EndFrame();
 
 	VkSwapchainKHR SwapChain{ nullptr };
@@ -99,40 +99,16 @@ public:
 
 	std::vector<VkRenderPassBeginInfo> PrimaryRenderPassBeginInfos;
 
-
-
-
-	VkImage DepthImage{ nullptr };
-	VkDeviceMemory DepthImageMemory{ nullptr };
-	VkImageView DepthImageView{ nullptr };
-	std::vector<VkCommandBuffer> CommandBuffers;
-	size_t CurrentFrame{ 0 };
-	std::vector<VkSemaphore> ImageAvailableSemaphores;
-	std::vector<VkSemaphore> RenderFinishedSemaphores;
-	std::vector<VkFence> InFlightFences;
-
 private:
 	bool createSwapChain(uint32_t width, uint32_t height);
 	bool createPrimaryRenderPass();
 	bool createPrimaryFramebuffers();
+	void cleanupSurfaceSwapchainAndImageViews();
+	void cleanupPrimaryFramebuffers();
+	bool recreateSwapchain();
+	VkResult TryAcquiringNextSwapchainImage();
 
-
-
-
-
-	bool createDepthResources();
-	std::optional<VkFormat> findDepthFormat();
-	bool createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory); // TODO: вынести в отдельный класс
-	std::optional<VkImageView> createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels); // TODO: вынести в отдельный класс
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties); // TODO: вынести в отдельный класс
-	bool createFramebuffers();
-	bool createRenderPass();
-	void destroySwapChain();
-
-	bool createCommandBuffers();
-	bool createSyncObjects();
-
-	uint32_t m_imageIndex = 0;
+	void AcquireNextSwapchainImage();
 };
 
 namespace RenderContext

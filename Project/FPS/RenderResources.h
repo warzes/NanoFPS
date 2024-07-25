@@ -1,5 +1,12 @@
 #pragma once
 
+struct VulkanRenderPassOptions
+{
+	bool ForPresentation = false;
+	bool PreserveDepth = false;
+	bool ShaderReadsDepth = false;
+};
+
 #pragma region VulkanImage
 
 class VulkanImage final
@@ -327,9 +334,20 @@ namespace Render
 
 	std::optional<VkFramebuffer> CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView>& attachments, const VkExtent2D& extent, uint32_t layers = 1);
 
+	void DestroyRenderPass(VkRenderPass renderPass);
 
 
-	[[nodiscard]] size_t GetNumBuffering();
+
+
+
+
+
+
+
+
+
+
+
 
 	VulkanImage CreateImage(VkFormat format, const VkExtent2D& extent, VkImageUsageFlags imageUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage, uint32_t layers = 1);
 	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectMask, uint32_t layers = 1);
