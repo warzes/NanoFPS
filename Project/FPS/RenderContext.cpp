@@ -451,12 +451,54 @@ void VulkanSwapChain::Destroy()
 
 VulkanFrameInfo VulkanSwapChain::BeginFrame()
 {
-	тут
-	return {};
+	const sBufferingObjects& bufferingObjects = Instance.BufferingObjects[CurrentBufferingIndex];
+
+	waitAndResetFence(bufferingObjects.RenderFence);
+
+	acquireNextSwapchainImage();
+
+	vkResetCommandBuffer(bufferingObjects.CommandBuffer, 0);
+	Render::BeginCommandBuffer(bufferingObjects.CommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	return { &PrimaryRenderPassBeginInfos[CurrentSwapchainImageIndex], CurrentBufferingIndex, bufferingObjects.CommandBuffer };
 }
 
 void VulkanSwapChain::EndFrame()
-{	
+{
+	sBufferingObjects& bufferingObjects = Instance.BufferingObjects[CurrentBufferingIndex];
+
+	Render::EndCommandBuffer(bufferingObjects.CommandBuffer);
+
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkSubmitInfo submitInfo{ .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &bufferingObjects.PresentSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &bufferingObjects.CommandBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &bufferingObjects.RenderSemaphore;
+
+	submitToGraphicsQueue(submitInfo, bufferingObjects.RenderFence);
+
+	VkPresentInfoKHR presentInfo = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &bufferingObjects.RenderSemaphore;
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &SwapChain;
+	presentInfo.pImageIndices = &CurrentSwapchainImageIndex;
+	const VkResult result = vkQueuePresentKHR(Instance.GraphicsQueue, &presentInfo); // TODO: может PresentQueue??
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		recreateSwapchain();
+	}
+	else
+	{
+		if (result != VK_SUCCESS)
+			Fatal("Failed to present Vulkan swapchain image.");
+	}
+
+	CurrentBufferingIndex = (CurrentBufferingIndex + 1) % Instance.BufferingObjects.size();
 }
 
 bool VulkanSwapChain::createSwapChain(uint32_t width, uint32_t height)
@@ -474,7 +516,7 @@ bool VulkanSwapChain::createSwapChain(uint32_t width, uint32_t height)
 		.set_desired_format(surfaceFormat)
 		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // TODO: VK_PRESENT_MODE_MAILBOX_KHR эффективней но пока крашится
 		.set_desired_extent(width, height)
-		.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+		//.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
 		.build();
 	if (!swapChainRet)
 	{
@@ -587,6 +629,48 @@ bool VulkanSwapChain::recreateSwapchain()
 	if (!createPrimaryFramebuffers()) return false;
 
 	return true;
+}
+
+VkResult VulkanSwapChain::tryAcquiringNextSwapchainImage()
+{
+	const sBufferingObjects& bufferingObjects = Instance.BufferingObjects[CurrentBufferingIndex];
+	VkResult result = vkAcquireNextImageKHR(Instance.Device, SwapChain, 100'000'000, bufferingObjects.PresentSemaphore, VK_NULL_HANDLE, &CurrentSwapchainImageIndex);
+	return result;
+}
+
+void VulkanSwapChain::acquireNextSwapchainImage()
+{
+	VkResult result = tryAcquiringNextSwapchainImage();
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			recreateSwapchain();
+			result = tryAcquiringNextSwapchainImage();
+		}
+
+		if (result != VK_SUCCESS)
+		{
+			Fatal("Failed to acquire next Vulkan swapchain image.");
+			return;
+		}
+	}
+}
+
+void VulkanSwapChain::waitAndResetFence(VkFence fence, uint64_t timeout)
+{
+	if (vkWaitForFences(Instance.Device, 1, &fence, VK_TRUE, timeout) != VK_SUCCESS)
+	{
+		Fatal("Failed to wait for Vulkan fence.");
+		return;
+	}
+	vkResetFences(Instance.Device, 1, &fence);
+}
+
+void VulkanSwapChain::submitToGraphicsQueue(const VkSubmitInfo& submitInfo, VkFence fence)
+{
+	if (vkQueueSubmit(Instance.GraphicsQueue, 1, &submitInfo, fence) != VK_SUCCESS)
+		Fatal("Failed to submit Vulkan command buffer.");
 }
 
 #pragma endregion

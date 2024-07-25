@@ -336,7 +336,8 @@ namespace Render
 
 	void DestroyRenderPass(VkRenderPass renderPass);
 
-
+	bool BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferUsageFlags flags = 0);
+	bool EndCommandBuffer(VkCommandBuffer commandBuffer);
 
 
 
@@ -387,8 +388,7 @@ namespace Render
 	void BeginImmediateSubmit();
 	void EndImmediateSubmit();
 
-	bool BeginCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferUsageFlags flags = {});
-	bool EndCommandBuffer(VkCommandBuffer commandBuffer);
+
 
 	void WaitAndResetFence(VkFence fence, uint64_t timeout = 100'000'000);
 

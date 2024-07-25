@@ -63,7 +63,7 @@ public:
 	VkDescriptorPool DescriptorPool{ nullptr };
 	VkFence ImmediateFence{ nullptr };
 	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
-	std::array<sBufferingObjects, 3> BufferingObjects;
+	std::array<sBufferingObjects, 3> BufferingObjects; // TODO: в свапчаин
 
 private:
 	bool getQueues(vkb::Device& vkbDevice);
@@ -99,6 +99,9 @@ public:
 
 	std::vector<VkRenderPassBeginInfo> PrimaryRenderPassBeginInfos;
 
+	uint32_t CurrentSwapchainImageIndex = 0;
+	uint32_t CurrentBufferingIndex = 0;
+
 private:
 	bool createSwapChain(uint32_t width, uint32_t height);
 	bool createPrimaryRenderPass();
@@ -106,9 +109,10 @@ private:
 	void cleanupSurfaceSwapchainAndImageViews();
 	void cleanupPrimaryFramebuffers();
 	bool recreateSwapchain();
-	VkResult TryAcquiringNextSwapchainImage();
-
-	void AcquireNextSwapchainImage();
+	VkResult tryAcquiringNextSwapchainImage();
+	void acquireNextSwapchainImage();
+	void waitAndResetFence(VkFence fence, uint64_t timeout = 100'000'000);
+	void submitToGraphicsQueue(const VkSubmitInfo& submitInfo, VkFence fence);
 };
 
 namespace RenderContext
