@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\stb\stb.cpp">
+      <Filter>3rdparty\stb</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineWindow.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineApp.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\volk\volk.c">
+      <Filter>3rdparty\volk</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp">
+      <Filter>3rdparty\tiny_obj_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderContext.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="_LessonRenderer.cpp">
+      <Filter>NanoEngineVK\old</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApp.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\vk_mem_alloc.cpp">
+      <Filter>3rdparty\vma</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderResources.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineMath.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{ab47c5c8-a361-4ca5-af03-0d46e8bba946}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NanoEngineVK">
+      <UniqueIdentifier>{7b6a06d7-05e8-4a5d-ae8a-d23350e79297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\VkBootstrap">
+      <UniqueIdentifier>{ac830a5f-6758-4d09-a979-ae5fc8724288}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NanoEngineVK\impl">
+      <UniqueIdentifier>{e08afc9e-6e26-46c1-a86d-3aef9c1b79ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\stb">
+      <UniqueIdentifier>{2fb80955-0f42-41ab-a450-458a04b3293a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\volk">
+      <UniqueIdentifier>{4273520d-665c-492a-9233-b65e96db1fc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\vma">
+      <UniqueIdentifier>{507e3df7-24bc-4e05-8e5c-117281267ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\tiny_obj_loader">
+      <UniqueIdentifier>{b2415d16-f7f3-4093-97df-82b5de38e5fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NanoEngineVK\old">
+      <UniqueIdentifier>{cce20224-6f95-4c89-a346-a508d4929512}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{3b24d118-e624-4e8e-9f87-21dd68709148}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h">
+      <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="Base.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineMath.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineWindow.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="NanoEngineVK.h">
+      <Filter>NanoEngineVK</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\stb\stb_image.h">
+      <Filter>3rdparty\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineApp.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\volk\volk.h">
+      <Filter>3rdparty\volk</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\vk_mem_alloc.h">
+      <Filter>3rdparty\vma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\tiny_obj_loader.h">
+      <Filter>3rdparty\tiny_obj_loader</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderContext.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="_lessonRenderer.h">
+      <Filter>NanoEngineVK\old</Filter>
+    </ClInclude>
+    <ClInclude Include="GameApp.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderResources.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
