@@ -1,6 +1,9 @@
 #include "Base.h"
 #include "Core.h"
 #include "VulkanRender.h"
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
+#	pragma comment( lib, "vulkan-1.lib" )
 
 #pragma region ShaderCompiler
 
@@ -774,6 +777,17 @@ static std::vector<const char*> GetEnabledInstanceExtensions() {
 }
 
 void VulkanDevice::CreateInstance() {
+	VkResult err = volkInitialize();
+	if (err != VK_SUCCESS) {
+		/*ERR_EXIT(
+			"Unable to find the Vulkan runtime on the system.\n\n"
+			"This likely indicates that no Vulkan capable drivers are installed.",
+			"Installation Failure");*/
+	}
+
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
+
 	const vk::ApplicationInfo applicationInfo("Game", VK_MAKE_VERSION(1, 0, 0), "Game", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
 
 	const std::vector<const char*> enabledLayers = GetEnabledInstanceLayers();
@@ -785,24 +799,9 @@ void VulkanDevice::CreateInstance() {
 	const auto [result, instance] = vk::createInstance(instanceCreateInfo);
 	//DebugCheckCriticalVk(result, "Failed to create Vulkan instance.");
 	m_instance = instance;
-}
 
-[[maybe_unused]] static VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(
-	VkInstance                                instance,
-	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-	const VkAllocationCallbacks* pAllocator,
-	VkDebugUtilsMessengerEXT* pMessenger
-) {
-	const auto proc = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	//DebugCheckCritical(proc != nullptr, "Failed to fetch vkCreateDebugUtilsMessengerEXT address.");
-	return proc(instance, pCreateInfo, pAllocator, pMessenger);
-}
-
-[[maybe_unused]] static VKAPI_ATTR void VKAPI_CALL
-vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger, const VkAllocationCallbacks* pAllocator) {
-	const auto proc = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	//DebugCheckCritical(proc != nullptr, "Failed to fetch vkDestroyDebugUtilsMessengerEXT address.");
-	return proc(instance, messenger, pAllocator);
+	volkLoadInstanceOnly(m_instance);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
@@ -890,6 +889,9 @@ void VulkanDevice::CreateDevice() {
 
 	m_graphicsQueue = m_device.getQueue(m_graphicsQueueFamily, 0);
 	//DebugCheckCritical(m_device, "Failed to get Vulkan graphics queue.");
+
+	volkLoadDevice(m_device);
+	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
 }
 
 void VulkanDevice::SubmitToGraphicsQueue(const vk::SubmitInfo& submitInfo, vk::Fence fence)
@@ -930,11 +932,35 @@ void VulkanDevice::WriteDescriptorSet(const vk::WriteDescriptorSet& writeDescrip
 }
 
 void VulkanDevice::CreateAllocator() {
+
+	VmaVulkanFunctions vmaVulkanFunc{};
+	vmaVulkanFunc.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	vmaVulkanFunc.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+	vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
+	vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
+	vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
+	vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
+	vmaVulkanFunc.vkCreateImage = vkCreateImage;
+	vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
+	vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
+	vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+	vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
+	vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+	vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+	vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+	vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+	vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+	vmaVulkanFunc.vkMapMemory = vkMapMemory;
+	vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
+	vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
+
+
 	VmaAllocatorCreateInfo createInfo{};
 	createInfo.physicalDevice = m_physicalDevice;
 	createInfo.device = m_device;
 	createInfo.instance = m_instance;
 	createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+	createInfo.pVulkanFunctions = &vmaVulkanFunc;
 	if(vmaCreateAllocator(&createInfo, &m_allocator) != VK_SUCCESS)
 		Fatal("Failed to create Vulkan Memory Allocator.");
 }

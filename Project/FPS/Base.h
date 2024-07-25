@@ -24,8 +24,13 @@
 #include <deque>
 #include <unordered_map>
 
+#define WIN32
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VK_NO_PROTOTYPES
+#include <vulkan/vulkan.hpp>
 
-//#include <volk/volk.h>
+#include <volk/volk.h>
 //#include <VkBootstrap/VkBootstrap.h>
 //#include <vulkan/vk_enum_string_helper.h>
 #define VMA_STATIC_VULKAN_FUNCTIONS 1
@@ -37,9 +42,6 @@
 #define VMA_RECORDING_ENABLED 0
 #include <vk_mem_alloc.h>
 
-#define WIN32
-#define VULKAN_HPP_NO_EXCEPTIONS
-#include <vulkan/vulkan.hpp>
 
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
