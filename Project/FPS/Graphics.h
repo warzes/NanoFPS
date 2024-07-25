@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #pragma region MyRegion
 
@@ -32,7 +32,7 @@ public:
 		float pitch = CAMERA_PITCH);
 
 	void Move(MovementDir direction, float deltaTime);
-	void Rotate(float xOffset, float yOffset); // TODO: дельтатайм нужна?
+	void Rotate(float xOffset, float yOffset); // TODO: РґРµР»СЊС‚Р°С‚Р°Р№Рј РЅСѓР¶РЅР°?
 
 	[[nodiscard]] const glm::mat4& GetViewMatrix() const;
 

@@ -24,15 +24,25 @@
 #include <deque>
 #include <unordered_map>
 
-#include <volk/volk.h>
-#include <VkBootstrap/VkBootstrap.h>
-#include <vulkan/vk_enum_string_helper.h>
+
+//#include <volk/volk.h>
+//#include <VkBootstrap/VkBootstrap.h>
+//#include <vulkan/vk_enum_string_helper.h>
+#define VMA_STATIC_VULKAN_FUNCTIONS 1
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
+#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
+#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 0
+#define VMA_DEBUG_GLOBAL_MUTEX 0
+#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
+#define VMA_RECORDING_ENABLED 0
 #include <vk_mem_alloc.h>
 
 #define WIN32
+#define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
 #define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 /*
@@ -42,7 +52,7 @@ Left handed
 	| /
 	|/___X
 */
-//#define GLM_FORCE_LEFT_HANDED
+#define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_INLINE
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_XYZW_ONLY
@@ -64,13 +74,13 @@ Left handed
 
 #include <tiny_obj_loader.h>
 
+#define SIMDJSON_EXCEPTIONS 0
+#define SIMDJSON_THREADS_ENABLED 1
 #include <simdjson/simdjson.h>
 
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-
-#include <spdlog/spdlog.h>
 
 #undef near
 #undef far
