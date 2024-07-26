@@ -3,8 +3,6 @@
 #include "VulkanRender.h"
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-#	pragma comment( lib, "vulkan-1.lib" )
-
 #pragma region ShaderCompiler
 
 struct ShaderIncluder : glslang::TShader::Includer {
@@ -777,6 +775,9 @@ static std::vector<const char*> GetEnabledInstanceExtensions() {
 }
 
 void VulkanDevice::CreateInstance() {
+	// See https://github.com/KhronosGroup/Vulkan-Hpp/pull/1755
+   // Currently Vulkan-Hpp doesn't check for libvulkan.1.dylib
+   // Which affects vkcube installation on Apple platforms.
 	VkResult err = volkInitialize();
 	if (err != VK_SUCCESS) {
 		/*ERR_EXIT(
@@ -786,6 +787,7 @@ void VulkanDevice::CreateInstance() {
 	}
 
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
 
 
 	const vk::ApplicationInfo applicationInfo("Game", VK_MAKE_VERSION(1, 0, 0), "Game", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
@@ -800,8 +802,9 @@ void VulkanDevice::CreateInstance() {
 	//DebugCheckCriticalVk(result, "Failed to create Vulkan instance.");
 	m_instance = instance;
 
-	volkLoadInstanceOnly(m_instance);
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_instance);
+	volkLoadInstanceOnly(m_instance);
+
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
@@ -869,7 +872,7 @@ void VulkanDevice::PickPhysicalDevice() {
 }
 
 static std::vector<const char*> GetEnabledDeviceExtensions() {
-	return { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	return { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME };
 }
 
 void VulkanDevice::CreateDevice() {
@@ -890,8 +893,8 @@ void VulkanDevice::CreateDevice() {
 	m_graphicsQueue = m_device.getQueue(m_graphicsQueueFamily, 0);
 	//DebugCheckCritical(m_device, "Failed to get Vulkan graphics queue.");
 
-	volkLoadDevice(m_device);
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
+	volkLoadDevice(m_device);
 }
 
 void VulkanDevice::SubmitToGraphicsQueue(const vk::SubmitInfo& submitInfo, vk::Fence fence)
@@ -953,13 +956,13 @@ void VulkanDevice::CreateAllocator() {
 	vmaVulkanFunc.vkMapMemory = vkMapMemory;
 	vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
 	vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
-
+	vmaVulkanFunc.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
 
 	VmaAllocatorCreateInfo createInfo{};
 	createInfo.physicalDevice = m_physicalDevice;
 	createInfo.device = m_device;
 	createInfo.instance = m_instance;
-	createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+	createInfo.vulkanApiVersion = VK_API_VERSION_1_0;
 	createInfo.pVulkanFunctions = &vmaVulkanFunc;
 	if(vmaCreateAllocator(&createInfo, &m_allocator) != VK_SUCCESS)
 		Fatal("Failed to create Vulkan Memory Allocator.");

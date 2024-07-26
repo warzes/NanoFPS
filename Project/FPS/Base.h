@@ -24,27 +24,34 @@
 #include <deque>
 #include <unordered_map>
 
-#define WIN32
-#define VULKAN_HPP_NO_EXCEPTIONS
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VK_NO_PROTOTYPES
+
+//
+//#include <VkBootstrap/VkBootstrap.h>
+//#include <vulkan/vk_enum_string_helper.h>
+//#define VMA_STATIC_VULKAN_FUNCTIONS 0
+//#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+//#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
+//#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 0
+//#define VMA_DEBUG_GLOBAL_MUTEX 0
+//#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
+//#define VMA_RECORDING_ENABLED 0
+//#define VMA_DEDICATED_ALLOCATION 0
+#include <vk_mem_alloc.h>
+#define WIN32
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_TYPESAFE_CONVERSION 1
+//#define VK_NO_PROTOTYPES
+//#define VK_USE_PLATFORM_WIN32_KHR 1
+#define VK_PROTOTYPES 1
 #include <vulkan/vulkan.hpp>
 
 #include <volk/volk.h>
-//#include <VkBootstrap/VkBootstrap.h>
-//#include <vulkan/vk_enum_string_helper.h>
-#define VMA_STATIC_VULKAN_FUNCTIONS 1
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
-#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
-#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 0
-#define VMA_DEBUG_GLOBAL_MUTEX 0
-#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
-#define VMA_RECORDING_ENABLED 0
-#include <vk_mem_alloc.h>
 
 
 #define GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_VULKAN
+//#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 /*

@@ -111,7 +111,11 @@ void Fatal(const std::string& text);
 
 [[nodiscard]] std::optional<std::string> LoadTextFile(const std::filesystem::path& path);
 
-namespace FileSystem {
+namespace FileSystem
+{
+	void Init();
+	void Shutdown();
+	void Mount(const std::string& newDir, const std::string& mountPoint, bool appendToPath = true);
 	std::string Read(const std::string& filename);
 } // namespace FileSystem
 
