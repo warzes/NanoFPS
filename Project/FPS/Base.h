@@ -91,6 +91,8 @@ Left handed
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
+#include <physfs/physfs.h>
+
 #undef near
 #undef far
 

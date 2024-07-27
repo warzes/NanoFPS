@@ -113,7 +113,7 @@ void Fatal(const std::string& text);
 
 namespace FileSystem
 {
-	void Init();
+	bool Init();
 	void Shutdown();
 	void Mount(const std::string& newDir, const std::string& mountPoint, bool appendToPath = true);
 	std::string Read(const std::string& filename);

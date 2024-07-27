@@ -926,28 +926,28 @@ void PbrRenderer::CreateIblTextureSet() {
 	m_iblTextureSet = m_device.AllocateDescriptorSet(m_iblTextureSetLayout);
 	m_textureCache
 		.LoadTexture(
-			"textures/brdf_lut.png", //
+			"Textures/brdf_lut.png", //
 			vk::Filter::eLinear,
 			vk::SamplerAddressMode::eClampToEdge
 		)
 		->BindToDescriptorSet(m_iblTextureSet, 0);
 	m_textureCache
 		.LoadTexture(
-			"textures/ibl/sunset.png", //
+			"Textures/ibl/sunset.png", //
 			vk::Filter::eLinear,
 			vk::SamplerAddressMode::eClampToEdge
 		)
 		->BindToDescriptorSet(m_iblTextureSet, 1);
 	m_textureCache
 		.LoadTexture(
-			"textures/ibl/sunset_specular.png", //
+			"Textures/ibl/sunset_specular.png", //
 			vk::Filter::eLinear,
 			vk::SamplerAddressMode::eClampToEdge
 		)
 		->BindToDescriptorSet(m_iblTextureSet, 2);
 	m_textureCache
 		.LoadTexture(
-			"textures/ibl/sunset_irradiance.png", //
+			"Textures/ibl/sunset_irradiance.png", //
 			vk::Filter::eLinear,
 			vk::SamplerAddressMode::eClampToEdge
 		)

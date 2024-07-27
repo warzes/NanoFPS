@@ -1,0 +1,6 @@
+{
+  "vertex": "shaders/fullscreen.vert",
+  "fragment": "shaders/combine.frag",
+  "topology": "triangle_strip",
+  "depth_test": false
+}

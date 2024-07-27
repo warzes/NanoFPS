@@ -118,10 +118,59 @@ std::optional<std::string> LoadTextFile(const std::filesystem::path& path)
 	return shaderCode;
 }
 
+std::string GetLastError()
+{
+	return PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
+}
+
+bool FileSystem::Init()
+{
+	if (!PHYSFS_init(__argv[0]))
+	{
+		Fatal("Failed to init PhysFS: " + GetLastError());
+		return false;
+	}
+	return true;
+}
+
+void FileSystem::Shutdown()
+{
+	if (!PHYSFS_deinit())
+		Fatal("Failed to shutdown PhysFS: " + GetLastError());
+}
+
+void FileSystem::Mount(const std::string& newDir, const std::string& mountPoint, bool appendToPath)
+{
+	if (!PHYSFS_mount(newDir.c_str(), mountPoint.c_str(), appendToPath))
+	{
+		Fatal("PhysFS failed to mount " + newDir + " at " + mountPoint + ": " + GetLastError());
+	}
+	else
+	{
+		Print("PhysFS mount " + newDir + " at " + mountPoint);
+	}
+}
+
 std::string FileSystem::Read(const std::string& filename)
 {
-	// TODO: пока так, а потом через physfs
-	return LoadTextFile(filename).value();
+	PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
+	if (!file)
+	{
+		Fatal("PhysFS failed to open file " + filename + ": " + GetLastError());
+		return {};
+	}
+	const PHYSFS_sint64 length = PHYSFS_fileLength(file);
+	if (length == -1)
+	{
+		Fatal("PhysFS failed to get file size " + filename + ": " + GetLastError());
+		return {};
+	}
+	std::string bytes(length, '\0');
+	if (PHYSFS_readBytes(file, bytes.data(), length) == -1)
+	{
+		Fatal("PhysFS failed to read file " + filename + ": " + GetLastError());
+	}
+	return bytes;
 }
 
 JsonFile::JsonFile(const std::string& filename)

@@ -7,6 +7,7 @@
 #if defined(_MSC_VER)
 #	pragma comment( lib, "glfw3.lib" )
 #	pragma comment( lib, "simdjson.lib" )
+#	pragma comment( lib, "physfs-static.lib" )
 
 #	if defined(_DEBUG)
 #		pragma comment( lib, "GenericCodeGend.lib" )
