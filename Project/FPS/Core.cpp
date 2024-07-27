@@ -118,7 +118,7 @@ std::optional<std::string> LoadTextFile(const std::filesystem::path& path)
 	return shaderCode;
 }
 
-std::string GetLastError()
+inline std::string PHYSFSGetLastError()
 {
 	return PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
 }
@@ -127,7 +127,7 @@ bool FileSystem::Init()
 {
 	if (!PHYSFS_init(__argv[0]))
 	{
-		Fatal("Failed to init PhysFS: " + GetLastError());
+		Fatal("Failed to init PhysFS: " + PHYSFSGetLastError());
 		return false;
 	}
 	return true;
@@ -136,14 +136,14 @@ bool FileSystem::Init()
 void FileSystem::Shutdown()
 {
 	if (!PHYSFS_deinit())
-		Fatal("Failed to shutdown PhysFS: " + GetLastError());
+		Fatal("Failed to shutdown PhysFS: " + PHYSFSGetLastError());
 }
 
 void FileSystem::Mount(const std::string& newDir, const std::string& mountPoint, bool appendToPath)
 {
 	if (!PHYSFS_mount(newDir.c_str(), mountPoint.c_str(), appendToPath))
 	{
-		Fatal("PhysFS failed to mount " + newDir + " at " + mountPoint + ": " + GetLastError());
+		Fatal("PhysFS failed to mount " + newDir + " at " + mountPoint + ": " + PHYSFSGetLastError());
 	}
 	else
 	{
@@ -156,19 +156,19 @@ std::string FileSystem::Read(const std::string& filename)
 	PHYSFS_File* file = PHYSFS_openRead(filename.c_str());
 	if (!file)
 	{
-		Fatal("PhysFS failed to open file " + filename + ": " + GetLastError());
+		Fatal("PhysFS failed to open file " + filename + ": " + PHYSFSGetLastError());
 		return {};
 	}
 	const PHYSFS_sint64 length = PHYSFS_fileLength(file);
 	if (length == -1)
 	{
-		Fatal("PhysFS failed to get file size " + filename + ": " + GetLastError());
+		Fatal("PhysFS failed to get file size " + filename + ": " + PHYSFSGetLastError());
 		return {};
 	}
-	std::string bytes(length, '\0');
-	if (PHYSFS_readBytes(file, bytes.data(), length) == -1)
+	std::string bytes(static_cast<const unsigned __int64>(length), '\0');
+	if (PHYSFS_readBytes(file, bytes.data(), static_cast<PHYSFS_uint64>(length)) == -1)
 	{
-		Fatal("PhysFS failed to read file " + filename + ": " + GetLastError());
+		Fatal("PhysFS failed to read file " + filename + ": " + PHYSFSGetLastError());
 	}
 	return bytes;
 }
@@ -241,8 +241,8 @@ ImageFile::ImageFile(const std::string& filename)
 		nullptr,
 		STBI_rgb_alpha
 	);
-	m_width = width;
-	m_height = height;
+	m_width = static_cast<uint32_t>(width);
+	m_height = static_cast<uint32_t>(height);
 }
 
 void ImageFile::Release()
@@ -264,11 +264,14 @@ void ImageFile::Swap(ImageFile& other) noexcept
 BinaryParser::BinaryParser(const std::string& filename)
 	: m_binary(FileSystem::Read(filename))
 	, m_current(m_binary.data())
-	, m_remainingBytes(m_binary.size()) {
+	, m_remainingBytes(m_binary.size())
+{
 }
 
-bool BinaryParser::ReadBytes(size_t numBytes, void* output) {
-	if (m_remainingBytes < numBytes) {
+bool BinaryParser::readBytes(size_t numBytes, void* output)
+{
+	if (m_remainingBytes < numBytes)
+	{
 		Fatal("Not enough data in the binary file.");
 		return false;
 	}
@@ -277,6 +280,5 @@ bool BinaryParser::ReadBytes(size_t numBytes, void* output) {
 	m_remainingBytes -= numBytes;
 	return true;
 }
-
 
 #pragma endregion

@@ -11,6 +11,7 @@
 #endif
 
 #define _USE_MATH_DEFINES
+#define NOMINMAX
 
 #include <chrono>
 #include <memory>
@@ -29,14 +30,13 @@
 //
 //#include <VkBootstrap/VkBootstrap.h>
 //#include <vulkan/vk_enum_string_helper.h>
-//#define VMA_STATIC_VULKAN_FUNCTIONS 0
-//#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
-//#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
-//#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 0
-//#define VMA_DEBUG_GLOBAL_MUTEX 0
-//#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
-//#define VMA_RECORDING_ENABLED 0
-//#define VMA_DEDICATED_ALLOCATION 0
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
+#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 0
+#define VMA_DEBUG_GLOBAL_MUTEX 0
+#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
+#define VMA_RECORDING_ENABLED 0
 #include <vk_mem_alloc.h>
 #define WIN32
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -83,8 +83,8 @@ Left handed
 
 #include <tiny_obj_loader.h>
 
-#define SIMDJSON_EXCEPTIONS 0
-#define SIMDJSON_THREADS_ENABLED 1
+#define SIMDJSON_EXCEPTIONS 0 // TODO: скомпилировать с этим или встроить в движок
+#define SIMDJSON_THREADS_ENABLED 1 // TODO: скомпилировать с этим или встроить в движок
 #include <simdjson/simdjson.h>
 
 #include <glslang/Public/ResourceLimits.h>
@@ -92,7 +92,6 @@ Left handed
 #include <glslang/SPIRV/GlslangToSpv.h>
 
 #include <physfs/physfs.h>
-
 
 #include <physx/PxPhysicsAPI.h>
 

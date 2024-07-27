@@ -116,7 +116,7 @@ namespace FileSystem
 	bool Init();
 	void Shutdown();
 	void Mount(const std::string& newDir, const std::string& mountPoint, bool appendToPath = true);
-	std::string Read(const std::string& filename);
+	std::string Read(const std::string& filename); // TODO: return optional
 } // namespace FileSystem
 
 class JsonFile final
@@ -145,7 +145,7 @@ private:
 	template<class T>
 	T getField(const std::string& key, const T& fallback);
 
-	simdjson::dom::parser m_parser;
+	simdjson::dom::parser  m_parser;
 	simdjson::dom::element m_document;
 };
 
@@ -178,71 +178,70 @@ public:
 	[[nodiscard]] const unsigned char* GetData() const { return m_data; }
 
 private:
-	uint32_t m_width = 0;
-	uint32_t m_height = 0;
+	uint32_t       m_width = 0;
+	uint32_t       m_height = 0;
 	unsigned char* m_data = nullptr;
 };
 
-class BinaryParser {
+class BinaryParser
+{
 public:
 	explicit BinaryParser(const std::string& filename);
-
 	BinaryParser(const BinaryParser&) = delete;
-
-	BinaryParser& operator=(const BinaryParser&) = delete;
-
 	BinaryParser(BinaryParser&&) = delete;
 
+	BinaryParser& operator=(const BinaryParser&) = delete;
 	BinaryParser& operator=(BinaryParser&&) = delete;
 
 protected:
-	bool ReadU8(uint8_t& value) { return ReadValue(value); }
-
-	bool ReadU16(uint16_t& value) { return ReadValue(value); }
-
-	bool ReadFloat(float& value) { return ReadValue(value); }
-
-	bool ReadVec3(glm::vec3& value) { return ReadValue(value); }
-
+	bool readU8(uint8_t& value) { return readValue(value); }
+	bool readU16(uint16_t& value) { return readValue(value); }
+	bool readFloat(float& value) { return readValue(value); }
+	bool readVec3(glm::vec3& value) { return readValue(value); }
 	// u8 length; char string[length];
-	bool ReadShortString(std::string& string) { return ReadString<uint8_t>(string); }
+	bool readShortString(std::string& string) { return readString<uint8_t>(string); }
 
 	// u16 size; T vector[size];
 	template<class T>
-	bool ReadVector(std::vector<T>& vector) {
-		return ReadVectorImpl<uint16_t>(vector);
+	bool readVector(std::vector<T>& vector)
+	{
+		return readVectorImpl<uint16_t>(vector);
 	}
 
 private:
-	bool ReadBytes(size_t numBytes, void* output);
+	bool readBytes(size_t numBytes, void* output);
 
 	template<class T>
-	bool ReadValue(T& value) {
-		return ReadBytes(sizeof(value), &value);
+	bool readValue(T& value)
+	{
+		return readBytes(sizeof(value), &value);
 	}
 
 	template<class LengthType>
-	bool ReadString(std::string& string) {
+	bool readString(std::string& string)
+	{
 		LengthType length;
-		if (!ReadValue(length)) {
+		if (!readValue(length))
+		{
 			return false;
 		}
 		string.resize(length);
-		return ReadBytes(length, string.data());
+		return readBytes(length, string.data());
 	}
 
 	template<class LengthType, class ValueType>
-	bool ReadVectorImpl(std::vector<ValueType>& vector) {
+	bool readVectorImpl(std::vector<ValueType>& vector)
+	{
 		LengthType size;
-		if (!ReadValue(size)) {
+		if (!readValue(size))
+		{
 			return false;
 		}
 		vector.resize(size);
-		return ReadBytes(size * sizeof(ValueType), vector.data());
+		return readBytes(size * sizeof(ValueType), vector.data());
 	}
 
 	std::string m_binary;
-
 	const char* m_current;
 	size_t      m_remainingBytes;
 };

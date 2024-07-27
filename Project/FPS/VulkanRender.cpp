@@ -788,8 +788,6 @@ void VulkanDevice::CreateInstance() {
 
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-
-
 	const vk::ApplicationInfo applicationInfo("Game", VK_MAKE_VERSION(1, 0, 0), "Game", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_3);
 
 	const std::vector<const char*> enabledLayers = GetEnabledInstanceLayers();
