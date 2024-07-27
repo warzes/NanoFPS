@@ -8,5 +8,7 @@
 #include "VulkanRender.h"
 #include "Renderer.h"
 #include "Graphics.h"
+#include "Physics.h"
 #include "EngineWindow.h"
+#include "LuaSandbox.h"
 #include "EngineApp.h"

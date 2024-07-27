@@ -8,6 +8,20 @@
 #	pragma comment( lib, "glfw3.lib" )
 #	pragma comment( lib, "simdjson.lib" )
 #	pragma comment( lib, "physfs-static.lib" )
+#	pragma comment( lib, "lua.lib" )
+
+#pragma comment( lib, "PhysX_64.lib" )
+#pragma comment( lib, "PhysXFoundation_64.lib" )
+#pragma comment( lib, "PhysXCooking_64.lib" )
+#pragma comment( lib, "PhysXCommon_64.lib" )
+
+//#pragma comment( lib, "LowLevel_static_64.lib" )
+//#pragma comment( lib, "LowLevelAABB_static_64.lib" )
+//#pragma comment( lib, "LowLevelDynamics_static_64.lib" )
+#pragma comment( lib, "PhysXCharacterKinematic_static_64.lib" )
+#pragma comment( lib, "PhysXExtensions_static_64.lib" )
+#pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
+
 
 #	if defined(_DEBUG)
 #		pragma comment( lib, "GenericCodeGend.lib" )

@@ -261,4 +261,22 @@ void ImageFile::Swap(ImageFile& other) noexcept
 	std::swap(m_data, other.m_data);
 }
 
+BinaryParser::BinaryParser(const std::string& filename)
+	: m_binary(FileSystem::Read(filename))
+	, m_current(m_binary.data())
+	, m_remainingBytes(m_binary.size()) {
+}
+
+bool BinaryParser::ReadBytes(size_t numBytes, void* output) {
+	if (m_remainingBytes < numBytes) {
+		Fatal("Not enough data in the binary file.");
+		return false;
+	}
+	memcpy(output, m_current, numBytes);
+	m_current += numBytes;
+	m_remainingBytes -= numBytes;
+	return true;
+}
+
+
 #pragma endregion

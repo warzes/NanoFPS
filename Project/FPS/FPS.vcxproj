@@ -61,7 +61,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -82,7 +82,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -111,11 +111,19 @@
     <ClCompile Include="EngineMath.cpp" />
     <ClCompile Include="EngineWindow.cpp" />
     <ClCompile Include="GameApp.cpp" />
+    <ClCompile Include="GameHUD.cpp" />
+    <ClCompile Include="GameLua.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="LuaSandbox.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MapData.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="PhysicsSimulationEventCallback.cpp" />
     <ClCompile Include="RenderContext.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderResources.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="VulkanRender.cpp" />
     <ClCompile Include="_LessonRenderer.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -135,11 +143,19 @@
     <ClInclude Include="EngineMath.h" />
     <ClInclude Include="EngineWindow.h" />
     <ClInclude Include="GameApp.h" />
+    <ClInclude Include="GameHUD.h" />
+    <ClInclude Include="GameLua.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="LuaSandbox.h" />
+    <ClInclude Include="MapData.h" />
+    <ClInclude Include="Mouse.h" />
     <ClInclude Include="NanoEngineVK.h" />
+    <ClInclude Include="Physics.h" />
+    <ClInclude Include="PhysicsSimulationEventCallback.h" />
     <ClInclude Include="RenderContext.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderResources.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="VulkanRender.h" />
     <ClInclude Include="_lessonRenderer.h" />
   </ItemGroup>

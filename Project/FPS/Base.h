@@ -93,6 +93,11 @@ Left handed
 
 #include <physfs/physfs.h>
 
+
+#include <physx/PxPhysicsAPI.h>
+
+#include <lua/lua.hpp>
+
 #undef near
 #undef far
 

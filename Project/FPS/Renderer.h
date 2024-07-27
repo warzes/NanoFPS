@@ -751,3 +751,23 @@ private:
 };
 
 #pragma endregion
+
+#pragma region BitmapTextRenderer
+
+class SingleTextureMaterial;
+
+class BitmapTextRenderer {
+public:
+	BitmapTextRenderer(PbrRenderer* renderer, const std::string& fontTexture, const glm::vec2& charSize);
+
+	[[nodiscard]] const glm::vec2& GetCharSize() const { return m_charSize; }
+
+	void DrawText(const std::string& text, const glm::vec2& position, const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+
+private:
+	SingleTextureMaterial* m_fontTexture = nullptr;
+	PbrRenderer* m_renderer = nullptr;
+	glm::vec2 m_charSize;
+};
+
+#pragma endregion

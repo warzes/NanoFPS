@@ -50,6 +50,30 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
+    <ClCompile Include="Physics.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsSimulationEventCallback.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="LuaSandbox.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="MapData.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="GameHUD.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="GameLua.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -81,6 +105,9 @@
     </Filter>
     <Filter Include="Game">
       <UniqueIdentifier>{3b24d118-e624-4e8e-9f87-21dd68709148}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\core">
+      <UniqueIdentifier>{3239adbe-989c-41c5-9861-54914ab44aaf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +167,30 @@
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Physics.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsSimulationEventCallback.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="LuaSandbox.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="MapData.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="GameHUD.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="GameLua.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse.h">
+      <Filter>Game\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
