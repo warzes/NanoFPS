@@ -7,8 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FPS", "FPS\FPS.vcxproj", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DOC", "DOC", "{2CF94783-26C1-4921-8E41-73594FE16BE8}"
 	ProjectSection(SolutionItems) = preProject
+		IdeaGame.md = IdeaGame.md
 		TODO.md = TODO.md
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OldFPS", "OldFPS\OldFPS.vcxproj", "{DFC51A28-4343-4BAE-B119-7E2E3E301594}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +23,10 @@ Global
 		{8E4C81E2-8DFC-4DD0-B353-6C84EF917F1B}.Debug|x64.Build.0 = Debug|x64
 		{8E4C81E2-8DFC-4DD0-B353-6C84EF917F1B}.Release|x64.ActiveCfg = Release|x64
 		{8E4C81E2-8DFC-4DD0-B353-6C84EF917F1B}.Release|x64.Build.0 = Release|x64
+		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Debug|x64.ActiveCfg = Debug|x64
+		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Debug|x64.Build.0 = Debug|x64
+		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Release|x64.ActiveCfg = Release|x64
+		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

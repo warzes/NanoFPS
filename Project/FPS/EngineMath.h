@@ -306,7 +306,7 @@ inline glm::vec3 Transform::GetHorizontalForwardVector() const
 
 #pragma endregion
 
-class ShadowMatrixCalculator
+class ShadowMatrixCalculator final
 {
 public:
 	void SetCameraInfo(const glm::mat4& view, float fov, float aspectRatio);

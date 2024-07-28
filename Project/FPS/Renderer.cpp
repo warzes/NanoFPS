@@ -5,14 +5,15 @@
 #pragma region DeferredFramebuffer
 
 DeferredFramebuffer::DeferredFramebuffer(
-	VulkanBase* device,
+	VulkanRender* device,
 	vk::RenderPass                                 renderPass,
 	vk::DescriptorSetLayout                        textureSetLayout,
 	vk::Sampler                                    sampler,
 	const vk::Extent2D& extent,
 	const vk::ArrayProxyNoTemporaries<vk::Format>& colorFormats
 )
-	: m_device(device) {
+	: m_device(device)
+{
 	CreateAttachments(extent, colorFormats);
 	CreateAttachmentViews(colorFormats);
 
@@ -23,7 +24,8 @@ DeferredFramebuffer::DeferredFramebuffer(
 
 	m_textureSet = m_device->AllocateDescriptorSet(textureSetLayout);
 
-	for (int i = 0; i < m_colorAttachmentViews.size(); i++) {
+	for (int i = 0; i < m_colorAttachmentViews.size(); i++)
+	{
 		m_device->WriteCombinedImageSamplerToDescriptorSet(
 			sampler, //
 			m_colorAttachmentViews[i],
@@ -33,8 +35,10 @@ DeferredFramebuffer::DeferredFramebuffer(
 	}
 }
 
-void DeferredFramebuffer::CreateAttachments(const vk::Extent2D& extent, const vk::ArrayProxyNoTemporaries<vk::Format>& colorFormats) {
-	for (const vk::Format& colorFormat : colorFormats) {
+void DeferredFramebuffer::CreateAttachments(const vk::Extent2D& extent, const vk::ArrayProxyNoTemporaries<vk::Format>& colorFormats)
+{
+	for (const vk::Format& colorFormat : colorFormats)
+	{
 		VulkanImage attachment = m_device->CreateImage(
 			colorFormat,
 			extent,
@@ -53,9 +57,11 @@ void DeferredFramebuffer::CreateAttachments(const vk::Extent2D& extent, const vk
 	);
 }
 
-void DeferredFramebuffer::CreateAttachmentViews(const vk::ArrayProxyNoTemporaries<vk::Format>& colorFormats) {
+void DeferredFramebuffer::CreateAttachmentViews(const vk::ArrayProxyNoTemporaries<vk::Format>& colorFormats)
+{
 	uint32_t i = 0;
-	for (const vk::Format& colorFormat : colorFormats) {
+	for (const vk::Format& colorFormat : colorFormats)
+	{
 		const vk::ImageView colorAttachmentView = m_device->CreateImageView(
 			m_colorAttachments[i++].Get(), //
 			colorFormat,
@@ -70,12 +76,15 @@ void DeferredFramebuffer::CreateAttachmentViews(const vk::ArrayProxyNoTemporarie
 	);
 }
 
-void DeferredFramebuffer::Release() {
-	if (m_device) {
+void DeferredFramebuffer::Release()
+{
+	if (m_device)
+	{
 		m_device->FreeDescriptorSet(m_textureSet);
 		m_device->DestroyFramebuffer(m_framebuffer);
 		m_device->DestroyImageView(m_depthAttachmentView);
-		for (const vk::ImageView& imageView : m_colorAttachmentViews) {
+		for (const vk::ImageView& imageView : m_colorAttachmentViews)
+		{
 			m_device->DestroyImageView(imageView);
 		}
 	}
@@ -89,7 +98,8 @@ void DeferredFramebuffer::Release() {
 	m_textureSet = VK_NULL_HANDLE;
 }
 
-void DeferredFramebuffer::Swap(DeferredFramebuffer& other) noexcept {
+void DeferredFramebuffer::Swap(DeferredFramebuffer& other) noexcept
+{
 	std::swap(m_device, other.m_device);
 	std::swap(m_colorAttachments, other.m_colorAttachments);
 	std::swap(m_depthAttachment, other.m_depthAttachment);
@@ -104,14 +114,15 @@ void DeferredFramebuffer::Swap(DeferredFramebuffer& other) noexcept {
 #pragma region ForwardFramebuffer
 
 ForwardFramebuffer::ForwardFramebuffer(
-	VulkanBase* device,
+	VulkanRender* device,
 	vk::RenderPass          renderPass,
 	vk::DescriptorSetLayout textureSetLayout,
 	vk::Sampler             sampler,
 	const vk::Extent2D& extent,
 	vk::ImageView           depthImageView
 )
-	: m_device(device) {
+	: m_device(device)
+{
 	CreateAttachments(extent);
 	CreateAttachmentViews();
 
@@ -129,7 +140,8 @@ ForwardFramebuffer::ForwardFramebuffer(
 	);
 }
 
-void ForwardFramebuffer::CreateAttachments(const vk::Extent2D& extent) {
+void ForwardFramebuffer::CreateAttachments(const vk::Extent2D& extent)
+{
 	m_colorAttachment = m_device->CreateImage(
 		vk::Format::eR32G32B32A32Sfloat,
 		extent,
@@ -139,7 +151,8 @@ void ForwardFramebuffer::CreateAttachments(const vk::Extent2D& extent) {
 	);
 }
 
-void ForwardFramebuffer::CreateAttachmentViews() {
+void ForwardFramebuffer::CreateAttachmentViews()
+{
 	m_colorAttachmentView = m_device->CreateImageView(
 		m_colorAttachment.Get(), //
 		vk::Format::eR32G32B32A32Sfloat,
@@ -147,8 +160,10 @@ void ForwardFramebuffer::CreateAttachmentViews() {
 	);
 }
 
-void ForwardFramebuffer::Release() {
-	if (m_device) {
+void ForwardFramebuffer::Release()
+{
+	if (m_device)
+	{
 		m_device->FreeDescriptorSet(m_textureSet);
 		m_device->DestroyFramebuffer(m_framebuffer);
 		m_device->DestroyImageView(m_colorAttachmentView);
@@ -161,7 +176,8 @@ void ForwardFramebuffer::Release() {
 	m_textureSet = VK_NULL_HANDLE;
 }
 
-void ForwardFramebuffer::Swap(ForwardFramebuffer& other) noexcept {
+void ForwardFramebuffer::Swap(ForwardFramebuffer& other) noexcept
+{
 	std::swap(m_device, other.m_device);
 	std::swap(m_colorAttachment, other.m_colorAttachment);
 	std::swap(m_colorAttachmentView, other.m_colorAttachmentView);
@@ -174,7 +190,7 @@ void ForwardFramebuffer::Swap(ForwardFramebuffer& other) noexcept {
 #pragma region PostProcessingFramebuffer
 
 PostProcessingFramebuffer::PostProcessingFramebuffer(
-	VulkanBase* device,
+	VulkanRender* device,
 	vk::RenderPass          renderPass,
 	vk::DescriptorSetLayout textureSetLayout,
 	vk::Sampler             sampler,
@@ -182,7 +198,8 @@ PostProcessingFramebuffer::PostProcessingFramebuffer(
 	vk::Format              format
 )
 	: m_device(device)
-	, m_format(format) {
+	, m_format(format)
+{
 	CreateAttachments(extent);
 	CreateAttachmentViews();
 
@@ -198,7 +215,8 @@ PostProcessingFramebuffer::PostProcessingFramebuffer(
 	);
 }
 
-void PostProcessingFramebuffer::CreateAttachments(const vk::Extent2D& extent) {
+void PostProcessingFramebuffer::CreateAttachments(const vk::Extent2D& extent)
+{
 	m_colorAttachment = m_device->CreateImage(
 		m_format,
 		extent,
@@ -208,7 +226,8 @@ void PostProcessingFramebuffer::CreateAttachments(const vk::Extent2D& extent) {
 	);
 }
 
-void PostProcessingFramebuffer::CreateAttachmentViews() {
+void PostProcessingFramebuffer::CreateAttachmentViews()
+{
 	m_colorAttachmentView = m_device->CreateImageView(
 		m_colorAttachment.Get(), //
 		m_format,
@@ -216,8 +235,10 @@ void PostProcessingFramebuffer::CreateAttachmentViews() {
 	);
 }
 
-void PostProcessingFramebuffer::Release() {
-	if (m_device) {
+void PostProcessingFramebuffer::Release()
+{
+	if (m_device)
+	{
 		m_device->FreeDescriptorSet(m_textureSet);
 		m_device->DestroyFramebuffer(m_framebuffer);
 		m_device->DestroyImageView(m_colorAttachmentView);
@@ -230,7 +251,8 @@ void PostProcessingFramebuffer::Release() {
 	m_textureSet = VK_NULL_HANDLE;
 }
 
-void PostProcessingFramebuffer::Swap(PostProcessingFramebuffer& other) noexcept {
+void PostProcessingFramebuffer::Swap(PostProcessingFramebuffer& other) noexcept
+{
 	std::swap(m_device, other.m_device);
 	std::swap(m_colorAttachment, other.m_colorAttachment);
 	std::swap(m_colorAttachmentView, other.m_colorAttachmentView);
@@ -242,15 +264,17 @@ void PostProcessingFramebuffer::Swap(PostProcessingFramebuffer& other) noexcept 
 
 #pragma region DeferredContext
 
-DeferredContext::DeferredContext(VulkanBase& device)
-	: m_device(&device) {
+DeferredContext::DeferredContext(VulkanRender& device)
+	: m_device(&device)
+{
 	m_sampler = m_device->CreateSampler(vk::Filter::eNearest, vk::SamplerAddressMode::eClampToEdge);
 
 	CreateRenderPass();
 	CreateFramebuffers();
 }
 
-void DeferredContext::CreateRenderPass() {
+void DeferredContext::CreateRenderPass()
+{
 	m_deferredRenderPass = m_device->CreateRenderPass(
 		{ vk::Format::eR32G32B32A32Sfloat, //
 		vk::Format::eR32G32B32A32Sfloat,
@@ -259,7 +283,8 @@ void DeferredContext::CreateRenderPass() {
 		vk::Format::eD32Sfloat
 	);
 
-	vk::DescriptorSetLayoutBinding deferredBindings[]{
+	vk::DescriptorSetLayoutBinding deferredBindings[]
+	{
 	{0, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment},
 	{1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment},
 	{2, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment},
@@ -282,7 +307,8 @@ void DeferredContext::CreateRenderPass() {
 	m_forwardTextureSetLayout = m_device->CreateDescriptorSetLayout(forwardBindings);
 }
 
-void DeferredContext::CreateFramebuffers() {
+void DeferredContext::CreateFramebuffers()
+{
 	m_extent = m_device->GetScaledExtent();
 
 	const size_t numBuffering = m_device->GetNumBuffering();
@@ -349,7 +375,8 @@ void DeferredContext::CreateFramebuffers() {
 	}
 }
 
-void DeferredContext::CleanupFramebuffers() {
+void DeferredContext::CleanupFramebuffers()
+{
 	m_extent = vk::Extent2D{};
 	m_deferredFramebuffers.clear();
 	m_deferredRenderPassBeginInfo.clear();
@@ -357,7 +384,8 @@ void DeferredContext::CleanupFramebuffers() {
 	m_forwardRenderPassBeginInfo.clear();
 }
 
-void DeferredContext::Release() {
+void DeferredContext::Release()
+{
 	if (m_device) {
 		m_device->DestroySampler(m_sampler);
 		m_device->DestroyDescriptorSetLayout(m_deferredTextureSetLayout);
@@ -375,7 +403,8 @@ void DeferredContext::Release() {
 	CleanupFramebuffers();
 }
 
-void DeferredContext::Swap(DeferredContext& other) noexcept {
+void DeferredContext::Swap(DeferredContext& other) noexcept
+{
 	std::swap(m_device, other.m_device);
 	std::swap(m_deferredRenderPass, other.m_deferredRenderPass);
 	std::swap(m_deferredTextureSetLayout, other.m_deferredTextureSetLayout);
@@ -389,7 +418,8 @@ void DeferredContext::Swap(DeferredContext& other) noexcept {
 	std::swap(m_forwardRenderPassBeginInfo, other.m_forwardRenderPassBeginInfo);
 }
 
-void DeferredContext::CheckFramebuffersOutOfDate() {
+void DeferredContext::CheckFramebuffersOutOfDate()
+{
 	if (m_device->GetScaledExtent() == m_extent) {
 		return;
 	}
@@ -403,15 +433,17 @@ void DeferredContext::CheckFramebuffersOutOfDate() {
 
 #pragma region PostProcessingContext
 
-PostProcessingContext::PostProcessingContext(VulkanBase& device)
-	: m_device(&device) {
+PostProcessingContext::PostProcessingContext(VulkanRender& device)
+	: m_device(&device)
+{
 	m_sampler = m_device->CreateSampler(vk::Filter::eLinear, vk::SamplerAddressMode::eClampToEdge);
 
 	CreateRenderPass();
 	CreateFramebuffers();
 }
 
-void PostProcessingContext::CreateRenderPass() {
+void PostProcessingContext::CreateRenderPass()
+{
 	m_renderPass = m_device->CreateRenderPass(
 		{ vk::Format::eR8G8B8A8Unorm }, //
 		vk::Format::eUndefined
@@ -423,7 +455,8 @@ void PostProcessingContext::CreateRenderPass() {
 	m_textureSetLayout = m_device->CreateDescriptorSetLayout(bindings);
 }
 
-void PostProcessingContext::CreateFramebuffers() {
+void PostProcessingContext::CreateFramebuffers()
+{
 	m_extent = m_device->GetScaledExtent();
 
 	const size_t numBuffering = m_device->GetNumBuffering();
@@ -456,13 +489,15 @@ void PostProcessingContext::CreateFramebuffers() {
 	}
 }
 
-void PostProcessingContext::CleanupFramebuffers() {
+void PostProcessingContext::CleanupFramebuffers()
+{
 	m_extent = vk::Extent2D{};
 	m_framebuffers.clear();
 	m_renderPassBeginInfo.clear();
 }
 
-void PostProcessingContext::Release() {
+void PostProcessingContext::Release()
+{
 	if (m_device) {
 		m_device->DestroySampler(m_sampler);
 		m_device->DestroyDescriptorSetLayout(m_textureSetLayout);
@@ -501,7 +536,7 @@ void PostProcessingContext::CheckFramebuffersOutOfDate() {
 #pragma region ShadowMap
 
 ShadowMap::ShadowMap(
-	VulkanBase* device,
+	VulkanRender* device,
 	vk::RenderPass          renderPass,
 	vk::DescriptorSetLayout textureSetLayout,
 	vk::Sampler             sampler,
@@ -574,7 +609,7 @@ void ShadowMap::Swap(ShadowMap& other) noexcept {
 
 #pragma region ShadowContext
 
-ShadowContext::ShadowContext(VulkanBase& device)
+ShadowContext::ShadowContext(VulkanRender& device)
 	: m_device(&device) {
 	CreateRenderPass();
 	CreateFramebuffers();
@@ -677,7 +712,7 @@ PbrMaterialConfig::PbrMaterialConfig(const std::string& jsonFilename) {
 }
 
 
-PbrMaterialCache::PbrMaterialCache(VulkanBase& device, TextureCache& textureCache)
+PbrMaterialCache::PbrMaterialCache(VulkanRender& device, TextureCache& textureCache)
 	: m_device(device)
 	, m_textureCache(textureCache) {
 	vk::DescriptorSetLayoutBinding bindings[]{
@@ -724,7 +759,7 @@ PbrMaterial* PbrMaterialCache::LoadMaterial(const std::string& filename) {
 
 #pragma region SingleTextureMaterialCache
 
-SingleTextureMaterialCache::SingleTextureMaterialCache(VulkanBase& device, TextureCache& textureCache)
+SingleTextureMaterialCache::SingleTextureMaterialCache(VulkanRender& device, TextureCache& textureCache)
 	: m_device(device)
 	, m_textureCache(textureCache) {
 	vk::DescriptorSetLayoutBinding bindings[]{

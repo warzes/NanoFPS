@@ -2,7 +2,7 @@
 #include "Core.h"
 #include "LuaSandbox.h"
 
-static int LuaPackageSearcher(lua_State* L)
+int LuaPackageSearcher(lua_State* L) noexcept
 {
 	const std::string path = luaL_checkstring(L, 1);
 	Print("Loading Lua package: " + path);
@@ -11,7 +11,7 @@ static int LuaPackageSearcher(lua_State* L)
 	return 1;
 }
 
-static int LuaPrint(lua_State* L)
+int LuaPrint(lua_State* L) noexcept
 {
 	const char* message = luaL_checkstring(L, 1);
 	Print(message);
@@ -20,86 +20,88 @@ static int LuaPrint(lua_State* L)
 
 LuaSandbox::LuaSandbox()
 {
-	L = luaL_newstate();
-	//DebugCheckCritical(L, "Failed to create Lua sandbox.");
+	m_luaState = luaL_newstate();
+	if(!m_luaState)
+		Fatal("Failed to create Lua sandbox.");
 	Print(LUA_RELEASE);
 
-	luaL_openlibs(L);
+	luaL_openlibs(m_luaState);
 
-	SetupPackageSearcher();
+	setupPackageSearcher();
 
 	SetGlobalFunction("print", LuaPrint);
 }
 
 LuaSandbox::~LuaSandbox()
 {
-	lua_close(L);
+	lua_close(m_luaState);
 }
 
-void LuaSandbox::SetupPackageSearcher()
+void LuaSandbox::setupPackageSearcher()
 {
 	//
-	lua_getglobal(L, "package");
+	lua_getglobal(m_luaState, "package");
 	// -1: package
-	lua_getfield(L, -1, "searchers");
+	lua_getfield(m_luaState, -1, "searchers");
 	// -2: package, -1: packager.searchers
 
-	if (lua_type(L, -1) != LUA_TTABLE) {
+	if (lua_type(m_luaState, -1) != LUA_TTABLE)
+	{
 		// -2: package, -1: packager.searchers (not table)
-		lua_pop(L, 1);
+		lua_pop(m_luaState, 1);
 		// -1: package
-		lua_createtable(L, 1, 0);
+		lua_createtable(m_luaState, 1, 0);
 		// -2: package, -1: {}
-		lua_pushvalue(L, -1);
+		lua_pushvalue(m_luaState, -1);
 		// -3: package, -2: {}, -1: {}
-		lua_setfield(L, -3, "searchers");
+		lua_setfield(m_luaState, -3, "searchers");
 		// -2: package, -1: package.searchers
 	}
 
-	lua_Integer n = luaL_len(L, -1);
-	lua_pushcfunction(L, LuaPackageSearcher);
+	lua_Integer n = luaL_len(m_luaState, -1);
+	lua_pushcfunction(m_luaState, LuaPackageSearcher);
 	// -3: package, -2: package.searchers, -1: LuaPackageSearcher
-	lua_seti(L, -2, n + 1);
+	lua_seti(m_luaState, -2, n + 1);
 	// -2: package, -1: packager.searchers
 
-	lua_pop(L, 2);
+	lua_pop(m_luaState, 2);
 	//
 }
 
 int LuaSandbox::CreateReference()
 {
-	return luaL_ref(L, LUA_REGISTRYINDEX);
+	return luaL_ref(m_luaState, LUA_REGISTRYINDEX);
 }
 
 void LuaSandbox::PushReference(int reference)
 {
-	lua_rawgeti(L, LUA_REGISTRYINDEX, reference);
+	lua_rawgeti(m_luaState, LUA_REGISTRYINDEX, reference);
 }
 
 void LuaSandbox::FreeReference(int reference)
 {
-	luaL_unref(L, LUA_REGISTRYINDEX, reference);
+	luaL_unref(m_luaState, LUA_REGISTRYINDEX, reference);
 }
 
 int LuaSandbox::GetGlobalVariableReference(const std::string& name)
 {
-	lua_getglobal(L, name.c_str());
+	lua_getglobal(m_luaState, name.c_str());
 	return CreateReference();
 }
 
 void LuaSandbox::SetGlobalFunction(const std::string& name, lua_CFunction function)
 {
-	lua_register(L, name.c_str(), function);
+	lua_register(m_luaState, name.c_str(), function);
 }
 
 void LuaSandbox::CallGlobalFunction(const std::string& name)
 {
-	const int type = lua_getglobal(L, name.c_str());
+	const int type = lua_getglobal(m_luaState, name.c_str());
 
 	if (type != LUA_TFUNCTION)
 	{
 		Error(name + " is not a Lua function.");
-		lua_pop(L, 1);
+		lua_pop(m_luaState, 1);
 		return;
 	}
 
@@ -108,16 +110,16 @@ void LuaSandbox::CallGlobalFunction(const std::string& name)
 
 void LuaSandbox::CallGlobalFunction(const std::string& name, const std::string& arg)
 {
-	const int type = lua_getglobal(L, name.c_str());
+	const int type = lua_getglobal(m_luaState, name.c_str());
 
 	if (type != LUA_TFUNCTION)
 	{
 		Error(name + " is not a Lua function.");
-		lua_pop(L, 1);
+		lua_pop(m_luaState, 1);
 		return;
 	}
 
-	lua_pushstring(L, arg.c_str());
+	lua_pushstring(m_luaState, arg.c_str());
 
 	PCall(1, 0);
 }
@@ -126,10 +128,10 @@ void LuaSandbox::DoSource(const std::string& source, const std::string& name)
 {
 	Print("Executing Lua script " + name);
 
-	if (luaL_loadbuffer(L, source.data(), source.size(), name.c_str()) != LUA_OK)
+	if (luaL_loadbuffer(m_luaState, source.data(), source.size(), name.c_str()) != LUA_OK)
 	{
-		Error("Failed to load Lua script: " + std::string(lua_tostring(L, -1)));
-		lua_pop(L, 1);
+		Error("Failed to load Lua script: " + std::string(lua_tostring(m_luaState, -1)));
+		lua_pop(m_luaState, 1);
 		return;
 	}
 
@@ -144,10 +146,10 @@ void LuaSandbox::DoFile(const std::string& filename)
 
 void LuaSandbox::PCall(int nArgs, int nResults)
 {
-	if (lua_pcall(L, nArgs, nResults, 0) != LUA_OK)
+	if (lua_pcall(m_luaState, nArgs, nResults, 0) != LUA_OK)
 	{
-		Error("Failed to execute Lua script: " + std::string(lua_tostring(L, -1)));
-		lua_pop(L, 1);
+		Error("Failed to execute Lua script: " + std::string(lua_tostring(m_luaState, -1)));
+		lua_pop(m_luaState, 1);
 		return;
 	}
 }

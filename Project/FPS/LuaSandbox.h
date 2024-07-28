@@ -1,17 +1,14 @@
 #pragma once
 
-class LuaSandbox {
+class LuaSandbox
+{
 public:
 	LuaSandbox();
-
+	LuaSandbox(const LuaSandbox&) = delete;
+	LuaSandbox(LuaSandbox&&) = delete;
 	~LuaSandbox();
 
-	LuaSandbox(const LuaSandbox&) = delete;
-
 	LuaSandbox& operator=(const LuaSandbox&) = delete;
-
-	LuaSandbox(LuaSandbox&&) = delete;
-
 	LuaSandbox& operator=(LuaSandbox&&) = delete;
 
 	int CreateReference();
@@ -35,7 +32,7 @@ public:
 	void PCall(int nArgs, int nResults);
 
 private:
-	void SetupPackageSearcher();
+	void setupPackageSearcher();
 
-	lua_State* L = nullptr;
+	lua_State* m_luaState = nullptr;
 };
