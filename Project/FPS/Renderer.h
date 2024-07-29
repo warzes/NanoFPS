@@ -539,7 +539,7 @@ public:
 		return { swapchainExtent.width, swapchainExtent.height };
 	}
 
-	void WaitDeviceIdle() { m_device.WaitIdle(); }
+	void WaitDeviceIdle() { m_device.GetInstance().WaitIdle(); }
 
 	VulkanMesh CreateMesh(const std::vector<VertexBase>& vertices) { return { m_device, vertices.size(), sizeof(VertexBase), vertices.data() }; }
 

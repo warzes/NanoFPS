@@ -424,7 +424,7 @@ void DeferredContext::CheckFramebuffersOutOfDate()
 		return;
 	}
 
-	m_device->WaitIdle();
+	m_device->GetInstance().WaitIdle();
 	CleanupFramebuffers();
 	CreateFramebuffers();
 }
@@ -526,7 +526,7 @@ void PostProcessingContext::CheckFramebuffersOutOfDate() {
 		return;
 	}
 
-	m_device->WaitIdle();
+	m_device->GetInstance().WaitIdle();
 	CleanupFramebuffers();
 	CreateFramebuffers();
 }
@@ -1181,7 +1181,7 @@ void PbrRenderer::CreateScreenPrimitiveMeshes() {
 }
 
 PbrRenderer::~PbrRenderer() {
-	m_device.WaitIdle();
+	m_device.GetInstance().WaitIdle();
 
 	m_screenRectMesh = {};
 	m_screenLineMesh = {};

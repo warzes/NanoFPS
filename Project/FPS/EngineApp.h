@@ -3,7 +3,7 @@
 struct EngineCreateInfo final
 {
 	WindowCreateInfo window;
-	RenderContextCreateInfo2 renderContext;
+	RenderContextCreateInfo renderContext;
 };
 
 namespace EngineApp
