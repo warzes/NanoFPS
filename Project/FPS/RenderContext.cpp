@@ -4,7 +4,7 @@
 #include "RenderContext.h"
 #include "EngineWindow.h"
 
-bool RenderContext::Create(const RenderContextCreateInfo& createInfo)
+bool RenderContext::Create(const RenderContextCreateInfo2& createInfo)
 {
 	return true;
 }

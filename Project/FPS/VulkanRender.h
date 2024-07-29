@@ -2,6 +2,62 @@
 
 #include "RenderResources.h"
 
+#pragma region VulkanInstance
+
+struct RenderContextCreateInfo
+{
+	struct
+	{
+		std::string_view appName{ "FPS Game" };
+		std::string_view engineName{ "Nano VK Engine" };
+		uint32_t appVersion{ VK_MAKE_VERSION(0, 0, 1) };
+		uint32_t engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
+		uint32_t requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
+		bool useValidationLayers{ false };
+	} vulkan;
+};
+
+class VulkanInstance final
+{
+public:
+	bool Create(const RenderContextCreateInfo& createInfo);
+	void Destroy();
+
+	void WaitIdle();
+
+	VkInstance Instance{ nullptr };
+	VkDebugUtilsMessengerEXT DebugMessenger{ nullptr };
+
+	VkSurfaceKHR Surface{ nullptr };
+
+	VkPhysicalDevice PhysicalDevice{ nullptr };
+	VkPhysicalDeviceProperties PhysicalDeviceProperties{};
+
+	VkDevice Device{ nullptr };
+
+	VkQueue GraphicsQueue{ nullptr };
+	uint32_t GraphicsQueueFamily{ 0 };
+	VkQueue PresentQueue{ nullptr };
+	uint32_t PresentQueueFamily{ 0 };
+	VkQueue ComputeQueue{ nullptr };
+	uint32_t ComputeQueueFamily{ 0 };
+
+	VmaAllocator Allocator{ nullptr };
+
+	// TODO: временно
+	vk::Queue m_graphicsQueue;
+	vk::PhysicalDevice m_physicalDevice;
+	vk::Device m_device;
+	vk::SurfaceKHR m_surface;
+private:
+	bool getQueues(vkb::Device& vkbDevice);
+	bool createAllocator(uint32_t vulkanApiVersion);
+	void temp();
+};
+
+#pragma endregion
+
+
 #pragma region VulkanRender
 
 struct VulkanRenderPassOptions final
@@ -51,7 +107,7 @@ public:
 
 	VulkanBuffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
 	{
-		return { m_allocator, size, bufferUsage, flags, memoryUsage };
+		return { Instance.Allocator, size, bufferUsage, flags, memoryUsage };
 	}
 
 	VulkanImage CreateImage(
@@ -63,7 +119,7 @@ public:
 		uint32_t                 layers = 1
 	)
 	{
-		return { m_allocator, format, extent, imageUsage, flags, memoryUsage, layers };
+		return { Instance.Allocator, format, extent, imageUsage, flags, memoryUsage, layers };
 	}
 
 	vk::ImageView CreateImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t layers = 1);
@@ -152,20 +208,14 @@ public:
 	}
 
 private:
-	void CreateInstance();
-	void CreateDebugMessenger();
-	void PickPhysicalDevice();
-	void CreateDevice();
 	void SubmitToGraphicsQueue(const vk::SubmitInfo& submitInfo, vk::Fence fence);
 	void CreateCommandPool();
 	void CreateDescriptorPool();
 	void WriteDescriptorSet(const vk::WriteDescriptorSet& writeDescriptorSet);
-	void CreateAllocator();
 	vk::Fence CreateFence(vk::FenceCreateFlags flags = {});
 	void WaitAndResetFence(vk::Fence fence, uint64_t timeout = 100'000'000);
 	vk::Semaphore CreateSemaphore();
 	vk::CommandBuffer AllocateCommandBuffer();
-	vk::SurfaceKHR CreateSurface(GLFWwindow* window);
 	vk::SwapchainKHR CreateSwapchain(
 		vk::SurfaceKHR                  surface,
 		uint32_t                        imageCount,
@@ -177,19 +227,9 @@ private:
 		vk::SwapchainKHR                oldSwapchain
 	);
 
-	vk::Instance               m_instance;
-	vk::DebugUtilsMessengerEXT m_debugMessenger;
-
-	vk::PhysicalDevice m_physicalDevice;
-	uint32_t           m_graphicsQueueFamily = 0;
-	vk::Device         m_device;
-	vk::Queue          m_graphicsQueue;
-
+	VulkanInstance Instance;
 	vk::CommandPool m_commandPool;
-
 	vk::DescriptorPool m_descriptorPool;
-
-	VmaAllocator m_allocator = VK_NULL_HANDLE;
 
 private:
 	void CreateImmediateContext();
@@ -217,7 +257,6 @@ private:
 
 	std::array<BufferingObjects, 3> m_bufferingObjects;
 
-	vk::SurfaceKHR             m_surface;
 	vk::Extent2D               m_swapchainExtent;
 	vk::SwapchainKHR           m_swapchain;
 	std::vector<vk::ImageView> m_swapchainImageViews;

@@ -6,13 +6,13 @@
 
 namespace
 {
-	VulkanInstance Instance;
+	VulkanInstance2 Instance;
 	VulkanSwapChain SwapChain;
 }
 
 #pragma region VulkanInstance
 
-bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
+bool VulkanInstance2::Create(const RenderContextCreateInfo2& createInfo)
 {
 	bool useValidationLayers = createInfo.vulkan.useValidationLayers;
 #if defined(_DEBUG)
@@ -128,7 +128,7 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	return true;
 }
 
-void VulkanInstance::Destroy()
+void VulkanInstance2::Destroy()
 {
 	if (Allocator)
 	{
@@ -172,7 +172,7 @@ void VulkanInstance::Destroy()
 	volkFinalize();
 }
 
-void VulkanInstance::WaitIdle()
+void VulkanInstance2::WaitIdle()
 {
 	if (Device)
 	{
@@ -183,12 +183,12 @@ void VulkanInstance::WaitIdle()
 	}
 }
 
-size_t VulkanInstance::GetNumBuffering()
+size_t VulkanInstance2::GetNumBuffering()
 {
 	return BufferingObjects.size();
 }
 
-bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
+bool VulkanInstance2::getQueues(vkb::Device& vkbDevice)
 {
 	auto graphicsQueueRet = vkbDevice.get_queue(vkb::QueueType::graphics);
 	if (!graphicsQueueRet)
@@ -241,7 +241,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 	return true;
 }
 
-bool VulkanInstance::createCommandPool()
+bool VulkanInstance2::createCommandPool()
 {
 	VkCommandPoolCreateInfo poolInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -255,7 +255,7 @@ bool VulkanInstance::createCommandPool()
 	return true;
 }
 
-bool VulkanInstance::createDescriptorPool()
+bool VulkanInstance2::createDescriptorPool()
 {
 	const std::vector<VkDescriptorPoolSize> poolSizes{
 		{VK_DESCRIPTOR_TYPE_SAMPLER,                1024},
@@ -286,7 +286,7 @@ bool VulkanInstance::createDescriptorPool()
 	return true;
 }
 
-bool VulkanInstance::createAllocator(uint32_t vulkanApiVersion)
+bool VulkanInstance2::createAllocator(uint32_t vulkanApiVersion)
 {
 	// initialize the memory allocator
 	VmaVulkanFunctions vmaVulkanFunc{};
@@ -326,7 +326,7 @@ bool VulkanInstance::createAllocator(uint32_t vulkanApiVersion)
 	return true;
 }
 
-bool VulkanInstance::createImmediateContext()
+bool VulkanInstance2::createImmediateContext()
 {
 	auto fence = createFence();
 	if (!fence)
@@ -347,7 +347,7 @@ bool VulkanInstance::createImmediateContext()
 	return true;
 }
 
-std::optional<VkFence> VulkanInstance::createFence(VkFenceCreateFlags flags)
+std::optional<VkFence> VulkanInstance2::createFence(VkFenceCreateFlags flags)
 {
 	VkFenceCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 	createInfo.flags = flags;
@@ -361,7 +361,7 @@ std::optional<VkFence> VulkanInstance::createFence(VkFenceCreateFlags flags)
 	return fence;
 }
 
-std::optional<VkCommandBuffer> VulkanInstance::allocateCommandBuffer()
+std::optional<VkCommandBuffer> VulkanInstance2::allocateCommandBuffer()
 {
 	VkCommandBufferAllocateInfo allocateInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
 	allocateInfo.commandPool = CommandPool;
@@ -377,7 +377,7 @@ std::optional<VkCommandBuffer> VulkanInstance::allocateCommandBuffer()
 	return commandBuffer;
 }
 
-bool VulkanInstance::createBufferingObjects()
+bool VulkanInstance2::createBufferingObjects()
 {
 	for (sBufferingObjects& bufferingObject : BufferingObjects)
 	{
@@ -415,7 +415,7 @@ bool VulkanInstance::createBufferingObjects()
 	return true;
 }
 
-std::optional<VkSemaphore> VulkanInstance::createSemaphore()
+std::optional<VkSemaphore> VulkanInstance2::createSemaphore()
 {
 	VkSemaphoreCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
@@ -675,7 +675,7 @@ void VulkanSwapChain::submitToGraphicsQueue(const VkSubmitInfo& submitInfo, VkFe
 
 #pragma endregion
 
-bool RenderContext::Create(const RenderContextCreateInfo& createInfo)
+bool RenderContext::Create(const RenderContextCreateInfo2& createInfo)
 {
 	if (!Instance.Create(createInfo)) return false;
 	if (!SwapChain.Create()) return false;
@@ -701,7 +701,7 @@ void RenderContext::EndFrame()
 	//SwapChain.EndFrame();
 }
 
-VulkanInstance& RenderContext::GetInstance()
+VulkanInstance2& RenderContext::GetInstance()
 {
 	return Instance;
 }

@@ -654,7 +654,10 @@ void ShadowContext::CreateFramebuffers() {
 		renderArea,
 		clearValues
 	);
-	for (int i = 0; i < numBuffering; i++) {
+
+
+	for (int i = 0; i < numBuffering; i++)
+	{
 		const ShadowMap& framebuffer = m_framebuffers.emplace_back(
 			m_device, //
 			m_renderPass,

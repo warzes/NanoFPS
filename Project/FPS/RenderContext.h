@@ -1,6 +1,6 @@
 #pragma once
 
-struct RenderContextCreateInfo
+struct RenderContextCreateInfo2
 {
 	struct
 	{
@@ -15,7 +15,7 @@ struct RenderContextCreateInfo
 
 namespace RenderContext
 {
-	bool Create(const RenderContextCreateInfo& createInfo);
+	bool Create(const RenderContextCreateInfo2& createInfo);
 	void Destroy();
 	void BeginFrame();
 	void EndFrame();

@@ -1,6 +1,6 @@
 #pragma once
 
-struct RenderContextCreateInfo
+struct RenderContextCreateInfo2
 {
 	struct
 	{
@@ -30,10 +30,10 @@ struct VulkanFrameInfo
 	VkCommandBuffer CommandBuffer{ nullptr };
 };
 
-class VulkanInstance final
+class VulkanInstance2 final
 {
 public:
-	bool Create(const RenderContextCreateInfo& createInfo);
+	bool Create(const RenderContextCreateInfo2& createInfo);
 	void Destroy();
 
 	void WaitIdle();
@@ -117,12 +117,12 @@ private:
 
 namespace RenderContext
 {
-	bool Create(const RenderContextCreateInfo& createInfo);
+	bool Create(const RenderContextCreateInfo2& createInfo);
 	void Destroy();
 	void BeginFrame();
 	void EndFrame();
 
-	[[nodiscard]] VulkanInstance& GetInstance();
+	[[nodiscard]] VulkanInstance2& GetInstance();
 	[[nodiscard]] VulkanSwapChain& GetSwapChain();
 
 
