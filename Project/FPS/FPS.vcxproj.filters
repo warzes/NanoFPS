@@ -56,7 +56,7 @@
     <ClCompile Include="LuaSandbox.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
-    <ClCompile Include="Scene.cpp">
+    <ClCompile Include="GameScene.cpp">
       <Filter>Game\core</Filter>
     </ClCompile>
     <ClCompile Include="MapData.cpp">
@@ -168,7 +168,7 @@
     <ClInclude Include="LuaSandbox.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
-    <ClInclude Include="Scene.h">
+    <ClInclude Include="GameScene.h">
       <Filter>Game\core</Filter>
     </ClInclude>
     <ClInclude Include="MapData.h">

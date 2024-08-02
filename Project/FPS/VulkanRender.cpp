@@ -12,49 +12,9 @@ void VulkanRender::SubmitToGraphicsQueue(const vk::SubmitInfo& submitInfo, vk::F
 		Fatal("Failed to submit Vulkan command buffer.");
 }
 
-void VulkanRender::CreateCommandPool()
-{
-	const vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, Instance.GraphicsQueueFamily);
-	const auto [result, commandPool] = Instance.m_device.createCommandPool(createInfo);
-	if (result != vk::Result::eSuccess)
-		Fatal("Failed to create Vulkan command pool.");
-	m_commandPool = commandPool;
-}
-
-void VulkanRender::CreateDescriptorPool()
-{
-	const std::vector<vk::DescriptorPoolSize> poolSizes{
-	{vk::DescriptorType::eSampler,              1024},
-	{vk::DescriptorType::eCombinedImageSampler, 1024},
-	{vk::DescriptorType::eSampledImage,         1024},
-	{vk::DescriptorType::eStorageImage,         1024},
-	{vk::DescriptorType::eUniformTexelBuffer,   1024},
-	{vk::DescriptorType::eStorageTexelBuffer,   1024},
-	{vk::DescriptorType::eUniformBuffer,        1024},
-	{vk::DescriptorType::eStorageBuffer,        1024},
-	{vk::DescriptorType::eUniformBufferDynamic, 1024},
-	{vk::DescriptorType::eStorageBufferDynamic, 1024},
-	{vk::DescriptorType::eInputAttachment,      1024}
-	};
-	const vk::DescriptorPoolCreateInfo createInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1024, poolSizes);
-	const auto [result, descriptorPool] = Instance.m_device.createDescriptorPool(createInfo);
-	if (result != vk::Result::eSuccess)
-		Fatal("Failed to create Vulkan descriptor pool.");
-	m_descriptorPool = descriptorPool;
-}
-
 void VulkanRender::WriteDescriptorSet(const vk::WriteDescriptorSet& writeDescriptorSet)
 {
 	Instance.m_device.updateDescriptorSets(writeDescriptorSet, {});
-}
-
-vk::Fence VulkanRender::CreateFence(vk::FenceCreateFlags flags)
-{
-	const vk::FenceCreateInfo createInfo(flags);
-	const auto [result, fence] = Instance.m_device.createFence(createInfo);
-	if (result != vk::Result::eSuccess)
-		Fatal("Failed to create Vulkan fence.");
-	return fence;
 }
 
 void VulkanRender::WaitAndResetFence(vk::Fence fence, uint64_t timeout)
@@ -71,15 +31,6 @@ vk::Semaphore VulkanRender::CreateSemaphore()
 	if (result != vk::Result::eSuccess)
 		Fatal("Failed to create Vulkan semaphore.");
 	return semaphore;
-}
-
-vk::CommandBuffer VulkanRender::AllocateCommandBuffer()
-{
-	const vk::CommandBufferAllocateInfo allocateInfo(m_commandPool, vk::CommandBufferLevel::ePrimary, 1);
-	vk::CommandBuffer                   commandBuffer;
-	if(Instance.m_device.allocateCommandBuffers(&allocateInfo, &commandBuffer) != vk::Result::eSuccess)
-		Fatal("Failed to allocate Vulkan command buffer.");
-	return commandBuffer;
 }
 
 vk::SwapchainKHR VulkanRender::CreateSwapchain(
@@ -260,7 +211,7 @@ void VulkanRender::DestroyDescriptorSetLayout(vk::DescriptorSetLayout descriptor
 
 vk::DescriptorSet VulkanRender::AllocateDescriptorSet(vk::DescriptorSetLayout descriptorSetLayout)
 {
-	const vk::DescriptorSetAllocateInfo allocateInfo(m_descriptorPool, descriptorSetLayout);
+	const vk::DescriptorSetAllocateInfo allocateInfo(Instance.m_descriptorPool, descriptorSetLayout);
 	vk::DescriptorSet                   descriptorSet;
 	if(Instance.m_device.allocateDescriptorSets(&allocateInfo, &descriptorSet) != vk::Result::eSuccess)
 		Fatal("Failed to allocate Vulkan descriptor set.");
@@ -269,7 +220,7 @@ vk::DescriptorSet VulkanRender::AllocateDescriptorSet(vk::DescriptorSetLayout de
 
 void VulkanRender::FreeDescriptorSet(vk::DescriptorSet descriptorSet)
 {
-	Instance.m_device.freeDescriptorSets(m_descriptorPool, descriptorSet);
+	Instance.m_device.freeDescriptorSets(Instance.m_descriptorPool, descriptorSet);
 }
 
 void VulkanRender::WriteCombinedImageSamplerToDescriptorSet(
@@ -425,20 +376,10 @@ VulkanRender::VulkanRender(GLFWwindow* window)
 	{
 
 	}
-	CreateCommandPool();
-	CreateDescriptorPool();
-
-	CreateImmediateContext();
 	CreateBufferingObjects();
 	CreateSurfaceSwapchainAndImageViews();
 	CreatePrimaryRenderPass();
 	CreatePrimaryFramebuffers();
-}
-
-void VulkanRender::CreateImmediateContext()
-{
-	m_immediateFence = CreateFence();
-	m_immediateCommandBuffer = AllocateCommandBuffer();
 }
 
 void VulkanRender::CreateBufferingObjects()
@@ -569,18 +510,13 @@ VulkanRender::~VulkanRender()
 		Instance.m_device.destroy(bufferingObject.RenderFence);
 		Instance.m_device.destroy(bufferingObject.PresentSemaphore);
 		Instance.m_device.destroy(bufferingObject.RenderSemaphore);
-		Instance.m_device.free(m_commandPool, bufferingObject.CommandBuffer);
+		Instance.m_device.free(Instance.m_commandPool, bufferingObject.CommandBuffer);
 	}
 
 	CleanupPrimaryFramebuffers();
 	DestroyRenderPass(m_primaryRenderPass);
 	CleanupSurfaceSwapchainAndImageViews();
 
-	Instance.m_device.free(m_commandPool, m_immediateCommandBuffer);
-	Instance.m_device.destroy(m_immediateFence);
-
-	Instance.m_device.destroy(m_descriptorPool);
-	Instance.m_device.destroy(m_commandPool);
 	Instance.Destroy();
 }
 
@@ -645,6 +581,24 @@ void VulkanRender::EndFrame()
 	}
 
 	m_currentBufferingIndex = (m_currentBufferingIndex + 1) % m_bufferingObjects.size();
+}
+
+vk::CommandBuffer VulkanRender::AllocateCommandBuffer()
+{
+	const vk::CommandBufferAllocateInfo allocateInfo(Instance.m_commandPool, vk::CommandBufferLevel::ePrimary, 1);
+	vk::CommandBuffer                   commandBuffer;
+	if (Instance.m_device.allocateCommandBuffers(&allocateInfo, &commandBuffer) != vk::Result::eSuccess)
+		Fatal("Failed to allocate Vulkan command buffer.");
+	return commandBuffer;
+}
+
+vk::Fence VulkanRender::CreateFence(vk::FenceCreateFlags flags)
+{
+	const vk::FenceCreateInfo createInfo(flags);
+	const auto [result, fence] = Instance.m_device.createFence(createInfo);
+	if (result != vk::Result::eSuccess)
+		Fatal("Failed to create Vulkan fence.");
+	return fence;
 }
 
 #pragma endregion

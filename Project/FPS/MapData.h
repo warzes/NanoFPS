@@ -72,16 +72,6 @@ private:
 
 #pragma region Brushes
 
-class PbrMaterial;
-
-namespace physx {
-	class PxConvexMesh;
-
-	class PxShape;
-
-	class PxRigidActor;
-} // namespace physx
-
 enum class BrushType {
 	Normal,      // mesh + collision
 	NoCollision, // mesh

@@ -119,8 +119,10 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	Print("GPU Used: " + std::string(PhysicalDeviceProperties.deviceName));
 
 	if (!getQueues(vkbDevice)) return false;
-
+	if (!createCommandPool()) return false;
+	if (!createDescriptorPool()) return false;
 	if (!createAllocator(createInfo.vulkan.requireVersion)) return false;
+	if (!createImmediateContext()) return false;
 
 	temp();
 
@@ -140,6 +142,10 @@ void VulkanInstance::Destroy()
 
 	if (Device)
 	{
+		if (ImmediateFence) vkDestroyFence(Device, ImmediateFence, nullptr);
+		if (ImmediateCommandBuffer) vkFreeCommandBuffers(Device, CommandPool, 1, &ImmediateCommandBuffer);
+		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
+		if (DescriptorPool) vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
 		vkDestroyDevice(Device, nullptr);
 	}
 
@@ -149,6 +155,10 @@ void VulkanInstance::Destroy()
 		if (DebugMessenger) vkb::destroy_debug_utils_messenger(Instance, DebugMessenger);
 		vkDestroyInstance(Instance, nullptr);
 	}
+	ImmediateFence = nullptr;
+	ImmediateCommandBuffer = nullptr;
+	CommandPool = nullptr;
+	DescriptorPool = nullptr;
 	Device = nullptr;
 	Allocator = nullptr;
 	Surface = nullptr;
@@ -221,6 +231,51 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 	return true;
 }
 
+bool VulkanInstance::createCommandPool()
+{
+	VkCommandPoolCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	createInfo.queueFamilyIndex = GraphicsQueueFamily;
+
+	if (vkCreateCommandPool(Device, &createInfo, nullptr, &CommandPool) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan command pool.");
+		return false;
+	}
+
+	return true;
+}
+
+bool VulkanInstance::createDescriptorPool()
+{
+	const std::vector<VkDescriptorPoolSize> poolSizes{
+		{VK_DESCRIPTOR_TYPE_SAMPLER,                1024},
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024},
+		{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1024},
+		{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1024},
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1024},
+		{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1024}
+	};
+
+	VkDescriptorPoolCreateInfo createInfo{ .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	createInfo.maxSets = 1024;
+	createInfo.poolSizeCount = poolSizes.size();
+	createInfo.pPoolSizes = poolSizes.data();
+
+	if (vkCreateDescriptorPool(Device, &createInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan descriptor pool.");
+		return false;
+	}
+
+	return true;
+}
 
 bool VulkanInstance::createAllocator(uint32_t vulkanApiVersion)
 {
@@ -263,6 +318,56 @@ bool VulkanInstance::createAllocator(uint32_t vulkanApiVersion)
 	return true;
 }
 
+bool VulkanInstance::createImmediateContext()
+{
+	auto fence = createFence();
+	if (!fence)
+	{
+		Fatal("Failed to create Vulkan Immediate Fence.");
+		return false;
+	}
+	ImmediateFence = fence.value();
+
+	auto commandBuffer = allocateCommandBuffer();
+	if (!commandBuffer)
+	{
+		Fatal("Failed to create Vulkan Immediate Command Buffer.");
+		return false;
+	}
+	ImmediateCommandBuffer = commandBuffer.value();
+
+	return true;
+}
+
+std::optional<VkFence> VulkanInstance::createFence(VkFenceCreateFlags flags)
+{
+	VkFenceCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+	createInfo.flags = flags;
+
+	VkFence fence;
+	if (vkCreateFence(Device, &createInfo, nullptr, &fence) != VK_SUCCESS)
+	{
+		Fatal("Failed to create Vulkan fence.");
+		return std::nullopt;
+	}
+	return fence;
+}
+
+std::optional<VkCommandBuffer> VulkanInstance::allocateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+	allocateInfo.commandPool = CommandPool;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	if (vkAllocateCommandBuffers(Device, &allocateInfo, &commandBuffer) != VK_SUCCESS)
+	{
+		Fatal("Failed to allocate Vulkan command buffer.");
+		return std::nullopt;
+	}
+	return commandBuffer; 
+}
 
 void VulkanInstance::temp()
 {
@@ -270,6 +375,10 @@ void VulkanInstance::temp()
 	m_physicalDevice = PhysicalDevice;
 	m_device = Device;
 	m_surface = Surface;
+	m_commandPool = CommandPool;
+	m_descriptorPool = DescriptorPool;
+	m_immediateFence = ImmediateFence;
+	m_immediateCommandBuffer = ImmediateCommandBuffer;
 }
 
 #pragma endregion

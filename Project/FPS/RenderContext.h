@@ -13,6 +13,13 @@ struct RenderContextCreateInfo
 	} vulkan;
 };
 
+struct sBufferingObjects
+{
+	VkFence RenderFence{ nullptr };
+	VkSemaphore PresentSemaphore{ nullptr };
+	VkSemaphore RenderSemaphore{ nullptr };
+	VkCommandBuffer CommandBuffer{ nullptr };
+};
 
 #pragma region VulkanInstance
 
@@ -43,14 +50,29 @@ public:
 
 	VmaAllocator Allocator{ nullptr };
 
+	VkCommandPool CommandPool{ nullptr };
+	VkDescriptorPool DescriptorPool{ nullptr };
+
+	VkFence ImmediateFence{ nullptr };
+	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
+
 	// TODO: временно
 	vk::Queue m_graphicsQueue;
 	vk::PhysicalDevice m_physicalDevice;
 	vk::Device m_device;
 	vk::SurfaceKHR m_surface;
+	vk::CommandPool m_commandPool;
+	vk::DescriptorPool m_descriptorPool;
+	vk::Fence         m_immediateFence;
+	vk::CommandBuffer m_immediateCommandBuffer;
 private:
 	bool getQueues(vkb::Device& vkbDevice);
+	bool createCommandPool();
+	bool createDescriptorPool();
 	bool createAllocator(uint32_t vulkanApiVersion);
+	bool createImmediateContext();
+	std::optional<VkFence> createFence(VkFenceCreateFlags flags = {});
+	std::optional<VkCommandBuffer> allocateCommandBuffer();
 	void temp();
 };
 

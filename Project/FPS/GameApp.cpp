@@ -1,6 +1,6 @@
 #include "GameApp.h"
 #include "PhysicsSimulationEventCallback.h"
-#include "Scene.h"
+#include "GameScene.h"
 #include "MapData.h"
 #include "GameHUD.h"
 #include "GameLua.h"
@@ -56,12 +56,15 @@ void CleanupMap()
 
 bool GameApp::Create()
 {
-	ScheduleMapLoad("maps/puzzle/level0.haru");
-
 	renderer = std::make_unique<PbrRenderer>(Window::GetWindow());
 	mouse = std::make_unique<TempMouse>();
 	physicsSystem = std::make_unique<PhysicsSystem>();
 	physicsCallback = std::make_unique<PhysicsSimulationEventCallback>();
+
+	//mouse->SetEnabled(false);
+	//mouse->Recalibrate();
+
+	ScheduleMapLoad("maps/puzzle/level0.mp");
 
 	return true;
 }
@@ -76,10 +79,15 @@ void GameApp::Destroy()
 
 void GameApp::Update()
 {
-}
+	float deltatime = EngineApp::GetDeltaTime();
 
-void Update(float deltaTime)
-{
+	if (!nextMap.empty())
+	{
+		CleanupMap();
+		LoadMap(nextMap);
+		currentMap = std::move(nextMap);
+	}
+
 	mouse->Update();
 	//m_audio->Update();
 
@@ -98,16 +106,16 @@ void Update(float deltaTime)
 	slowMotion = glfwGetKey(Window::GetWindow(), GLFW_KEY_TAB);
 	showTriggers = glfwGetKey(Window::GetWindow(), GLFW_KEY_CAPS_LOCK);
 
-	lua->Update(deltaTime);
+	lua->Update(deltatime);
 
 	const float timeScale = slowMotion ? 0.2f : 1.0f;
-	if (physicsScene->Update(deltaTime, timeScale))
+	if (physicsScene->Update(deltatime, timeScale))
 	{
 		scene->FixedUpdate(physicsScene->GetFixedTimestep() * timeScale);
 	}
-	scene->Update(deltaTime * timeScale);
+	scene->Update(deltatime * timeScale);
 
-	hud->Update(deltaTime);
+	hud->Update(deltatime);
 }
 
 void Draw() 
@@ -120,13 +128,5 @@ void Draw()
 
 void GameApp::Frame()
 {
-	if (!nextMap.empty())
-	{
-		CleanupMap();
-		LoadMap(nextMap);
-		currentMap = std::move(nextMap);
-	}
-
-	::Update(EngineApp::GetDeltaTime());
 	Draw();
 }

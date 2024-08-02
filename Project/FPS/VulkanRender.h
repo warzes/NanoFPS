@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "RenderResources.h"
 #include "RenderContext.h"
@@ -140,27 +140,23 @@ public:
 
 	template<class Func>
 	void ImmediateSubmit(Func&& func) {
-		m_immediateCommandBuffer.reset();
-		BeginCommandBuffer(m_immediateCommandBuffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		func(m_immediateCommandBuffer);
-		EndCommandBuffer(m_immediateCommandBuffer);
+		Instance.m_immediateCommandBuffer.reset();
+		BeginCommandBuffer(Instance.m_immediateCommandBuffer, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		func(Instance.m_immediateCommandBuffer);
+		EndCommandBuffer(Instance.m_immediateCommandBuffer);
 
-		const vk::SubmitInfo submitInfo({}, {}, m_immediateCommandBuffer, {});
-		SubmitToGraphicsQueue(submitInfo, m_immediateFence);
-		WaitAndResetFence(m_immediateFence);
+		const vk::SubmitInfo submitInfo({}, {}, Instance.m_immediateCommandBuffer, {});
+		SubmitToGraphicsQueue(submitInfo, Instance.m_immediateFence);
+		WaitAndResetFence(Instance.m_immediateFence);
 	}
 
 	VulkanInstance& GetInstance() { return Instance; }
 
 private:
 	void SubmitToGraphicsQueue(const vk::SubmitInfo& submitInfo, vk::Fence fence);
-	void CreateCommandPool();
-	void CreateDescriptorPool();
 	void WriteDescriptorSet(const vk::WriteDescriptorSet& writeDescriptorSet);
-	vk::Fence CreateFence(vk::FenceCreateFlags flags = {});
 	void WaitAndResetFence(vk::Fence fence, uint64_t timeout = 100'000'000);
 	vk::Semaphore CreateSemaphore();
-	vk::CommandBuffer AllocateCommandBuffer();
 	vk::SwapchainKHR CreateSwapchain(
 		vk::SurfaceKHR                  surface,
 		uint32_t                        imageCount,
@@ -173,11 +169,8 @@ private:
 	);
 
 	VulkanInstance Instance;
-	vk::CommandPool m_commandPool;
-	vk::DescriptorPool m_descriptorPool;
 
 private:
-	void CreateImmediateContext();
 	void CreateBufferingObjects();
 	void CreateSurfaceSwapchainAndImageViews();
 	void CreatePrimaryRenderPass();
@@ -188,10 +181,10 @@ private:
 	vk::Result TryAcquiringNextSwapchainImage();
 	void AcquireNextSwapchainImage();
 
-	GLFWwindow* m_window = nullptr;
+	vk::Fence CreateFence(vk::FenceCreateFlags flags = {}); // TODO: после выделения свапчаина удалить эту функцию
+	vk::CommandBuffer AllocateCommandBuffer(); // TODO: после выделения свапчаина удалить эту функцию
 
-	vk::Fence         m_immediateFence;
-	vk::CommandBuffer m_immediateCommandBuffer;
+	GLFWwindow* m_window = nullptr;
 
 	struct BufferingObjects {
 		vk::Fence         RenderFence;

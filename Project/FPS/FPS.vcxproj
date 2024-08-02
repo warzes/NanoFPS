@@ -123,7 +123,7 @@
     <ClCompile Include="RenderContext.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderResources.cpp" />
-    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="VulkanRender.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -151,7 +151,7 @@
     <ClInclude Include="RenderContext.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderResources.h" />
-    <ClInclude Include="Scene.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="VulkanRender.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

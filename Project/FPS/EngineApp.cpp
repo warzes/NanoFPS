@@ -48,8 +48,8 @@
 
 namespace
 {
-	float LastFrameTime{};
-	float DeltaTime{};
+	float LastFrameTime{ 0.0f };
+	float DeltaTime{0.0f};
 
 	bool IsAppEnd = false;
 }
@@ -63,6 +63,7 @@ bool EngineApp::Create(const EngineCreateInfo& createInfo)
 	if (IsAppEnd) return false; // произошли фатальные ошибки
 
 	LastFrameTime = static_cast<float>(glfwGetTime());
+	DeltaTime = 0.0f;
 	return true;
 }
 
