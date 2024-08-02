@@ -4,44 +4,45 @@
 
 #pragma region MapData
 
-namespace MapData {
-	struct Vertex {
+namespace MapData 
+{
+	struct Vertex final
+	{
 		glm::vec3 Position;
 		glm::vec2 TexCoord;
 	};
 
-	struct Face {
+	struct Face final
+	{
 		std::string         Texture;
 		glm::vec3           Normal;
 		std::vector<Vertex> Vertices;
 	};
 
-	struct Brush {
+	struct Brush final
+	{
 		std::vector<glm::vec3> Vertices;
 		std::vector<Face>      Faces;
 	};
 
-	struct Entity {
+	struct Entity final 
+	{
+		[[nodiscard]] bool GetPropertyString(const std::string& key, std::string& value) const;
+		[[nodiscard]] bool GetPropertyInteger(const std::string& key, int& value) const;
+		[[nodiscard]] bool GetPropertyFloat(const std::string& key, float& value) const;
+		[[nodiscard]] bool GetPropertyColor(const std::string& key, glm::vec3& value) const;
+		[[nodiscard]] bool GetPropertyVector(const std::string& key, glm::vec3& value) const;
+
 		std::map<std::string, std::string> Properties;
 		std::vector<Brush>                 Brushes;
 
-		[[nodiscard]] bool GetPropertyString(const std::string& key, std::string& value) const;
-
-		[[nodiscard]] bool GetPropertyInteger(const std::string& key, int& value) const;
-
-		[[nodiscard]] bool GetPropertyFloat(const std::string& key, float& value) const;
-
-		[[nodiscard]] bool GetPropertyColor(const std::string& key, glm::vec3& value) const;
-
-		[[nodiscard]] bool GetPropertyVector(const std::string& key, glm::vec3& value) const;
-
 	private:
-		[[nodiscard]] const std::string& GetProperty(const std::string& key, const std::string& fallback = {}) const;
-
-		[[nodiscard]] bool GetPropertyVec3(const std::string& key, glm::vec3& value) const;
+		[[nodiscard]] const std::string& getProperty(const std::string& key, const std::string& fallback = {}) const;
+		[[nodiscard]] bool getPropertyVec3(const std::string& key, glm::vec3& value) const;
 	};
 
-	struct Map {
+	struct Map final
+	{
 		std::vector<Entity> Entities;
 	};
 } // namespace MapData
@@ -50,20 +51,18 @@ namespace MapData {
 
 #pragma region MapParser
 
-class MapParser : private BinaryParser {
+class MapParser final : private BinaryParser
+{
 public:
 	explicit MapParser(const std::string& filename);
 
 	[[nodiscard]] const MapData::Map& GetMap() const { return m_map; }
 
 private:
-	void ParseFace(MapData::Face& face);
-
-	void ParseBrush(MapData::Brush& brush);
-
-	void ParseEntity(MapData::Entity& entity);
-
-	void ParseMap(MapData::Map& map);
+	void parseFace(MapData::Face& face);
+	void parseBrush(MapData::Brush& brush);
+	void parseEntity(MapData::Entity& entity);
+	void parseMap(MapData::Map& map);
 
 	MapData::Map m_map;
 };
@@ -72,29 +71,26 @@ private:
 
 #pragma region Brushes
 
-enum class BrushType {
+enum class BrushType
+{
 	Normal,      // mesh + collision
 	NoCollision, // mesh
 	NoMesh,      // collision
 	Trigger      // collision(trigger)
 };
 
-class Brushes {
+class Brushes final
+{
 public:
 	explicit Brushes(const std::vector<MapData::Brush>& brushes, BrushType type = BrushType::Normal, PhysicsLayer layer = PHYSICS_LAYER_0);
-
+	Brushes(const Brushes&) = delete;
+	Brushes(Brushes&&) = delete;
 	~Brushes();
 
-	Brushes(const Brushes&) = delete;
-
 	Brushes& operator=(const Brushes&) = delete;
-
-	Brushes(Brushes&&) = delete;
-
 	Brushes& operator=(Brushes&&) = delete;
 
 	[[nodiscard]] const BrushType& GetType() const { return m_type; }
-
 	[[nodiscard]] const glm::vec3& GetCenter() const { return m_center; }
 
 	void AttachToRigidActor(physx::PxRigidActor* actor);
@@ -102,9 +98,8 @@ public:
 	void Draw(const glm::mat4& model);
 
 private:
-	void CreateMeshes(const std::vector<MapData::Brush>& brushes);
-
-	void CreateColliders(const std::vector<MapData::Brush>& brushes, PhysicsLayer layer);
+	void createMeshes(const std::vector<MapData::Brush>& brushes);
+	void createColliders(const std::vector<MapData::Brush>& brushes, PhysicsLayer layer);
 
 	BrushType m_type = BrushType::Normal;
 	glm::vec3 m_center;

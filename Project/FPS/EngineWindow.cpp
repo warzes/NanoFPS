@@ -96,6 +96,7 @@ bool Window::Create(const WindowCreateInfo& createInfo)
 	glfwSetFramebufferSizeCallback(WindowContext, framesizeCallback);
 
 	MouseState.lastPosition = MouseState.position = Mouse::GetPosition();
+	MouseState.delta = glm::ivec2(0);
 
 	return true;
 }
@@ -115,6 +116,11 @@ void Window::Update()
 {
 	IsWindowResize = false;
 	glfwPollEvents();
+
+	// TODO: ошибка при движении камеры мышью - ее почему-то дергает в первый кадр. а этот блок убирает дерганье но оставляет поворот не в ту сторону. разобраться
+	//glm::dvec2 mousePosition;
+	//glfwGetCursorPos(Window::GetWindow(), &mousePosition.x, &mousePosition.y);
+	//MouseState.position = mousePosition;
 
 	MouseState.delta = MouseState.position - MouseState.lastPosition;
 	MouseState.lastPosition = MouseState.position;

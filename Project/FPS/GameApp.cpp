@@ -4,13 +4,10 @@
 #include "MapData.h"
 #include "GameHUD.h"
 #include "GameLua.h"
-#include "Mouse.h"
 
 std::unique_ptr<PbrRenderer> renderer;
 std::unique_ptr<PhysicsSystem> physicsSystem;
 std::unique_ptr<PhysicsSimulationEventCallback> physicsCallback;
-
-std::unique_ptr<TempMouse> mouse;
 
 std::string nextMap;
 std::string currentMap;
@@ -34,7 +31,6 @@ void LoadMap(const std::string& mapName)
 {
 	Print("Loading map " + mapName);
 
-	mouse->Recalibrate();
 	//m_audio->StopAllEvents();
 
 	physicsScene = std::make_unique<PhysicsScene>(physicsSystem.get());
@@ -57,12 +53,8 @@ void CleanupMap()
 bool GameApp::Create()
 {
 	renderer = std::make_unique<PbrRenderer>(Window::GetWindow());
-	mouse = std::make_unique<TempMouse>();
 	physicsSystem = std::make_unique<PhysicsSystem>();
 	physicsCallback = std::make_unique<PhysicsSimulationEventCallback>();
-
-	//mouse->SetEnabled(false);
-	//mouse->Recalibrate();
 
 	ScheduleMapLoad("maps/puzzle/level0.mp");
 
@@ -74,7 +66,6 @@ void GameApp::Destroy()
 	physicsCallback.reset();
 	physicsSystem.reset();
 	renderer.reset();
-	mouse.reset();
 }
 
 void GameApp::Update()
@@ -87,8 +78,6 @@ void GameApp::Update()
 		LoadMap(nextMap);
 		currentMap = std::move(nextMap);
 	}
-
-	mouse->Update();
 	//m_audio->Update();
 
 	if (glfwGetKey(Window::GetWindow(), GLFW_KEY_ESCAPE))
