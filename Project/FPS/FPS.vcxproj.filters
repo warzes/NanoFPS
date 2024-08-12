@@ -68,6 +68,9 @@
     <ClCompile Include="GameLua.cpp">
       <Filter>Game\core</Filter>
     </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -175,6 +178,9 @@
       <Filter>Game\core</Filter>
     </ClInclude>
     <ClInclude Include="GameLua.h">
+      <Filter>Game\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
       <Filter>Game\core</Filter>
     </ClInclude>
   </ItemGroup>

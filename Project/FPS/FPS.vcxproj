@@ -119,6 +119,7 @@
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="Physics.cpp" />
     <ClCompile Include="PhysicsSimulationEventCallback.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="RenderContext.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderResources.cpp" />
@@ -146,6 +147,7 @@
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="PhysicsSimulationEventCallback.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="RenderContext.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderResources.h" />
