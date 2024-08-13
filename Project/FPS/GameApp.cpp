@@ -58,7 +58,9 @@ bool GameApp::Create()
 	physicsSystem = std::make_unique<PhysicsSystem>();
 	physicsCallback = std::make_unique<PhysicsSimulationEventCallback>();
 
-	ScheduleMapLoad("maps/puzzle/level0.mp");
+	if (isNewParserMap) ScheduleMapLoad("Data/maps/puzzle/level0.map");
+	else ScheduleMapLoad("maps/puzzle/level0.mp");
+	
 
 	return true;
 }
@@ -79,13 +81,14 @@ void loadMap()
 
 void GameApp::Update()
 {
-	float deltatime = EngineApp::GetDeltaTime();
-
 	if (!nextMap.empty())
 	{
 		loadMap();
 		return;
 	}
+
+	float deltatime = EngineApp::GetDeltaTime();
+
 	//m_audio->Update();
 
 	if (glfwGetKey(Window::GetWindow(), GLFW_KEY_ESCAPE))
