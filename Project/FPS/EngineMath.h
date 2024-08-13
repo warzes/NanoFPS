@@ -184,10 +184,9 @@ public:
 	[[nodiscard]] glm::mat4 GetInverseMatrix() const { return inverse(GetMatrix()); }
 
 private:
-	static float clampPitch(const float radians) { return glm::clamp(radians, -glm::half_pi<float>(), glm::half_pi<float>()); }
-
+	float clampPitch(const float radians) { return glm::clamp(radians, -glm::half_pi<float>(), glm::half_pi<float>()); }
 	// Wrap to (-PI..PI]
-	static float wrapAngle(const float radians) { return std::remainder(radians, glm::two_pi<float>()); }
+	float wrapAngle(const float radians) { return std::remainder(radians, glm::two_pi<float>()); }
 
 	glm::vec3 m_position = glm::vec3(0.0f);
 	glm::vec3 m_eulerAngles = glm::vec3(0.0f);
@@ -197,7 +196,6 @@ private:
 
 	mutable bool m_translationDirty = true;
 	mutable bool m_rotationDirty = true;
-
 };
 
 #pragma region inline Transform

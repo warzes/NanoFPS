@@ -15,6 +15,7 @@ std::string currentMap;
 bool slowMotion = false;
 bool showTriggers = false;
 bool prevR = false;
+bool isNewParserMap = false;
 
 // recreated per map
 std::unique_ptr<PhysicsScene> physicsScene;
@@ -39,7 +40,8 @@ void LoadMap(const std::string& mapName)
 	lua = std::make_unique<GameLua>();
 	hud = std::make_unique<GameHUD>();
 
-	LoadEntities(mapName);
+	if (isNewParserMap) LoadEntities2(mapName);
+	else LoadEntities(mapName);
 }
 void CleanupMap()
 {
@@ -68,15 +70,21 @@ void GameApp::Destroy()
 	renderer.reset();
 }
 
+void loadMap()
+{
+	CleanupMap();
+	LoadMap(nextMap);
+	currentMap = std::move(nextMap);
+}
+
 void GameApp::Update()
 {
 	float deltatime = EngineApp::GetDeltaTime();
 
 	if (!nextMap.empty())
 	{
-		CleanupMap();
-		LoadMap(nextMap);
-		currentMap = std::move(nextMap);
+		loadMap();
+		return;
 	}
 	//m_audio->Update();
 
@@ -84,7 +92,6 @@ void GameApp::Update()
 	{
 		glfwSetWindowShouldClose(Window::GetWindow(), GLFW_TRUE);
 	}
-
 	const bool currentR = glfwGetKey(Window::GetWindow(), GLFW_KEY_R);
 	if (currentR && !prevR)
 	{
