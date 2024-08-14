@@ -2,6 +2,10 @@
 
 #include "NanoEngineVK.h"
 
+// https://github.com/chunky-cat/qformats
+#include <qformats/map/map.h>
+#include <qformats/wad/wad.h>
+
 #pragma region MapData
 
 namespace MapData 

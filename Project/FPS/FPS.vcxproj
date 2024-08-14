@@ -61,7 +61,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;$(SolutionDir)3rdparty\qformats\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -82,7 +82,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;$(SolutionDir)3rdparty\qformats\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -114,6 +114,8 @@
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="GameHUD.cpp" />
     <ClCompile Include="GameLua.cpp" />
+    <ClCompile Include="GameScene2.cpp" />
+    <ClCompile Include="GameScene3.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="LuaSandbox.cpp" />
     <ClCompile Include="main.cpp" />

@@ -1,5 +1,7 @@
 #include "MapData.h"
 
+#pragma comment( lib, "qformats.lib" )
+
 extern std::unique_ptr<PbrRenderer> renderer;
 extern std::unique_ptr<PhysicsSystem> physicsSystem;
 extern std::unique_ptr<PhysicsScene> physicsScene;

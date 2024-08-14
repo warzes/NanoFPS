@@ -74,6 +74,12 @@
     <ClCompile Include="Actor.cpp">
       <Filter>Game\core</Filter>
     </ClCompile>
+    <ClCompile Include="GameScene2.cpp">
+      <Filter>Game\core</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene3.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">

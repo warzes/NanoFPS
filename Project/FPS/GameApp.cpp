@@ -5,6 +5,8 @@
 #include "GameHUD.h"
 #include "GameLua.h"
 
+extern void LoadEntities3(const std::string& mapFilename);
+
 std::unique_ptr<PbrRenderer> renderer;
 std::unique_ptr<PhysicsSystem> physicsSystem;
 std::unique_ptr<PhysicsSimulationEventCallback> physicsCallback;
@@ -15,7 +17,7 @@ std::string currentMap;
 bool slowMotion = false;
 bool showTriggers = false;
 bool prevR = false;
-bool isNewParserMap = false;
+bool isNewParserMap = true;
 
 // recreated per map
 std::unique_ptr<PhysicsScene> physicsScene;
@@ -40,8 +42,13 @@ void LoadMap(const std::string& mapName)
 	lua = std::make_unique<GameLua>();
 	hud = std::make_unique<GameHUD>();
 
-	if (isNewParserMap) LoadEntities2(mapName);
-	else LoadEntities(mapName);
+	if (isNewParserMap)
+	{
+		//LoadEntities3(mapName);
+		isNewParserMap = false;
+	}
+	else 
+		LoadEntities(mapName);
 }
 void CleanupMap()
 {
@@ -121,7 +128,6 @@ void Draw()
 {
 	scene->Draw();
 	hud->Draw();
-
 	renderer->FinishDrawing();
 }
 
