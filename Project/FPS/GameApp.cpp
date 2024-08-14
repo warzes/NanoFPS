@@ -1,4 +1,4 @@
-#include "GameApp.h"
+﻿#include "GameApp.h"
 #include "PhysicsSimulationEventCallback.h"
 #include "GameScene.h"
 #include "MapData.h"
@@ -17,7 +17,7 @@ std::string currentMap;
 bool slowMotion = false;
 bool showTriggers = false;
 bool prevR = false;
-bool isNewParserMap = true;
+bool isNewParserMap = false;
 
 // recreated per map
 std::unique_ptr<PhysicsScene> physicsScene;
@@ -44,11 +44,17 @@ void LoadMap(const std::string& mapName)
 
 	if (isNewParserMap)
 	{
-		//LoadEntities3(mapName);
+		LoadEntities2(mapName);
 		isNewParserMap = false;
 	}
 	else 
 		LoadEntities(mapName);
+
+	scene->CreateActor<APropTestModel>("models/sm210_radiatoryang2.obj", "materials/dev_5.json", glm::vec3(5));
+
+	//новый сцене и актер поверх старых (не удаляя их)
+
+
 }
 void CleanupMap()
 {

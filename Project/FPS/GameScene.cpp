@@ -37,7 +37,7 @@ void LoadInfoPlayerStart(const MapData::Entity& entity)
 	if(!entity.GetPropertyVector("origin", origin))
 		Fatal("info_player_start doesn't have a valid origin!");
 
-	scene->CreateActor<APlayer>(origin);
+	scene->CreateActor<APlayerNoClip>(origin);
 }
 
 void LoadFuncBrush(const MapData::Entity& entity)

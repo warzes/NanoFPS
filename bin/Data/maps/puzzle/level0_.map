@@ -1,0 +1,24 @@
+// Game: Generic
+// Format: Standard
+// entity 0
+{
+"classname" "worldspawn"
+"_tb_textures" "textures"
+"light_color" "5 4 3"
+"light_direction" "8 4 3.5"
+"script" "scripts/puzzle/level0.lua"
+// brush 0
+{
+( -128 384 0 ) ( -128 -128 0 ) ( -128 -128 -32 ) slab 0 0 0 1 1
+( -128 -128 0 ) ( 128 -128 0 ) ( 128 -128 -32 ) slab 0 0 0 1 1
+( 128 -128 -32 ) ( 128 384 -32 ) ( -128 384 -32 ) slab 0 0 0 1 1
+( -128 384 0 ) ( 128 384 0 ) ( 128 -128 0 ) slab 0 0 0 1 1
+( 128 384 -32 ) ( 128 384 0 ) ( -128 384 0 ) slab 0 0 0 1 1
+( 128 -128 0 ) ( 128 384 0 ) ( 128 384 -32 ) slab 0 0 0 1 1
+}
+}
+// entity 1
+{
+"classname" "info_player_start"
+"origin" "0 0 32"
+}

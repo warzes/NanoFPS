@@ -69,34 +69,29 @@ QuakeModel readModelEntity(const qformats::map::SolidEntityPtr& ent)
 
 void LoadEntities2(const std::string& mapFilename)
 {
-#if 0
+
 	//Print("Loading entities in map " + mapFilename);
 	// TODO: parser map
 
-	//qformats::map::QMap mapInstance;
-	//qformats::wad::QuakeWadManager wadMgr;
-	//std::vector<QuakeModel> models;
+	qformats::map::QMap mapInstance;
+	qformats::wad::QuakeWadManager wadMgr;
+	std::vector<QuakeModel> models;
 
-	//mapInstance = qformats::map::QMap();
-	//mapInstance.LoadFile(mapFilename);
+	mapInstance = qformats::map::QMap();
+	mapInstance.LoadFile(mapFilename);
 
-	//mapInstance.GenerateGeometry(true);
+	mapInstance.GenerateGeometry(true);
 
-	//size_t clippedFacesTotal = 0;
-	//for (const auto& se : mapInstance.GetSolidEntities())
-	//{
-	//	auto m = readModelEntity(se);
-	//	models.push_back(m);
-	//	clippedFacesTotal += se->StatsClippedFaces();
-	//}
+	size_t clippedFacesTotal = 0;
+	for (const auto& se : mapInstance.GetSolidEntities())
+	{
+		auto m = readModelEntity(se);
+		models.push_back(m);
+		clippedFacesTotal += se->StatsClippedFaces();
+	}
 
-	//std::cout << "faces clipped: " << clippedFacesTotal << std::endl;
+	std::cout << "faces clipped: " << clippedFacesTotal << std::endl;
 
-
-	//
-	//// TODO: write map
-	//
-#else
 	MapData::Map map;
 
 	map.Entities.resize(5);
@@ -107,6 +102,5 @@ void LoadEntities2(const std::string& mapFilename)
 
 	}
 
-#endif
 	LoadEntities(map);
 }
