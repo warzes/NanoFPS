@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include "Graphics.h"
 #include "Physics.h"
+#include "Scene.h"
 #include "EngineWindow.h"
 #include "LuaSandbox.h"
 #include "EngineApp.h"

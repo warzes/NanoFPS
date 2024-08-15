@@ -1,5 +1,4 @@
 #include "Player.h"
-#include "GameScene.h"
 
 extern std::unique_ptr<PhysicsScene> physicsScene;
 

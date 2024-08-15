@@ -180,3 +180,18 @@ private:
 };
 
 #pragma endregion
+
+#pragma region PhysicsSimulationEventCallback
+
+class PhysicsSimulationEventCallback final : public physx::PxSimulationEventCallback
+{
+public:
+	void onConstraintBreak([[maybe_unused]] physx::PxConstraintInfo* constraints, [[maybe_unused]] physx::PxU32 count) final {}
+	void onWake([[maybe_unused]] physx::PxActor** actors, [[maybe_unused]] physx::PxU32 count) final {}
+	void onSleep([[maybe_unused]] physx::PxActor** actors, [[maybe_unused]] physx::PxU32 count) final {}
+	void onContact([[maybe_unused]] const physx::PxContactPairHeader& pairHeader, [[maybe_unused]] const physx::PxContactPair* pairs, [[maybe_unused]] physx::PxU32 nbPairs) final {}
+	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final;
+	void onAdvance([[maybe_unused]] const physx::PxRigidBody* const* bodyBuffer, [[maybe_unused]] const physx::PxTransform* poseBuffer, [[maybe_unused]] physx::PxU32 count) final {}
+};
+
+#pragma endregion

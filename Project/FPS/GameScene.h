@@ -5,7 +5,6 @@
 #pragma region LoadEntities
 
 void LoadEntities(const std::string& mapFilename);
-void LoadEntities2(const std::string& mapFilename);
 void LoadEntities(const MapData::Map& map);
 
 #pragma endregion

@@ -1,11 +1,8 @@
 ﻿#include "GameApp.h"
-#include "PhysicsSimulationEventCallback.h"
 #include "GameScene.h"
 #include "MapData.h"
 #include "GameHUD.h"
 #include "GameLua.h"
-
-extern void LoadEntities3(const std::string& mapFilename);
 
 std::unique_ptr<PbrRenderer> renderer;
 std::unique_ptr<PhysicsSystem> physicsSystem;
@@ -17,7 +14,6 @@ std::string currentMap;
 bool slowMotion = false;
 bool showTriggers = false;
 bool prevR = false;
-bool isNewParserMap = false;
 
 // recreated per map
 std::unique_ptr<PhysicsScene> physicsScene;
@@ -42,20 +38,12 @@ void LoadMap(const std::string& mapName)
 	lua = std::make_unique<GameLua>();
 	hud = std::make_unique<GameHUD>();
 
-	if (isNewParserMap)
-	{
-		LoadEntities2(mapName);
-		isNewParserMap = false;
-	}
-	else 
-		LoadEntities(mapName);
-
-	scene->CreateActor<APropTestModel>("models/sm210_radiatoryang2.obj", "materials/dev_5.json", glm::vec3(5));
+	LoadEntities(mapName);
+	scene->CreateActor<APropTestModel>("models/sm210_radiatoryang2.obj", "materials/dev_1.json", glm::vec3(5));
 
 	//новый сцене и актер поверх старых (не удаляя их)
-
-
 }
+
 void CleanupMap()
 {
 	renderer->WaitDeviceIdle();
@@ -71,9 +59,7 @@ bool GameApp::Create()
 	physicsSystem = std::make_unique<PhysicsSystem>();
 	physicsCallback = std::make_unique<PhysicsSimulationEventCallback>();
 
-	if (isNewParserMap) ScheduleMapLoad("Data/maps/puzzle/level0.map");
-	else ScheduleMapLoad("maps/puzzle/level0.mp");
-	
+	ScheduleMapLoad("maps/puzzle/level0.mp");
 
 	return true;
 }

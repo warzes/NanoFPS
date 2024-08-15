@@ -1,5 +1,6 @@
 ﻿#include "Base.h"
 #include "Core.h"
+#include "Scene.h"
 #include "Physics.h"
 
 #pragma region Physics Error Callback
@@ -323,6 +324,39 @@ physx::PxTriangleMesh* PhysicsSystem::CreateTriangleMesh(physx::PxU32 count, con
 
 	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
 	return m_physics->createTriangleMesh(input);
+}
+
+#pragma endregion
+
+#pragma region PhysicsSimulationEventCallback
+
+void PhysicsSimulationEventCallback::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
+{
+	for (int i = 0; i < count; i++)
+	{
+		const physx::PxTriggerPair& pair = pairs[i];
+		if (pair.flags == physx::PxTriggerPairFlag::eREMOVED_SHAPE_OTHER || pair.flags == physx::PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER)
+		{
+			// ignore events caused by shape removal
+			continue;
+		}
+
+		auto triggerActor = static_cast<Actor*>(pair.triggerActor->userData);
+		auto otherActor = static_cast<Actor*>(pair.otherActor->userData);
+
+		switch (pair.status)
+		{
+		case physx::PxPairFlag::eNOTIFY_TOUCH_FOUND:
+			triggerActor->OnTriggerEnter(otherActor);
+			break;
+		case physx::PxPairFlag::eNOTIFY_TOUCH_LOST:
+			triggerActor->OnTriggerExit(otherActor);
+			break;
+		default:
+			Error("Invalid trigger pair status " + std::to_string(pair.status));
+			break;
+		}
+	}
 }
 
 #pragma endregion

@@ -34,6 +34,7 @@ namespace Window
 namespace Keyboard
 {
 	bool IsPressed(int key);
+	float GetKeyAxis(int posKey, int negKey);
 }
 
 namespace Mouse

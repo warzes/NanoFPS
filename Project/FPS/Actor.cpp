@@ -8,14 +8,6 @@ extern std::unique_ptr<PbrRenderer> renderer;
 extern bool slowMotion;
 extern bool showTriggers;
 
-float GetKeyAxis(GLFWwindow* window, int posKey, int negKey)
-{
-	float value = 0.0f;
-	if (glfwGetKey(window, posKey)) value += 1.0f;
-	if (glfwGetKey(window, negKey)) value -= 1.0f;
-	return value;
-}
-
 #pragma region AFuncBrush
 
 AFuncBrush::AFuncBrush(const std::vector<MapData::Brush>& brushes, BrushType type, PhysicsLayer layer)
@@ -294,7 +286,7 @@ void APlayer::Update(const float deltaTime)
 
 	// move
 	{
-		glm::vec3 movementInput = transform.GetHorizontalRightVector() * GetKeyAxis(Window::GetWindow(), GLFW_KEY_D, GLFW_KEY_A) + transform.GetHorizontalForwardVector() * GetKeyAxis(Window::GetWindow(), GLFW_KEY_W, GLFW_KEY_S);
+		glm::vec3 movementInput = transform.GetHorizontalRightVector() * Keyboard::GetKeyAxis(GLFW_KEY_D, GLFW_KEY_A) + transform.GetHorizontalForwardVector() * Keyboard::GetKeyAxis(GLFW_KEY_W, GLFW_KEY_S);
 		if (movementInput.x != 0 || movementInput.y != 0 || movementInput.z != 0)
 		{
 			movementInput = glm::normalize(movementInput);
@@ -359,42 +351,6 @@ void APlayer::drawReticle()
 		drawReticleDiagonal(screenCenter, 6.0f, 18.0f, color);
 	else
 		drawReticleStandard(screenCenter, 4.0f, 12.0f, color);
-}
-
-#pragma endregion
-
-#pragma region APlayerNoClip
-
-APlayerNoClip::APlayerNoClip(const glm::vec3& position) 
-{
-	GetTransform().SetPosition(position);
-	Mouse::SetCursorMode(Mouse::CursorMode::Disabled);
-}
-
-APlayerNoClip::~APlayerNoClip()
-{
-	Mouse::SetCursorMode(Mouse::CursorMode::Normal);
-}
-
-void APlayerNoClip::Update(float deltaTime)
-{
-	const glm::vec3 inputDirection = GetTransform().GetHorizontalRightVector() * GetKeyAxis(Window::GetWindow(), GLFW_KEY_D, GLFW_KEY_A) +
-		glm::vec3(0.0f, 1.0f, 0.0f) * GetKeyAxis(Window::GetWindow(), GLFW_KEY_E, GLFW_KEY_Q) +
-		GetTransform().GetHorizontalForwardVector() * GetKeyAxis(Window::GetWindow(), GLFW_KEY_W, GLFW_KEY_S);
-
-	if (inputDirection.x != 0.0f || inputDirection.y != 0.0f || inputDirection.z != 0.0f)
-	{
-		GetTransform().Translate(glm::normalize(inputDirection) * (5.0f * deltaTime));
-	}
-
-	const glm::vec2& deltaMousePos = Mouse::GetDeltaPosition();
-
-	GetTransform().RotateX(0.001f * deltaMousePos.y).RotateY(0.001f * deltaMousePos.x).ClampPitch();
-}
-
-void APlayerNoClip::Draw()
-{
-	renderer->SetCameraData(GetTransform().GetPosition(), GetTransform().GetInverseMatrix(), glm::radians(60.0f), 0.01f, 100.0f);
 }
 
 #pragma endregion

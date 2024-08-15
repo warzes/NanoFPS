@@ -114,19 +114,17 @@
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="GameHUD.cpp" />
     <ClCompile Include="GameLua.cpp" />
-    <ClCompile Include="GameScene2.cpp" />
-    <ClCompile Include="GameScene3.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="LuaSandbox.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="Physics.cpp" />
-    <ClCompile Include="PhysicsSimulationEventCallback.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="RenderContext.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderResources.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="VulkanRender.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -150,12 +148,12 @@
     <ClInclude Include="MapData.h" />
     <ClInclude Include="NanoEngineVK.h" />
     <ClInclude Include="Physics.h" />
-    <ClInclude Include="PhysicsSimulationEventCallback.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="RenderContext.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderResources.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="VulkanRender.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

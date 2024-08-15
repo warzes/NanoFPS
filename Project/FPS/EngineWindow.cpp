@@ -158,6 +158,14 @@ bool Keyboard::IsPressed(int key)
 	return glfwGetKey(WindowContext, key) == GLFW_PRESS;
 }
 
+float Keyboard::GetKeyAxis(int posKey, int negKey)
+{
+	float value = 0.0f;
+	if (glfwGetKey(WindowContext, posKey)) value += 1.0f;
+	if (glfwGetKey(WindowContext, negKey)) value -= 1.0f;
+	return value;
+}
+
 bool Mouse::IsButtonDown(Button button)
 {
 	return glfwGetMouseButton(WindowContext, static_cast<int>(button)) == GLFW_PRESS;

@@ -50,9 +50,6 @@
     <ClCompile Include="Physics.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
-    <ClCompile Include="PhysicsSimulationEventCallback.cpp">
-      <Filter>Game\core</Filter>
-    </ClCompile>
     <ClCompile Include="LuaSandbox.cpp">
       <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
@@ -74,11 +71,8 @@
     <ClCompile Include="Actor.cpp">
       <Filter>Game\core</Filter>
     </ClCompile>
-    <ClCompile Include="GameScene2.cpp">
-      <Filter>Game\core</Filter>
-    </ClCompile>
-    <ClCompile Include="GameScene3.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="Scene.cpp">
+      <Filter>NanoEngineVK\impl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -171,9 +165,6 @@
     <ClInclude Include="Physics.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
-    <ClInclude Include="PhysicsSimulationEventCallback.h">
-      <Filter>Game\core</Filter>
-    </ClInclude>
     <ClInclude Include="LuaSandbox.h">
       <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
@@ -189,10 +180,13 @@
     <ClInclude Include="GameLua.h">
       <Filter>Game\core</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
+    <ClInclude Include="Actor.h">
       <Filter>Game\core</Filter>
     </ClInclude>
-    <ClInclude Include="Actor.h">
+    <ClInclude Include="Scene.h">
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
       <Filter>Game\core</Filter>
     </ClInclude>
   </ItemGroup>
