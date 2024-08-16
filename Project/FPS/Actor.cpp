@@ -239,22 +239,6 @@ void AFuncPhys::Draw()
 
 #pragma endregion
 
-#pragma region ALightPoint
-
-ALightPoint::ALightPoint(const glm::vec3& position, const glm::vec3& color, float radius)
-	: m_position(position)
-	, m_color(color)
-	, m_radius(radius)
-{
-}
-
-void ALightPoint::Draw()
-{
-	renderer->DrawPointLight(m_position, m_color, m_radius);
-}
-
-#pragma endregion
-
 #pragma region APlayer
 
 APlayer::APlayer(const glm::vec3& position, float yaw, float mouseSpeed)

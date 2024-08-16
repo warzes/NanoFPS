@@ -39,9 +39,10 @@ void LoadMap(const std::string& mapName)
 	hud = std::make_unique<GameHUD>();
 
 	LoadEntities(mapName);
-	scene->CreateActor<APropTestModel>("models/sm210_radiatoryang2.obj", "materials/dev_1.json", glm::vec3(5));
+	scene->CreateActor<APropTestModel>("models/sm210_radiatoryang2.obj", "materials/dev_10.json", glm::vec3(5));
 
-	//новый сцене и актер поверх старых (не удаляя их)
+	scene->CreateActor<ALightPoint>(glm::vec3(1), glm::vec3(0.9f, 0.2f, 0.4f), 1000);
+
 }
 
 void CleanupMap()

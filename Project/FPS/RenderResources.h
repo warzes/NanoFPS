@@ -1,6 +1,5 @@
 #pragma once
 
-
 #pragma region ShaderCompiler
 
 struct ShaderIncluder;

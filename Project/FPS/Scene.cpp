@@ -44,3 +44,97 @@ void APlayerNoClip::Draw()
 }
 
 #pragma endregion
+
+#pragma region ALightPoint
+
+ALightPoint::ALightPoint(const glm::vec3& position, const glm::vec3& color, float radius)
+	: m_position(position)
+	, m_color(color)
+	, m_radius(radius)
+{
+}
+
+void ALightPoint::Draw()
+{
+	renderer->DrawPointLight(m_position, m_color, m_radius);
+}
+
+#pragma endregion
+
+#pragma region Scene
+
+void Scene::Update(const float deltaTime)
+{
+	// put pending destroy actors from last frame into a temp queue
+	const std::vector<std::unique_ptr<Actor>> pendingDestroyActorsFromLastFrame = std::move(m_pendingDestroyActors);
+
+	// update all alive actors
+	std::vector<std::unique_ptr<Actor>> aliveActors;
+	aliveActors.reserve(m_actors.size());
+	for (auto& actor : m_actors)
+	{
+		actor->Update(deltaTime);
+		if (actor->IsPendingDestroy())
+		{
+			// put pending destroy actors in this frame into m_pendingDestroyActors
+			m_pendingDestroyActors.push_back(std::move(actor));
+		}
+		else
+		{
+			aliveActors.push_back(std::move(actor));
+		}
+	}
+	m_actors = std::move(aliveActors);
+
+	// pendingDestroyActorsFromLastFrame deconstructs and releases all pending destroy actors destroy pending destroy actors from last frame this strategy will give other actors one frame to cleanup their references
+}
+
+void Scene::FixedUpdate(float fixedDeltaTime)
+{
+	for (auto& actor : m_actors)
+		actor->FixedUpdate(fixedDeltaTime);
+}
+
+void Scene::Draw()
+{
+	for (auto& actor : m_actors)
+		actor->Draw();
+}
+
+void Scene::Register(const std::string& name, Actor* actor)
+{
+	auto pair = m_registeredActors.find(name);
+	if (pair == m_registeredActors.end())
+	{
+		m_registeredActors.emplace(name, actor);
+	}
+	else
+	{
+		Error("Failed to register actor \"" + name + "\" because the name is already registered.");
+	}
+}
+
+Actor* Scene::FindActorWithName(const std::string& name) const
+{
+	auto pair = m_registeredActors.find(name);
+	if (pair == m_registeredActors.end())
+	{
+		Error("Failed to find actor \"" + name + "\"");
+		return nullptr;
+	}
+	return pair->second;
+}
+
+Actor* Scene::findFirstActorOfClassImpl(const std::string& className) const
+{
+	for (auto& actor : m_actors)
+	{
+		if (actor->GetActorClassName() == className)
+		{
+			return actor.get();
+		}
+	}
+	return nullptr;
+}
+
+#pragma endregion

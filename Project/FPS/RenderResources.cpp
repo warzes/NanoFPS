@@ -700,7 +700,7 @@ VulkanTexture* TextureCache::LoadTexture(const std::string& filename, vk::Filter
 
 #pragma region MeshCache
 
-static std::vector<VertexBase> LoadObj(const std::string& filename)
+std::vector<VertexBase> LoadObj(const std::string& filename)
 {
 	tinyobj::ObjReader reader;
 

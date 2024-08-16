@@ -114,25 +114,6 @@ private:
 
 #pragma endregion
 
-#pragma region ALightPoint
-
-class ALightPoint final : public Actor
-{
-public:
-	DEFINE_ACTOR_CLASS(ALightPoint)
-
-	explicit ALightPoint(const glm::vec3& position, const glm::vec3& color, float radius);
-
-	void Draw() final;
-
-private:
-	glm::vec3 m_position;
-	glm::vec3 m_color;
-	float     m_radius;
-};
-
-#pragma endregion
-
 #pragma region APlayer
 
 class APlayer final : public Actor

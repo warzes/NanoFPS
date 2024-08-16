@@ -41,7 +41,7 @@ public:
 	}
 
 private:
-	BitmapTextRenderer* m_textRenderer;
+	BitmapTextRenderer*    m_textRenderer;
 	SingleTextureMaterial* m_whiteTexture;
 
 	float       m_fadeDuration = 0.0f;

@@ -1,0 +1,6 @@
+{
+  "albedo": "textures/dev/dev_1.png",
+  "normal": "textures/dev/normal.png",
+  "mra": "textures/dev/black.png",
+  "emissive": "textures/dev/black.png"
+}
