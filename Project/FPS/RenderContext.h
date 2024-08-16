@@ -31,6 +31,9 @@ public:
 
 	void WaitIdle();
 
+	const VkPhysicalDeviceLimits& GetLimits() const { return PhysicalDeviceProperties.limits; }
+	float GetTimestampPeriod() const;
+
 	VkInstance Instance{ nullptr };
 	VkDebugUtilsMessengerEXT DebugMessenger{ nullptr };
 

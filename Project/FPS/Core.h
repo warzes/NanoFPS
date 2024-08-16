@@ -2,6 +2,98 @@
 
 #pragma region Container
 
+template <typename T>
+typename std::vector<T>::iterator Find(std::vector<T>& container, const T& element)
+{
+	typename std::vector<T>::iterator it = std::find(
+		std::begin(container),
+		std::end(container),
+		element);
+	return it;
+}
+
+template <typename T>
+typename std::vector<T>::const_iterator Find(const std::vector<T>& container, const T& element)
+{
+	typename std::vector<T>::iterator it = std::find(
+		std::begin(container),
+		std::end(container),
+		element);
+	return it;
+}
+
+template <typename T, class UnaryPredicate>
+typename std::vector<T>::iterator FindIf(std::vector<T>& container, UnaryPredicate predicate)
+{
+	typename std::vector<T>::iterator it = std::find_if(
+		std::begin(container),
+		std::end(container),
+		predicate);
+	return it;
+}
+
+template <typename T, class UnaryPredicate>
+typename std::vector<T>::const_iterator FindIf(const std::vector<T>& container, UnaryPredicate predicate)
+{
+	typename std::vector<T>::const_iterator it = std::find_if(
+		std::begin(container),
+		std::end(container),
+		predicate);
+	return it;
+}
+
+template <typename T>
+bool ElementExists(const T& elem, const std::vector<T>& container)
+{
+	auto it = std::find(std::begin(container), std::end(container), elem);
+	bool exists = (it != std::end(container));
+	return exists;
+}
+
+template <typename T>
+bool GetElement(uint32_t index, const std::vector<T>& container, T* pElem)
+{
+	if (!IsIndexInRange(index, container)) {
+		return false;
+	}
+	*pElem = container[index];
+	return true;
+}
+
+template <typename T>
+void AppendElements(const std::vector<T>& elements, std::vector<T>& container)
+{
+	if (!elements.empty()) {
+		std::copy(
+			std::begin(elements),
+			std::end(elements),
+			std::back_inserter(container));
+	}
+}
+
+template <typename T>
+void RemoveElement(const T& elem, std::vector<T>& container)
+{
+	container.erase(
+		std::remove(std::begin(container), std::end(container), elem),
+		container.end());
+}
+
+template <typename T, class UnaryPredicate>
+void RemoveElementIf(std::vector<T>& container, UnaryPredicate predicate)
+{
+	container.erase(
+		std::remove_if(std::begin(container), std::end(container), predicate),
+		container.end());
+}
+
+template <typename T>
+void Unique(std::vector<T>& container)
+{
+	auto it = std::unique(std::begin(container), std::end(container));
+	container.resize(std::distance(std::begin(container), it));
+}
+
 class CopyableByteSpan final : public std::span<const std::byte>
 {
 public:

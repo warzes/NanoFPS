@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-[[nodiscard]] constexpr size_t RoundUp(size_t numberToRoundUp, size_t multipleOf)
+[[nodiscard]] constexpr size_t RoundUp(size_t value, size_t multiple)
 {
-	assert(multipleOf);
-	return ((numberToRoundUp + multipleOf - 1) / multipleOf) * multipleOf;
+	assert(multiple && ((multiple & (multiple - 1)) == 0));
+	return (value + multiple - 1) & ~(multiple - 1);
 }
 
 [[nodiscard]] inline int NumMipmap(int width, int height)
