@@ -17,6 +17,8 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
 #define COMPRESSED_DATA_SIZE_FONT_DEJAVUEXPORTED 66654
 
 #include "raylib.h"

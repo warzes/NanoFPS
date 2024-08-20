@@ -257,23 +257,8 @@ bool FileDialog::Draw()
 	return open;
 }
 
-static const int N_QUIT_MESSAGES = 10;
-static const char* QUIT_MESSAGES[N_QUIT_MESSAGES] = {
-"Only winners take stretch breaks.",
-"Did I leave the editor on Nightmare difficulty?",
-"Remember to eat some clowns.",
-"Admiring the *cough* robust C++ architecture?",
-"Your SOUL is what needs saving, not this map file!",
-"Click 'Nah' to meet hot singles in your area!",
-"Whelp...I'm going to Grillby's...",
-"100% of people who go outside die!",
-"Да, я тоже не понимаю это приложение.",
-"They told me the fancy new UI would make you stay...",
-};
-
 CloseDialog::CloseDialog()
 {
-	_messageIdx = GetRandomValue(0, N_QUIT_MESSAGES - 1);
 }
 
 bool CloseDialog::Draw()
@@ -284,8 +269,6 @@ bool CloseDialog::Draw()
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	if (ImGui::BeginPopupModal("REALLY QUIT?", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::TextUnformatted(QUIT_MESSAGES[_messageIdx]);
-
 		if (ImGui::Button("Quit"))
 		{
 			App::Get()->Quit();
@@ -478,10 +461,7 @@ bool AboutDialog::Draw()
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	if (ImGui::BeginPopupModal("ABOUT", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "Total Editor 3.1.0");
-		ImGui::TextUnformatted("Written by The Tophat Demon\nWith help from Raylib, Nlohmann JSON, CPPCodec, ImGUI.\nHumble Fonts Gold II font made by Eevie Somepx");
-		ImGui::TextColored(ImColor(0.0f, 0.5f, 0.5f), "Source code: \nhttps://github.com/TheTophatDemon/Total-Editor-3");
-
+		ImGui::TextColored(ImColor(1.0f, 1.0f, 0.0f), "Editor");
 		ImGui::EndPopup();
 		return true;
 	}

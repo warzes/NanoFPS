@@ -70,8 +70,6 @@ class CloseDialog : public Dialog
 public:
 	CloseDialog();
 	virtual bool Draw() override;
-protected:
-	int _messageIdx;
 };
 
 class AssetPathDialog : public Dialog
