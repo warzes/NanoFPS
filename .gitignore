@@ -15,5 +15,6 @@ Thumbs.db
 /bin/FPS_Release.*
 /bin/OldFPS_Debug.*
 /bin/OldFPS_Release.*
-
+/bin/Editor_Debug.*
+/bin/Editor_Release.*
 

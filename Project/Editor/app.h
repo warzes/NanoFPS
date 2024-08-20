@@ -1,0 +1,122 @@
+#pragma once
+
+#include "raylib.h"
+#include "json.hpp"
+
+#include <string>
+#include <memory>
+#include <filesystem>
+namespace fs = std::filesystem;
+
+#include "tile.h"
+
+class PlaceMode;
+class PickMode;
+class EntMode;
+class MenuBar;
+class MapMan;
+
+#define TEXT_FIELD_MAX 512
+
+class App
+{
+public:
+	struct Settings
+	{
+		std::string texturesDir;
+		std::string shapesDir;
+		size_t undoMax;
+		float mouseSensitivity;
+		bool exportSeparateGeometry, cullFaces; //For GLTF export
+		std::string exportFilePath; //For GLTF export
+		std::string defaultTexturePath;
+		std::string defaultShapePath;
+		uint8_t backgroundColor[3];
+	};
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+		Settings,
+		texturesDir,
+		shapesDir,
+		undoMax,
+		mouseSensitivity,
+		exportSeparateGeometry,
+		cullFaces,
+		exportFilePath,
+		defaultTexturePath,
+		defaultShapePath,
+		backgroundColor);
+
+	//Mode implementation
+	class ModeImpl
+	{
+	public:
+		inline virtual ~ModeImpl() {}
+		virtual void Update() = 0;
+		virtual void Draw() = 0;
+		virtual void OnEnter() = 0;
+		virtual void OnExit() = 0;
+	};
+
+	enum class Mode { PLACE_TILE, PICK_TEXTURE, PICK_SHAPE, EDIT_ENT };
+
+	static App* Get();
+
+	//Handles transition and data flow from one editor state to the next.
+	void ChangeEditorMode(const Mode newMode);
+
+	inline float       GetMouseSensitivity() { return _settings.mouseSensitivity; }
+	inline size_t      GetUndoMax() { return _settings.undoMax; }
+	inline std::string GetTexturesDir() { return _settings.texturesDir; };
+	inline std::string GetShapesDir() { return _settings.shapesDir; }
+	inline std::string GetDefaultTexturePath() { return _settings.defaultTexturePath; }
+	inline std::string GetDefaultShapePath() { return _settings.defaultShapePath; }
+	inline bool        IsCullingEnabled() { return _settings.cullFaces; }
+	inline Color       GetBackgroundColor() { return Color{ _settings.backgroundColor[0], _settings.backgroundColor[1], _settings.backgroundColor[2], 255 }; }
+
+	//Indicates if rendering should be done in "preview mode", i.e. without editor widgets being drawn.
+	inline bool IsPreviewing() const { return _previewDraw; }
+	inline void SetPreviewing(bool p) { _previewDraw = p; }
+	inline void TogglePreviewing() { _previewDraw = !_previewDraw; }
+	inline fs::path GetLastSavedPath() const { return _lastSavedPath; }
+
+	inline bool IsQuitting() const { return _quit; }
+	inline void Quit() { _quit = true; }
+
+	void DisplayStatusMessage(std::string message, float durationSeconds, int priority);
+
+	void Update();
+
+	//General map file operations
+	inline const MapMan& GetMapMan() const { return *_mapMan.get(); }
+	void ResetEditorCamera();
+	void NewMap(int width, int height, int length);
+	void ExpandMap(Direction axis, int amount);
+	void ShrinkMap();
+	void TryOpenMap(fs::path path);
+	void TrySaveMap(fs::path path);
+	void TryExportMap(fs::path path, bool separateGeometry);
+
+	//Serializes settings into JSON file and exports.
+	void SaveSettings();
+	//Deserializes settings from JSON file
+	void LoadSettings();
+private:
+	App();
+
+	Settings _settings;
+
+	std::unique_ptr<MenuBar> _menuBar;
+	std::unique_ptr<MapMan> _mapMan;
+
+	std::unique_ptr<PlaceMode> _tilePlaceMode;
+	std::unique_ptr<PickMode> _texPickMode;
+	std::unique_ptr<PickMode> _shapePickMode;
+	std::unique_ptr<EntMode> _entMode;
+
+	ModeImpl* _editorMode;
+
+	fs::path _lastSavedPath;
+	bool _previewDraw;
+
+	bool _quit;
+};

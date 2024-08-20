@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DOC", "DOC", "{2CF94783-26C
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OldFPS", "OldFPS\OldFPS.vcxproj", "{DFC51A28-4343-4BAE-B119-7E2E3E301594}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcxproj", "{6DEA77C9-7612-470E-B1AB-1FC6359E32A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,10 @@ Global
 		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Debug|x64.Build.0 = Debug|x64
 		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Release|x64.ActiveCfg = Release|x64
 		{DFC51A28-4343-4BAE-B119-7E2E3E301594}.Release|x64.Build.0 = Release|x64
+		{6DEA77C9-7612-470E-B1AB-1FC6359E32A8}.Debug|x64.ActiveCfg = Debug|x64
+		{6DEA77C9-7612-470E-B1AB-1FC6359E32A8}.Debug|x64.Build.0 = Debug|x64
+		{6DEA77C9-7612-470E-B1AB-1FC6359E32A8}.Release|x64.ActiveCfg = Release|x64
+		{6DEA77C9-7612-470E-B1AB-1FC6359E32A8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
