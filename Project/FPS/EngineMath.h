@@ -1,5 +1,57 @@
 ﻿#pragma once
 
+#define SMALL_NUMBER       (1.e-8f)
+#define KINDA_SMALL_NUMBER (1.e-4f)
+#define BIG_NUMBER         (3.4e+38f)
+#define EULERS_NUMBER      (2.71828182845904523536f)
+#define MAX_FLT            (3.402823466e+38F)
+#define INV_PI             (0.31830988618f)
+#define HALF_PI            (1.57079632679f)
+#define DELTA              (0.00001f)
+
+#pragma region Core Math Func
+
+template< class T >
+[[nodiscard]] constexpr T Square(const T a)
+{
+	return a * a;
+}
+
+template< class T >
+[[nodiscard]] constexpr T Max3(const T a, const T b, const T c)
+{
+	return glm::max(glm::max(a, b), c);
+}
+
+template< class T >
+[[nodiscard]] constexpr T Min3(const T a, const T b, const T c)
+{
+	return glm::min(glm::min(a, b), c);
+}
+
+template< class T, class U >
+[[nodiscard]] constexpr T Lerp(const T& a, const T& b, const U& alpha)
+{
+	return (T)(a + alpha * (b - a));
+}
+
+[[nodiscard]] inline float Fmod(float x, float y)
+{
+	if (fabsf(y) <= 1.e-8f) {
+		return 0.f;
+	}
+
+	const float quotient = (float)(int32_t)(x / y);
+	float intPortion = y * quotient;
+
+	if (fabsf(intPortion) > fabsf(x)) {
+		intPortion = x;
+	}
+
+	const float result = x - intPortion;
+	return result;
+}
+
 [[nodiscard]] constexpr size_t RoundUp(size_t value, size_t multiple)
 {
 	assert(multiple && ((multiple & (multiple - 1)) == 0));
@@ -10,6 +62,374 @@
 {
 	return static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
 }
+
+#pragma endregion
+
+#pragma region Color
+
+class Color;
+
+enum class GammaSpace
+{
+	Linear,
+	Pow22,
+	sRGB,
+};
+
+class LinearColor final
+{
+public:
+	static const LinearColor White;
+	static const LinearColor Gray;
+	static const LinearColor Black;
+	static const LinearColor Transparent;
+	static const LinearColor Red;
+	static const LinearColor Green;
+	static const LinearColor Blue;
+	static const LinearColor Yellow;
+
+	static double pow22OneOver255Table[256];
+	static double sRGBToLinearTable[256];
+
+	LinearColor() = default;
+	explicit LinearColor(const Color& Color);
+	constexpr LinearColor(float inR, float inG, float inB, float inA = 1.0f)
+		: r(inR)
+		, g(inG)
+		, b(inB)
+		, a(inA)
+	{
+	}
+
+	Color ToRGBE() const;
+	LinearColor LinearRGBToHSV() const;
+	LinearColor HSVToLinearRGB() const;
+	Color ToFColor(const bool sRGB) const;
+	LinearColor Desaturate(float desaturation) const;
+
+	float& Component(uint32_t index)
+	{
+		return (&r)[index];
+	}
+
+	const float& Component(uint32_t index) const
+	{
+		return (&r)[index];
+	}
+
+	LinearColor operator+(const LinearColor& rhs) const
+	{
+		return LinearColor(
+			this->r + rhs.r,
+			this->g + rhs.g,
+			this->b + rhs.b,
+			this->a + rhs.a
+		);
+	}
+
+	LinearColor& operator+=(const LinearColor& rhs)
+	{
+		r += rhs.r;
+		g += rhs.g;
+		b += rhs.b;
+		a += rhs.a;
+
+		return *this;
+	}
+
+	LinearColor operator-(const LinearColor& rhs) const
+	{
+		return LinearColor(
+			this->r - rhs.r,
+			this->g - rhs.g,
+			this->b - rhs.b,
+			this->a - rhs.a
+		);
+	}
+
+	LinearColor& operator-=(const LinearColor& rhs)
+	{
+		r -= rhs.r;
+		g -= rhs.g;
+		b -= rhs.b;
+		a -= rhs.a;
+
+		return *this;
+	}
+
+	LinearColor operator*(const LinearColor& rhs) const
+	{
+		return LinearColor(
+			this->r * rhs.r,
+			this->g * rhs.g,
+			this->b * rhs.b,
+			this->a * rhs.a
+		);
+	}
+
+	LinearColor& operator*=(const LinearColor& rhs)
+	{
+		r *= rhs.r;
+		g *= rhs.g;
+		b *= rhs.b;
+		a *= rhs.a;
+
+		return *this;
+	}
+
+	LinearColor operator*(float scalar) const
+	{
+		return LinearColor(
+			this->r * scalar,
+			this->g * scalar,
+			this->b * scalar,
+			this->a * scalar
+		);
+	}
+
+	LinearColor& operator*=(float scalar)
+	{
+		r *= scalar;
+		g *= scalar;
+		b *= scalar;
+		a *= scalar;
+
+		return *this;
+	}
+
+	LinearColor operator/(const LinearColor& rhs) const
+	{
+		return LinearColor(
+			this->r / rhs.r,
+			this->g / rhs.g,
+			this->b / rhs.b,
+			this->a / rhs.a
+		);
+	}
+
+	LinearColor& operator/=(const LinearColor& rhs)
+	{
+		r /= rhs.r;
+		g /= rhs.g;
+		b /= rhs.b;
+		a /= rhs.a;
+
+		return *this;
+	}
+
+	LinearColor operator/(float scalar) const
+	{
+		const float invScalar = 1.0f / scalar;
+
+		return LinearColor(
+			this->r * invScalar,
+			this->g * invScalar,
+			this->b * invScalar,
+			this->a * invScalar
+		);
+	}
+
+	LinearColor& operator/=(float scalar)
+	{
+		const float invScalar = 1.0f / scalar;
+
+		r *= invScalar;
+		g *= invScalar;
+		b *= invScalar;
+		a *= invScalar;
+
+		return *this;
+	}
+
+	LinearColor GetClamped(float inMin = 0.0f, float inMax = 1.0f) const
+	{
+		LinearColor ret;
+		ret.r = glm::clamp(r, inMin, inMax);
+		ret.g = glm::clamp(g, inMin, inMax);
+		ret.b = glm::clamp(b, inMin, inMax);
+		ret.a = glm::clamp(a, inMin, inMax);
+
+		return ret;
+	}
+
+	bool operator==(const LinearColor& other) const
+	{
+		return this->r == other.r && this->g == other.g && this->b == other.b && this->a == other.a;
+	}
+
+	bool operator!=(const LinearColor& Other) const
+	{
+		return this->r != Other.r || this->g != Other.g || this->b != Other.b || this->a != Other.a;
+	}
+
+	bool Equals(const LinearColor& other, float tolerance = KINDA_SMALL_NUMBER) const
+	{
+		return glm::abs(this->r - other.r) < tolerance && glm::abs(this->g - other.g) < tolerance && glm::abs(this->b - other.b) < tolerance && glm::abs(this->a - other.a) < tolerance;
+	}
+
+	LinearColor CopyWithNewOpacity(float newOpacicty) const
+	{
+		LinearColor newCopy = *this;
+		newCopy.a = newOpacicty;
+		return newCopy;
+	}
+
+	float ComputeLuminance() const
+	{
+		return r * 0.3f + g * 0.59f + b * 0.11f;
+	}
+
+	float GetMax() const
+	{
+		return glm::max(glm::max(glm::max(r, g), b), a);
+	}
+
+	bool IsAlmostBlack() const
+	{
+		return Square(r) < DELTA && Square(g) < DELTA && Square(b) < DELTA;
+	}
+
+	float GetMin() const
+	{
+		return glm::min(glm::min(glm::min(r, g), b), a);
+	}
+
+	float GetLuminance() const
+	{
+		return r * 0.3f + g * 0.59f + b * 0.11f;
+	}
+
+	static float Dist(const LinearColor& v1, const LinearColor& v2)
+	{
+		return sqrtf(Square(v2.r - v1.r) + Square(v2.g - v1.g) + Square(v2.b - v1.b) + Square(v2.a - v1.a));
+	}
+
+	static LinearColor GetHSV(uint8_t h, uint8_t s, uint8_t v);
+
+	static LinearColor MakeFromColorTemperature(float temp);
+
+	static LinearColor FromSRGBColor(const Color& Color);
+
+	static LinearColor FromPow22Color(const Color& Color);
+
+	static LinearColor LerpUsingHSV(const LinearColor& from, const LinearColor& to, const float progress);
+
+	float r = 0.0f;
+	float g = 0.0f;
+	float b = 0.0f;
+	float a = 0.0f;
+};
+
+class Color final
+{
+public:
+	static const Color White;
+	static const Color Black;
+	static const Color Transparent;
+	static const Color Red;
+	static const Color Green;
+	static const Color Blue;
+	static const Color Yellow;
+	static const Color Cyan;
+	static const Color Magenta;
+	static const Color Orange;
+	static const Color Purple;
+	static const Color Turquoise;
+	static const Color Silver;
+	static const Color Emerald;
+
+	Color() = default;
+	constexpr Color(uint8_t inR, uint8_t inG, uint8_t inB, uint8_t inA = 255)
+		: b(inB)
+		, g(inG)
+		, r(inR)
+		, a(inA)
+	{
+	}
+
+	explicit Color(uint32_t inColor)
+	{
+		DWColor() = inColor;
+	}
+
+	uint32_t& DWColor()
+	{
+		return *((uint32_t*)this);
+	}
+
+	const uint32_t& DWColor() const
+	{
+		return *((uint32_t*)this);
+	}
+
+	bool operator==(const Color& C) const
+	{
+		return DWColor() == C.DWColor();
+	}
+
+	bool operator!=(const Color& C) const
+	{
+		return DWColor() != C.DWColor();
+	}
+
+	void operator+=(const Color& C)
+	{
+		r = (uint8_t)glm::min((int32_t)r + (int32_t)C.r, 255);
+		g = (uint8_t)glm::min((int32_t)g + (int32_t)C.g, 255);
+		b = (uint8_t)glm::min((int32_t)b + (int32_t)C.b, 255);
+		a = (uint8_t)glm::min((int32_t)a + (int32_t)C.a, 255);
+	}
+
+	Color WithAlpha(uint8_t alpha) const
+	{
+		return Color(r, g, b, alpha);
+	}
+
+	LinearColor ReinterpretAsLinear() const
+	{
+		return LinearColor(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+	}
+
+	uint32_t ToPackedARGB() const
+	{
+		return (a << 24) | (r << 16) | (g << 8) | (b << 0);
+	}
+
+	uint32_t ToPackedABGR() const
+	{
+		return (a << 24) | (b << 16) | (g << 8) | (r << 0);
+	}
+
+	uint32_t ToPackedRGBA() const
+	{
+		return (r << 24) | (g << 16) | (b << 8) | (a << 0);
+	}
+
+	uint32_t ToPackedBGRA() const
+	{
+		return (b << 24) | (g << 16) | (r << 8) | (a << 0);
+	}
+
+	LinearColor FromRGBE() const;
+
+	static Color MakeRedToGreenColorFromScalar(float scalar);
+	static Color MakeFromColorTemperature(float temp);
+
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a;
+
+private:
+	explicit Color(const LinearColor& linearColor);
+};
+
+inline LinearColor operator*(float scalar, const LinearColor& Color)
+{
+	return Color.operator*(scalar);
+}
+
+#pragma endregion
 
 class AABB final
 {

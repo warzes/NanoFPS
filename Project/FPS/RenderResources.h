@@ -227,7 +227,7 @@ public:
 	[[nodiscard]] const vk::Pipeline& Get() const { return m_pipeline; }
 
 private:
-	VulkanRender* m_device = nullptr;
+	VulkanRender*      m_device = nullptr;
 	vk::PipelineLayout m_pipelineLayout;
 	vk::ShaderModule   m_vertexShaderModule;
 	vk::ShaderModule   m_geometryShaderModule;

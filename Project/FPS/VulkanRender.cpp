@@ -394,7 +394,8 @@ void VulkanRender::CreateBufferingObjects()
 }
 
 void VulkanRender::CreateSurfaceSwapchainAndImageViews()
-{	const auto [capabilitiesResult, capabilities] = Instance.m_physicalDevice.getSurfaceCapabilitiesKHR(Instance.m_surface);
+{
+	const auto [capabilitiesResult, capabilities] = Instance.m_physicalDevice.getSurfaceCapabilitiesKHR(Instance.m_surface);
 	if (capabilitiesResult != vk::Result::eSuccess)
 		Fatal("Failed to get Vulkan surface capabilities.");
 	uint32_t imageCount = capabilities.minImageCount + 1;

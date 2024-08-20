@@ -74,7 +74,7 @@ void Fatal(const std::string& text)
 
 #pragma region IO
 
-std::optional<std::string> LoadTextFile(const std::filesystem::path& path)
+std::optional<std::string> LoadSourceFile(const std::filesystem::path& path)
 {
 	if (!std::filesystem::exists(path))
 	{
@@ -102,7 +102,7 @@ std::optional<std::string> LoadTextFile(const std::filesystem::path& path)
 			std::size_t index = lineBuffer.find_last_of(whitespace);
 			std::string includeFullPath = rootFolder + lineBuffer.substr(index + 1);
 
-			auto subtext = LoadTextFile(includeFullPath.c_str());
+			auto subtext = LoadSourceFile(includeFullPath.c_str());
 			if (!subtext) return std::nullopt;
 
 			shaderCode += *subtext;

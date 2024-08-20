@@ -102,7 +102,7 @@ void Fatal(const std::string& text);
 
 #pragma region IO
 
-[[nodiscard]] std::optional<std::string> LoadTextFile(const std::filesystem::path& path);
+[[nodiscard]] std::optional<std::string> LoadSourceFile(const std::filesystem::path& path);
 
 namespace FileSystem {
 	std::string Read(const std::string& filename);
