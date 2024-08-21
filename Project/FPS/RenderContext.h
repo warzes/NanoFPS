@@ -13,6 +13,12 @@ struct RenderContextCreateInfo
 	} vulkan;
 };
 
+struct VulkanQueue final
+{
+	VkQueue Queue{ nullptr };
+	uint32_t QueueFamily{ 0 };
+};
+
 struct sBufferingObjects
 {
 	VkFence RenderFence{ nullptr };
@@ -20,6 +26,7 @@ struct sBufferingObjects
 	VkSemaphore RenderSemaphore{ nullptr };
 	VkCommandBuffer CommandBuffer{ nullptr };
 };
+
 
 #pragma region VulkanInstance
 
@@ -31,8 +38,11 @@ public:
 
 	void WaitIdle();
 
-	const VkPhysicalDeviceLimits& GetLimits() const { return PhysicalDeviceProperties.limits; }
-	float GetTimestampPeriod() const;
+	[[nodiscard]] const VkPhysicalDeviceProperties& GetDeviceProperties() const { return PhysicalDeviceProperties; }
+	[[nodiscard]] const VkPhysicalDeviceLimits& GetLimits() const { return PhysicalDeviceProperties.limits; }
+	[[nodiscard]] const VkPhysicalDeviceFeatures& GetPhysicalFeatures() const { return PhysicalDeviceFeatures; }
+
+	[[nodiscard]] float GetTimestampPeriod() const { return PhysicalDeviceProperties.limits.timestampPeriod; }
 
 	VkInstance Instance{ nullptr };
 	VkDebugUtilsMessengerEXT DebugMessenger{ nullptr };
@@ -41,15 +51,14 @@ public:
 
 	VkPhysicalDevice PhysicalDevice{ nullptr };
 	VkPhysicalDeviceProperties PhysicalDeviceProperties{};
+	VkPhysicalDeviceFeatures PhysicalDeviceFeatures{};
 
 	VkDevice Device{ nullptr };
 
-	VkQueue GraphicsQueue{ nullptr };
-	uint32_t GraphicsQueueFamily{ 0 };
-	VkQueue PresentQueue{ nullptr };
-	uint32_t PresentQueueFamily{ 0 };
-	VkQueue ComputeQueue{ nullptr };
-	uint32_t ComputeQueueFamily{ 0 };
+	VulkanQueue GraphicsQueue;
+	VulkanQueue PresentQueue;
+	VulkanQueue TransferQueue;
+	VulkanQueue ComputeQueue;
 
 	VmaAllocator Allocator{ nullptr };
 
@@ -69,6 +78,7 @@ public:
 	vk::Fence         m_immediateFence;
 	vk::CommandBuffer m_immediateCommandBuffer;
 private:
+	bool createInstanceAndDevice(const RenderContextCreateInfo& createInfo);
 	bool getQueues(vkb::Device& vkbDevice);
 	bool createCommandPool();
 	bool createDescriptorPool();

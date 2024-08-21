@@ -1024,7 +1024,7 @@ void PbrRenderer::CreatePipelines() {
 			m_uniformBufferSet.GetDescriptorSetLayout()
 		},
 		{
-			{vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4)} //
+			{vk::ShaderStageFlagBits::eVertex, 0, sizeof(glm::mat4)}
 		},
 		VertexBase::GetPipelineVertexInputStateCreateInfo(),
 		"pipelines/shadow.json",
@@ -1226,7 +1226,8 @@ void PbrRenderer::SetWorldBounds(const glm::vec3& min, const glm::vec3& max) {
 	m_shadowMatrixCalculator.SetWorldBounds(min - SHADOW_SAFE_DISTANCE, max + SHADOW_SAFE_DISTANCE);
 }
 
-void PbrRenderer::FinishDrawing() {
+void PbrRenderer::FinishDrawing()
+{
 	const VulkanFrameInfo frameInfo = m_device.BeginFrame();
 
 	m_deferredContext.CheckFramebuffersOutOfDate();

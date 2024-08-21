@@ -57,6 +57,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 	VulkanBuffer CreateBuffer(vk::DeviceSize size, vk::BufferUsageFlags bufferUsage, VmaAllocationCreateFlags flags, VmaMemoryUsage memoryUsage)
 	{
 		return { Instance.Allocator, size, bufferUsage, flags, memoryUsage };

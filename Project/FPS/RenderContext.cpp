@@ -4,10 +4,71 @@
 #include "RenderContext.h"
 #include "EngineWindow.h"
 
-
 #pragma region VulkanInstance
 
 bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
+{
+	if (!createInstanceAndDevice(createInfo)) return false;
+	if (!createCommandPool()) return false;
+	if (!createDescriptorPool()) return false;
+	if (!createAllocator(createInfo.vulkan.requireVersion)) return false;
+	if (!createImmediateContext()) return false;
+
+	temp();
+
+	return true;
+}
+
+void VulkanInstance::Destroy()
+{
+	if (Allocator)
+	{
+		VmaTotalStatistics stats;
+		vmaCalculateStatistics(Allocator, &stats);
+		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
+		vmaDestroyAllocator(Allocator);
+		Allocator = VK_NULL_HANDLE;
+	}
+
+	if (Device)
+	{
+		if (ImmediateFence) vkDestroyFence(Device, ImmediateFence, nullptr);
+		if (ImmediateCommandBuffer) vkFreeCommandBuffers(Device, CommandPool, 1, &ImmediateCommandBuffer);
+		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
+		if (DescriptorPool) vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
+		vkDestroyDevice(Device, nullptr);
+	}
+
+	if (Instance)
+	{
+		if (Surface) vkDestroySurfaceKHR(Instance, Surface, nullptr);
+		if (DebugMessenger) vkb::destroy_debug_utils_messenger(Instance, DebugMessenger);
+		vkDestroyInstance(Instance, nullptr);
+	}
+	ImmediateFence = nullptr;
+	ImmediateCommandBuffer = nullptr;
+	CommandPool = nullptr;
+	DescriptorPool = nullptr;
+	Device = nullptr;
+	Allocator = nullptr;
+	Surface = nullptr;
+	DebugMessenger = nullptr;
+	Instance = nullptr;
+	volkFinalize();
+}
+
+void VulkanInstance::WaitIdle()
+{
+	if (Device)
+	{
+		if (vkDeviceWaitIdle(Device) != VK_SUCCESS)
+		{
+			Fatal("Failed when waiting for Vulkan device to be idle.");
+		}
+	}
+}
+
+bool VulkanInstance::createInstanceAndDevice(const RenderContextCreateInfo& createInfo)
 {
 	bool useValidationLayers = createInfo.vulkan.useValidationLayers;
 #if defined(_DEBUG)
@@ -68,7 +129,7 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	// vulkan 1.2 features
 	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
 	features12.bufferDeviceAddress = true;
-	features12.descriptorIndexing  = true;
+	features12.descriptorIndexing = true;
 
 	// vulkan 1.1 features
 	VkPhysicalDeviceVulkan11Features features11{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
@@ -76,8 +137,8 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	// vulkan 1.0 features
 	VkPhysicalDeviceFeatures features10{};
 	features10.samplerAnisotropy = VK_TRUE;
-	features10.geometryShader    = VK_TRUE;
-	features10.fillModeNonSolid  = VK_TRUE;
+	features10.geometryShader = VK_TRUE;
+	features10.fillModeNonSolid = VK_TRUE;
 
 	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
 	auto physicalDeviceRet = physicalDeviceSelector
@@ -115,72 +176,12 @@ bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Device(Device));
 
 	vkGetPhysicalDeviceProperties(PhysicalDevice, &PhysicalDeviceProperties);
+	vkGetPhysicalDeviceFeatures(PhysicalDevice, &PhysicalDeviceFeatures);
 
 	Print("GPU Used: " + std::string(PhysicalDeviceProperties.deviceName));
 
 	if (!getQueues(vkbDevice)) return false;
-	if (!createCommandPool()) return false;
-	if (!createDescriptorPool()) return false;
-	if (!createAllocator(createInfo.vulkan.requireVersion)) return false;
-	if (!createImmediateContext()) return false;
-
-	temp();
-
 	return true;
-}
-
-void VulkanInstance::Destroy()
-{
-	if (Allocator)
-	{
-		VmaTotalStatistics stats;
-		vmaCalculateStatistics(Allocator, &stats);
-		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
-		vmaDestroyAllocator(Allocator);
-		Allocator = VK_NULL_HANDLE;
-	}
-
-	if (Device)
-	{
-		if (ImmediateFence) vkDestroyFence(Device, ImmediateFence, nullptr);
-		if (ImmediateCommandBuffer) vkFreeCommandBuffers(Device, CommandPool, 1, &ImmediateCommandBuffer);
-		if (CommandPool) vkDestroyCommandPool(Device, CommandPool, nullptr);
-		if (DescriptorPool) vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
-		vkDestroyDevice(Device, nullptr);
-	}
-
-	if (Instance)
-	{
-		if (Surface) vkDestroySurfaceKHR(Instance, Surface, nullptr);
-		if (DebugMessenger) vkb::destroy_debug_utils_messenger(Instance, DebugMessenger);
-		vkDestroyInstance(Instance, nullptr);
-	}
-	ImmediateFence = nullptr;
-	ImmediateCommandBuffer = nullptr;
-	CommandPool = nullptr;
-	DescriptorPool = nullptr;
-	Device = nullptr;
-	Allocator = nullptr;
-	Surface = nullptr;
-	DebugMessenger = nullptr;
-	Instance = nullptr;
-	volkFinalize();
-}
-
-void VulkanInstance::WaitIdle()
-{
-	if (Device)
-	{
-		if (vkDeviceWaitIdle(Device) != VK_SUCCESS)
-		{
-			Fatal("Failed when waiting for Vulkan device to be idle.");
-		}
-	}
-}
-
-float VulkanInstance::GetTimestampPeriod() const
-{
-	return PhysicalDeviceProperties.limits.timestampPeriod;
 }
 
 bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
@@ -191,7 +192,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get graphics queue: " + graphicsQueueRet.error().message());
 		return false;
 	}
-	GraphicsQueue = graphicsQueueRet.value();
+	GraphicsQueue.Queue = graphicsQueueRet.value();
 
 	auto graphicsQueueFamilyRet = vkbDevice.get_queue_index(vkb::QueueType::graphics);
 	if (!graphicsQueueFamilyRet)
@@ -199,7 +200,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get graphics queue index: " + graphicsQueueFamilyRet.error().message());
 		return false;
 	}
-	GraphicsQueueFamily = graphicsQueueFamilyRet.value();
+	GraphicsQueue.QueueFamily = graphicsQueueFamilyRet.value();
 
 	auto presentQueueRet = vkbDevice.get_queue(vkb::QueueType::present);
 	if (!presentQueueRet)
@@ -207,7 +208,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get present queue: " + presentQueueRet.error().message());
 		return false;
 	}
-	PresentQueue = presentQueueRet.value();
+	PresentQueue.Queue = presentQueueRet.value();
 
 	auto presentQueueFamilyRet = vkbDevice.get_queue_index(vkb::QueueType::present);
 	if (!presentQueueFamilyRet)
@@ -215,7 +216,23 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get present queue index: " + presentQueueFamilyRet.error().message());
 		return false;
 	}
-	PresentQueueFamily = presentQueueFamilyRet.value();
+	PresentQueue.QueueFamily = presentQueueFamilyRet.value();
+
+	auto transferQueueRet = vkbDevice.get_queue(vkb::QueueType::transfer);
+	if (!transferQueueRet)
+	{
+		Fatal("failed to get transfer queue: " + transferQueueRet.error().message());
+		return false;
+	}
+	TransferQueue.Queue = transferQueueRet.value();
+
+	auto transferQueueFamilyRet = vkbDevice.get_queue_index(vkb::QueueType::transfer);
+	if (!transferQueueFamilyRet)
+	{
+		Fatal("failed to get transfer queue index: " + transferQueueFamilyRet.error().message());
+		return false;
+	}
+	TransferQueue.QueueFamily = transferQueueFamilyRet.value();
 
 	auto computeQueueRet = vkbDevice.get_queue(vkb::QueueType::compute);
 	if (!computeQueueRet)
@@ -223,7 +240,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get compute queue: " + computeQueueRet.error().message());
 		return false;
 	}
-	ComputeQueue = computeQueueRet.value();
+	PresentQueue.Queue = computeQueueRet.value();
 
 	auto computeQueueFamilyRet = vkbDevice.get_queue_index(vkb::QueueType::compute);
 	if (!computeQueueFamilyRet)
@@ -231,7 +248,7 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 		Fatal("failed to get compute queue index: " + computeQueueFamilyRet.error().message());
 		return false;
 	}
-	ComputeQueueFamily = computeQueueFamilyRet.value();
+	PresentQueue.QueueFamily = computeQueueFamilyRet.value();
 
 	return true;
 }
@@ -240,7 +257,7 @@ bool VulkanInstance::createCommandPool()
 {
 	VkCommandPoolCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	createInfo.queueFamilyIndex = GraphicsQueueFamily;
+	createInfo.queueFamilyIndex = GraphicsQueue.QueueFamily;
 
 	if (vkCreateCommandPool(Device, &createInfo, nullptr, &CommandPool) != VK_SUCCESS)
 	{
@@ -376,7 +393,7 @@ std::optional<VkCommandBuffer> VulkanInstance::allocateCommandBuffer()
 
 void VulkanInstance::temp()
 {
-	m_graphicsQueue = GraphicsQueue;
+	m_graphicsQueue = GraphicsQueue.Queue;
 	m_physicalDevice = PhysicalDevice;
 	m_device = Device;
 	m_surface = Surface;

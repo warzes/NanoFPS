@@ -57,6 +57,10 @@ namespace
 bool EngineApp::Create(const EngineCreateInfo& createInfo)
 {
 	IsAppEnd = false;
+
+	FileSystem::Init();
+	FileSystem::Mount("Data", "/");
+
 	if (!Window::Create(createInfo.window)) return false;
 	if (!RenderContext::Create(createInfo.renderContext)) return false;
 
@@ -71,6 +75,7 @@ void EngineApp::Destroy()
 {
 	RenderContext::Destroy();
 	Window::Destroy();
+	FileSystem::Shutdown();
 }
 
 bool EngineApp::ShouldClose()

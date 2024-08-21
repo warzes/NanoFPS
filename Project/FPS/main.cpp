@@ -4,8 +4,6 @@ int main(
 	[[maybe_unused]] int   argc,
 	[[maybe_unused]] char* argv[])
 {
-	FileSystem::Init();
-	FileSystem::Mount("Data", "/");
 	if (EngineApp::Create({}))
 	{
 		if (GameApp::Create())
@@ -23,6 +21,5 @@ int main(
 		GameApp::Destroy();
 	}
 	EngineApp::Destroy();
-	FileSystem::Shutdown();
 }
 //-----------------------------------------------------------------------------
