@@ -7,13 +7,7 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #endif
 
-#pragma region Debug Report Callback
-
-#pragma endregion
-
-
 #pragma region VulkanInstance
-
 
 bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 {
@@ -90,7 +84,9 @@ bool VulkanInstance::createInstanceAndDevice(const RenderContextCreateInfo& crea
 		return false;
 	}
 
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+#endif
 
 	vkb::InstanceBuilder instanceBuilder;
 
@@ -114,7 +110,10 @@ bool VulkanInstance::createInstanceAndDevice(const RenderContextCreateInfo& crea
 	Instance = vkbInstance.instance;
 	DebugMessenger = vkbInstance.debug_messenger;
 
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Instance(Instance));
+#endif
+
 	volkLoadInstanceOnly(Instance);
 
 	if (glfwCreateWindowSurface(Instance, Window::GetWindow(), nullptr, &Surface) != VK_SUCCESS)
@@ -149,12 +148,32 @@ bool VulkanInstance::createInstanceAndDevice(const RenderContextCreateInfo& crea
 	features10.geometryShader = VK_TRUE;
 	features10.fillModeNonSolid = VK_TRUE;
 
+	std::vector<const char*> requiredExtensions =
+	{
+		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
+		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		//VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+		//VK_NV_MESH_SHADER_EXTENSION_NAME,
+		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+	};
+
 	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
 	auto physicalDeviceRet = physicalDeviceSelector
 		.set_minimum_version(1, 3)
 		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
 		.allow_any_gpu_device_type(false)
-		.add_required_extension(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)
+		.add_required_extensions(requiredExtensions)
 		.set_required_features_13(features13)
 		.set_required_features_12(features12)
 		.set_required_features_11(features11)
@@ -182,7 +201,9 @@ bool VulkanInstance::createInstanceAndDevice(const RenderContextCreateInfo& crea
 	PhysicalDevice = physicalDevice.physical_device;
 
 	volkLoadDevice(Device);
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vk::Device(Device));
+#endif
 
 	vkGetPhysicalDeviceProperties(PhysicalDevice, &PhysicalDeviceProperties);
 	vkGetPhysicalDeviceFeatures(PhysicalDevice, &PhysicalDeviceFeatures);
