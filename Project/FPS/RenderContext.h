@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma region VulkanInstance
+
 struct RenderContextCreateInfo
 {
 	struct
@@ -18,17 +20,6 @@ struct VulkanQueue final
 	VkQueue Queue{ nullptr };
 	uint32_t QueueFamily{ 0 };
 };
-
-struct sBufferingObjects
-{
-	VkFence RenderFence{ nullptr };
-	VkSemaphore PresentSemaphore{ nullptr };
-	VkSemaphore RenderSemaphore{ nullptr };
-	VkCommandBuffer CommandBuffer{ nullptr };
-};
-
-
-#pragma region VulkanInstance
 
 class VulkanInstance final
 {

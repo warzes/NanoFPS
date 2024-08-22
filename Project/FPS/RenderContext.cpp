@@ -3,8 +3,17 @@
 #include "RenderResources.h"
 #include "RenderContext.h"
 #include "EngineWindow.h"
+#if VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+#endif
+
+#pragma region Debug Report Callback
+
+#pragma endregion
+
 
 #pragma region VulkanInstance
+
 
 bool VulkanInstance::Create(const RenderContextCreateInfo& createInfo)
 {

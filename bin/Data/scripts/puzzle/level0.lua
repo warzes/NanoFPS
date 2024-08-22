@@ -17,6 +17,6 @@ playAudio("event:/ambience/wind_calm")
 fadeFromBlack(2)
 delay(2, function ()
     if not entered_trigger then
-        showObjective("Step onto the platform.")
+        showObjective("Test. test.")
     end
 end)
