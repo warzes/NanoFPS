@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Core.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{b323eaaf-e86f-4c89-987a-1d113b743e42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="engine">
+      <UniqueIdentifier>{4a2d847e-e9f6-46e2-acca-6afc8101b0ea}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NanoEngine.h" />
+    <ClInclude Include="Base.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

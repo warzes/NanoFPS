@@ -60,14 +60,14 @@ public:
 	VkCommandBuffer ImmediateCommandBuffer{ nullptr };
 
 	// TODO: временно
-	vk::Queue m_graphicsQueue;
+	vk::Queue          m_graphicsQueue;
 	vk::PhysicalDevice m_physicalDevice;
-	vk::Device m_device;
-	vk::SurfaceKHR m_surface;
-	vk::CommandPool m_commandPool;
+	vk::Device         m_device;
+	vk::SurfaceKHR     m_surface;
+	vk::CommandPool    m_commandPool;
 	vk::DescriptorPool m_descriptorPool;
-	vk::Fence         m_immediateFence;
-	vk::CommandBuffer m_immediateCommandBuffer;
+	vk::Fence          m_immediateFence;
+	vk::CommandBuffer  m_immediateCommandBuffer;
 private:
 	bool createInstanceAndDevice(const RenderContextCreateInfo& createInfo);
 	bool getQueues(vkb::Device& vkbDevice);

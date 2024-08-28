@@ -13,6 +13,8 @@ Thumbs.db
 #exe
 /bin/FPS_Debug.*
 /bin/FPS_Release.*
+/bin/NewFPS_Debug.*
+/bin/NewFPS_Release.*
 /bin/OldFPS_Debug.*
 /bin/OldFPS_Release.*
 /bin/Editor_Debug.*
