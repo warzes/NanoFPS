@@ -414,34 +414,34 @@ enum Result
 	ERROR_INVALID_CREATE_ARGUMENT    = -300,
 	ERROR_RANGE_ALIASING_NOT_ALLOWED = -301,
 
-	ERROR_GR_INVALID_OWNERSHIP                    = -1000,
-	ERROR_GR_OBJECT_OWNERSHIP_IS_RESTRICTED       = -1001,
-	ERROR_GR_UNSUPPORTED_SWAPCHAIN_FORMAT         = -1002,
-	ERROR_GR_UNSUPPORTED_PRESENT_MODE             = -1003,
-	ERROR_GR_MAX_VERTEX_BINDING_EXCEEDED          = -1004,
-	ERROR_GR_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED    = -1005,
-	ERROR_GR_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER = -1006,
-	ERROR_GR_CANNOT_MIX_VERTEX_INPUT_RATES        = -1007,
-	ERROR_GR_UNKNOWN_DESCRIPTOR_TYPE              = -1008,
-	ERROR_GR_INVALID_DESCRIPTOR_TYPE              = -1009,
-	ERROR_GR_DESCRIPTOR_COUNT_EXCEEDED            = -1010,
-	ERROR_GR_BINDING_NOT_IN_SET                   = -1011,
-	ERROR_GR_NON_UNIQUE_SET                       = -1012,
-	ERROR_GR_MINIMUM_BUFFER_SIZE_NOT_MET          = -1013,
-	ERROR_GR_INVALID_SHADER_BYTE_CODE             = -1014,
-	ERROR_GR_INVALID_PIPELINE_INTERFACE           = -1015,
-	ERROR_GR_INVALID_QUERY_TYPE                   = -1016,
-	ERROR_GR_INVALID_QUERY_COUNT                  = -1017,
-	ERROR_GR_NO_QUEUES_AVAILABLE                  = -1018,
-	ERROR_GR_INVALID_INDEX_TYPE                   = -1019,
-	ERROR_GR_INVALID_GEOMETRY_CONFIGURATION       = -1020,
-	ERROR_GR_INVALID_VERTEX_ATTRIBUTE_COUNT       = -1021,
-	ERROR_GR_INVALID_VERTEX_ATTRIBUTE_STRIDE      = -1022,
-	ERROR_GR_NON_UNIQUE_BINDING                   = -1023,
-	ERROR_GR_INVALID_BINDING_NUMBER               = -1024,
-	ERROR_GR_INVALID_SET_NUMBER                   = -1025,
-	ERROR_GR_OPERATION_NOT_PERMITTED              = -1026,
-	ERROR_GR_INVALID_SEMAPHORE_TYPE               = -1027,
+	ERROR_GRFX_INVALID_OWNERSHIP                    = -1000,
+    ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED       = -1001,
+    ERROR_GRFX_UNSUPPORTED_SWAPCHAIN_FORMAT         = -1002,
+    ERROR_GRFX_UNSUPPORTED_PRESENT_MODE             = -1003,
+    ERROR_GRFX_MAX_VERTEX_BINDING_EXCEEDED          = -1004,
+    ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED    = -1005,
+    ERROR_GRFX_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER = -1006,
+    ERROR_GRFX_CANNOT_MIX_VERTEX_INPUT_RATES        = -1007,
+    ERROR_GRFX_UNKNOWN_DESCRIPTOR_TYPE              = -1008,
+    ERROR_GRFX_INVALID_DESCRIPTOR_TYPE              = -1009,
+    ERROR_GRFX_DESCRIPTOR_COUNT_EXCEEDED            = -1010,
+    ERROR_GRFX_BINDING_NOT_IN_SET                   = -1011,
+    ERROR_GRFX_NON_UNIQUE_SET                       = -1012,
+    ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET          = -1013,
+    ERROR_GRFX_INVALID_SHADER_BYTE_CODE             = -1014,
+    ERROR_GRFX_INVALID_PIPELINE_INTERFACE           = -1015,
+    ERROR_GRFX_INVALID_QUERY_TYPE                   = -1016,
+    ERROR_GRFX_INVALID_QUERY_COUNT                  = -1017,
+    ERROR_GRFX_NO_QUEUES_AVAILABLE                  = -1018,
+    ERROR_GRFX_INVALID_INDEX_TYPE                   = -1019,
+    ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION       = -1020,
+    ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_COUNT       = -1021,
+    ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE      = -1022,
+    ERROR_GRFX_NON_UNIQUE_BINDING                   = -1023,
+    ERROR_GRFX_INVALID_BINDING_NUMBER               = -1024,
+    ERROR_GRFX_INVALID_SET_NUMBER                   = -1025,
+    ERROR_GRFX_OPERATION_NOT_PERMITTED              = -1026,
+    ERROR_GRFX_INVALID_SEMAPHORE_TYPE               = -1027,
 
 	ERROR_IMAGE_FILE_LOAD_FAILED               = -2000,
 	ERROR_IMAGE_FILE_SAVE_FAILED               = -2001,
@@ -519,34 +519,33 @@ inline const char* ToString(Result value)
 		case Result::ERROR_INVALID_CREATE_ARGUMENT                    : return "ERROR_INVALID_CREATE_ARGUMENT";
 		case Result::ERROR_RANGE_ALIASING_NOT_ALLOWED                 : return "ERROR_RANGE_ALIASING_NOT_ALLOWED";
 
-		case Result::ERROR_GR_INVALID_OWNERSHIP                     : return "ERROR_GR_INVALID_OWNERSHIP";
-		case Result::ERROR_GR_OBJECT_OWNERSHIP_IS_RESTRICTED        : return "ERROR_GR_OBJECT_OWNERSHIP_IS_RESTRICTED";
-		case Result::ERROR_GR_UNSUPPORTED_SWAPCHAIN_FORMAT          : return "ERROR_GR_UNSUPPORTED_SWAPCHAIN_FORMAT";
-		case Result::ERROR_GR_UNSUPPORTED_PRESENT_MODE              : return "ERROR_GR_UNSUPPORTED_PRESENT_MODE";
-		case Result::ERROR_GR_MAX_VERTEX_BINDING_EXCEEDED           : return "ERROR_GR_MAX_VERTEX_BINDING_EXCEEDED";
-		case Result::ERROR_GR_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED     : return "ERROR_GR_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED";
-		case Result::ERROR_GR_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER  : return "ERROR_GR_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER";
-		case Result::ERROR_GR_CANNOT_MIX_VERTEX_INPUT_RATES         : return "ERROR_GR_CANNOT_MIX_VERTEX_INPUT_RATES";
-		case Result::ERROR_GR_UNKNOWN_DESCRIPTOR_TYPE               : return "ERROR_GR_UNKNOWN_DESCRIPTOR_TYPE";
-		case Result::ERROR_GR_INVALID_DESCRIPTOR_TYPE               : return "ERROR_GR_INVALID_DESCRIPTOR_TYPE";
-		case Result::ERROR_GR_DESCRIPTOR_COUNT_EXCEEDED             : return "ERROR_GR_DESCRIPTOR_COUNT_EXCEEDED";
-		case Result::ERROR_GR_BINDING_NOT_IN_SET                    : return "ERROR_GR_BINDING_NOT_IN_SET";
-		case Result::ERROR_GR_NON_UNIQUE_SET                        : return "ERROR_GR_NON_UNIQUE_SET";
-		case Result::ERROR_GR_MINIMUM_BUFFER_SIZE_NOT_MET           : return "ERROR_GR_MINIMUM_BUFFER_SIZE_NOT_MET";
-		case Result::ERROR_GR_INVALID_SHADER_BYTE_CODE              : return "ERROR_GR_INVALID_SHADER_BYTE_CODE";
-		case Result::ERROR_GR_INVALID_PIPELINE_INTERFACE            : return "ERROR_GR_INVALID_PIPELINE_INTERFACE";
-		case Result::ERROR_GR_INVALID_QUERY_TYPE                    : return "ERROR_GR_INVALID_QUERY_TYPE";
-		case Result::ERROR_GR_INVALID_QUERY_COUNT                   : return "ERROR_GR_INVALID_QUERY_COUNT";
-		case Result::ERROR_GR_NO_QUEUES_AVAILABLE                   : return "ERROR_GR_NO_QUEUES_AVAILABLE";
-		case Result::ERROR_GR_INVALID_INDEX_TYPE                    : return "ERROR_GR_INVALID_INDEX_TYPE";
-		case Result::ERROR_GR_INVALID_GEOMETRY_CONFIGURATION        : return "ERROR_GR_INVALID_GEOMETRY_CONFIGURATION ";
-		case Result::ERROR_GR_INVALID_VERTEX_ATTRIBUTE_COUNT        : return "ERROR_GR_INVALID_VERTEX_ATTRIBUTE_COUNT ";
-		case Result::ERROR_GR_INVALID_VERTEX_ATTRIBUTE_STRIDE       : return "ERROR_GR_INVALID_VERTEX_ATTRIBUTE_STRIDE";
-		case Result::ERROR_GR_NON_UNIQUE_BINDING                    : return "ERROR_GR_NON_UNIQUE_BINDING";
-		case Result::ERROR_GR_INVALID_BINDING_NUMBER                : return "ERROR_GR_INVALID_BINDING_NUMBER";
-		case Result::ERROR_GR_INVALID_SET_NUMBER                    : return "ERROR_GR_INVALID_SET_NUMBER";
-		case Result::ERROR_GR_OPERATION_NOT_PERMITTED               : return "ERROR_GR_OPERATION_NOT_PERMITTED";
-		case Result::ERROR_GR_INVALID_SEMAPHORE_TYPE                : return "ERROR_GR_INVALID_SEMAPHORE_TYPE";
+		case Result::ERROR_GRFX_INVALID_OWNERSHIP                     : return "ERROR_GRFX_INVALID_OWNERSHIP";
+        case Result::ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED        : return "ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED";
+        case Result::ERROR_GRFX_UNSUPPORTED_SWAPCHAIN_FORMAT          : return "ERROR_GRFX_UNSUPPORTED_SWAPCHAIN_FORMAT";
+        case Result::ERROR_GRFX_UNSUPPORTED_PRESENT_MODE              : return "ERROR_GRFX_UNSUPPORTED_PRESENT_MODE";
+        case Result::ERROR_GRFX_MAX_VERTEX_BINDING_EXCEEDED           : return "ERROR_GRFX_MAX_VERTEX_BINDING_EXCEEDED";
+        case Result::ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED     : return "ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED";
+        case Result::ERROR_GRFX_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER  : return "ERROR_GRFX_VERTEX_ATTRIBUTE_OFFSET_OUT_OF_ORDER";
+        case Result::ERROR_GRFX_CANNOT_MIX_VERTEX_INPUT_RATES         : return "ERROR_GRFX_CANNOT_MIX_VERTEX_INPUT_RATES";
+        case Result::ERROR_GRFX_UNKNOWN_DESCRIPTOR_TYPE               : return "ERROR_GRFX_UNKNOWN_DESCRIPTOR_TYPE";
+        case Result::ERROR_GRFX_INVALID_DESCRIPTOR_TYPE               : return "ERROR_GRFX_INVALID_DESCRIPTOR_TYPE";
+        case Result::ERROR_GRFX_DESCRIPTOR_COUNT_EXCEEDED             : return "ERROR_GRFX_DESCRIPTOR_COUNT_EXCEEDED";
+        case Result::ERROR_GRFX_BINDING_NOT_IN_SET                    : return "ERROR_GRFX_BINDING_NOT_IN_SET";
+        case Result::ERROR_GRFX_NON_UNIQUE_SET                        : return "ERROR_GRFX_NON_UNIQUE_SET";
+        case Result::ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET           : return "ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET";
+        case Result::ERROR_GRFX_INVALID_SHADER_BYTE_CODE              : return "ERROR_GRFX_INVALID_SHADER_BYTE_CODE";
+        case Result::ERROR_GRFX_INVALID_PIPELINE_INTERFACE            : return "ERROR_GRFX_INVALID_PIPELINE_INTERFACE";
+        case Result::ERROR_GRFX_INVALID_QUERY_TYPE                    : return "ERROR_GRFX_INVALID_QUERY_TYPE";
+        case Result::ERROR_GRFX_INVALID_QUERY_COUNT                   : return "ERROR_GRFX_INVALID_QUERY_COUNT";
+        case Result::ERROR_GRFX_NO_QUEUES_AVAILABLE                   : return "ERROR_GRFX_NO_QUEUES_AVAILABLE";
+        case Result::ERROR_GRFX_INVALID_INDEX_TYPE                    : return "ERROR_GRFX_INVALID_INDEX_TYPE";
+        case Result::ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION        : return "ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION ";
+        case Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_COUNT        : return "ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_COUNT ";
+        case Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE       : return "ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE";
+        case Result::ERROR_GRFX_NON_UNIQUE_BINDING                    : return "ERROR_GRFX_NON_UNIQUE_BINDING";
+        case Result::ERROR_GRFX_INVALID_BINDING_NUMBER                : return "ERROR_GRFX_INVALID_BINDING_NUMBER";
+        case Result::ERROR_GRFX_INVALID_SET_NUMBER                    : return "ERROR_GRFX_INVALID_SET_NUMBER";
+        case Result::ERROR_GRFX_OPERATION_NOT_PERMITTED               : return "ERROR_GRFX_OPERATION_NOT_PERMITTED";
 
 		case Result::ERROR_IMAGE_FILE_LOAD_FAILED                     : return "ERROR_IMAGE_FILE_LOAD_FAILED";
 		case Result::ERROR_IMAGE_FILE_SAVE_FAILED                     : return "ERROR_IMAGE_FILE_SAVE_FAILED";
@@ -709,6 +708,184 @@ private:
 
 #pragma endregion
 
+#pragma region ComPtr
+
+template <class T>
+class CComPtrBase
+{
+protected:
+	CComPtrBase() throw() { p = nullptr; }
+	CComPtrBase(T* lp) throw()
+	{
+		p = lp;
+		if (p != nullptr)
+			p->AddRef();
+	}
+	void Swap(CComPtrBase& other)
+	{
+		T* pTemp = p;
+		p = other.p;
+		other.p = pTemp;
+	}
+
+public:
+	~CComPtrBase() throw()
+	{
+		if (p) {
+			p->Release();
+			p = nullptr;
+		}
+	}
+	operator T* () const throw() { return p; }
+	T& operator*() const { return *p; }
+	T* operator->() const { return p; }
+	T** operator&() throw()
+	{
+		assert(p == nullptr);
+		return &p;
+	}
+	bool operator!() const throw() { return (p == nullptr); }
+	bool operator<(T* pT) const throw() { return p < pT; }
+	bool operator!=(T* pT) const { return !operator==(pT); }
+	bool operator==(T* pT) const throw() { return p == pT; }
+
+	// Release the interface and set to nullptr
+	void Release() throw()
+	{
+		T* pTemp = p;
+		if (pTemp) {
+			p = nullptr;
+			pTemp->Release();
+		}
+	}
+
+	// Attach to an existing interface (does not AddRef)
+	void Attach(T* p2) throw()
+	{
+		if (p) {
+			ULONG ref = p->Release();
+			(void)(ref);
+			// Attaching to the same object only works if duplicate references are
+			// being coalesced.  Otherwise re-attaching will cause the pointer to be
+			// released and may cause a crash on a subsequent dereference.
+			assert(ref != 0 || p2 != p);
+		}
+		p = p2;
+	}
+
+	// Detach the interface (does not Release)
+	T* Detach() throw()
+	{
+		T* pt = p;
+		p = nullptr;
+		return pt;
+	}
+
+	HRESULT CopyTo(T** ppT) throw()
+	{
+		assert(ppT != nullptr);
+		if (ppT == nullptr)
+			return E_POINTER;
+		*ppT = p;
+		if (p)
+			p->AddRef();
+		return S_OK;
+	}
+
+	template <class Q>
+	HRESULT QueryInterface(Q** pp) const throw()
+	{
+		assert(pp != nullptr);
+		return p->QueryInterface(__uuidof(Q), (void**)pp);
+	}
+
+	T* p;
+};
+
+template <class T>
+class CComPtr : public CComPtrBase<T>
+{
+public:
+	typedef T InterfaceType;
+
+	CComPtr() throw() {}
+	CComPtr(T* lp) throw()
+		: CComPtrBase<T>(lp) {}
+	CComPtr(const CComPtr<T>& lp) throw()
+		: CComPtrBase<T>(lp.p) {}
+	T* operator=(T* lp) throw()
+	{
+		if (*this != lp) {
+			CComPtr(lp).Swap(*this);
+		}
+		return *this;
+	}
+
+	inline bool IsEqualObject(IUnknown* pOther) throw()
+	{
+		if (this->p == nullptr && pOther == nullptr)
+			return true; // They are both NULL objects
+
+		if (this->p == nullptr || pOther == nullptr)
+			return false; // One is NULL the other is not
+
+		CComPtr<IUnknown> punk1;
+		CComPtr<IUnknown> punk2;
+		this->p->QueryInterface(__uuidof(IUnknown), (void**)&punk1);
+		pOther->QueryInterface(__uuidof(IUnknown), (void**)&punk2);
+		return punk1 == punk2;
+	}
+
+	void ComPtrAssign(IUnknown** pp, IUnknown* lp, REFIID riid)
+	{
+		IUnknown* pTemp = *pp; // takes ownership
+		if (lp == nullptr || FAILED(lp->QueryInterface(riid, (void**)pp)))
+			*pp = nullptr;
+		if (pTemp)
+			pTemp->Release();
+	}
+
+	template <typename Q>
+	T* operator=(const CComPtr<Q>& lp) throw()
+	{
+		if (!this->IsEqualObject(lp)) {
+			ComPtrAssign((IUnknown**)&this->p, lp, __uuidof(T));
+		}
+		return *this;
+	}
+
+	T* operator=(const CComPtr<T>& lp) throw()
+	{
+		if (*this != lp) {
+			CComPtr(lp).Swap(*this);
+		}
+		return *this;
+	}
+
+	CComPtr(CComPtr<T>&& lp) throw()
+		: CComPtrBase<T>() { lp.Swap(*this); }
+
+	T* operator=(CComPtr<T>&& lp) throw()
+	{
+		if (*this != lp) {
+			CComPtr(static_cast<CComPtr&&>(lp)).Swap(*this);
+		}
+		return *this;
+	}
+
+	T* Get() const
+	{
+		return this->p;
+	}
+
+	void Reset() throw()
+	{
+		this->Release();
+	}
+};
+
+#pragma endregion
+
 #pragma region Log
 
 constexpr const auto LOG_DEFAULT_PATH = "Log.txt";
@@ -861,18 +1038,18 @@ private:
         assert(false);                                                     \
     }
 
-#define CHECKED_CALL(EXPR)                                                        \
-    {                                                                             \
-        Result _checked_result_0xdeadbeef = EXPR;                                 \
-        if (_checked_result_0xdeadbeef != SUCCESS) {                              \
-            LOG_RAW(NE_ENDL                                                       \
-                << "*** Engine Call Failed ***" << NE_ENDL                        \
-                << "Return     : " << checked_result_0xdeadbeef << " " << NE_ENDL \
-                << "Expression : " << #EXPR << " " << NE_ENDL                     \
-                << "Function   : " << __FUNCTION__ << NE_ENDL                     \
-                << "Location   : " << __FILE__ << " : " << NE_LINE << NE_ENDL);   \
-            assert(false);                                                        \
-        }                                                                         \
+#define CHECKED_CALL(EXPR)                                                         \
+    {                                                                              \
+        Result _checked_result_0xdeadbeef = EXPR;                                  \
+        if (_checked_result_0xdeadbeef != SUCCESS) {                               \
+            LOG_RAW(NE_ENDL                                                        \
+                << "*** Engine Call Failed ***" << NE_ENDL                         \
+                << "Return     : " << _checked_result_0xdeadbeef << " " << NE_ENDL \
+                << "Expression : " << #EXPR << " " << NE_ENDL                      \
+                << "Function   : " << __FUNCTION__ << NE_ENDL                      \
+                << "Location   : " << __FILE__ << " : " << NE_LINE << NE_ENDL);    \
+            assert(false);                                                         \
+        }                                                                          \
     }
 
 #pragma endregion
@@ -1271,6 +1448,45 @@ namespace fs
 	std::filesystem::path GetFullPath(const std::filesystem::path& partialPath, const std::filesystem::path& defaultFolder, const std::string& regexToReplace = "", const std::string& replaceString = "");
 
 } // namespace fs
+
+#pragma endregion
+
+#pragma region Math Utils
+
+// Converts spherical coordinate 'sc' to unit cartesian position.
+//
+// theta is the azimuth angle between [0, 2pi].
+// phi is the polar angle between [0, pi].
+//
+// theta = 0, phi =[0, pi] sweeps the positive X axis:
+//    SphericalToCartesian(0, 0)    = (0,  1, 0)
+//    SphericalToCartesian(0, pi/2) = (1,  0, 0)
+//    SphericalToCartesian(0, pi)   = (0, -1, 0)
+//
+// theta = [0, 2pi], phi = [pi/2] sweeps a circle:
+//    SphericalToCartesian(0,     pi/2) = ( 1, 0, 0)
+//    SphericalToCartesian(pi/2,  pi/2) = ( 0, 0, 1)
+//    SphericalToCartesian(pi  ,  pi/2) = (-1, 0, 0)
+//    SphericalToCartesian(3pi/2, pi/2) = ( 0, 0,-1)
+//    SphericalToCartesian(2pi,   pi/2) = ( 1, 0, 0)
+//
+inline float3 SphericalToCartesian(float theta, float phi)
+{
+	return float3(
+		cos(theta) * sin(phi), // x
+		cos(phi),              // y
+		sin(theta) * sin(phi)  // z
+	);
+}
+
+inline float3 SphericalTangent(float theta, float phi)
+{
+	return float3(
+		sin(theta), // x
+		0,          // y
+		-cos(theta) // z
+	);
+}
 
 #pragma endregion
 

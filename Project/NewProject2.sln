@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35103.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DOC", "DOC", "{2CF94783-26C1-4921-8E41-73594FE16BE8}"
+	ProjectSection(SolutionItems) = preProject
+		IdeaGame.md = IdeaGame.md
+		TODO.md = TODO.md
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NewFPS", "NewFPS\NewFPS.vcxproj", "{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7192DED7-6F6D-4082-B809-E565FA8B4CBB} = {7192DED7-6F6D-4082-B809-E565FA8B4CBB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NanoEngine", "NanoEngine\NanoEngine.vcxproj", "{7192DED7-6F6D-4082-B809-E565FA8B4CBB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}.Debug|x64.ActiveCfg = Debug|x64
+		{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}.Debug|x64.Build.0 = Debug|x64
+		{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}.Release|x64.ActiveCfg = Release|x64
+		{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}.Release|x64.Build.0 = Release|x64
+		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Debug|x64.ActiveCfg = Debug|x64
+		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Debug|x64.Build.0 = Debug|x64
+		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Release|x64.ActiveCfg = Release|x64
+		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4C917DBD-7ACD-4997-B46B-B97DDE6C95AB}
+	EndGlobalSection
+EndGlobal

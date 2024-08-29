@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <cfloat>
 
 #include <chrono>
 #include <memory>
@@ -51,6 +52,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <map>
 #include <unordered_map>
 #include <mutex>
 
@@ -84,11 +86,35 @@ Left handed
 
 #include <pcg32/pcg32.h>
 
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+
+#include <GLFW/glfw3.h>
+#if defined(_WIN32)
+#	define GLFW_EXPOSE_NATIVE_WIN32
+#endif
+#include <GLFW/glfw3native.h>
+
 #if defined(_WIN32)
 #	include <Windows.h>
+#	include <unknwn.h>
 #endif
 
 #include <cpu_features/cpuinfo_x86.h>
+
+#include <gli/gli.hpp>
+#include <gli/target.hpp>
+#include <gli/format.hpp>
+
+
+#include <stb/stb_image.h>
+#include <stb/stb_image_resize.h>
+#include <stb/stb_image_write.h>
+#include <stb/stb_truetype.h>
+
+#include <tiny_obj_loader.h>
+
+#include <utf8.h>
 
 #undef near
 #undef far
