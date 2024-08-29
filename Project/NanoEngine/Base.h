@@ -1,14 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #pragma region Header
 
 #if defined(_MSC_VER)
-#	pragma warning(disable : 4514)
-#	pragma warning(disable : 4625)
-#	pragma warning(disable : 4626)
-#	pragma warning(disable : 4820)
 #	pragma warning(push, 3)
-#	pragma warning(disable : 5039)
+//#	pragma warning(disable : 5039)
 #endif
 
 #if defined(_MSC_VER)
@@ -84,32 +80,13 @@ Left handed
 #include <glm/gtx/matrix_decompose.hpp>
 //#include <glm/gtx/normal.hpp>
 
-#include <pcg32/pcg32.h>
-
-#include <imgui/imgui.h>
-#include <imgui/imgui_impl_glfw.h>
-
 #include <GLFW/glfw3.h>
 #if defined(_WIN32)
 #	define GLFW_EXPOSE_NATIVE_WIN32
 #endif
 #include <GLFW/glfw3native.h>
 
-#if defined(_WIN32)
-#	include <Windows.h>
-#	include <unknwn.h>
-#endif
-
-#include <cpu_features/cpuinfo_x86.h>
-
-#include <gli/gli.hpp>
-#include <gli/target.hpp>
-#include <gli/format.hpp>
-
-
 #include <stb/stb_image.h>
-#include <stb/stb_image_resize.h>
-#include <stb/stb_image_write.h>
 #include <stb/stb_truetype.h>
 
 #include <tiny_obj_loader.h>
@@ -122,24 +99,5 @@ Left handed
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif
-
-#pragma endregion
-
-#pragma region Base Macros
-
-#if defined(_MSC_VER)
-#	define PRAGMA(X) __pragma(X)
-#else
-#	define PRAGMA(X) _Pragma(#X)
-#endif
-#define HLSL_PACK_BEGIN() PRAGMA(pack(push, 1))
-#define HLSL_PACK_END()   PRAGMA(pack(pop))
-
-#define NE_STRINGIFY_(x)   #x
-#define NE_STRINGIFY(x)    NE_STRINGIFY_(x)
-#define NE_LINE            NE_STRINGIFY(__LINE__)
-#define NE_SOURCE_LOCATION __FUNCTION__ << " @ " __FILE__ ":" NE_LINE
-#define NE_VAR_VALUE(var)  #var << ":" << var
-#define NE_ENDL            std::endl
 
 #pragma endregion

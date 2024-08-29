@@ -4,3 +4,4 @@
 #include "RenderCore.h"
 #include "RenderResources.h"
 #include "RenderDevice.h"
+#include "RenderSystem.h"

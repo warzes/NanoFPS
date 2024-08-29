@@ -62,6 +62,7 @@
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -81,6 +82,7 @@
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -91,53 +93,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\3rdparty\imgui\imgui.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_draw.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_glfw.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_vulkan.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_tables.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_widgets.cpp">
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
-      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\stb\stb.cpp" />
-    <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="RenderCore.cpp" />
     <ClCompile Include="RenderDevice.cpp" />
     <ClCompile Include="RenderResources.cpp" />
+    <ClCompile Include="RenderSystem.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\3rdparty\imgui\imconfig.h" />
-    <ClInclude Include="..\3rdparty\imgui\imgui.h" />
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_vulkan.h" />
-    <ClInclude Include="..\3rdparty\imgui\imgui_internal.h" />
-    <ClInclude Include="..\3rdparty\imgui\imstb_rectpack.h" />
-    <ClInclude Include="..\3rdparty\imgui\imstb_textedit.h" />
-    <ClInclude Include="..\3rdparty\imgui\imstb_truetype.h" />
-    <ClInclude Include="..\3rdparty\stb\stb_image.h" />
-    <ClInclude Include="..\3rdparty\stb\stb_image_resize.h" />
-    <ClInclude Include="..\3rdparty\stb\stb_image_write.h" />
-    <ClInclude Include="..\3rdparty\stb\stb_truetype.h" />
-    <ClInclude Include="..\3rdparty\tiny_obj_loader.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Base.h" />
     <ClInclude Include="Core.h" />
@@ -146,6 +114,8 @@
     <ClInclude Include="RenderCore.h" />
     <ClInclude Include="RenderDevice.h" />
     <ClInclude Include="RenderResources.h" />
+    <ClInclude Include="RenderSystem.h" />
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

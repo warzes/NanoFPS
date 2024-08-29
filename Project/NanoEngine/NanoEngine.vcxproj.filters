@@ -10,24 +10,6 @@
     <ClCompile Include="Platform.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_widgets.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_draw.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_glfw.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_vulkan.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_tables.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="RenderCore.cpp">
       <Filter>engine\Render</Filter>
     </ClCompile>
@@ -37,12 +19,10 @@
     <ClCompile Include="RenderDevice.cpp">
       <Filter>engine\Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\stb\stb.cpp">
-      <Filter>3rdparty\stb</Filter>
+    <ClCompile Include="RenderSystem.cpp">
+      <Filter>engine\Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp">
-      <Filter>3rdparty\tiny_obj_loader</Filter>
-    </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -51,17 +31,8 @@
     <Filter Include="engine">
       <UniqueIdentifier>{4a2d847e-e9f6-46e2-acca-6afc8101b0ea}</UniqueIdentifier>
     </Filter>
-    <Filter Include="3rdparty\imgui">
-      <UniqueIdentifier>{042b717e-2963-439d-a7b9-614a935a593c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="engine\Render">
       <UniqueIdentifier>{26ff6c62-b739-4d1e-ad7a-44ef159a0629}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\stb">
-      <UniqueIdentifier>{ac2d33f8-79ef-4945-8512-1f7d45b36312}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\tiny_obj_loader">
-      <UniqueIdentifier>{b4daa4dd-ec39-42c8-8267-17808a844df6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -78,30 +49,6 @@
     <ClInclude Include="Platform.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_rectpack.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_textedit.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_truetype.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imconfig.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_glfw.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_vulkan.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_internal.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="RenderCore.h">
       <Filter>engine\Render</Filter>
     </ClInclude>
@@ -111,20 +58,9 @@
     <ClInclude Include="RenderDevice.h">
       <Filter>engine\Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_truetype.h">
-      <Filter>3rdparty\stb</Filter>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>engine\Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image_resize.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image_write.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\tiny_obj_loader.h">
-      <Filter>3rdparty\tiny_obj_loader</Filter>
-    </ClInclude>
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
 </Project>
