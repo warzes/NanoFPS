@@ -35,12 +35,15 @@
 #include <chrono>
 #include <memory>
 #include <filesystem>
+#include <ostream>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <functional>
 #include <algorithm>
+#include <regex>
+#include <optional>
 #include <bitset>
 #include <span>
 #include <array>
@@ -50,6 +53,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+
 
 /*
 Left handed
@@ -83,6 +87,8 @@ Left handed
 #if defined(_WIN32)
 #	include <Windows.h>
 #endif
+
+#include <cpu_features/cpuinfo_x86.h>
 
 #undef near
 #undef far

@@ -711,7 +711,7 @@ private:
 
 #pragma region Log
 
-constexpr const auto LOG_DEFAULT_PATH = "ppx.log";
+constexpr const auto LOG_DEFAULT_PATH = "Log.txt";
 
 std::ostream& operator<<(std::ostream& os, const float2& i);
 std::ostream& operator<<(std::ostream& os, const float3& i);
@@ -720,19 +720,19 @@ std::ostream& operator<<(std::ostream& os, const uint3& i);
 
 enum LogMode
 {
-	LOG_MODE_OFF     = 0x0,
+	LOG_MODE_OFF = 0x0,
 	LOG_MODE_CONSOLE = 0x1,
-	LOG_MODE_FILE    = 0x2,
+	LOG_MODE_FILE = 0x2,
 };
 
 enum LogLevel
 {
 	LOG_LEVEL_DEFAULT = 0x0,
-	LOG_LEVEL_INFO    = 0x1,
-	LOG_LEVEL_WARN    = 0x2,
-	LOG_LEVEL_DEBUG   = 0x3,
-	LOG_LEVEL_ERROR   = 0x4,
-	LOG_LEVEL_FATAL   = 0x5,
+	LOG_LEVEL_INFO = 0x1,
+	LOG_LEVEL_WARN = 0x2,
+	LOG_LEVEL_DEBUG = 0x3,
+	LOG_LEVEL_ERROR = 0x4,
+	LOG_LEVEL_FATAL = 0x5,
 };
 
 class Log final
@@ -775,7 +775,7 @@ private:
 	uint32_t          m_modes = LOG_MODE_OFF;
 	std::string       m_filePath;
 	std::ofstream     m_fileStream;
-	std::ostream*     m_consoleStream = nullptr;
+	std::ostream* m_consoleStream = nullptr;
 	std::stringstream m_buffer;
 	std::mutex        m_writeMutex;
 };
@@ -866,7 +866,7 @@ private:
         Result _checked_result_0xdeadbeef = EXPR;                                 \
         if (_checked_result_0xdeadbeef != SUCCESS) {                              \
             LOG_RAW(NE_ENDL                                                       \
-                << "*** PPX Call Failed ***" << NE_ENDL                           \
+                << "*** Engine Call Failed ***" << NE_ENDL                        \
                 << "Return     : " << checked_result_0xdeadbeef << " " << NE_ENDL \
                 << "Expression : " << #EXPR << " " << NE_ENDL                     \
                 << "Function   : " << __FUNCTION__ << NE_ENDL                     \
@@ -874,6 +874,120 @@ private:
             assert(false);                                                        \
         }                                                                         \
     }
+
+#pragma endregion
+
+#pragma region String Utils
+
+namespace string_util 
+{
+	// -------------------------------------------------------------------------------------------------
+	// Misc
+	// -------------------------------------------------------------------------------------------------
+
+	std::string ToLowerCopy(const std::string& s);
+	std::string ToUpperCopy(const std::string& s);
+
+	void TrimLeft(std::string& s);
+	void TrimRight(std::string& s);
+
+	std::string TrimCopy(const std::string& s);
+
+	// Trims all characters specified in c from both the left and right sides of s
+	std::string_view TrimBothEnds(std::string_view s, std::string_view c = " \t");
+
+	// Splits s at the first instance of delimiter and returns two substrings
+	// Returns an empty second element if there is no delimiter
+	std::pair<std::string_view, std::string_view> SplitInTwo(std::string_view s, char delimiter);
+
+	// -------------------------------------------------------------------------------------------------
+	// Formatting Strings
+	// -------------------------------------------------------------------------------------------------
+
+	// Formats string for printing with the specified width and left indent.
+	// Words will be pushed to the subsequent line to avoid line breaks in the
+	// middle of a word if possible.
+	// Leading and trailing whitespace is trimmed from each line.
+	std::string WrapText(const std::string& s, size_t width, size_t indent = 0);
+
+	// Provides string representation of value for printing or display
+	template <typename T>
+	std::string ToString(T value)
+	{
+		std::stringstream ss;
+		if constexpr (std::is_same_v<T, bool>)
+		{
+			ss << std::boolalpha;
+		}
+		ss << value;
+		return ss.str();
+	}
+
+	// Same as above, for vectors
+	template <typename T>
+	std::string ToString(std::vector<T> values)
+	{
+		std::stringstream ss;
+		for (const auto& value : values)
+		{
+			ss << ToString<T>(value) << ", ";
+		}
+		std::string valueStr = ss.str();
+		return valueStr.substr(0, valueStr.length() - 2);
+	}
+
+	// Same as above, for pairs
+	template <typename T>
+	std::string ToString(std::pair<T, T> values)
+	{
+		std::stringstream ss;
+		ss << ToString<T>(values.first) << ", " << ToString<T>(values.second);
+		return ss.str();
+	}
+
+	// -------------------------------------------------------------------------------------------------
+	// Parsing Strings
+	// -------------------------------------------------------------------------------------------------
+
+	// Parse() attempts to parse valueStr into the specified type
+	// If successful, overwrites parsedValue and returns std::nullopt
+	// If unsucessful, does not overwrite parsedValue, logs error and returns ERROR_FAILED instead
+
+	// For strings
+	// e.g. "a string" -> "a string"
+	Result Parse(std::string_view valueStr, std::string& parsedValue);
+
+	// For bool
+	// e.g. "true", "1", "" -> true
+	// e.g. "false", "0" -> false
+	Result Parse(std::string_view valueStr, bool& parsedValue);
+
+	// For integers, chars and floats
+	// e.g. "1.0" -> 1.0f
+	// e.g. "-20" -> -20
+	// e.g. "c" -> 'c'
+	template <typename T>
+	Result Parse(std::string_view valueStr, T& parsedValue)
+	{
+		static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "attempting to parse unsupported type");
+
+		std::stringstream ss((std::string(valueStr)));
+		T                 valueAsNum;
+		ss >> valueAsNum;
+		if (ss.fail())
+		{
+			LOG_ERROR("could not be parsed as integral or float: " << valueStr);
+			return ERROR_FAILED;
+		}
+		parsedValue = valueAsNum;
+		return SUCCESS;
+	}
+
+	// For resolution with x-separated string representation
+	// e.g. "600x800" -> (600, 800)
+	Result Parse(std::string_view valueStr, std::pair<int, int>& parsedValues);
+
+} // namespace string_util
 
 #pragma endregion
 
@@ -946,16 +1060,21 @@ private:
 	Features    m_features = { 0 };
 };
 
-
 #pragma endregion
 
 #pragma region Platform Info
+
+enum PlatformId
+{
+	PLATFORM_ID_UNDEFINED = 0,
+	PLATFORM_ID_LINUX,
+	PLATFORM_ID_MSW,
+};
 
 class Platform final
 {
 public:
 	Platform();
-	~Platform();
 
 	static PlatformId     GetPlatformId();
 	static const char*    GetPlatformString();
@@ -965,4 +1084,713 @@ private:
 	CpuInfo m_cpuInfo;
 };
 
+#pragma endregion
+
+#pragma region Timer
+
+#define TIMER_SECONDS_TO_NANOS 1000000000
+#define TIMER_MILLIS_TO_NANOS  1000000
+#define TIMER_MICROS_TO_NANOS  1000
+#define TIMER_NANOS_TO_SECONDS 0.000000001
+#define TIMER_NANOS_TO_MILLIS  0.000001
+#define TIMER_NANOS_TO_MICROS  0.001
+
+// Select which clock to use
+#if defined(TIMER_FORCE_MONOTONIC)
+#	define TIMER_CLK_ID CLOCK_MONOTONIC
+#else
+#	define TIMER_CLK_ID CLOCK_MONOTONIC_RAW
+#endif
+
+enum TimerResult
+{
+	TIMER_RESULT_SUCCESS                 = 0,
+	TIMER_RESULT_ERROR_NULL_POINTER      = -1,
+	TIMER_RESULT_ERROR_INITIALIZE_FAILED = -2,
+	TIMER_RESULT_ERROR_TIMESTAMP_FAILED  = -3,
+	TIMER_RESULT_ERROR_SLEEP_FAILED      = -4,
+	TIMER_RESULT_ERROR_CORRUPTED_DATA    = -5,
+};
+
+class Timer final
+{
+public:
+	static TimerResult InitializeStaticData();
+
+	static TimerResult Timestamp(uint64_t* pTimestamp);
+	static double      TimestampToSeconds(uint64_t timestamp);
+	static double      TimestampToMillis(uint64_t timestamp);
+	static double      TimestampToMicros(uint64_t timestamp);
+	static double      TimestampToNanos(uint64_t timestamp);
+
+	static TimerResult SleepSeconds(double seconds);
+	static TimerResult SleepMillis(double millis);
+	static TimerResult SleepMicros(double micros);
+	static TimerResult SleepNanos(double nanos);
+
+	TimerResult Start();
+	TimerResult Stop();
+	uint64_t    StartTimestamp() const;
+	uint64_t    StopTimestamp() const;
+	double      SecondsSinceStart() const;
+	double      MillisSinceStart() const;
+	double      MicrosSinceStart() const;
+	double      NanosSinceStart() const;
+
+private:
+	bool     m_initialized = false;
+	uint64_t m_startTimestamp = 0;
+	uint64_t m_stopTimestamp = 0;
+};
+
+class ScopedTimer
+{
+public:
+	ScopedTimer(const std::string& message);
+	~ScopedTimer();
+
+	ScopedTimer(const ScopedTimer&) = delete;
+	ScopedTimer(ScopedTimer&&) = delete;
+private:
+	Timer             m_timer;
+	const std::string m_message;
+};
+
+#pragma endregion
+
+#pragma region File System
+
+namespace fs
+{
+#if defined(_ANDROID)
+	void set_android_context(android_app* androidContext);
+#endif
+
+	// Abstract a static, regular file on all platforms.
+	// This class doesn't handle sockets, or file which content is not constant
+	// for the lifetime of this class.
+	class File
+	{
+		// Internal enum to know which handle is currently valid.
+		enum FileHandleType
+		{
+			// Default handle, no file associated.
+			BAD_HANDLE = 0,
+			// The file is accessible through a stream.
+			STREAM_HANDLE = 1,
+			// The file is accessible through an Android asset handle.
+			ASSET_HANDLE = 2,
+		};
+
+	public:
+		File();
+		File(const File& other) = delete;
+		File(const File&& other) = delete;
+		~File();
+
+		// Opens a file given a specific path.
+		// path: the path of the file to open.
+		//  - On desktop, loads the regular file at `path`. (memory-mapping availability is implementation defined).
+		//  - On Android, relative path are assumed to be loaded from the APK, those are memory mapped.
+		//                absolute path are loaded as regular files (mapping availability is implementation defined).
+		//
+		// - This API only supports regular files.
+		// - This API expects the file not to change size or content while this handle is open.
+		// - This class supports RAII. File will be closed on destroy.
+		bool Open(const std::filesystem::path& path);
+
+		// Reads `size` bytes from the file into `buffer`.
+		// buffer: a pointer to a buffer with at least `count` writable bytes.
+		// count: the maximum number of bytes to write to `buffer`.
+		// Returns the number of bytes written to `buffer`.
+		//
+		// - The file has an internal cursor, meaning the next read will start at the end of the last read.
+		// - If the file size is larger than `count`, the read stops at `count` bytes.
+		size_t Read(void* buffer, size_t count);
+
+		// Returns true if the file is readable.
+		bool IsValid() const;
+		// Returns true if the file is mapped in memory. See `File::GetMappedData()`.
+		bool IsMapped() const;
+
+		// Returns the total size in bytes of the file from the start.
+		size_t GetLength() const;
+		// Returns a readable pointer to a beginning of the file. Behavior undefined if `File::IsMapped()` is false.
+		const void* GetMappedData() const;
+
+	private:
+#if !defined(_ANDROID)
+		typedef void AAsset;
+#endif
+
+		FileHandleType m_handleType = BAD_HANDLE;
+		AAsset*        m_asset = nullptr;
+		const void*    m_buffer = nullptr;
+		std::ifstream  m_stream;
+		size_t         m_fileSize = 0;
+		size_t         m_fileOffset = 0;
+	};
+
+	class FileStream : public std::streambuf
+	{
+	public:
+		bool Open(const char* path);
+
+	private:
+		std::vector<char> m_buffer;
+	};
+
+	// Opens a regular file and returns its content if the read succeeded.
+	// `path`: the path of the file to load.
+	// The path is handled differently depending on the platform:
+	//  - desktop: all paths are treated the same.
+	//  - android: relative paths are assumed to be in APK's storage (Asset API). Absolute are loaded from disk.
+	std::optional<std::vector<char>> load_file(const std::filesystem::path& path);
+
+	// Returns true if a given path exists (file or directory).
+	// `path`: the path to check.
+	// The path is handled differently depending on the platform:
+	//  - desktop: all path are treated the same.
+	//  - android: relative path are assumed to be in APK's storage (Asset API). Absolute are loaded from disk.
+	bool path_exists(const std::filesystem::path& path);
+
+#if defined(_ANDROID)
+	// Returns a path to the application's internal data directory (can be used for output).
+	// NOTE: The internal data path on Android is extremely limited in terms of filesize!
+	std::filesystem::path GetInternalDataPath();
+
+	// Returns a path to the application's external data directory (can be used for output).
+	std::filesystem::path GetExternalDataPath();
+#endif
+
+	// Returns the default output directory where artifacts will be written.
+	std::filesystem::path GetDefaultOutputDirectory();
+
+	// Constructs the full path from a possibly partial path
+	// If `regexToReplace` is specified, replace all instances of that symbol in the filename with `replaceString`
+	std::filesystem::path GetFullPath(const std::filesystem::path& partialPath, const std::filesystem::path& defaultFolder, const std::string& regexToReplace = "", const std::string& replaceString = "");
+
+} // namespace fs
+
+#pragma endregion
+
+#pragma region Random
+
+class Random
+{
+public:
+	Random()
+	{
+		Seed(0xDEAD, 0xBEEF);
+	}
+
+	Random(uint64_t initialState, uint64_t initialSequence)
+	{
+		Seed(initialSequence, initialSequence);
+	}
+
+	void Seed(uint64_t initialState, uint64_t initialSequence)
+	{
+		m_rng.seed(initialSequence, initialSequence);
+	}
+
+	uint32_t UInt32()
+	{
+		uint32_t value = m_rng.nextUInt();
+		return value;
+	}
+
+	float Float()
+	{
+		float value = m_rng.nextFloat();
+		return value;
+	}
+
+	float Float(float a, float b)
+	{
+		float value = glm::lerp(a, b, Float());
+		return value;
+	}
+
+	float2 Float2()
+	{
+		float2 value(
+			Float(),
+			Float());
+		return value;
+	}
+
+	float2 Float2(const float2& a, const float2& b)
+	{
+		float2 value(
+			Float(a.x, b.x),
+			Float(a.y, b.y));
+		return value;
+	}
+
+	float3 Float3()
+	{
+		float3 value(
+			Float(),
+			Float(),
+			Float());
+		return value;
+	}
+
+	float3 Float3(const float3& a, const float3& b)
+	{
+		float3 value(
+			Float(a.x, b.x),
+			Float(a.y, b.y),
+			Float(a.z, b.z));
+		return value;
+	}
+
+	float4 Float4()
+	{
+		float4 value(
+			Float(),
+			Float(),
+			Float(),
+			Float());
+		return value;
+	}
+
+	float4 Float4(const float4& a, const float4& b)
+	{
+		float4 value(
+			Float(a.x, b.x),
+			Float(a.y, b.y),
+			Float(a.z, b.z),
+			Float(a.w, b.w));
+		return value;
+	}
+
+private:
+	pcg32 m_rng;
+};
+
+#pragma endregion
+
+#pragma region Bounding Volume
+
+class AABB;
+class OBB;
+
+class AABB
+{
+public:
+	AABB() = default;
+	AABB(const float3& pos)
+	{
+		Set(pos);
+	}
+
+	AABB(const float3& minPos, const float3& maxPos)
+	{
+		Set(minPos, maxPos);
+	}
+
+	AABB(const OBB& obb);
+
+
+	AABB& operator=(const OBB& rhs);
+
+	void Set(const float3& pos)
+	{
+		m_min = m_max = pos;
+	}
+
+	void Set(const float3& minPos, const float3& maxPos)
+	{
+		m_min = glm::min(minPos, maxPos);
+		m_max = glm::max(minPos, maxPos);
+	}
+
+	void Set(const OBB& obb);
+
+	void Expand(const float3& pos)
+	{
+		m_min = glm::min(pos, m_min);
+		m_max = glm::max(pos, m_max);
+	}
+
+	const float3& GetMin() const
+	{
+		return m_min;
+	}
+
+	const float3& GetMax() const
+	{
+		return m_max;
+	}
+
+	float3 GetCenter() const
+	{
+		float3 center = (m_min + m_max) / 2.0f;
+		return center;
+	}
+
+	float3 GetSize() const
+	{
+		float3 size = (m_max - m_min);
+		return size;
+	}
+
+	float GetWidth() const
+	{
+		return (m_max.x - m_min.x);
+	}
+
+	float GetHeight() const
+	{
+		return (m_max.y - m_min.y);
+	}
+
+	float GetDepth() const
+	{
+		return (m_max.y - m_min.y);
+	}
+
+	float3 GetU() const
+	{
+		float3 P = float3(m_max.x, m_min.y, m_min.z);
+		float3 U = glm::normalize(P - m_min);
+		return U;
+	}
+
+	float3 GetV() const
+	{
+		float3 P = float3(m_min.x, m_max.y, m_min.z);
+		float3 V = glm::normalize(P - m_min);
+		return V;
+	}
+
+	float3 GetW() const
+	{
+		float3 P = float3(m_min.x, m_min.y, m_max.z);
+		float3 W = glm::normalize(P - m_min);
+		return W;
+	}
+
+	void Transform(const float4x4& matrix, float3 obbVertices[8]) const;
+
+private:
+	float3 m_min = float3(0, 0, 0);
+	float3 m_max = float3(0, 0, 0);
+};
+
+class OBB
+{
+public:
+	OBB() {}
+
+	OBB(const float3& center, const float3& size, const float3& U, const float3& V, const float3& W)
+		: m_center(center)
+		, m_size(size)
+		, m_u(glm::normalize(U))
+		, m_v(glm::normalize(V))
+		, m_w(glm::normalize(W)) {}
+
+	OBB(const AABB& aabb);
+
+	void Set(const AABB& aabb);
+
+	const float3& GetPos() const
+	{
+		return m_center;
+	}
+
+	const float3& GetSize() const
+	{
+		return m_size;
+	}
+
+	const float3& GetU() const
+	{
+		return m_u;
+	}
+
+	const float3& GetV() const
+	{
+		return m_v;
+	}
+
+	const float3& GetW() const
+	{
+		return m_w;
+	}
+
+	void GetPoints(float3 obbVertices[8]) const;
+
+private:
+	float3 m_center = float3(0, 0, 0);
+	float3 m_size = float3(0, 0, 0);
+	float3 m_u = float3(1, 0, 0);
+	float3 m_v = float3(0, 1, 0);
+	float3 m_w = float3(0, 0, 1);
+};
+
+#pragma endregion
+
+#pragma region Transform
+
+class Transform
+{
+public:
+	enum class RotationOrder
+	{
+		XYZ,
+		XZY,
+		YZX,
+		YXZ,
+		ZXY,
+		ZYX,
+	};
+
+	Transform() = default;
+	Transform(const float3& translation);
+	virtual ~Transform() = default;
+
+	bool IsDirty() const { return (m_dirty.mask != 0); }
+
+	const float3& GetTranslation() const { return m_translation; }
+	const float3& GetRotation() const { return m_rotation; }
+	const float3& GetScale() const { return m_scale; }
+	RotationOrder GetRotationOrder() const { return m_rotationOrder; }
+
+	virtual void SetTranslation(const float3& value);
+	void         SetTranslation(float x, float y, float z);
+	virtual void SetRotation(const float3& value);
+	void         SetRotation(float x, float y, float z);
+	virtual void SetScale(const float3& value);
+	void         SetScale(float x, float y, float z);
+	virtual void SetRotationOrder(Transform::RotationOrder value);
+
+	const float4x4& GetTranslationMatrix() const;
+	const float4x4& GetRotationMatrix() const;
+	const float4x4& GetScaleMatrix() const;
+	const float4x4& GetConcatenatedMatrix() const;
+
+protected:
+	mutable struct
+	{
+		union
+		{
+			struct
+			{
+				bool translation : 1;
+				bool rotation : 1;
+				bool scale : 1;
+				bool concatenated : 1;
+			};
+			uint32_t mask = 0xF;
+		};
+	} m_dirty;
+
+	float3           m_translation = float3(0, 0, 0);
+	float3           m_rotation = float3(0, 0, 0);
+	float3           m_scale = float3(1, 1, 1);
+	RotationOrder    m_rotationOrder = RotationOrder::XYZ;
+	mutable float4x4 m_translationMatrix;
+	mutable float4x4 m_rotationMatrix;
+	mutable float4x4 m_scaleMatrix;
+	mutable float4x4 m_concatenatedMatrix;
+};
+
+
+#pragma endregion
+
+#pragma region Camera
+
+#define CAMERA_DEFAULT_NEAR_CLIP      0.1f
+#define CAMERA_DEFAULT_FAR_CLIP       10000.0f
+#define CAMERA_DEFAULT_EYE_POSITION   float3(0, 0, 1)
+#define CAMERA_DEFAULT_LOOK_AT        float3(0, 0, 0)
+#define CAMERA_DEFAULT_WORLD_UP       float3(0, 1, 0)
+#define CAMERA_DEFAULT_VIEW_DIRECTION float3(0, 0, -1)
+
+enum CameraType
+{
+	CAMERA_TYPE_UNKNOWN = 0,
+	CAMERA_TYPE_PERSPECTIVE = 1,
+	CAMERA_TYPE_ORTHOGRAPHIC = 2,
+};
+
+class Camera
+{
+public:
+	Camera(bool pixelAligned = false);
+
+	Camera(float nearClip, float farClip, bool pixelAligned = false);
+
+	virtual ~Camera() {}
+
+	virtual CameraType GetCameraType() const = 0;
+
+	float GetNearClip() const { return mNearClip; }
+	float GetFarClip() const { return mFarClip; }
+
+	virtual void LookAt(const float3& eye, const float3& target, const float3& up = CAMERA_DEFAULT_WORLD_UP);
+
+	const float3& GetEyePosition() const { return mEyePosition; }
+	const float3& GetTarget() const { return mTarget; }
+	const float3& GetViewDirection() const { return mViewDirection; }
+	const float3& GetWorldUp() const { return mWorldUp; }
+
+	const float4x4& GetViewMatrix() const { return mViewMatrix; }
+	const float4x4& GetProjectionMatrix() const { return mProjectionMatrix; }
+	const float4x4& GetViewProjectionMatrix() const { return mViewProjectionMatrix; }
+
+	float3 WorldToViewPoint(const float3& worldPoint) const;
+	float3 WorldToViewVector(const float3& worldVector) const;
+
+	void MoveAlongViewDirection(float distance);
+
+protected:
+	bool             mPixelAligned = false;
+	float            mNearClip = CAMERA_DEFAULT_NEAR_CLIP;
+	float            mFarClip = CAMERA_DEFAULT_FAR_CLIP;
+	float3           mEyePosition = CAMERA_DEFAULT_EYE_POSITION;
+	float3           mTarget = CAMERA_DEFAULT_LOOK_AT;
+	float3           mViewDirection = CAMERA_DEFAULT_VIEW_DIRECTION;
+	float3           mWorldUp = CAMERA_DEFAULT_WORLD_UP;
+	mutable float4x4 mViewMatrix = float4x4(1);
+	mutable float4x4 mProjectionMatrix = float4x4(1);
+	mutable float4x4 mViewProjectionMatrix = float4x4(1);
+	mutable float4x4 mInverseViewMatrix = float4x4(1);
+};
+
+class PerspCamera : public Camera
+{
+public:
+	PerspCamera();
+
+	explicit PerspCamera(
+		float horizFovDegrees,
+		float aspect,
+		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
+		float farClip = CAMERA_DEFAULT_FAR_CLIP);
+
+	explicit PerspCamera(
+		const float3& eye,
+		const float3& target,
+		const float3& up,
+		float         horizFovDegrees,
+		float         aspect,
+		float         nearClip = CAMERA_DEFAULT_NEAR_CLIP,
+		float         farClip = CAMERA_DEFAULT_FAR_CLIP);
+
+	explicit PerspCamera(
+		uint32_t pixelWidth,
+		uint32_t pixelHeight,
+		float    horizFovDegrees = 60.0f);
+
+	// Pixel aligned camera
+	explicit PerspCamera(
+		uint32_t pixelWidth,
+		uint32_t pixelHeight,
+		float    horizFovDegrees,
+		float    nearClip,
+		float    farClip);
+
+	virtual ~PerspCamera();
+
+	virtual CameraType GetCameraType() const { return CAMERA_TYPE_PERSPECTIVE; }
+
+	void SetPerspective(
+		float horizFovDegrees,
+		float aspect,
+		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
+		float farClip = CAMERA_DEFAULT_FAR_CLIP);
+
+	void FitToBoundingBox(const float3& bboxMinWorldSpace, const float3& bbxoMaxWorldSpace);
+
+private:
+	float mHorizFovDegrees = 60.0f;
+	float mVertFovDegrees = 36.98f;
+	float mAspect = 1.0f;
+};
+
+class OrthoCamera : public Camera
+{
+public:
+	OrthoCamera();
+
+	OrthoCamera(
+		float left,
+		float right,
+		float bottom,
+		float top,
+		float nearClip,
+		float farClip);
+
+	virtual ~OrthoCamera();
+
+	virtual CameraType GetCameraType() const { return CAMERA_TYPE_ORTHOGRAPHIC; }
+
+	void SetOrthographic(
+		float left,
+		float right,
+		float bottom,
+		float top,
+		float nearClip,
+		float farClip);
+
+private:
+	float mLeft = -1.0f;
+	float mRight = 1.0f;
+	float mBottom = -1.0f;
+	float mTop = 1.0f;
+};
+
+// Adapted from: https://github.com/Twinklebear/arcball-cpp
+class ArcballCamera : public PerspCamera
+{
+public:
+	ArcballCamera();
+
+	ArcballCamera(
+		float horizFovDegrees,
+		float aspect,
+		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
+		float farClip = CAMERA_DEFAULT_FAR_CLIP);
+
+	ArcballCamera(
+		const float3& eye,
+		const float3& target,
+		const float3& up,
+		float         horizFovDegrees,
+		float         aspect,
+		float         nearClip = CAMERA_DEFAULT_NEAR_CLIP,
+		float         farClip = CAMERA_DEFAULT_FAR_CLIP);
+
+	virtual ~ArcballCamera() {}
+
+	void LookAt(const float3& eye, const float3& target, const float3& up = CAMERA_DEFAULT_WORLD_UP) override;
+
+	//! @fn void Rotate(const float2& prevPos, const float2& curPos)
+	//!
+	//! @param prevPos previous mouse position in normalized device coordinates
+	//! @param curPos current mouse position in normalized device coordinates
+	//!
+	void Rotate(const float2& prevPos, const float2& curPos);
+
+	//! @fn void Pan(const float2& delta)
+	//!
+	//! @param delta mouse delta in normalized device coordinates
+	//!
+	void Pan(const float2& delta);
+
+	//! @fn void Zoom(float amount)
+	//!
+	void Zoom(float amount);
+
+private:
+	void UpdateCamera();
+
+	float4x4 mCenterTranslationMatrix;
+	float4x4 mTranslationMatrix;
+	quat     mRotationQuat;
+};
 #pragma endregion
