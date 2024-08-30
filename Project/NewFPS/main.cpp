@@ -1,4 +1,4 @@
-﻿#include "NanoEngine.h"
+﻿#include "GameApp.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -8,5 +8,6 @@ int main(
 	[[maybe_unused]] int   argc,
 	[[maybe_unused]] char* argv[])
 {
+	EngineApplication::Run<GameApplication>();
 }
 //-----------------------------------------------------------------------------
