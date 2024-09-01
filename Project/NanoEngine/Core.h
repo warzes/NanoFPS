@@ -264,6 +264,18 @@ private:
 
 std::optional<std::vector<char>> LoadFile(const std::filesystem::path& path);
 
+[[nodiscard]] std::optional<std::string> LoadSourceFile(const std::filesystem::path& path);
+
+
+#pragma endregion
+
+#pragma region Log
+
+void Print(const std::string& msg);
+void Warning(const std::string& msg);
+void Error(const std::string& msg);
+void Fatal(const std::string& msg);
+
 #pragma endregion
 
 #pragma region Core Math
@@ -316,6 +328,17 @@ template< class T, class U >
 
 	const float result = x - intPortion;
 	return result;
+}
+
+[[nodiscard]] constexpr size_t RoundUp(size_t value, size_t multiple)
+{
+	assert(multiple && ((multiple & (multiple - 1)) == 0));
+	return (value + multiple - 1) & ~(multiple - 1);
+}
+
+[[nodiscard]] inline int NumMipmap(int width, int height)
+{
+	return static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
 }
 
 #pragma endregion
@@ -926,13 +949,13 @@ public:
 	const glm::vec3& GetScale() const { return m_scale; }
 	RotationOrder GetRotationOrder() const { return m_rotationOrder; }
 
-	virtual void SetTranslation(const glm::vec3& value);
-	void         SetTranslation(float x, float y, float z);
-	virtual void SetRotation(const glm::vec3& value);
-	void         SetRotation(float x, float y, float z);
-	virtual void SetScale(const glm::vec3& value);
-	void         SetScale(float x, float y, float z);
-	virtual void SetRotationOrder(Transform::RotationOrder value);
+	void SetTranslation(const glm::vec3& value);
+	void SetTranslation(float x, float y, float z);
+	void SetRotation(const glm::vec3& value);
+	void SetRotation(float x, float y, float z);
+	void SetScale(const glm::vec3& value);
+	void SetScale(float x, float y, float z);
+	void SetRotationOrder(Transform::RotationOrder value);
 
 	const glm::mat4x4& GetTranslationMatrix() const;
 	const glm::mat4x4& GetRotationMatrix() const;

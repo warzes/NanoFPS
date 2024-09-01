@@ -6,25 +6,47 @@
 #pragma region Window
 
 Window* currentWindow = nullptr;
-EngineApplication* currentEngine = nullptr;
+Input* currentInput = nullptr;
+extern EngineApplication* thisEngineApplication;
 
 class WindowEvents final
 {
 public:
 	static void MoveCallback([[maybe_unused]] GLFWwindow* window, int eventX, int eventY)
 	{
-		currentEngine->m_app->Move(static_cast<int32_t>(eventX), static_cast<int32_t>(eventY));
+		thisEngineApplication->m_app->Move(static_cast<int32_t>(eventX), static_cast<int32_t>(eventY));
+	}
+
+	static void framesizeCallback([[maybe_unused]] GLFWwindow* window, int width, int height) noexcept // TODO: переделать
+	{
+		width = std::max(width, 1);
+		height = std::max(height, 1);
+
+		if (currentWindow->m_width != static_cast<uint32_t>(width) || currentWindow->m_height != static_cast<uint32_t>(height))
+			currentWindow->IsWindowResize = true;
+
+		currentWindow->m_width = static_cast<uint32_t>(width);
+		currentWindow->m_height = static_cast<uint32_t>(height);
+	}
+
+	static void mouseCallback([[maybe_unused]] GLFWwindow* window, double xPosIn, double yPosIn) noexcept // TODO: переделать
+	{
+		currentInput->m_mouseState.position = glm::ivec2{ xPosIn,yPosIn };
 	}
 };
 
-
-bool Window::Setup(EngineApplication& engine, const WindowCreateInfo& createInfo)
+Window::Window(EngineApplication& engine)
+	: m_engine(engine)
 {
-	//glfwSetErrorCallback([](int, const char* desc) noexcept { Fatal("GLFW error: " + std::string(desc)); });
+}
+
+bool Window::Setup(const WindowCreateInfo& createInfo)
+{
+	glfwSetErrorCallback([](int, const char* desc) noexcept { Fatal("GLFW error: " + std::string(desc)); });
 
 	if (glfwInit() != GLFW_TRUE)
 	{
-		engine.Fatal("Failed to initialize GLFW");
+		Fatal("Failed to initialize GLFW");
 		return false;
 	}
 
@@ -38,7 +60,7 @@ bool Window::Setup(EngineApplication& engine, const WindowCreateInfo& createInfo
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	if (monitor == nullptr)
 	{
-		engine.Fatal("No Monitor detected");
+		Fatal("No Monitor detected");
 		return false;
 	}
 	const GLFWvidmode* videoMode = glfwGetVideoMode(monitor);
@@ -46,13 +68,11 @@ bool Window::Setup(EngineApplication& engine, const WindowCreateInfo& createInfo
 	m_window = glfwCreateWindow(createInfo.width, createInfo.height, createInfo.title.data(), nullptr, nullptr);
 	if (!m_window)
 	{
-		engine.Fatal("Failed to create GLFW window.");
+		Fatal("Failed to create GLFW window.");
 		return false;
 	}
 
 	currentWindow = this;
-	currentEngine = &engine;
-
 
 	int xSize{};
 	int ySize{};
@@ -75,11 +95,9 @@ bool Window::Setup(EngineApplication& engine, const WindowCreateInfo& createInfo
 
 	glfwSetWindowPosCallback(m_window, WindowEvents::MoveCallback);
 
-	//glfwSetCursorPosCallback(m_window, mouseCallback);
+	glfwSetCursorPosCallback(m_window, WindowEvents::mouseCallback);
 	//glfwSetCursorEnterCallback(Engine.window, cursorEnterCallback);
-	//glfwSetFramebufferSizeCallback(m_window, framesizeCallback);
-
-
+	glfwSetFramebufferSizeCallback(m_window, WindowEvents::framesizeCallback);
 
 	return true;
 }
@@ -97,6 +115,7 @@ bool Window::ShouldClose() const
 
 void Window::Update()
 {
+	IsWindowResize = false;
 	glfwPollEvents();
 }
 
@@ -249,6 +268,82 @@ const char* GetKeyCodeString(KeyCode code)
 	if ((code < KEY_RANGE_FIRST) || (code >= KEY_RANGE_LAST))
 		return sKeyCodeString[0];
 	return sKeyCodeString[static_cast<uint32_t>(code)];
+}
+
+#pragma endregion
+
+#pragma region Input
+
+Input::Input(EngineApplication& engine)
+	: m_engine(engine)
+{
+	currentInput = this;
+}
+
+bool Input::Setup()
+{
+	m_mouseState.lastPosition = m_mouseState.position = GetPosition();
+	m_mouseState.delta = glm::ivec2(0);
+
+	return true;
+}
+
+void Input::Shutdown()
+{
+}
+
+void Input::Update()
+{
+	// TODO: ошибка при движении камеры мышью - ее почему-то дергает в первый кадр. а этот блок убирает дерганье но оставляет поворот не в ту сторону. разобраться
+	//glm::dvec2 mousePosition;
+	//glfwGetCursorPos(Window::GetWindow(), &mousePosition.x, &mousePosition.y);
+	//MouseState.position = mousePosition;
+
+	m_mouseState.delta = m_mouseState.position - m_mouseState.lastPosition;
+	m_mouseState.lastPosition = m_mouseState.position;
+}
+
+bool Input::IsPressed(int key)
+{
+	return glfwGetKey(m_engine.GetWindow().m_window, key) == GLFW_PRESS;
+}
+
+float Input::GetKeyAxis(int posKey, int negKey)
+{
+	float value = 0.0f;
+	if (glfwGetKey(m_engine.GetWindow().m_window, posKey)) value += 1.0f;
+	if (glfwGetKey(m_engine.GetWindow().m_window, negKey)) value -= 1.0f;
+	return value;
+}
+
+bool Input::IsButtonDown(Button button)
+{
+	return glfwGetMouseButton(m_engine.GetWindow().m_window, static_cast<int>(button)) == GLFW_PRESS;
+}
+
+const glm::ivec2 Input::GetPosition()
+{
+	return m_mouseState.position;
+}
+
+const glm::ivec2 Input::GetDeltaPosition()
+{
+	return m_mouseState.delta;
+}
+
+void Input::SetPosition(const glm::ivec2& position)
+{
+	glfwSetCursorPos(m_engine.GetWindow().m_window, position.x, position.y);
+}
+
+void Input::SetCursorMode(CursorMode mode)
+{
+	int mod = GLFW_CURSOR_NORMAL;
+
+	if (mode == CursorMode::Disabled) mod = GLFW_CURSOR_DISABLED;
+	else if (mode == CursorMode::Disabled) mod = GLFW_CURSOR_HIDDEN;
+
+	glfwSetInputMode(m_engine.GetWindow().m_window, GLFW_CURSOR, mod);
 }
 
 #pragma endregion

@@ -60,6 +60,9 @@ public:
 	void Error(const std::string& msg);
 	void Fatal(const std::string& msg);
 
+	Window& GetWindow();
+	Input& GetInput();
+
 	EngineApplication* engine = nullptr;
 };
 
@@ -87,8 +90,11 @@ public:
 	void Error(const std::string& msg);
 	void Fatal(const std::string& msg);
 
+	Window& GetWindow() { return m_window; }
+	Input& GetInput() { return m_input; }
+
 private:
-	EngineApplication() = default;
+	EngineApplication();
 	~EngineApplication();
 
 	void run(IApplication* app);
@@ -112,6 +118,7 @@ private:
 	} m_log;
 
 	Window m_window;
+	Input m_input;
 };
 
 #pragma endregion

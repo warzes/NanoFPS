@@ -33,12 +33,55 @@ void IApplication::Fatal(const std::string& msg)
 	engine->Fatal(msg);
 }
 
+Window& IApplication::GetWindow()
+{
+	return engine->GetWindow();
+}
+Input& IApplication::GetInput()
+{
+	return engine->GetInput();
+}
+
 #pragma endregion
 
 #pragma region Engine Application
 
+EngineApplication* thisEngineApplication = nullptr;
+
+void Print(const std::string& msg)
+{
+	assert(thisEngineApplication);
+	thisEngineApplication->Print(msg);
+}
+
+void Warning(const std::string& msg)
+{
+	assert(thisEngineApplication);
+	thisEngineApplication->Warning(msg);
+}
+
+void Error(const std::string& msg)
+{
+	assert(thisEngineApplication);
+	thisEngineApplication->Error(msg);
+}
+
+void Fatal(const std::string& msg)
+{
+	assert(thisEngineApplication);
+	thisEngineApplication->Fatal(msg);
+}
+
+EngineApplication::EngineApplication()
+	: m_window(*this)
+	, m_input(*this)
+{
+	thisEngineApplication = this;
+}
+
 EngineApplication::~EngineApplication()
 {
+	m_input.Shutdown();
 	m_window.Shutdown();
 	shutdownLog();
 }
@@ -97,7 +140,9 @@ void EngineApplication::run(IApplication* app)
 		if (!initializeLog(createInfo.logFilePath))
 			return;
 
-		if (!m_window.Setup(*this, createInfo.window))
+		if (!m_window.Setup(createInfo.window))
+			return;
+		if (!m_input.Setup())
 			return;
 
 		if (m_status == StatusApp::NonInit)
@@ -114,6 +159,7 @@ void EngineApplication::run(IApplication* app)
 			if (m_window.ShouldClose()) break;
 
 			m_window.Update();
+			m_input.Update();
 		}
 	}
 }

@@ -29,12 +29,13 @@
 
 #include <cassert>
 #include <cstdint>
-//#include <cstdlib>
-//#include <cstring>
+#include <cstdlib>
+#include <cstring>
 #include <cfloat>
+#include <cmath>
 
 #include <chrono>
-//#include <memory>
+#include <memory>
 #include <filesystem>
 #include <ostream>
 #include <fstream>
@@ -42,9 +43,9 @@
 //#include <iostream>
 //#include <iomanip>
 //#include <functional>
-//#include <algorithm>
+#include <algorithm>
 //#include <regex>
-//#include <optional>
+#include <optional>
 //#include <bitset>
 #include <span>
 #include <array>
@@ -57,7 +58,6 @@
 //#include <mutex>
 
 #define VK_NO_PROTOTYPES
-
 
 #include <VkBootstrap/VkBootstrap.h>
 #include <vulkan/vk_enum_string_helper.h>
@@ -81,6 +81,12 @@
 
 #include <volk/volk.h>
 
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
+#define GLFW_INCLUDE_NONE
+//#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 //#if defined(_WIN32)
 //#	define GLFW_EXPOSE_NATIVE_WIN32

@@ -17,8 +17,12 @@ struct WindowCreateInfo final
 
 class Window final
 {
+	friend class WindowEvents;
+	friend class Input;
 public:
-	[[nodiscard]] bool Setup(EngineApplication& engine, const WindowCreateInfo& createInfo);
+	Window(EngineApplication& engine);
+
+	[[nodiscard]] bool Setup(const WindowCreateInfo& createInfo);
 	void Shutdown();
 
 	[[nodiscard]] bool ShouldClose() const;
@@ -29,15 +33,30 @@ public:
 	[[nodiscard]] uint32_t GetHeight() const;
 
 private:
+	EngineApplication& m_engine;
 	GLFWwindow* m_window = nullptr;
 	uint32_t m_width = 0;
 	uint32_t m_height = 0;
+	bool IsWindowResize = true; // TODO: убрать
 };
 
 #pragma endregion
 
-
 #pragma region Key Code
+
+enum class Button
+{
+	Left = GLFW_MOUSE_BUTTON_LEFT,
+	Right = GLFW_MOUSE_BUTTON_RIGHT,
+	Middle = GLFW_MOUSE_BUTTON_MIDDLE,
+};
+
+enum class CursorMode
+{
+	Disabled,
+	Hidden,
+	Normal
+};
 
 enum MouseButton
 {
@@ -184,3 +203,42 @@ struct KeyState final
 
 #pragma endregion
 
+#pragma region Input
+
+class Input final
+{
+	friend class WindowEvents;
+public:
+
+	Input(EngineApplication& engine);
+
+	[[nodiscard]] bool Setup();
+	void Shutdown();
+
+	void Update();
+
+	// Keyboard
+	bool IsPressed(int key); // TODO: использовать кей код
+	float GetKeyAxis(int posKey, int negKey);
+
+	// Mouse
+	[[nodiscard]] bool IsButtonDown(Button button);
+	[[nodiscard]] const glm::ivec2 GetPosition();
+	[[nodiscard]] const glm::ivec2 GetDeltaPosition();
+	void SetPosition(const glm::ivec2& position);
+
+	void SetCursorMode(CursorMode mode);
+
+
+private:
+	EngineApplication& m_engine;
+
+	struct
+	{
+		glm::ivec2 position{};
+		glm::ivec2 lastPosition{};
+		glm::ivec2 delta{};
+	} m_mouseState; // TODO: перенести в класс input
+};
+
+#pragma endregion
