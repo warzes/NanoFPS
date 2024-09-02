@@ -57,11 +57,11 @@
 #include <unordered_map>
 //#include <mutex>
 
-//#define VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
 
 #include <vulkan/vulkan_core.h>
 #include <VkBootstrap/VkBootstrap.h>
-//#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vk_enum_string_helper.h>
 //#define VMA_STATIC_VULKAN_FUNCTIONS 0
 //#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 //#define VMA_DEBUG_ALWAYS_DEDICATED_MEMORY 0
@@ -79,8 +79,8 @@
 ////#define VK_USE_PLATFORM_WIN32_KHR 1
 //#define VK_PROTOTYPES 1
 //#include <vulkan/vulkan.hpp>
-//
-//#include <volk/volk.h>
+
+#include <volk/volk.h>
 
 //#include <glslang/Public/ResourceLimits.h>
 //#include <glslang/Public/ShaderLang.h>

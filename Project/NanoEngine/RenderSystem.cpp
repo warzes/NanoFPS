@@ -10,17 +10,34 @@
 //#	pragma comment( lib, "vulkan-1.lib" )
 #endif
 
+#pragma region VulkanQueue
+
+bool VulkanQueue::Init(vkb::Device& vkbDevice, vkb::QueueType type)
+{
+	auto queueRet = vkbDevice.get_queue(type);
+	if (!queueRet.has_value())
+	{
+		Fatal("failed to get queue: " + queueRet.error().message());
+		return false;
+	}
+	Queue = queueRet.value();
+
+	auto queueFamilyRet = vkbDevice.get_queue_index(type);
+	if (!queueFamilyRet.has_value())
+	{
+		Fatal("failed to get queue index: " + queueFamilyRet.error().message());
+		return false;
+	}
+	QueueFamily = queueFamilyRet.value();
+
+	return true;
+}
+
+#pragma endregion
+
 #pragma region RenderSystem
 
-vkb::Instance instance;
-vkb::InstanceDispatchTable instDisp;
-VkSurfaceKHR surface;
-vkb::Device device;
-vkb::DispatchTable disp;
 vkb::Swapchain swapchain;
-
-VkQueue graphicsQueue;
-VkQueue presentQueue;
 
 VkRenderPass renderPass;
 VkPipelineLayout pipelineLayout;
@@ -41,29 +58,12 @@ size_t current_frame = 0;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-VkSurfaceKHR createSurfaceGLFW(VkInstance instance, GLFWwindow* window, VkAllocationCallbacks* allocator = nullptr)
+bool createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
 {
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &surface);
-	if (err)
-	{
-		const char* errorMsg;
-		int ret = glfwGetError(&errorMsg);
-		if (ret != 0)
-		{
-			std::string textErr = ret + " ";
-			if (errorMsg != nullptr) textErr += errorMsg;
-			Fatal(textErr);
-		}
-		surface = VK_NULL_HANDLE;
-	}
-	return surface;
-}
+	vkb::SwapchainBuilder swapChainBuilder{ physicalDevice, device, surface };
 
-bool createSwapchain()
-{
-	vkb::SwapchainBuilder swapchainBuilder{ device };
-	auto swapRet = swapchainBuilder.set_old_swapchain(swapchain).build();
+	auto swapRet = swapChainBuilder
+		.set_old_swapchain(swapchain).build();
 	if (!swapRet)
 	{
 		Fatal(swapRet.error().message() /*+ std::string(" ") + swapRet.vk_result()*/);
@@ -74,7 +74,7 @@ bool createSwapchain()
 	return true;
 }
 
-bool createFramebuffers()
+bool createFramebuffers(VkDevice device)
 {
 	swapchain_images = swapchain.get_images().value();
 	swapchain_image_views = swapchain.get_image_views().value();
@@ -94,7 +94,7 @@ bool createFramebuffers()
 		framebuffer_info.height = swapchain.extent.height;
 		framebuffer_info.layers = 1;
 
-		if (disp.createFramebuffer(&framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
 		{
 			return false; // failed to create framebuffer
 		}
@@ -102,13 +102,13 @@ bool createFramebuffers()
 	return true;
 }
 
-bool createCommandPool()
+bool createCommandPool(VkDevice device, VulkanQueue graphicsQueue)
 {
 	VkCommandPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	pool_info.queueFamilyIndex = device.get_queue_index(vkb::QueueType::graphics).value();
+	pool_info.queueFamilyIndex = graphicsQueue.QueueFamily;
 
-	if (disp.createCommandPool(&pool_info, nullptr, &command_pool) != VK_SUCCESS)
+	if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS)
 	{
 		Fatal("failed to create command pool");
 		return false; // failed to create command pool
@@ -116,7 +116,7 @@ bool createCommandPool()
 	return true;
 }
 
-bool createCommandBuffers()
+bool createCommandBuffers(VkDevice device)
 {
 	command_buffers.resize(framebuffers.size());
 
@@ -126,7 +126,7 @@ bool createCommandBuffers()
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)command_buffers.size();
 
-	if (disp.allocateCommandBuffers(&allocInfo, command_buffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(device, &allocInfo, command_buffers.data()) != VK_SUCCESS)
 	{
 		return false; // failed to allocate command buffers;
 	}
@@ -136,7 +136,7 @@ bool createCommandBuffers()
 		VkCommandBufferBeginInfo begin_info = {};
 		begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-		if (disp.beginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS)
+		if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS)
 		{
 			return false; // failed to begin recording command buffer
 		}
@@ -163,18 +163,18 @@ bool createCommandBuffers()
 		scissor.offset = { 0, 0 };
 		scissor.extent = swapchain.extent;
 
-		disp.cmdSetViewport(command_buffers[i], 0, 1, &viewport);
-		disp.cmdSetScissor(command_buffers[i], 0, 1, &scissor);
+		vkCmdSetViewport(command_buffers[i], 0, 1, &viewport);
+		vkCmdSetScissor(command_buffers[i], 0, 1, &scissor);
 
-		disp.cmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-		disp.cmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-		disp.cmdDraw(command_buffers[i], 3, 1, 0, 0);
+		vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
 
-		disp.cmdEndRenderPass(command_buffers[i]);
+		vkCmdEndRenderPass(command_buffers[i]);
 
-		if (disp.endCommandBuffer(command_buffers[i]) != VK_SUCCESS)
+		if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS)
 		{
 			Fatal("failed to record command buffer");
 			return false; // failed to record command buffer!
@@ -183,7 +183,7 @@ bool createCommandBuffers()
 	return true;
 }
 
-VkShaderModule createShaderModule(const std::vector<char>& code)
+VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code)
 {
 	VkShaderModuleCreateInfo create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -191,7 +191,7 @@ VkShaderModule createShaderModule(const std::vector<char>& code)
 	create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 	VkShaderModule shaderModule;
-	if (disp.createShaderModule(&create_info, nullptr, &shaderModule) != VK_SUCCESS)
+	if (vkCreateShaderModule(device, &create_info, nullptr, &shaderModule) != VK_SUCCESS)
 	{
 		return VK_NULL_HANDLE; // failed to create shader module
 	}
@@ -199,22 +199,22 @@ VkShaderModule createShaderModule(const std::vector<char>& code)
 	return shaderModule;
 }
 
-int recreateSwapchain()
+int recreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VulkanQueue graphicsQueue)
 {
-	disp.deviceWaitIdle();
-	disp.destroyCommandPool(command_pool, nullptr);
+	vkDeviceWaitIdle(device);
+	vkDestroyCommandPool(device, command_pool, nullptr);
 
 	for (auto framebuffer : framebuffers)
 	{
-		disp.destroyFramebuffer(framebuffer, nullptr);
+		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
 
 	swapchain.destroy_image_views(swapchain_image_views);
 
-	if (!createSwapchain()) return -1;
-	if (!createFramebuffers()) return -1;
-	if (!createCommandPool) return -1;
-	if (!createCommandBuffers()) return -1;
+	if (!createSwapchain(physicalDevice, device, surface)) return -1;
+	if (!createFramebuffers(device)) return -1;
+	if (!createCommandPool(device, graphicsQueue)) return -1;
+	if (!createCommandBuffers(device)) return -1;
 	return 0;
 }
 
@@ -225,68 +225,123 @@ RenderSystem::RenderSystem(EngineApplication& engine)
 
 bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
+	bool useValidationLayers = createInfo.vulkan.useValidationLayers;
+#if defined(_DEBUG)
+	useValidationLayers = true;
+#endif
+
+	if (volkInitialize() != VK_SUCCESS)
+	{
+		Fatal("Failed to initialize volk.");
+		return false;
+	}
+
 	vkb::InstanceBuilder instanceBuilder;
-	auto instance_ret = instanceBuilder
+
+	auto instanceRet = instanceBuilder
+		.set_app_name(createInfo.vulkan.appName.data())
+		.set_engine_name(createInfo.vulkan.engineName.data())
+		.set_app_version(createInfo.vulkan.appVersion)
+		.set_engine_version(createInfo.vulkan.engineVersion)
+		.require_api_version(createInfo.vulkan.requireVersion)
+		.request_validation_layers(useValidationLayers)
 		.use_default_debug_messenger()
-		.request_validation_layers()
 		.build();
-	if (!instance_ret)
+	if (!instanceRet)
 	{
-		Fatal(instance_ret.error().message());
+		Fatal(instanceRet.error().message());
 		return false;
 	}
-	instance = instance_ret.value();
-	instDisp = instance.make_table();
+	vkb::Instance vkbInstance = instanceRet.value();
+	m_instance = vkbInstance.instance;
+	m_debugMessenger = vkbInstance.debug_messenger;
 
-	surface = createSurfaceGLFW(instance, m_engine.GetWindow().GetWindow());
+	volkLoadInstanceOnly(m_instance);
 
-	vkb::PhysicalDeviceSelector physDeviceSelector(instance);
-	auto physDeviceRet = physDeviceSelector.set_surface(surface).select();
-	if (!physDeviceRet)
+	m_surface = createSurfaceGLFW();
+	if (m_surface == VK_NULL_HANDLE) return false;
+
+	// vulkan 1.0 features
+	VkPhysicalDeviceFeatures features10{};
+	features10.samplerAnisotropy = VK_TRUE;
+	features10.geometryShader    = VK_TRUE;
+	features10.fillModeNonSolid  = VK_TRUE;
+	// vulkan 1.1 features
+	VkPhysicalDeviceVulkan11Features features11{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+	// vulkan 1.2 features
+	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+	features12.bufferDeviceAddress = true;
+	features12.descriptorIndexing = true;
+	// vulkan 1.3 features
+	VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+	features13.dynamicRendering = true;
+	features13.synchronization2 = true;
+
+	std::vector<const char*> requiredExtensions =
 	{
-		Fatal(physDeviceRet.error().message());
+		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
+		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		//VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+		//VK_NV_MESH_SHADER_EXTENSION_NAME,
+		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+	};
+
+	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
+
+	auto physicalDeviceRet = physicalDeviceSelector
+		.set_minimum_version(1, 3)
+		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
+		.allow_any_gpu_device_type(false)
+		.add_required_extensions(requiredExtensions)
+		.set_required_features_13(features13)
+		.set_required_features_12(features12)
+		.set_required_features_11(features11)
+		.set_required_features(features10)
+		.set_surface(m_surface)
+		.select();
+	if (!physicalDeviceRet)
+	{
+		Fatal(physicalDeviceRet.error().message());
 		return false;
 	}
-	vkb::PhysicalDevice physicalDevice = physDeviceRet.value();
+	vkb::PhysicalDevice physicalDevice = physicalDeviceRet.value();
+	m_physicalDevice = physicalDevice.physical_device;
 
 	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
-
 	auto deviceRet = deviceBuilder.build();
 	if (!deviceRet)
 	{
 		Fatal(deviceRet.error().message());
 		return false;
 	}
-	device = deviceRet.value();
+	vkb::Device vkbDevice = deviceRet.value();
+	m_device = vkbDevice.device;
 
-	disp = device.make_table();
+	volkLoadDevice(m_device);
+
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &m_physicalDeviceProperties);
+	vkGetPhysicalDeviceFeatures(m_physicalDevice, &m_physicalDeviceFeatures);
+
+	Print("GPU Used: " + std::string(m_physicalDeviceProperties.deviceName));
+
+	if (!getQueues(vkbDevice)) return false;
 
 	//=======================================================================
 	// create swapchain
 	//=======================================================================
-	if (!createSwapchain())
+	if (!createSwapchain(m_physicalDevice, m_device, m_surface))
 		return false;
-
-	//=======================================================================
-	// get queues
-	//=======================================================================
-	{
-		auto gq = device.get_queue(vkb::QueueType::graphics);
-		if (!gq.has_value()) 
-		{
-			Fatal("failed to get graphics queue: " + gq.error().message());
-			return false;
-		}
-		graphicsQueue = gq.value();
-
-		auto pq = device.get_queue(vkb::QueueType::present);
-		if (!pq.has_value())
-		{
-			Fatal("failed to get present queue: " + pq.error().message());
-			return false;
-		}
-		presentQueue = pq.value();
-	}
 
 	//=======================================================================
 	// create_render_pass
@@ -328,7 +383,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		render_pass_info.dependencyCount = 1;
 		render_pass_info.pDependencies = &dependency;
 
-		if (disp.createRenderPass(&render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device, &render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
 		{
 			Fatal("failed to create render pass");
 			return false; // failed to create render pass!
@@ -342,9 +397,10 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		auto vert_code = LoadFile("vert.spv").value();
 		auto frag_code = LoadFile("frag.spv").value();
 
-		VkShaderModule vert_module = createShaderModule(vert_code);
-		VkShaderModule frag_module = createShaderModule(frag_code);
-		if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE) {
+		VkShaderModule vert_module = createShaderModule(m_device, vert_code);
+		VkShaderModule frag_module = createShaderModule(m_device, frag_code);
+		if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE)
+		{
 			Fatal("failed to create shader module");
 			return false; // failed to create shader modules
 		}
@@ -428,7 +484,8 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		pipeline_layout_info.setLayoutCount = 0;
 		pipeline_layout_info.pushConstantRangeCount = 0;
 
-		if (disp.createPipelineLayout(&pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(m_device, &pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS)
+		{
 			Fatal("failed to create pipeline layout");
 			return -1; // failed to create pipeline layout
 		}
@@ -456,32 +513,32 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		pipeline_info.subpass = 0;
 		pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (disp.createGraphicsPipelines(VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
 		{
 			Fatal("failed to create pipline");
 			return false; // failed to create graphics pipeline
 		}
 
-		disp.destroyShaderModule(frag_module, nullptr);
-		disp.destroyShaderModule(vert_module, nullptr);
+		vkDestroyShaderModule(m_device, frag_module, nullptr);
+		vkDestroyShaderModule(m_device, vert_module, nullptr);
 	}
 
 	//=======================================================================
 	// create_framebuffers
 	//=======================================================================
-	if (!createFramebuffers())
+	if (!createFramebuffers(m_device))
 		return false;
 
 	//=======================================================================
 	// create_command_pool
 	//=======================================================================
-	if (!createCommandPool())
+	if (!createCommandPool(m_device, m_graphicsQueue))
 		return false;
 
 	//=======================================================================
 	// create_command_buffers
 	//=======================================================================
-	if (!createCommandBuffers())
+	if (!createCommandBuffers(m_device))
 		return false;
 
 	//=======================================================================
@@ -502,9 +559,9 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			if (disp.createSemaphore(&semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
-				disp.createSemaphore(&semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
-				disp.createFence(&fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
+			if (vkCreateSemaphore(m_device, &semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(m_device, &semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
+				vkCreateFence(m_device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
 			{
 				Fatal("failed to create sync objects");
 				return false; // failed to create synchronization objects for a frame
@@ -517,44 +574,58 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 
 void RenderSystem::Shutdown()
 {
-	disp.deviceWaitIdle();
+	vkDeviceWaitIdle(m_device);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		disp.destroySemaphore(finished_semaphore[i], nullptr);
-		disp.destroySemaphore(available_semaphores[i], nullptr);
-		disp.destroyFence(in_flight_fences[i], nullptr);
+		vkDestroySemaphore(m_device, finished_semaphore[i], nullptr);
+		vkDestroySemaphore(m_device, available_semaphores[i], nullptr);
+		vkDestroyFence(m_device, in_flight_fences[i], nullptr);
 	}
 
-	disp.destroyCommandPool(command_pool, nullptr);
+	vkDestroyCommandPool(m_device, command_pool, nullptr);
 
 	for (auto framebuffer : framebuffers)
 	{
-		disp.destroyFramebuffer(framebuffer, nullptr);
+		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
 	}
 
-	disp.destroyPipeline(graphicsPipeline, nullptr);
-	disp.destroyPipelineLayout(pipelineLayout, nullptr);
-	disp.destroyRenderPass(renderPass, nullptr);
+	vkDestroyPipeline(m_device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, pipelineLayout, nullptr);
+	vkDestroyRenderPass(m_device, renderPass, nullptr);
 
 	swapchain.destroy_image_views(swapchain_image_views);
 
 	vkb::destroy_swapchain(swapchain);
-	vkb::destroy_device(device);
-	vkb::destroy_surface(instance, surface);
-	vkb::destroy_instance(instance);
+
+	if (m_device)
+	{
+		vkDestroyDevice(m_device, nullptr);
+	}
+
+	if (m_instance)
+	{
+		if (m_surface) vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		if (m_debugMessenger) vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
+		vkDestroyInstance(m_instance, nullptr);
+	}
+	m_device = nullptr;
+	m_surface = nullptr;
+	m_debugMessenger = nullptr;
+	m_instance = nullptr;
+	volkFinalize();
 }
 
 void RenderSystem::TestDraw()
 {
-	disp.waitForFences(1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(m_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
 	uint32_t image_index = 0;
-	VkResult result = disp.acquireNextImageKHR(swapchain, UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(m_device, swapchain, UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		if (recreateSwapchain() != 0)
+		if (recreateSwapchain(m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -566,7 +637,7 @@ void RenderSystem::TestDraw()
 
 	if (image_in_flight[image_index] != VK_NULL_HANDLE)
 	{
-		disp.waitForFences(1, &image_in_flight[image_index], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(m_device, 1, &image_in_flight[image_index], VK_TRUE, UINT64_MAX);
 	}
 	image_in_flight[image_index] = in_flight_fences[current_frame];
 
@@ -586,9 +657,9 @@ void RenderSystem::TestDraw()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signal_semaphores;
 
-	disp.resetFences(1, &in_flight_fences[current_frame]);
+	vkResetFences(m_device, 1, &in_flight_fences[current_frame]);
 
-	if (disp.queueSubmit(graphicsQueue, 1, &submitInfo, in_flight_fences[current_frame]) != VK_SUCCESS)
+	if (vkQueueSubmit(m_graphicsQueue.Queue, 1, &submitInfo, in_flight_fences[current_frame]) != VK_SUCCESS)
 	{
 		Fatal("failed to submit draw command buffer");
 		return; //"failed to submit draw command buffer
@@ -606,10 +677,10 @@ void RenderSystem::TestDraw()
 
 	present_info.pImageIndices = &image_index;
 
-	result = disp.queuePresentKHR(presentQueue, &present_info);
+	result = vkQueuePresentKHR(m_presentQueue.Queue, &present_info);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		if (recreateSwapchain() != 0)
+		if (recreateSwapchain(m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -620,6 +691,35 @@ void RenderSystem::TestDraw()
 	}
 
 	current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+VkSurfaceKHR RenderSystem::createSurfaceGLFW(VkAllocationCallbacks* allocator)
+{
+	VkSurfaceKHR surface{ VK_NULL_HANDLE };
+	VkResult err = glfwCreateWindowSurface(m_instance, m_engine.GetWindow().GetWindow(), allocator, &surface);
+	if (err)
+	{
+		const char* errorMsg = nullptr;
+		int ret = glfwGetError(&errorMsg);
+		if (ret != 0)
+		{
+			std::string text = std::to_string(ret) + " ";
+			if (errorMsg != nullptr) text += std::string(errorMsg);
+			Fatal(text);
+		}
+		surface = VK_NULL_HANDLE;
+	}
+	return surface;
+}
+
+bool RenderSystem::getQueues(vkb::Device& vkbDevice)
+{
+	if (!m_graphicsQueue.Init(vkbDevice, vkb::QueueType::graphics)) return false;
+	if (!m_presentQueue.Init(vkbDevice, vkb::QueueType::present)) return false;
+	if (!m_transferQueue.Init(vkbDevice, vkb::QueueType::transfer)) return false;
+	if (!m_computeQueue.Init(vkbDevice, vkb::QueueType::compute)) return false;
+
+	return true;
 }
 
 #pragma endregion

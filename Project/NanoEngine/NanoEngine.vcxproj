@@ -99,6 +99,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\volk\volk.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="Platform.cpp" />
@@ -114,6 +120,7 @@
   <ItemGroup>
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h" />
+    <ClInclude Include="..\3rdparty\volk\volk.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Base.h" />
     <ClInclude Include="Core.h" />

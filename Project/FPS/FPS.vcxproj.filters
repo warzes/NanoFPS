@@ -109,9 +109,6 @@
     <Filter Include="NanoEngineVK\impl\Render">
       <UniqueIdentifier>{5bc4323e-cd1b-44f8-9ecf-4c1f781c5351}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NanoEngineVK\impl\NewFilter1">
-      <UniqueIdentifier>{4a0147a4-8a44-43a6-82e8-87cf4ba6cdc7}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
@@ -189,11 +186,11 @@
     <ClInclude Include="VulkanRender.h">
       <Filter>NanoEngineVK\impl\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Base.h">
-      <Filter>NanoEngineVK\impl\NewFilter1</Filter>
-    </ClInclude>
     <ClInclude Include="Core.h">
-      <Filter>NanoEngineVK\impl\NewFilter1</Filter>
+      <Filter>NanoEngineVK\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="Base.h">
+      <Filter>NanoEngineVK\impl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

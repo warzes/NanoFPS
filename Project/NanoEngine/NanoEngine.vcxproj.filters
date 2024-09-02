@@ -26,6 +26,9 @@
     <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
       <Filter>3rdparty\VkBootstrap</Filter>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\volk\volk.c">
+      <Filter>3rdparty\volk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -39,6 +42,9 @@
     </Filter>
     <Filter Include="3rdparty\VkBootstrap">
       <UniqueIdentifier>{34d9a81a-f411-4ea7-94a2-50721a41adc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\volk">
+      <UniqueIdentifier>{13fc360a-0b70-4413-8b6a-7e0ace1b33df}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h">
       <Filter>3rdparty\VkBootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\volk\volk.h">
+      <Filter>3rdparty\volk</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
