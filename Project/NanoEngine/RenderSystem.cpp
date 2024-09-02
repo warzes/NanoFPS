@@ -211,7 +211,7 @@ bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
 {
 	Shutdown();
 
-	vkb::SwapchainBuilder swapChainBuilder{ m_render.GetPhysicalDevice(), m_render.GetDevice(), m_render.GetSurface() };
+	vkb::SwapchainBuilder swapChainBuilder{ m_render.GetVkPhysicalDevice(), m_render.GetVkDevice(), m_render.GetVkSurface() };
 
 	const VkSurfaceFormatKHR surfaceFormat
 	{
@@ -244,16 +244,16 @@ bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
 
 void VulkanSwapchain::Shutdown()
 {
-	if (m_render.GetDevice())
+	if (m_render.GetVkDevice())
 	{
 		for (const VkImageView& imageView : m_swapChainImageViews)
 		{
-			if (imageView) vkDestroyImageView(m_render.GetDevice(), imageView, nullptr);
+			if (imageView) vkDestroyImageView(m_render.GetVkDevice(), imageView, nullptr);
 		}
 	}
 	m_swapChainImageViews.clear();
 
-	if (m_swapChain && m_render.GetDevice()) vkDestroySwapchainKHR(m_render.GetDevice(), m_swapChain, nullptr);
+	if (m_swapChain && m_render.GetVkDevice()) vkDestroySwapchainKHR(m_render.GetVkDevice(), m_swapChain, nullptr);
 	m_swapChain = nullptr;
 }
 
@@ -283,8 +283,10 @@ std::vector<VkCommandBuffer> command_buffers;
 
 std::vector<VkSemaphore> available_semaphores;
 std::vector<VkSemaphore> finished_semaphore;
-std::vector<VkFence> in_flight_fences;
-std::vector<VkFence> image_in_flight;
+//std::vector<VkFence> in_flight_fences;
+std::vector<VulkanFencePtr> inFlightFences;
+//std::vector<VkFence> image_in_flight;
+std::vector<VulkanFencePtr> imageInFlight;
 size_t current_frame = 0;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -644,21 +646,19 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	{
 		available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		finished_semaphore.resize(MAX_FRAMES_IN_FLIGHT);
-		in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-		image_in_flight.resize(m_swapChain.GetImageNum(), VK_NULL_HANDLE);
+		inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+		imageInFlight.resize(m_swapChain.GetImageNum(), nullptr);
 
 		VkSemaphoreCreateInfo semaphore_info = {};
 		semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		VkFenceCreateInfo fence_info = {};
-		fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
+			inFlightFences[i] = m_device.CreateFence({ .signaled = true });
+
 			if (vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
 				vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
-				vkCreateFence(m_instance.device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
+				inFlightFences[i] == nullptr)
 			{
 				Fatal("failed to create sync objects");
 				return false; // failed to create synchronization objects for a frame
@@ -677,7 +677,7 @@ void RenderSystem::Shutdown()
 	{
 		vkDestroySemaphore(m_instance.device, finished_semaphore[i], nullptr);
 		vkDestroySemaphore(m_instance.device, available_semaphores[i], nullptr);
-		vkDestroyFence(m_instance.device, in_flight_fences[i], nullptr);
+		m_device.DestroyFence(inFlightFences[i]);
 	}
 
 	vkDestroyCommandPool(m_instance.device, command_pool, nullptr);
@@ -697,13 +697,13 @@ void RenderSystem::Shutdown()
 
 void RenderSystem::TestDraw()
 {
-	vkWaitForFences(m_instance.device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+	inFlightFences[current_frame]->Wait();
 
 	uint32_t image_index = UINT32_MAX;
 	VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		if (recreateSwapchain(m_swapChain, 1024, 768, m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -713,11 +713,11 @@ void RenderSystem::TestDraw()
 		return;
 	}
 
-	if (image_in_flight[image_index] != VK_NULL_HANDLE)
+	if (imageInFlight[image_index] != nullptr)
 	{
-		vkWaitForFences(m_instance.device, 1, &image_in_flight[image_index], VK_TRUE, UINT64_MAX);
+		imageInFlight[image_index]->Wait();
 	}
-	image_in_flight[image_index] = in_flight_fences[current_frame];
+	imageInFlight[image_index] = inFlightFences[current_frame];
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -735,9 +735,9 @@ void RenderSystem::TestDraw()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signal_semaphores;
 
-	vkResetFences(m_instance.device, 1, &in_flight_fences[current_frame]);
+	inFlightFences[current_frame]->Reset();
 
-	if (vkQueueSubmit(m_instance.graphicsQueue.Queue, 1, &submitInfo, in_flight_fences[current_frame]) != VK_SUCCESS)
+	if (vkQueueSubmit(m_instance.graphicsQueue.Queue, 1, &submitInfo, inFlightFences[current_frame]->Get()) != VK_SUCCESS)
 	{
 		Fatal("failed to submit draw command buffer");
 		return; //"failed to submit draw command buffer
@@ -758,7 +758,7 @@ void RenderSystem::TestDraw()
 	result = vkQueuePresentKHR(m_instance.presentQueue.Queue, &present_info);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		if (recreateSwapchain(m_swapChain, 1024, 768, m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}

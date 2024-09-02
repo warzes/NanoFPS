@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "RenderDevice.h"
+
 class EngineApplication;
 class RenderSystem;
 
@@ -97,6 +99,7 @@ struct RenderCreateInfo final
 
 class RenderSystem final
 {
+	friend class RenderDevice;
 public:
 	RenderSystem(EngineApplication& engine);
 
@@ -105,21 +108,25 @@ public:
 
 	void TestDraw();
 
-	VkInstance& GetInstance() { return m_instance.instance; }
-	VkSurfaceKHR& GetSurface() { return m_instance.surface; }
-	VkPhysicalDevice& GetPhysicalDevice() { return m_instance.physicalDevice; }
-	VkDevice& GetDevice() { return m_instance.device; }
+	VkInstance& GetVkInstance() { return m_instance.instance; }
+	VkSurfaceKHR& GetVkSurface() { return m_instance.surface; }
+	VkPhysicalDevice& GetVkPhysicalDevice() { return m_instance.physicalDevice; }
+	VkDevice& GetVkDevice() { return m_instance.device; }
 
-	VulkanQueue& GetGraphicsQueue() { return m_instance.graphicsQueue; }
-	VulkanQueue& GetPresentQueue() { return m_instance.presentQueue; }
-	VulkanQueue& GetTransferQueue() { return m_instance.transferQueue; }
-	VulkanQueue& GetComputeQueue() { return m_instance.computeQueue; }
+	VulkanQueue& GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
+	VulkanQueue& GetVkPresentQueue() { return m_instance.presentQueue; }
+	VulkanQueue& GetVkTransferQueue() { return m_instance.transferQueue; }
+	VulkanQueue& GetVkComputeQueue() { return m_instance.computeQueue; }
+
+	RenderDevice& GetDevice() { return m_device; }
 
 private:
 	EngineApplication& m_engine;
 	
 	VulkanInstance m_instance{ *this };
 	VulkanSwapchain m_swapChain{ *this };
+
+	RenderDevice m_device{ m_engine, *this };
 };
 
 #pragma endregion
