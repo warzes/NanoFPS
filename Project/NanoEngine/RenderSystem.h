@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+class EngineApplication;
+class RenderSystem;
+
 #pragma region VulkanQueue
 
 struct VulkanQueue final
@@ -12,9 +15,51 @@ struct VulkanQueue final
 
 #pragma endregion
 
-#pragma region VulkanSwapchain
+#pragma region VulkanInstance
 
-class RenderSystem;
+struct VulkanInstanceCreateInfo final
+{
+	std::string_view appName{ "FPS Game" };
+	std::string_view engineName{ "Nano VK Engine" };
+	uint32_t appVersion{ VK_MAKE_VERSION(0, 0, 1) };
+	uint32_t engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
+	uint32_t requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
+	bool useValidationLayers{ false };
+};
+
+class VulkanInstance final
+{
+public:
+	VulkanInstance(RenderSystem& render);
+
+	[[nodiscard]] bool Setup(const VulkanInstanceCreateInfo& createInfo, GLFWwindow* window);
+	void Shutdown();
+
+	VkInstance instance{ nullptr };
+	VkDebugUtilsMessengerEXT debugMessenger{ nullptr };
+
+	VkSurfaceKHR surface{ nullptr };
+
+	VkPhysicalDevice physicalDevice{ nullptr };
+	VkPhysicalDeviceProperties physicalDeviceProperties{};
+	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+
+	VkDevice device{ nullptr };
+
+	VulkanQueue graphicsQueue{};
+	VulkanQueue presentQueue{};
+	VulkanQueue transferQueue{};
+	VulkanQueue computeQueue{};
+
+private:
+	VkSurfaceKHR createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator = nullptr);
+	bool getQueues(vkb::Device& vkbDevice);
+	RenderSystem& m_render;
+};
+
+#pragma endregion
+
+#pragma region VulkanSwapchain
 
 class VulkanSwapchain final
 {
@@ -47,18 +92,8 @@ private:
 
 struct RenderCreateInfo final
 {
-	struct Vulkan final
-	{
-		std::string_view appName{ "FPS Game" };
-		std::string_view engineName{ "Nano VK Engine" };
-		uint32_t appVersion{ VK_MAKE_VERSION(0, 0, 1) };
-		uint32_t engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
-		uint32_t requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
-		bool useValidationLayers{ false };
-	} vulkan;
+	VulkanInstanceCreateInfo vulkan;
 };
-
-class EngineApplication;
 
 class RenderSystem final
 {
@@ -70,39 +105,21 @@ public:
 
 	void TestDraw();
 
-	VkInstance& GetInstance() { return m_instance; }
-	VkSurfaceKHR& GetSurface() { return m_surface; }
-	VkPhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
-	VkDevice& GetDevice() { return m_device; }
+	VkInstance& GetInstance() { return m_instance.instance; }
+	VkSurfaceKHR& GetSurface() { return m_instance.surface; }
+	VkPhysicalDevice& GetPhysicalDevice() { return m_instance.physicalDevice; }
+	VkDevice& GetDevice() { return m_instance.device; }
 
-	VulkanQueue& GetGraphicsQueue() { return m_graphicsQueue; }
-	VulkanQueue& GetPresentQueue() { return m_presentQueue; }
-	VulkanQueue& GetTransferQueue() { return m_transferQueue; }
-	VulkanQueue& GetComputeQueue() { return m_computeQueue; }
+	VulkanQueue& GetGraphicsQueue() { return m_instance.graphicsQueue; }
+	VulkanQueue& GetPresentQueue() { return m_instance.presentQueue; }
+	VulkanQueue& GetTransferQueue() { return m_instance.transferQueue; }
+	VulkanQueue& GetComputeQueue() { return m_instance.computeQueue; }
 
 private:
-	VkSurfaceKHR createSurfaceGLFW(VkAllocationCallbacks* allocator = nullptr);
-	bool getQueues(vkb::Device& vkbDevice);
-
 	EngineApplication& m_engine;
-
-	VkInstance m_instance{ nullptr };
-	VkDebugUtilsMessengerEXT m_debugMessenger{ nullptr };
-
-	VkSurfaceKHR m_surface{ nullptr };
-
-	VkPhysicalDevice m_physicalDevice{ nullptr };
-	VkPhysicalDeviceProperties m_physicalDeviceProperties{};
-	VkPhysicalDeviceFeatures m_physicalDeviceFeatures{};
-
-	VkDevice m_device{ nullptr };
-
-	VulkanQueue m_graphicsQueue{};
-	VulkanQueue m_presentQueue{};
-	VulkanQueue m_transferQueue{};
-	VulkanQueue m_computeQueue{};
-
-	VulkanSwapchain m_swapChain{*this};
+	
+	VulkanInstance m_instance{ *this };
+	VulkanSwapchain m_swapChain{ *this };
 };
 
 #pragma endregion

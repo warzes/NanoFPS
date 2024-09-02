@@ -31,6 +31,175 @@ bool VulkanQueue::Init(vkb::Device& vkbDevice, vkb::QueueType type)
 
 #pragma endregion
 
+#pragma region VulkanInstance
+
+VulkanInstance::VulkanInstance(RenderSystem& render)
+	: m_render(render)
+{
+}
+
+bool VulkanInstance::Setup(const VulkanInstanceCreateInfo& createInfo, GLFWwindow* window)
+{
+	bool useValidationLayers = createInfo.useValidationLayers;
+#if defined(_DEBUG)
+	useValidationLayers = true;
+#endif
+
+	if (volkInitialize() != VK_SUCCESS)
+	{
+		Fatal("Failed to initialize volk.");
+		return false;
+	}
+
+	vkb::InstanceBuilder instanceBuilder;
+
+	auto instanceRet = instanceBuilder
+		.set_app_name(createInfo.appName.data())
+		.set_engine_name(createInfo.engineName.data())
+		.set_app_version(createInfo.appVersion)
+		.set_engine_version(createInfo.engineVersion)
+		.require_api_version(createInfo.requireVersion)
+		.request_validation_layers(useValidationLayers)
+		.use_default_debug_messenger()
+		.build();
+	if (!instanceRet)
+	{
+		Fatal(instanceRet.error().message());
+		return false;
+	}
+	vkb::Instance vkbInstance = instanceRet.value();
+	instance = vkbInstance.instance;
+	debugMessenger = vkbInstance.debug_messenger;
+
+	volkLoadInstanceOnly(instance);
+
+	surface = createSurfaceGLFW(window);
+	if (surface == VK_NULL_HANDLE) return false;
+
+	// vulkan 1.0 features
+	VkPhysicalDeviceFeatures features10{};
+	features10.samplerAnisotropy = VK_TRUE;
+	features10.geometryShader = VK_TRUE;
+	features10.fillModeNonSolid = VK_TRUE;
+	// vulkan 1.1 features
+	VkPhysicalDeviceVulkan11Features features11{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+	// vulkan 1.2 features
+	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+	features12.bufferDeviceAddress = true;
+	features12.descriptorIndexing = true;
+	// vulkan 1.3 features
+	VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+	features13.dynamicRendering = true;
+	features13.synchronization2 = true;
+
+	std::vector<const char*> requiredExtensions =
+	{
+		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
+		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		//VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+		//VK_NV_MESH_SHADER_EXTENSION_NAME,
+		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+	};
+
+	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
+
+	auto physicalDeviceRet = physicalDeviceSelector
+		.set_minimum_version(1, 3)
+		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
+		.allow_any_gpu_device_type(false)
+		.add_required_extensions(requiredExtensions)
+		.set_required_features_13(features13)
+		.set_required_features_12(features12)
+		.set_required_features_11(features11)
+		.set_required_features(features10)
+		.set_surface(surface)
+		.select();
+	if (!physicalDeviceRet)
+	{
+		Fatal(physicalDeviceRet.error().message());
+		return false;
+	}
+	vkb::PhysicalDevice vkbPhysicalDevice = physicalDeviceRet.value();
+	physicalDevice = vkbPhysicalDevice.physical_device;
+
+	vkb::DeviceBuilder deviceBuilder{ vkbPhysicalDevice };
+	auto deviceRet = deviceBuilder.build();
+	if (!deviceRet)
+	{
+		Fatal(deviceRet.error().message());
+		return false;
+	}
+	vkb::Device vkbDevice = deviceRet.value();
+	device = vkbDevice.device;
+
+	volkLoadDevice(device);
+
+	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+	vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+	Print("GPU Used: " + std::string(physicalDeviceProperties.deviceName));
+
+	if (!getQueues(vkbDevice)) return false;
+
+	return true;
+}
+
+void VulkanInstance::Shutdown()
+{
+	if (device) vkDestroyDevice(device, nullptr);
+	if (instance && surface) vkDestroySurfaceKHR(instance, surface, nullptr);
+	if (instance && debugMessenger) vkb::destroy_debug_utils_messenger(instance, debugMessenger);
+	if (instance) vkDestroyInstance(instance, nullptr);
+
+	device = nullptr;
+	surface = nullptr;
+	debugMessenger = nullptr;
+	instance = nullptr;
+	volkFinalize();
+}
+
+VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator)
+{
+	VkSurfaceKHR surface{ VK_NULL_HANDLE };
+	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &surface);
+	if (err)
+	{
+		const char* errorMsg = nullptr;
+		int ret = glfwGetError(&errorMsg);
+		if (ret != 0)
+		{
+			std::string text = std::to_string(ret) + " ";
+			if (errorMsg != nullptr) text += std::string(errorMsg);
+			Fatal(text);
+		}
+		surface = VK_NULL_HANDLE;
+	}
+	return surface;
+}
+
+bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
+{
+	if (!graphicsQueue.Init(vkbDevice, vkb::QueueType::graphics)) return false;
+	if (!presentQueue.Init(vkbDevice, vkb::QueueType::present)) return false;
+	if (!transferQueue.Init(vkbDevice, vkb::QueueType::transfer)) return false;
+	if (!computeQueue.Init(vkbDevice, vkb::QueueType::compute)) return false;
+
+	return true;
+}
+
+#pragma endregion
+
 #pragma region VulkanSwapchain
 
 VulkanSwapchain::VulkanSwapchain(RenderSystem& render)
@@ -100,7 +269,6 @@ VkImageView& VulkanSwapchain::GetImageView(size_t i)
 }
 
 #pragma endregion
-
 
 #pragma region RenderSystem
 
@@ -267,117 +435,8 @@ RenderSystem::RenderSystem(EngineApplication& engine)
 
 bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
-	bool useValidationLayers = createInfo.vulkan.useValidationLayers;
-#if defined(_DEBUG)
-	useValidationLayers = true;
-#endif
-
-	if (volkInitialize() != VK_SUCCESS)
-	{
-		Fatal("Failed to initialize volk.");
+	if (!m_instance.Setup(createInfo.vulkan, m_engine.GetWindow().GetWindow()))
 		return false;
-	}
-
-	vkb::InstanceBuilder instanceBuilder;
-
-	auto instanceRet = instanceBuilder
-		.set_app_name(createInfo.vulkan.appName.data())
-		.set_engine_name(createInfo.vulkan.engineName.data())
-		.set_app_version(createInfo.vulkan.appVersion)
-		.set_engine_version(createInfo.vulkan.engineVersion)
-		.require_api_version(createInfo.vulkan.requireVersion)
-		.request_validation_layers(useValidationLayers)
-		.use_default_debug_messenger()
-		.build();
-	if (!instanceRet)
-	{
-		Fatal(instanceRet.error().message());
-		return false;
-	}
-	vkb::Instance vkbInstance = instanceRet.value();
-	m_instance = vkbInstance.instance;
-	m_debugMessenger = vkbInstance.debug_messenger;
-
-	volkLoadInstanceOnly(m_instance);
-
-	m_surface = createSurfaceGLFW();
-	if (m_surface == VK_NULL_HANDLE) return false;
-
-	// vulkan 1.0 features
-	VkPhysicalDeviceFeatures features10{};
-	features10.samplerAnisotropy = VK_TRUE;
-	features10.geometryShader    = VK_TRUE;
-	features10.fillModeNonSolid  = VK_TRUE;
-	// vulkan 1.1 features
-	VkPhysicalDeviceVulkan11Features features11{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
-	// vulkan 1.2 features
-	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
-	features12.bufferDeviceAddress = true;
-	features12.descriptorIndexing = true;
-	// vulkan 1.3 features
-	VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
-	features13.dynamicRendering = true;
-	features13.synchronization2 = true;
-
-	std::vector<const char*> requiredExtensions =
-	{
-		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
-		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-		//VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
-		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-		//VK_NV_MESH_SHADER_EXTENSION_NAME,
-		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
-	};
-
-	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
-
-	auto physicalDeviceRet = physicalDeviceSelector
-		.set_minimum_version(1, 3)
-		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
-		.allow_any_gpu_device_type(false)
-		.add_required_extensions(requiredExtensions)
-		.set_required_features_13(features13)
-		.set_required_features_12(features12)
-		.set_required_features_11(features11)
-		.set_required_features(features10)
-		.set_surface(m_surface)
-		.select();
-	if (!physicalDeviceRet)
-	{
-		Fatal(physicalDeviceRet.error().message());
-		return false;
-	}
-	vkb::PhysicalDevice physicalDevice = physicalDeviceRet.value();
-	m_physicalDevice = physicalDevice.physical_device;
-
-	vkb::DeviceBuilder deviceBuilder{ physicalDevice };
-	auto deviceRet = deviceBuilder.build();
-	if (!deviceRet)
-	{
-		Fatal(deviceRet.error().message());
-		return false;
-	}
-	vkb::Device vkbDevice = deviceRet.value();
-	m_device = vkbDevice.device;
-
-	volkLoadDevice(m_device);
-
-	vkGetPhysicalDeviceProperties(m_physicalDevice, &m_physicalDeviceProperties);
-	vkGetPhysicalDeviceFeatures(m_physicalDevice, &m_physicalDeviceFeatures);
-
-	Print("GPU Used: " + std::string(m_physicalDeviceProperties.deviceName));
-
-	if (!getQueues(vkbDevice)) return false;
 	if (!m_swapChain.Setup(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
 		return false;
 
@@ -421,7 +480,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		render_pass_info.dependencyCount = 1;
 		render_pass_info.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(m_device, &render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_instance.device, &render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
 		{
 			Fatal("failed to create render pass");
 			return false; // failed to create render pass!
@@ -435,8 +494,8 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		auto vert_code = LoadFile("vert.spv").value();
 		auto frag_code = LoadFile("frag.spv").value();
 
-		VkShaderModule vert_module = createShaderModule(m_device, vert_code);
-		VkShaderModule frag_module = createShaderModule(m_device, frag_code);
+		VkShaderModule vert_module = createShaderModule(m_instance.device, vert_code);
+		VkShaderModule frag_module = createShaderModule(m_instance.device, frag_code);
 		if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE)
 		{
 			Fatal("failed to create shader module");
@@ -522,7 +581,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		pipeline_layout_info.setLayoutCount = 0;
 		pipeline_layout_info.pushConstantRangeCount = 0;
 
-		if (vkCreatePipelineLayout(m_device, &pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(m_instance.device, &pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS)
 		{
 			Fatal("failed to create pipeline layout");
 			return -1; // failed to create pipeline layout
@@ -551,32 +610,32 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		pipeline_info.subpass = 0;
 		pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(m_instance.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
 		{
 			Fatal("failed to create pipline");
 			return false; // failed to create graphics pipeline
 		}
 
-		vkDestroyShaderModule(m_device, frag_module, nullptr);
-		vkDestroyShaderModule(m_device, vert_module, nullptr);
+		vkDestroyShaderModule(m_instance.device, frag_module, nullptr);
+		vkDestroyShaderModule(m_instance.device, vert_module, nullptr);
 	}
 
 	//=======================================================================
 	// create_framebuffers
 	//=======================================================================
-	if (!createFramebuffers(m_device, m_swapChain))
+	if (!createFramebuffers(m_instance.device, m_swapChain))
 		return false;
 
 	//=======================================================================
 	// create_command_pool
 	//=======================================================================
-	if (!createCommandPool(m_device, m_graphicsQueue))
+	if (!createCommandPool(m_instance.device, m_instance.graphicsQueue))
 		return false;
 
 	//=======================================================================
 	// create_command_buffers
 	//=======================================================================
-	if (!createCommandBuffers(m_device, m_swapChain))
+	if (!createCommandBuffers(m_instance.device, m_swapChain))
 		return false;
 
 	//=======================================================================
@@ -597,9 +656,9 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			if (vkCreateSemaphore(m_device, &semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(m_device, &semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
-				vkCreateFence(m_device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
+			if (vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
+				vkCreateFence(m_instance.device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
 			{
 				Fatal("failed to create sync objects");
 				return false; // failed to create synchronization objects for a frame
@@ -612,56 +671,39 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 
 void RenderSystem::Shutdown()
 {
-	vkDeviceWaitIdle(m_device);
+	vkDeviceWaitIdle(m_instance.device);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		vkDestroySemaphore(m_device, finished_semaphore[i], nullptr);
-		vkDestroySemaphore(m_device, available_semaphores[i], nullptr);
-		vkDestroyFence(m_device, in_flight_fences[i], nullptr);
+		vkDestroySemaphore(m_instance.device, finished_semaphore[i], nullptr);
+		vkDestroySemaphore(m_instance.device, available_semaphores[i], nullptr);
+		vkDestroyFence(m_instance.device, in_flight_fences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(m_device, command_pool, nullptr);
+	vkDestroyCommandPool(m_instance.device, command_pool, nullptr);
 
 	for (auto framebuffer : framebuffers)
 	{
-		vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+		vkDestroyFramebuffer(m_instance.device, framebuffer, nullptr);
 	}
 
-	vkDestroyPipeline(m_device, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_device, pipelineLayout, nullptr);
-	vkDestroyRenderPass(m_device, renderPass, nullptr);
+	vkDestroyPipeline(m_instance.device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_instance.device, pipelineLayout, nullptr);
+	vkDestroyRenderPass(m_instance.device, renderPass, nullptr);
 
 	m_swapChain.Shutdown();
-
-	if (m_device)
-	{
-		vkDestroyDevice(m_device, nullptr);
-	}
-
-	if (m_instance)
-	{
-		if (m_surface) vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-		if (m_debugMessenger) vkb::destroy_debug_utils_messenger(m_instance, m_debugMessenger);
-		vkDestroyInstance(m_instance, nullptr);
-	}
-	m_device = nullptr;
-	m_surface = nullptr;
-	m_debugMessenger = nullptr;
-	m_instance = nullptr;
-	volkFinalize();
+	m_instance.Shutdown();	
 }
 
 void RenderSystem::TestDraw()
 {
-	vkWaitForFences(m_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(m_instance.device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
-	uint32_t image_index = 0;
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain.Get(), UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
-
+	uint32_t image_index = UINT32_MAX;
+	VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		if (recreateSwapchain(m_swapChain, 1024, 768, m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, 1024, 768, m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -673,7 +715,7 @@ void RenderSystem::TestDraw()
 
 	if (image_in_flight[image_index] != VK_NULL_HANDLE)
 	{
-		vkWaitForFences(m_device, 1, &image_in_flight[image_index], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(m_instance.device, 1, &image_in_flight[image_index], VK_TRUE, UINT64_MAX);
 	}
 	image_in_flight[image_index] = in_flight_fences[current_frame];
 
@@ -693,9 +735,9 @@ void RenderSystem::TestDraw()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signal_semaphores;
 
-	vkResetFences(m_device, 1, &in_flight_fences[current_frame]);
+	vkResetFences(m_instance.device, 1, &in_flight_fences[current_frame]);
 
-	if (vkQueueSubmit(m_graphicsQueue.Queue, 1, &submitInfo, in_flight_fences[current_frame]) != VK_SUCCESS)
+	if (vkQueueSubmit(m_instance.graphicsQueue.Queue, 1, &submitInfo, in_flight_fences[current_frame]) != VK_SUCCESS)
 	{
 		Fatal("failed to submit draw command buffer");
 		return; //"failed to submit draw command buffer
@@ -713,10 +755,10 @@ void RenderSystem::TestDraw()
 
 	present_info.pImageIndices = &image_index;
 
-	result = vkQueuePresentKHR(m_presentQueue.Queue, &present_info);
+	result = vkQueuePresentKHR(m_instance.presentQueue.Queue, &present_info);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		if (recreateSwapchain(m_swapChain, 1024, 768, m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, 1024, 768, m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -727,35 +769,6 @@ void RenderSystem::TestDraw()
 	}
 
 	current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-VkSurfaceKHR RenderSystem::createSurfaceGLFW(VkAllocationCallbacks* allocator)
-{
-	VkSurfaceKHR surface{ VK_NULL_HANDLE };
-	VkResult err = glfwCreateWindowSurface(m_instance, m_engine.GetWindow().GetWindow(), allocator, &surface);
-	if (err)
-	{
-		const char* errorMsg = nullptr;
-		int ret = glfwGetError(&errorMsg);
-		if (ret != 0)
-		{
-			std::string text = std::to_string(ret) + " ";
-			if (errorMsg != nullptr) text += std::string(errorMsg);
-			Fatal(text);
-		}
-		surface = VK_NULL_HANDLE;
-	}
-	return surface;
-}
-
-bool RenderSystem::getQueues(vkb::Device& vkbDevice)
-{
-	if (!m_graphicsQueue.Init(vkbDevice, vkb::QueueType::graphics)) return false;
-	if (!m_presentQueue.Init(vkbDevice, vkb::QueueType::present)) return false;
-	if (!m_transferQueue.Init(vkbDevice, vkb::QueueType::transfer)) return false;
-	if (!m_computeQueue.Init(vkbDevice, vkb::QueueType::compute)) return false;
-
-	return true;
 }
 
 #pragma endregion
