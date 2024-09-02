@@ -6,10 +6,6 @@
 #include "RenderSystem.h"
 #include "Application.h"
 
-#if defined(_MSC_VER)
-//#	pragma comment( lib, "vulkan-1.lib" )
-#endif
-
 #pragma region VulkanQueue
 
 bool VulkanQueue::Init(vkb::Device& vkbDevice, vkb::QueueType type)
@@ -35,16 +31,83 @@ bool VulkanQueue::Init(vkb::Device& vkbDevice, vkb::QueueType type)
 
 #pragma endregion
 
-#pragma region RenderSystem
+#pragma region VulkanSwapchain
 
-vkb::Swapchain swapchain;
+VulkanSwapchain::VulkanSwapchain(RenderSystem& render)
+	: m_render(render)
+{
+}
+
+bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
+{
+	Shutdown();
+
+	vkb::SwapchainBuilder swapChainBuilder{ m_render.GetPhysicalDevice(), m_render.GetDevice(), m_render.GetSurface() };
+
+	const VkSurfaceFormatKHR surfaceFormat
+	{
+		.format = m_swapChainImageFormat,
+		.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+	};
+
+	auto swapChainRet = swapChainBuilder
+		//.use_default_format_selection()
+		.set_desired_format(surfaceFormat)
+		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // TODO: VK_PRESENT_MODE_MAILBOX_KHR эффективней но пока крашится
+		.set_desired_extent(width, height)
+		//.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+		.build();
+	if (!swapChainRet)
+	{
+		Fatal(swapChainRet.error().message() + " " + std::string(string_VkResult(swapChainRet.vk_result())));
+		return false;
+	}
+
+	vkb::Swapchain vkbSwapchain = swapChainRet.value();
+
+	m_swapChain = vkbSwapchain.swapchain;
+	m_swapChainExtent = vkbSwapchain.extent;
+	m_swapChainImages = vkbSwapchain.get_images().value();
+	m_swapChainImageViews = vkbSwapchain.get_image_views().value();
+
+	return true;
+}
+
+void VulkanSwapchain::Shutdown()
+{
+	if (m_render.GetDevice())
+	{
+		for (const VkImageView& imageView : m_swapChainImageViews)
+		{
+			if (imageView) vkDestroyImageView(m_render.GetDevice(), imageView, nullptr);
+		}
+	}
+	m_swapChainImageViews.clear();
+
+	if (m_swapChain && m_render.GetDevice()) vkDestroySwapchainKHR(m_render.GetDevice(), m_swapChain, nullptr);
+	m_swapChain = nullptr;
+}
+
+VkFormat VulkanSwapchain::GetFormat()
+{
+	return m_swapChainImageFormat;
+}
+
+VkImageView& VulkanSwapchain::GetImageView(size_t i)
+{
+	assert(i < m_swapChainImageViews.size());
+	return m_swapChainImageViews[i];
+}
+
+#pragma endregion
+
+
+#pragma region RenderSystem
 
 VkRenderPass renderPass;
 VkPipelineLayout pipelineLayout;
 VkPipeline graphicsPipeline;
 
-std::vector<VkImage> swapchain_images;
-std::vector<VkImageView> swapchain_image_views;
 std::vector<VkFramebuffer> framebuffers;
 
 VkCommandPool command_pool;
@@ -58,40 +121,21 @@ size_t current_frame = 0;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-bool createSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface)
+bool createFramebuffers(VkDevice device, VulkanSwapchain& swapchain)
 {
-	vkb::SwapchainBuilder swapChainBuilder{ physicalDevice, device, surface };
+	framebuffers.resize(swapchain.GetImageViewNum());
 
-	auto swapRet = swapChainBuilder
-		.set_old_swapchain(swapchain).build();
-	if (!swapRet)
+	for (size_t i = 0; i < swapchain.GetImageViewNum(); i++)
 	{
-		Fatal(swapRet.error().message() /*+ std::string(" ") + swapRet.vk_result()*/);
-		return false;
-	}
-	vkb::destroy_swapchain(swapchain);
-	swapchain = swapRet.value();
-	return true;
-}
-
-bool createFramebuffers(VkDevice device)
-{
-	swapchain_images = swapchain.get_images().value();
-	swapchain_image_views = swapchain.get_image_views().value();
-
-	framebuffers.resize(swapchain_image_views.size());
-
-	for (size_t i = 0; i < swapchain_image_views.size(); i++)
-	{
-		VkImageView attachments[] = { swapchain_image_views[i] };
+		VkImageView attachments[] = { swapchain.GetImageView(i) };
 
 		VkFramebufferCreateInfo framebuffer_info = {};
 		framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebuffer_info.renderPass = renderPass;
 		framebuffer_info.attachmentCount = 1;
 		framebuffer_info.pAttachments = attachments;
-		framebuffer_info.width = swapchain.extent.width;
-		framebuffer_info.height = swapchain.extent.height;
+		framebuffer_info.width = swapchain.GetExtent().width;
+		framebuffer_info.height = swapchain.GetExtent().height;
 		framebuffer_info.layers = 1;
 
 		if (vkCreateFramebuffer(device, &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
@@ -116,7 +160,7 @@ bool createCommandPool(VkDevice device, VulkanQueue graphicsQueue)
 	return true;
 }
 
-bool createCommandBuffers(VkDevice device)
+bool createCommandBuffers(VkDevice device, VulkanSwapchain& swapchain)
 {
 	command_buffers.resize(framebuffers.size());
 
@@ -146,7 +190,7 @@ bool createCommandBuffers(VkDevice device)
 		render_pass_info.renderPass = renderPass;
 		render_pass_info.framebuffer = framebuffers[i];
 		render_pass_info.renderArea.offset = { 0, 0 };
-		render_pass_info.renderArea.extent = swapchain.extent;
+		render_pass_info.renderArea.extent = swapchain.GetExtent();
 		VkClearValue clearColor{ { { 0.0f, 0.0f, 0.0f, 1.0f } } };
 		render_pass_info.clearValueCount = 1;
 		render_pass_info.pClearValues = &clearColor;
@@ -154,14 +198,14 @@ bool createCommandBuffers(VkDevice device)
 		VkViewport viewport = {};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)swapchain.extent.width;
-		viewport.height = (float)swapchain.extent.height;
+		viewport.width = (float)swapchain.GetExtent().width;
+		viewport.height = (float)swapchain.GetExtent().height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor = {};
 		scissor.offset = { 0, 0 };
-		scissor.extent = swapchain.extent;
+		scissor.extent = swapchain.GetExtent();
 
 		vkCmdSetViewport(command_buffers[i], 0, 1, &viewport);
 		vkCmdSetScissor(command_buffers[i], 0, 1, &scissor);
@@ -199,7 +243,7 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 	return shaderModule;
 }
 
-int recreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VulkanQueue graphicsQueue)
+int recreateSwapchain(VulkanSwapchain& swapchain, uint32_t width, uint32_t height, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VulkanQueue graphicsQueue)
 {
 	vkDeviceWaitIdle(device);
 	vkDestroyCommandPool(device, command_pool, nullptr);
@@ -209,12 +253,10 @@ int recreateSwapchain(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfac
 		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
 
-	swapchain.destroy_image_views(swapchain_image_views);
-
-	if (!createSwapchain(physicalDevice, device, surface)) return -1;
-	if (!createFramebuffers(device)) return -1;
+	if (!swapchain.Setup(width, height)) return -1;
+	if (!createFramebuffers(device, swapchain)) return -1;
 	if (!createCommandPool(device, graphicsQueue)) return -1;
-	if (!createCommandBuffers(device)) return -1;
+	if (!createCommandBuffers(device, swapchain)) return -1;
 	return 0;
 }
 
@@ -336,11 +378,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	Print("GPU Used: " + std::string(m_physicalDeviceProperties.deviceName));
 
 	if (!getQueues(vkbDevice)) return false;
-
-	//=======================================================================
-	// create swapchain
-	//=======================================================================
-	if (!createSwapchain(m_physicalDevice, m_device, m_surface))
+	if (!m_swapChain.Setup(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
 		return false;
 
 	//=======================================================================
@@ -348,7 +386,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	//=======================================================================
 	{
 		VkAttachmentDescription color_attachment = {};
-		color_attachment.format = swapchain.image_format;
+		color_attachment.format = m_swapChain.GetFormat();
 		color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -432,14 +470,14 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		VkViewport viewport = {};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)swapchain.extent.width;
-		viewport.height = (float)swapchain.extent.height;
+		viewport.width = (float)m_swapChain.GetExtent().width;
+		viewport.height = (float)m_swapChain.GetExtent().height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor = {};
 		scissor.offset = { 0, 0 };
-		scissor.extent = swapchain.extent;
+		scissor.extent = m_swapChain.GetExtent();
 
 		VkPipelineViewportStateCreateInfo viewport_state = {};
 		viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -526,7 +564,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	//=======================================================================
 	// create_framebuffers
 	//=======================================================================
-	if (!createFramebuffers(m_device))
+	if (!createFramebuffers(m_device, m_swapChain))
 		return false;
 
 	//=======================================================================
@@ -538,7 +576,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	//=======================================================================
 	// create_command_buffers
 	//=======================================================================
-	if (!createCommandBuffers(m_device))
+	if (!createCommandBuffers(m_device, m_swapChain))
 		return false;
 
 	//=======================================================================
@@ -548,7 +586,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		finished_semaphore.resize(MAX_FRAMES_IN_FLIGHT);
 		in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-		image_in_flight.resize(swapchain.image_count, VK_NULL_HANDLE);
+		image_in_flight.resize(m_swapChain.GetImageNum(), VK_NULL_HANDLE);
 
 		VkSemaphoreCreateInfo semaphore_info = {};
 		semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -594,9 +632,7 @@ void RenderSystem::Shutdown()
 	vkDestroyPipelineLayout(m_device, pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_device, renderPass, nullptr);
 
-	swapchain.destroy_image_views(swapchain_image_views);
-
-	vkb::destroy_swapchain(swapchain);
+	m_swapChain.Shutdown();
 
 	if (m_device)
 	{
@@ -621,11 +657,11 @@ void RenderSystem::TestDraw()
 	vkWaitForFences(m_device, 1, &in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
 
 	uint32_t image_index = 0;
-	VkResult result = vkAcquireNextImageKHR(m_device, swapchain, UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain.Get(), UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		if (recreateSwapchain(m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, 1024, 768, m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
@@ -671,7 +707,7 @@ void RenderSystem::TestDraw()
 	present_info.waitSemaphoreCount = 1;
 	present_info.pWaitSemaphores = signal_semaphores;
 
-	VkSwapchainKHR swapChains[] = { swapchain };
+	VkSwapchainKHR swapChains[] = { m_swapChain.Get()};
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = swapChains;
 
@@ -680,7 +716,7 @@ void RenderSystem::TestDraw()
 	result = vkQueuePresentKHR(m_presentQueue.Queue, &present_info);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		if (recreateSwapchain(m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
+		if (recreateSwapchain(m_swapChain, 1024, 768, m_physicalDevice, m_device, m_surface, m_graphicsQueue) != 0)
 			Fatal("recreateSwapchain failed");
 		return;
 	}
