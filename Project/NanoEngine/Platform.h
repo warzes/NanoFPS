@@ -19,6 +19,7 @@ class Window final
 {
 	friend class WindowEvents;
 	friend class Input;
+	friend class RenderSystem;
 public:
 	Window(EngineApplication& engine);
 
@@ -44,7 +45,7 @@ private:
 
 #pragma region Key Code
 
-enum class Button
+enum class MouseButton
 {
 	Left = GLFW_MOUSE_BUTTON_LEFT,
 	Right = GLFW_MOUSE_BUTTON_RIGHT,
@@ -56,13 +57,6 @@ enum class CursorMode
 	Disabled,
 	Hidden,
 	Normal
-};
-
-enum MouseButton
-{
-	MOUSE_BUTTON_LEFT = 0x00000001,
-	MOUSE_BUTTON_RIGHT = 0x00000002,
-	MOUSE_BUTTON_MIDDLE = 0x00000004,
 };
 
 enum KeyCode
@@ -222,7 +216,7 @@ public:
 	float GetKeyAxis(int posKey, int negKey);
 
 	// Mouse
-	[[nodiscard]] bool IsButtonDown(Button button);
+	[[nodiscard]] bool IsButtonDown(MouseButton button);
 	[[nodiscard]] const glm::ivec2 GetPosition();
 	[[nodiscard]] const glm::ivec2 GetDeltaPosition();
 	void SetPosition(const glm::ivec2& position);

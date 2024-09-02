@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Platform.h"
+#include "RenderSystem.h"
 
 #pragma region Create Application Info
 
@@ -9,6 +10,7 @@ struct EngineApplicationCreateInfo final
 	std::string_view logFilePath = "Log.txt";
 
 	WindowCreateInfo window{};
+	RenderCreateInfo render{};
 };
 
 #pragma endregion
@@ -119,6 +121,7 @@ private:
 
 	Window m_window;
 	Input m_input;
+	RenderSystem m_render;
 };
 
 #pragma endregion

@@ -2,12 +2,6 @@
 #include "Core.h"
 #include "Application.h"
 
-retro terra -
-
-#if defined(_MSC_VER)
-#	pragma comment( lib, "glfw3.lib" )
-#endif
-
 #pragma region IApplication
 
 void IApplication::Quit()
@@ -77,12 +71,14 @@ void Fatal(const std::string& msg)
 EngineApplication::EngineApplication()
 	: m_window(*this)
 	, m_input(*this)
+	, m_render(*this)
 {
 	thisEngineApplication = this;
 }
 
 EngineApplication::~EngineApplication()
 {
+	m_render.Shutdown();
 	m_input.Shutdown();
 	m_window.Shutdown();
 	shutdownLog();
@@ -146,6 +142,8 @@ void EngineApplication::run(IApplication* app)
 			return;
 		if (!m_input.Setup())
 			return;
+		if (!m_render.Setup(createInfo.render))
+			return;
 
 		if (m_status == StatusApp::NonInit)
 			m_status = StatusApp::Success;
@@ -162,6 +160,7 @@ void EngineApplication::run(IApplication* app)
 
 			m_window.Update();
 			m_input.Update();
+			m_render.TestDraw();
 		}
 	}
 }

@@ -1,7 +1,11 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
-#include "Application.h"
 #include "Platform.h"
+#include "Application.h"
+
+#if defined(_MSC_VER)
+#	pragma comment( lib, "glfw3.lib" )
+#endif
 
 #pragma region Window
 
@@ -87,8 +91,6 @@ bool Window::Setup(const WindowCreateInfo& createInfo)
 	glfwSetWindowPos(m_window,
 		videoMode->width / 2 - static_cast<int>(m_width) / 2 + monitorLeft,
 		videoMode->height / 2 - static_cast<int>(m_height) / 2 + monitorTop);
-
-	glfwSwapInterval(createInfo.vsync ? 1 : 0);
 
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GLFW_TRUE); // сохраняет событие клавиши до его опроса через glfwGetKey()
 	glfwSetInputMode(m_window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE); // сохраняет событие кнопки мыши до его опроса через glfwGetMouseButton()
@@ -316,7 +318,7 @@ float Input::GetKeyAxis(int posKey, int negKey)
 	return value;
 }
 
-bool Input::IsButtonDown(Button button)
+bool Input::IsButtonDown(MouseButton button)
 {
 	return glfwGetMouseButton(m_engine.GetWindow().m_window, static_cast<int>(button)) == GLFW_PRESS;
 }
