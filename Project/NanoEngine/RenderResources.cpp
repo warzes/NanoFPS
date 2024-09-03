@@ -480,7 +480,6 @@ void VulkanImage::UnmapMemory()
 
 #pragma endregion
 
-
 #pragma region DeviceQueue
 
 bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
@@ -508,6 +507,54 @@ bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
 		return false;
 	}
 	QueueFamily = queueFamilyRet.value();
+
+	return true;
+}
+
+#pragma endregion
+
+#pragma region VulkanQueue
+
+VulkanQueue::VulkanQueue(RenderDevice& device, const QueueCreateInfo& createInfo)
+	: m_device(device)
+{
+	switch (createInfo.CommandType)
+	{
+	case COMMAND_TYPE_PRESENT:  m_deviceQueue = device.GetPresentQueue();  break;
+	case COMMAND_TYPE_GRAPHICS: m_deviceQueue = device.GetGraphicsQueue(); break;
+	case COMMAND_TYPE_COMPUTE:  m_deviceQueue = device.GetComputeQueue();  break;
+	case COMMAND_TYPE_TRANSFER: m_deviceQueue = device.GetTransferQueue(); break;
+	}
+
+	VkCommandPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+	vkci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	vkci.queueFamilyIndex = m_deviceQueue->QueueFamily;
+
+	VkResult result = vkCreateCommandPool(m_device.Device(), &vkci, nullptr, &m_transientPool);
+	if (result != VK_SUCCESS)
+	{
+		Fatal("vkCreateCommandPool failed" + std::string(string_VkResult(result)));
+		return;
+	}
+}
+
+VulkanQueue::~VulkanQueue()
+{
+	if (m_transientPool)
+		vkDestroyCommandPool(m_device.Device(), m_transientPool, nullptr);
+}
+
+bool VulkanQueue::WaitIdle()
+{
+	// Synchronized queue access
+	std::lock_guard<std::mutex> lock(m_queueMutex);
+
+	VkResult result = vkQueueWaitIdle(m_deviceQueue->Queue);
+	if (result != VK_SUCCESS)
+	{
+		Fatal("vkQueueWaitIdle failed" + std::string(string_VkResult(result)));
+		return false;
+	}
 
 	return true;
 }

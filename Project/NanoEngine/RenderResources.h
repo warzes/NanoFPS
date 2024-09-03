@@ -246,9 +246,18 @@ using DeviceQueuePtr = std::shared_ptr<DeviceQueue>;
 
 #pragma region VulkanQueue
 
+struct QueueCreateInfo final
+{
+	CommandType CommandType{ COMMAND_TYPE_UNDEFINED };
+};
+
 class VulkanQueue final
 {
+	friend class RenderDevice;
 public:
+	VulkanQueue(RenderDevice& device, const QueueCreateInfo& createInfo);
+	~VulkanQueue();
+
 	bool WaitIdle();
 	bool Submit(const SubmitInfo& pSubmitInfo);
 
@@ -295,6 +304,7 @@ public:
 		VkPipelineStageFlags newPipelineStage);
 
 private:
+	RenderDevice& m_device;
 
 	DeviceQueuePtr m_deviceQueue;
 
