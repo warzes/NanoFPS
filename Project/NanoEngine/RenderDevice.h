@@ -14,6 +14,8 @@ public:
 
 	VkDevice& Device();
 
+	std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
+
 	VulkanFencePtr CreateFence(const FenceCreateInfo& createInfo);
 	VulkanSemaphorePtr CreateSemaphore(const SemaphoreCreateInfo& createInfo);
 

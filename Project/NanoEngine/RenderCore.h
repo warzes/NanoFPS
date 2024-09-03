@@ -1298,20 +1298,20 @@ class VertexBinding final
 public:
 	VertexBinding() {}
 	VertexBinding(uint32_t binding, VertexInputRate inputRate)
-		: mBinding(binding), mInputRate(inputRate) {}
+		: m_binding(binding), m_inputRate(inputRate) {}
 
 	VertexBinding(const VertexAttribute& attribute)
-		: mBinding(attribute.binding), mInputRate(attribute.inputRate)
+		: m_binding(attribute.binding), m_inputRate(attribute.inputRate)
 	{
 		AppendAttribute(attribute);
 	}
 
-	uint32_t        GetBinding() const { return mBinding; }
+	uint32_t        GetBinding() const { return m_binding; }
 	void            SetBinding(uint32_t binding);
-	const uint32_t& GetStride() const { return mStride; } // Return a reference to member var so apps can take address of it
+	const uint32_t& GetStride() const { return m_stride; } // Return a reference to member var so apps can take address of it
 	void            SetStride(uint32_t stride);
-	VertexInputRate GetInputRate() const { return mInputRate; }
-	uint32_t        GetAttributeCount() const { return static_cast<uint32_t>(mAttributes.size()); }
+	VertexInputRate GetInputRate() const { return m_inputRate; }
+	uint32_t        GetAttributeCount() const { return static_cast<uint32_t>(m_attributes.size()); }
 	bool            GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const;
 	uint32_t        GetAttributeIndex(VertexSemantic semantic) const;
 	VertexBinding&  AppendAttribute(const VertexAttribute& attribute);
@@ -1321,23 +1321,93 @@ public:
 private:
 	static const VertexInputRate kInvalidVertexInputRate = static_cast<VertexInputRate>(~0);
 
-	uint32_t                     mBinding = 0;
-	uint32_t                     mStride = 0;
-	VertexInputRate              mInputRate = kInvalidVertexInputRate;
-	std::vector<VertexAttribute> mAttributes;
+	uint32_t                     m_binding = 0;
+	uint32_t                     m_stride = 0;
+	VertexInputRate              m_inputRate = kInvalidVertexInputRate;
+	std::vector<VertexAttribute> m_attributes;
 };
 
 class VertexDescription final
 {
 public:
-	uint32_t             etBindingCount() const { return CountU32(mBindings); }
+	uint32_t             etBindingCount() const { return CountU32(m_bindings); }
 	bool                 GetBinding(uint32_t index, const VertexBinding** ppBinding) const;
 	const VertexBinding* GetBinding(uint32_t index) const;
 	uint32_t             GetBindingIndex(uint32_t binding) const;
 	bool                 AppendBinding(const VertexBinding& binding);
 
 private:
-	std::vector<VertexBinding> mBindings;
+	std::vector<VertexBinding> m_bindings;
 };
+
+#pragma endregion
+
+#pragma region VK Utils
+
+VkAttachmentLoadOp            ToVkAttachmentLoadOp(AttachmentLoadOp value);
+VkAttachmentStoreOp           ToVkAttachmentStoreOp(AttachmentStoreOp value);
+VkBlendFactor                 ToVkBlendFactor(BlendFactor value);
+VkBlendOp                     ToVkBlendOp(BlendOp value);
+VkBorderColor                 ToVkBorderColor(BorderColor value);
+VkBufferUsageFlags            ToVkBufferUsageFlags(const BufferUsageFlags& value);
+VkChromaLocation              ToVkChromaLocation(ChromaLocation value);
+VkClearColorValue             ToVkClearColorValue(const RenderTargetClearValue& value);
+VkClearDepthStencilValue      ToVkClearDepthStencilValue(const DepthStencilClearValue& value);
+VkColorComponentFlags         ToVkColorComponentFlags(const ColorComponentFlags& value);
+VkCompareOp                   ToVkCompareOp(CompareOp value);
+VkComponentSwizzle            ToVkComponentSwizzle(ComponentSwizzle value);
+VkComponentMapping            ToVkComponentMapping(const ComponentMapping& value);
+VkCullModeFlagBits            ToVkCullMode(CullMode value);
+VkDescriptorBindingFlags      ToVkDescriptorBindingFlags(const DescriptorBindingFlags& value);
+VkDescriptorType              ToVkDescriptorType(DescriptorType value);
+VkFilter                      ToVkFilter(Filter value);
+VkFormat                      ToVkFormat(Format value);
+VkFrontFace                   ToVkFrontFace(FrontFace value);
+VkImageType                   ToVkImageType(ImageType value);
+VkImageUsageFlags             ToVkImageUsageFlags(const ImageUsageFlags& value);
+VkImageViewType               ToVkImageViewType(ImageViewType value);
+VkIndexType                   ToVkIndexType(IndexType value);
+VkLogicOp                     ToVkLogicOp(LogicOp value);
+VkPipelineStageFlagBits       ToVkPipelineStage(PipelineStage value);
+VkPolygonMode                 ToVkPolygonMode(PolygonMode value);
+VkPresentModeKHR              ToVkPresentMode(PresentMode value);
+VkPrimitiveTopology           ToVkPrimitiveTopology(PrimitiveTopology value);
+VkQueryType                   ToVkQueryType(QueryType value);
+VkSamplerAddressMode          ToVkSamplerAddressMode(SamplerAddressMode value);
+VkSamplerMipmapMode           ToVkSamplerMipmapMode(SamplerMipmapMode value);
+VkSampleCountFlagBits         ToVkSampleCount(SampleCount value);
+VkShaderStageFlags            ToVkShaderStageFlags(const ShaderStageFlags& value);
+VkStencilOp                   ToVkStencilOp(StencilOp value);
+VkTessellationDomainOrigin    ToVkTessellationDomainOrigin(TessellationDomainOrigin value);
+VkVertexInputRate             ToVkVertexInputRate(VertexInputRate value);
+VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion value);
+VkSamplerYcbcrRange           ToVkYcbcrRange(YcbcrRange value);
+
+bool ToVkBarrierSrc(
+	ResourceState                   state,
+	CommandType                     commandType,
+	const VkPhysicalDeviceFeatures& features,
+	VkPipelineStageFlags&           stageMask,
+	VkAccessFlags&                  accessMask,
+	VkImageLayout&                  layout);
+bool ToVkBarrierDst(
+	ResourceState                   state,
+	CommandType                     commandType,
+	const VkPhysicalDeviceFeatures& features,
+	VkPipelineStageFlags&           stageMask,
+	VkAccessFlags&                  accessMask,
+	VkImageLayout&                  layout);
+
+VkImageAspectFlags DetermineAspectMask(VkFormat format);
+
+VmaMemoryUsage ToVmaMemoryUsage(MemoryUsage value);
+
+// Inserts nextStruct into the pNext chain of baseStruct.
+template <typename TVkStruct1, typename TVkStruct2>
+void InsertPNext(TVkStruct1& baseStruct, TVkStruct2& nextStruct)
+{
+	nextStruct.pNext = baseStruct.pNext;
+	baseStruct.pNext = &nextStruct;
+}
 
 #pragma endregion

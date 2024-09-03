@@ -153,6 +153,12 @@ inline std::string FloatString(float value, int precision = 6)
 	return ss.str();
 }
 
+template <typename T>
+T InvalidValue(const T value = static_cast<T>(~0))
+{
+	return value;
+}
+
 #pragma endregion
 
 #pragma region Time

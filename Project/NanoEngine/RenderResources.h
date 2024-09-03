@@ -87,12 +87,12 @@ struct ImageCreateInfo final
 	uint32_t               mipLevelCount = 1;
 	uint32_t               arrayLayerCount = 1;
 	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
-	MemoryUsage            memoryUsage = MEMORY_USAGE_GPU_ONLY;  // D3D12 will fail on any other memory usage
+	MemoryUsage            memoryUsage = MEMORY_USAGE_GPU_ONLY;   // D3D12 will fail on any other memory usage
 	ResourceState          initialState = RESOURCE_STATE_GENERAL; // This may not be the best choice
-	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };                 // Optimized RTV clear value
-	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };                 // Optimized DSV clear value
-	void* pApiObject = nullptr;                      // [OPTIONAL] For external images such as swapchain images
-	bool                         concurrentMultiQueueUsage = false;
+	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
+	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
+	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
+	bool                   concurrentMultiQueueUsage = false;
 	ImageCreateFlags       createFlags = {};
 
 	// Returns a create info for sampled image
@@ -116,6 +116,68 @@ struct ImageCreateInfo final
 		uint32_t          height,
 		Format      format,
 		SampleCount sampleCount = SAMPLE_COUNT_1);
+};
+
+class VulkanImage final
+{
+	friend class RenderDevice;
+public:
+	VulkanImage(RenderDevice& device, const ImageCreateInfo& createInfo);
+	~VulkanImage();
+
+	// Convenience functions
+	ImageViewType GuessImageViewType(bool isCube = false) const;
+
+	bool MapMemory(uint64_t offset, void** ppMappedAddress);
+	void UnmapMemory();
+
+	bool IsValid() const { return m_image != nullptr; }
+
+	VkImage                       Get() { return m_image; }
+	VkFormat                      GetVkFormat() const { return m_vkFormat; }
+	VkImageAspectFlags            GetVkImageAspectFlags() const { return m_imageAspect; }
+
+	ImageType                     GetType() const { return m_type; }
+	uint32_t                      GetWidth() const { return m_width; }
+	uint32_t                      GetHeight() const { return m_height; }
+	uint32_t                      GetDepth() const { return m_depth; }
+	Format                        GetFormat() const { return m_format; }
+	SampleCount                   GetSampleCount() const { return m_sampleCount; }
+	uint32_t                      GetMipLevelCount() const { return m_mipLevelCount; }
+	uint32_t                      GetArrayLayerCount() const { return m_arrayLayerCount; }
+	const ImageUsageFlags&        GetUsageFlags() const { return m_usageFlags; }
+	MemoryUsage                   GetMemoryUsage() const { return m_memoryUsage; }
+	ResourceState                 GetInitialState() const { return m_initialState; }
+	const RenderTargetClearValue& GetRTVClearValue() const { return m_RTVClearValue; }
+	const DepthStencilClearValue& GetDSVClearValue() const { return m_DSVClearValue; }
+	bool                          GetConcurrentMultiQueueUsageEnabled() const { return m_concurrentMultiQueueUsage; }
+	ImageCreateFlags              GetCreateFlags() const { return m_createFlags; }
+
+private:
+	RenderDevice&          m_device;
+
+	ImageType              m_type = IMAGE_TYPE_2D;
+	uint32_t               m_width = 0;
+	uint32_t               m_height = 0;
+	uint32_t               m_depth = 0;
+	Format                 m_format = FORMAT_UNDEFINED;
+	SampleCount            m_sampleCount = SAMPLE_COUNT_1;
+	uint32_t               m_mipLevelCount = 1;
+	uint32_t               m_arrayLayerCount = 1;
+	ImageUsageFlags        m_usageFlags = ImageUsageFlags::SampledImage();
+	MemoryUsage            m_memoryUsage = MEMORY_USAGE_GPU_ONLY;   // D3D12 will fail on any other memory usage
+	ResourceState          m_initialState = RESOURCE_STATE_GENERAL; // This may not be the best choice
+	RenderTargetClearValue m_RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
+	DepthStencilClearValue m_DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
+	void*                  m_pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
+	bool                   m_concurrentMultiQueueUsage = false;
+	ImageCreateFlags       m_createFlags = {};
+
+	VkImage                m_image{ nullptr };
+	VmaAllocation          m_allocation{ nullptr };
+	VmaAllocationInfo      m_allocationInfo = {};
+	VkFormat               m_vkFormat = VK_FORMAT_UNDEFINED;
+	VkImageAspectFlags     m_imageAspect = InvalidValue<VkImageAspectFlags>();
 };
 
 #pragma endregion

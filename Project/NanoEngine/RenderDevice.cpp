@@ -18,6 +18,11 @@ VkDevice& RenderDevice::Device()
 	return m_render.GetVkDevice();
 }
 
+std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
+{
+	return { m_render.GetVkGraphicsQueue().QueueFamily, m_render.GetVkComputeQueue().QueueFamily, m_render.GetVkTransferQueue().QueueFamily };
+}
+
 VulkanFencePtr RenderDevice::CreateFence(const FenceCreateInfo& createInfo)
 {
 	VulkanFencePtr res = std::make_shared<VulkanFence>(*this, createInfo);
