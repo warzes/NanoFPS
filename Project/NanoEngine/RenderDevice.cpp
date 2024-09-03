@@ -24,12 +24,11 @@ VulkanFencePtr RenderDevice::CreateFence(const FenceCreateInfo& createInfo)
 	return res->IsValid() ? res : nullptr;
 }
 
-void RenderDevice::DestroyFence(VulkanFencePtr& fence)
+VulkanSemaphorePtr RenderDevice::CreateSemaphore(const SemaphoreCreateInfo& createInfo)
 {
-	fence.reset();
+	VulkanSemaphorePtr res = std::make_shared<VulkanSemaphore>(*this, createInfo);
+	return res->IsValid() ? res : nullptr;
 }
-
-
 
 #pragma endregion
 

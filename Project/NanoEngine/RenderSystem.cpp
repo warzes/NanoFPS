@@ -281,11 +281,12 @@ std::vector<VkFramebuffer> framebuffers;
 VkCommandPool command_pool;
 std::vector<VkCommandBuffer> command_buffers;
 
-std::vector<VkSemaphore> available_semaphores;
-std::vector<VkSemaphore> finished_semaphore;
-//std::vector<VkFence> in_flight_fences;
+//std::vector<VkSemaphore> available_semaphores;
+//std::vector<VkSemaphore> finished_semaphore;
+std::vector<VulkanSemaphorePtr> availableSemaphores;
+std::vector<VulkanSemaphorePtr> finishedSemaphore;
+
 std::vector<VulkanFencePtr> inFlightFences;
-//std::vector<VkFence> image_in_flight;
 std::vector<VulkanFencePtr> imageInFlight;
 size_t current_frame = 0;
 
@@ -644,21 +645,18 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	// create_sync_objects
 	//=======================================================================
 	{
-		available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		finished_semaphore.resize(MAX_FRAMES_IN_FLIGHT);
+		availableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		finishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
 		inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 		imageInFlight.resize(m_swapChain.GetImageNum(), nullptr);
-
-		VkSemaphoreCreateInfo semaphore_info = {};
-		semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			inFlightFences[i] = m_device.CreateFence({ .signaled = true });
+			availableSemaphores[i] = m_device.CreateSemaphore({});
+			finishedSemaphore[i] = m_device.CreateSemaphore({});
 
-			if (vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &available_semaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(m_instance.device, &semaphore_info, nullptr, &finished_semaphore[i]) != VK_SUCCESS ||
-				inFlightFences[i] == nullptr)
+			if (availableSemaphores[i] == nullptr || finishedSemaphore[i] == nullptr || inFlightFences[i] == nullptr)
 			{
 				Fatal("failed to create sync objects");
 				return false; // failed to create synchronization objects for a frame
@@ -673,12 +671,10 @@ void RenderSystem::Shutdown()
 {
 	vkDeviceWaitIdle(m_instance.device);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		vkDestroySemaphore(m_instance.device, finished_semaphore[i], nullptr);
-		vkDestroySemaphore(m_instance.device, available_semaphores[i], nullptr);
-		m_device.DestroyFence(inFlightFences[i]);
-	}
+	availableSemaphores.clear();
+	finishedSemaphore.clear();
+	inFlightFences.clear();
+	imageInFlight.clear();
 
 	vkDestroyCommandPool(m_instance.device, command_pool, nullptr);
 
@@ -700,7 +696,7 @@ void RenderSystem::TestDraw()
 	inFlightFences[current_frame]->Wait();
 
 	uint32_t image_index = UINT32_MAX;
-	VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, availableSemaphores[current_frame]->Get(), VK_NULL_HANDLE, &image_index);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
@@ -719,10 +715,10 @@ void RenderSystem::TestDraw()
 	}
 	imageInFlight[image_index] = inFlightFences[current_frame];
 
-	VkSubmitInfo submitInfo = {};
+	VkSubmitInfo submitInfo = {}; // TODO: переделать
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore wait_semaphores[] = { available_semaphores[current_frame] };
+	VkSemaphore wait_semaphores[] = { availableSemaphores[current_frame]->Get()};
 	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = wait_semaphores;
@@ -731,7 +727,7 @@ void RenderSystem::TestDraw()
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &command_buffers[image_index];
 
-	VkSemaphore signal_semaphores[] = { finished_semaphore[current_frame] };
+	VkSemaphore signal_semaphores[] = { finishedSemaphore[current_frame]->Get() };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signal_semaphores;
 

@@ -15,7 +15,7 @@ public:
 	VkDevice& Device();
 
 	VulkanFencePtr CreateFence(const FenceCreateInfo& createInfo);
-	void DestroyFence(VulkanFencePtr& fence);
+	VulkanSemaphorePtr CreateSemaphore(const SemaphoreCreateInfo& createInfo);
 
 private:
 
