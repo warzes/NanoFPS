@@ -54,6 +54,13 @@ bool VulkanFence::Reset()
 	return true;
 }
 
+bool VulkanFence::WaitAndReset(uint64_t timeout)
+{
+	if (!Wait(timeout)) return false;
+	if (!Reset()) return false;
+	return true;
+}
+
 VkResult VulkanFence::Status() const
 {
 	return vkGetFenceStatus(m_device.Device(), m_fence);
@@ -158,5 +165,11 @@ uint64_t VulkanSemaphore::timelineCounterValue() const
 	// Not clear if value is written to upon failure so prefer safety.
 	return (result == VK_SUCCESS) ? value : UINT64_MAX;
 }
+
+#pragma endregion
+
+#pragma region VulkanImage
+
+
 
 #pragma endregion

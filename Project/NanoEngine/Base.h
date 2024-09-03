@@ -69,8 +69,8 @@
 //#define VMA_DEBUG_GLOBAL_MUTEX 0
 //#define VMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT 0
 //#define VMA_RECORDING_ENABLED 0
-//
-//#include <vk_mem_alloc.h>
+#define VMA_VULKAN_VERSION 1003000 // Vulkan 1.3
+#include <vk_mem_alloc.h>
 //#define WIN32
 //#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 //#define VULKAN_HPP_NO_EXCEPTIONS

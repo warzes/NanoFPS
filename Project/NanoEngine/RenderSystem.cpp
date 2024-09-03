@@ -38,7 +38,7 @@ VulkanInstance::VulkanInstance(RenderSystem& render)
 {
 }
 
-bool VulkanInstance::Setup(const VulkanInstanceCreateInfo& createInfo, GLFWwindow* window)
+bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* window)
 {
 	bool useValidationLayers = createInfo.useValidationLayers;
 #if defined(_DEBUG)
@@ -54,7 +54,7 @@ bool VulkanInstance::Setup(const VulkanInstanceCreateInfo& createInfo, GLFWwindo
 	vkb::InstanceBuilder instanceBuilder;
 
 	auto instanceRet = instanceBuilder
-		.set_app_name(createInfo.appName.data())
+		.set_app_name(createInfo.applicationName.data())
 		.set_engine_name(createInfo.engineName.data())
 		.set_app_version(createInfo.appVersion)
 		.set_engine_version(createInfo.engineVersion)
@@ -215,7 +215,7 @@ bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
 
 	const VkSurfaceFormatKHR surfaceFormat
 	{
-		.format = m_swapChainImageFormat,
+		.format = m_colorFormat,
 		.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 	};
 
@@ -259,7 +259,7 @@ void VulkanSwapchain::Shutdown()
 
 VkFormat VulkanSwapchain::GetFormat()
 {
-	return m_swapChainImageFormat;
+	return m_colorFormat;
 }
 
 VkImageView& VulkanSwapchain::GetImageView(size_t i)
@@ -438,7 +438,7 @@ RenderSystem::RenderSystem(EngineApplication& engine)
 
 bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
-	if (!m_instance.Setup(createInfo.vulkan, m_engine.GetWindow().GetWindow()))
+	if (!m_instance.Setup(createInfo.instance, m_engine.GetWindow().GetWindow()))
 		return false;
 	if (!m_swapChain.Setup(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
 		return false;
@@ -715,19 +715,16 @@ void RenderSystem::TestDraw()
 	}
 	imageInFlight[image_index] = inFlightFences[current_frame];
 
-	VkSubmitInfo submitInfo = {}; // TODO: переделать
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
 	VkSemaphore wait_semaphores[] = { availableSemaphores[current_frame]->Get()};
 	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkSemaphore signal_semaphores[] = { finishedSemaphore[current_frame]->Get() };
+
+	VkSubmitInfo submitInfo = { .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO }; // TODO: переделать
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = wait_semaphores;
 	submitInfo.pWaitDstStageMask = wait_stages;
-
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &command_buffers[image_index];
-
-	VkSemaphore signal_semaphores[] = { finishedSemaphore[current_frame]->Get() };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signal_semaphores;
 
@@ -739,16 +736,13 @@ void RenderSystem::TestDraw()
 		return; //"failed to submit draw command buffer
 	}
 
-	VkPresentInfoKHR present_info = {};
-	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	VkSwapchainKHR swapChains[] = { m_swapChain.Get()};
 
+	VkPresentInfoKHR present_info = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
 	present_info.waitSemaphoreCount = 1;
 	present_info.pWaitSemaphores = signal_semaphores;
-
-	VkSwapchainKHR swapChains[] = { m_swapChain.Get()};
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = swapChains;
-
 	present_info.pImageIndices = &image_index;
 
 	result = vkQueuePresentKHR(m_instance.presentQueue.Queue, &present_info);
