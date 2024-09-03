@@ -5,17 +5,7 @@
 class EngineApplication;
 class RenderSystem;
 
-#pragma region VulkanQueue
 
-struct VulkanQueue final
-{
-	bool Init(vkb::Device& vkbDevice, vkb::QueueType type);
-
-	VkQueue Queue{ nullptr };
-	uint32_t QueueFamily{ 0 };
-};
-
-#pragma endregion
 
 #pragma region VulkanInstance
 
@@ -56,10 +46,10 @@ public:
 
 	VkDevice                   device{ nullptr };
 
-	VulkanQueue                graphicsQueue{};
-	VulkanQueue                presentQueue{};
-	VulkanQueue                transferQueue{};
-	VulkanQueue                computeQueue{};
+	DeviceQueuePtr             graphicsQueue{ new DeviceQueue() };
+	DeviceQueuePtr             presentQueue{ new DeviceQueue() };
+	DeviceQueuePtr             transferQueue{ new DeviceQueue() };
+	DeviceQueuePtr             computeQueue{ new DeviceQueue() };
 
 private:
 	std::optional<vkb::Instance> createInstance(const InstanceCreateInfo& createInfo);
@@ -123,10 +113,10 @@ public:
 	VkPhysicalDevice& GetVkPhysicalDevice() { return m_instance.physicalDevice; }
 	VkDevice& GetVkDevice() { return m_instance.device; }
 
-	VulkanQueue& GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
-	VulkanQueue& GetVkPresentQueue() { return m_instance.presentQueue; }
-	VulkanQueue& GetVkTransferQueue() { return m_instance.transferQueue; }
-	VulkanQueue& GetVkComputeQueue() { return m_instance.computeQueue; }
+	DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
+	DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }
+	DeviceQueuePtr GetVkTransferQueue() { return m_instance.transferQueue; }
+	DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
 	RenderDevice& GetDevice() { return m_device; }
 

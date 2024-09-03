@@ -237,6 +237,7 @@ enum CommandType
 	COMMAND_TYPE_GRAPHICS = 1,
 	COMMAND_TYPE_COMPUTE = 2,
 	COMMAND_TYPE_TRANSFER = 3,
+	COMMAND_TYPE_PRESENT = 4,
 };
 
 enum ComponentSwizzle
@@ -1409,5 +1410,79 @@ void InsertPNext(TVkStruct1& baseStruct, TVkStruct2& nextStruct)
 	nextStruct.pNext = baseStruct.pNext;
 	baseStruct.pNext = &nextStruct;
 }
+
+#pragma endregion
+
+#pragma region Command
+
+struct BufferToBufferCopyInfo final
+{
+	uint64_t size = 0;
+
+	struct srcBuffer
+	{
+		uint64_t offset = 0;
+	} srcBuffer;
+
+	struct
+	{
+		uint32_t offset = 0;
+	} dstBuffer;
+};
+
+struct BufferToImageCopyInfo final
+{
+	struct
+	{
+		uint32_t imageWidth = 0; // [pixels]
+		uint32_t imageHeight = 0; // [pixels]
+		uint32_t imageRowStride = 0; // [bytes]
+		uint64_t footprintOffset = 0; // [bytes]
+		uint32_t footprintWidth = 0; // [pixels]
+		uint32_t footprintHeight = 0; // [pixels]
+		uint32_t footprintDepth = 0; // [pixels]
+	} srcBuffer;
+
+	struct
+	{
+		uint32_t mipLevel = 0;
+		uint32_t arrayLayer = 0; // Must be 0 for 3D images
+		uint32_t arrayLayerCount = 0; // Must be 1 for 3D images
+		uint32_t x = 0; // [pixels]
+		uint32_t y = 0; // [pixels]
+		uint32_t z = 0; // [pixels]
+		uint32_t width = 0; // [pixels]
+		uint32_t height = 0; // [pixels]
+		uint32_t depth = 0; // [pixels]
+	} dstImage;
+};
+
+struct ImageToBufferCopyInfo final
+{
+	struct
+	{
+		uint32_t mipLevel = 0;
+		uint32_t arrayLayer = 0; // Must be 0 for 3D images
+		uint32_t arrayLayerCount = 1; // Must be 1 for 3D images
+		struct
+		{
+			uint32_t x = 0; // [pixels]
+			uint32_t y = 0; // [pixels]
+			uint32_t z = 0; // [pixels]
+		} offset;
+	} srcImage;
+
+	struct
+	{
+		uint32_t x = 0; // [pixels]
+		uint32_t y = 0; // [pixels]
+		uint32_t z = 0; // [pixels]
+	} extent;
+};
+
+struct ImageToBufferOutputPitch
+{
+	uint32_t rowPitch = 0;
+};
 
 #pragma endregion

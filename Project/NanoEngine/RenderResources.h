@@ -179,6 +179,138 @@ private:
 	VkFormat               m_vkFormat = VK_FORMAT_UNDEFINED;
 	VkImageAspectFlags     m_imageAspect = InvalidValue<VkImageAspectFlags>();
 };
+using VulkanImagePtr = std::shared_ptr<VulkanImage>;
+
+#pragma endregion
+
+#pragma region VulkanBuffer
+
+class VulkanBuffer final
+{
+
+};
+using VulkanBufferPtr = std::shared_ptr<VulkanBuffer>;
+
+#pragma endregion
+
+#pragma region VulkanCommandPool
+
+class VulkanCommandPool final
+{
+public:
+
+};
+using VulkanCommandPoolPtr = std::shared_ptr<VulkanCommandPool>;
+
+#pragma endregion
+
+#pragma region VulkanCommandBuffer
+
+class VulkanCommandBuffer final
+{
+
+};
+using VulkanCommandBufferPtr = std::shared_ptr<VulkanCommandBuffer>;
+
+#pragma endregion
+
+#pragma region SubmitInfo
+
+struct SubmitInfo final
+{
+	std::vector<VulkanCommandBufferPtr> commandBuffers;
+	std::vector<VulkanSemaphorePtr>     waitSemaphores;
+	std::vector<uint64_t>               waitValues = {}; // Use 0 if index is binary semaphore
+	std::vector<VulkanSemaphorePtr>     signalSemaphores;
+	std::vector<uint64_t>               signalValues = {}; // Use 0 if index is binary smeaphore
+	VulkanFencePtr                      fence = nullptr;
+};
+
+#pragma endregion
+
+#pragma region DeviceQueue
+
+class DeviceQueue final
+{
+	friend class VulkanInstance;
+public:
+	VkQueue     Queue{ nullptr };
+	uint32_t    QueueFamily{ 0 };
+	CommandType CommandType{ COMMAND_TYPE_UNDEFINED };
+private:
+	bool init(vkb::Device& vkbDevice, vkb::QueueType type);
+};
+using DeviceQueuePtr = std::shared_ptr<DeviceQueue>;
+
+#pragma endregion
+
+#pragma region VulkanQueue
+
+class VulkanQueue final
+{
+public:
+	bool WaitIdle();
+	bool Submit(const SubmitInfo& pSubmitInfo);
+
+	// Timeline semaphore functions
+	bool QueueWait(VulkanSemaphorePtr pSemaphore, uint64_t value);
+	bool QueueSignal(VulkanSemaphorePtr pSemaphore, uint64_t value);
+
+	// GPU timestamp frequency counter in ticks per second
+	bool GetTimestampFrequency(uint64_t* pFrequency) const;
+
+	VulkanCommandBufferPtr CreateCommandBuffer(
+		uint32_t              resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT,
+		uint32_t              samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT);
+
+	// In place copy of buffer to buffer
+	bool CopyBufferToBuffer(
+		const BufferToBufferCopyInfo* pCopyInfo,
+		VulkanBufferPtr pSrcBuffer,
+		VulkanBufferPtr pDstBuffer,
+		ResourceState                 stateBefore,
+		ResourceState                 stateAfter);
+
+	// In place copy of buffer to image
+	bool CopyBufferToImage(
+		const std::vector<BufferToImageCopyInfo>& pCopyInfos,
+		VulkanBufferPtr pSrcBuffer,
+		VulkanImagePtr pDstImage,
+		uint32_t                                        mipLevel,
+		uint32_t                                        mipLevelCount,
+		uint32_t                                        arrayLayer,
+		uint32_t                                        arrayLayerCount,
+		ResourceState                             stateBefore,
+		ResourceState                             stateAfter);
+
+	VkResult TransitionImageLayout(
+		VkImage              image,
+		VkImageAspectFlags   aspectMask,
+		uint32_t             baseMipLevel,
+		uint32_t             levelCount,
+		uint32_t             baseArrayLayer,
+		uint32_t             layerCount,
+		VkImageLayout        oldLayout,
+		VkImageLayout        newLayout,
+		VkPipelineStageFlags newPipelineStage);
+
+private:
+
+	DeviceQueuePtr m_deviceQueue;
+
+	struct CommandSet
+	{
+		VulkanCommandPoolPtr   commandPool;
+		VulkanCommandBufferPtr commandBuffer;
+	};
+	std::vector<CommandSet> m_commandSets;
+	std::mutex              m_commandSetMutex;
+
+	VkCommandPool m_transientPool{ nullptr };
+	std::mutex    m_queueMutex{};
+	std::mutex    m_commandPoolMutex{};
+};
+using VulkanQueuePtr = std::shared_ptr<VulkanQueue>;
 
 #pragma endregion
 

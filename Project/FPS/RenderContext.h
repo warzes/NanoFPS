@@ -15,7 +15,7 @@ struct RenderContextCreateInfo
 	} vulkan;
 };
 
-struct VulkanQueue final
+struct DeviceQueue final
 {
 	VkQueue Queue{ nullptr };
 	uint32_t QueueFamily{ 0 };
@@ -46,10 +46,10 @@ public:
 
 	VkDevice Device{ nullptr };
 
-	VulkanQueue GraphicsQueue;
-	VulkanQueue PresentQueue;
-	VulkanQueue TransferQueue;
-	VulkanQueue ComputeQueue;
+	DeviceQueue GraphicsQueue;
+	DeviceQueue PresentQueue;
+	DeviceQueue TransferQueue;
+	DeviceQueue ComputeQueue;
 
 	VmaAllocator Allocator{ nullptr };
 

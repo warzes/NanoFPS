@@ -479,3 +479,37 @@ void VulkanImage::UnmapMemory()
 }
 
 #pragma endregion
+
+
+#pragma region DeviceQueue
+
+bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
+{
+	switch (type)
+	{
+	case vkb::QueueType::present:  CommandType = COMMAND_TYPE_PRESENT; break;
+	case vkb::QueueType::graphics: CommandType = COMMAND_TYPE_GRAPHICS; break;
+	case vkb::QueueType::compute:  CommandType = COMMAND_TYPE_COMPUTE; break;
+	case vkb::QueueType::transfer: CommandType = COMMAND_TYPE_TRANSFER; break;
+	}
+
+	auto queueRet = vkbDevice.get_queue(type);
+	if (!queueRet.has_value())
+	{
+		Fatal("failed to get queue: " + queueRet.error().message());
+		return false;
+	}
+	Queue = queueRet.value();
+
+	auto queueFamilyRet = vkbDevice.get_queue_index(type);
+	if (!queueFamilyRet.has_value())
+	{
+		Fatal("failed to get queue index: " + queueFamilyRet.error().message());
+		return false;
+	}
+	QueueFamily = queueFamilyRet.value();
+
+	return true;
+}
+
+#pragma endregion

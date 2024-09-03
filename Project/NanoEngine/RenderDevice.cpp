@@ -18,9 +18,26 @@ VkDevice& RenderDevice::Device()
 	return m_render.GetVkDevice();
 }
 
+DeviceQueuePtr RenderDevice::GetGraphicsQueue() const
+{
+	return m_render.GetVkGraphicsQueue();
+}
+DeviceQueuePtr RenderDevice::GetPresentQueue() const
+{
+	return m_render.GetVkPresentQueue();
+}
+DeviceQueuePtr RenderDevice::GetTransferQueue() const
+{
+	return m_render.GetVkTransferQueue();
+}
+DeviceQueuePtr RenderDevice::GetComputeQueue() const
+{
+	return m_render.GetVkComputeQueue();
+}
+
 std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
 {
-	return { m_render.GetVkGraphicsQueue().QueueFamily, m_render.GetVkComputeQueue().QueueFamily, m_render.GetVkTransferQueue().QueueFamily };
+	return { GetGraphicsQueue()->QueueFamily, GetComputeQueue()->QueueFamily, GetTransferQueue()->QueueFamily };
 }
 
 VulkanFencePtr RenderDevice::CreateFence(const FenceCreateInfo& createInfo)

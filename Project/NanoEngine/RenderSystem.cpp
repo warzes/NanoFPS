@@ -6,31 +6,6 @@
 #include "RenderSystem.h"
 #include "Application.h"
 
-#pragma region VulkanQueue
-
-bool VulkanQueue::Init(vkb::Device& vkbDevice, vkb::QueueType type)
-{
-	auto queueRet = vkbDevice.get_queue(type);
-	if (!queueRet.has_value())
-	{
-		Fatal("failed to get queue: " + queueRet.error().message());
-		return false;
-	}
-	Queue = queueRet.value();
-
-	auto queueFamilyRet = vkbDevice.get_queue_index(type);
-	if (!queueFamilyRet.has_value())
-	{
-		Fatal("failed to get queue index: " + queueFamilyRet.error().message());
-		return false;
-	}
-	QueueFamily = queueFamilyRet.value();
-
-	return true;
-}
-
-#pragma endregion
-
 #pragma region VulkanInstance
 
 VulkanInstance::VulkanInstance(RenderSystem& render)
@@ -85,6 +60,11 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 
 void VulkanInstance::Shutdown()
 {
+	graphicsQueue.reset();
+	presentQueue.reset();
+	transferQueue.reset();
+	computeQueue.reset();
+
 	if (device)                     vkDestroyDevice(device, nullptr);
 	if (instance && surface)        vkDestroySurfaceKHR(instance, surface, nullptr);
 	if (instance && debugMessenger) vkb::destroy_debug_utils_messenger(instance, debugMessenger);
@@ -205,10 +185,10 @@ std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Insta
 
 bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 {
-	if (!graphicsQueue.Init(vkbDevice, vkb::QueueType::graphics)) return false;
-	if (!presentQueue.Init(vkbDevice, vkb::QueueType::present)) return false;
-	if (!transferQueue.Init(vkbDevice, vkb::QueueType::transfer)) return false;
-	if (!computeQueue.Init(vkbDevice, vkb::QueueType::compute)) return false;
+	if (!graphicsQueue->init(vkbDevice, vkb::QueueType::graphics)) return false;
+	if (!presentQueue->init(vkbDevice, vkb::QueueType::present)) return false;
+	if (!transferQueue->init(vkbDevice, vkb::QueueType::transfer)) return false;
+	if (!computeQueue->init(vkbDevice, vkb::QueueType::compute)) return false;
 
 	return true;
 }
@@ -296,8 +276,6 @@ std::vector<VkFramebuffer> framebuffers;
 VkCommandPool command_pool;
 std::vector<VkCommandBuffer> command_buffers;
 
-//std::vector<VkSemaphore> available_semaphores;
-//std::vector<VkSemaphore> finished_semaphore;
 std::vector<VulkanSemaphorePtr> availableSemaphores;
 std::vector<VulkanSemaphorePtr> finishedSemaphore;
 
@@ -332,11 +310,11 @@ bool createFramebuffers(VkDevice device, VulkanSwapchain& swapchain)
 	return true;
 }
 
-bool createCommandPool(VkDevice device, VulkanQueue graphicsQueue)
+bool createCommandPool(VkDevice device, DeviceQueuePtr graphicsQueue)
 {
 	VkCommandPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	pool_info.queueFamilyIndex = graphicsQueue.QueueFamily;
+	pool_info.queueFamilyIndex = graphicsQueue->QueueFamily;
 
 	if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS)
 	{
@@ -429,7 +407,7 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 	return shaderModule;
 }
 
-int recreateSwapchain(VulkanSwapchain& swapchain, uint32_t width, uint32_t height, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VulkanQueue graphicsQueue)
+int recreateSwapchain(VulkanSwapchain& swapchain, uint32_t width, uint32_t height, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, DeviceQueuePtr graphicsQueue)
 {
 	vkDeviceWaitIdle(device);
 	vkDestroyCommandPool(device, command_pool, nullptr);
@@ -745,7 +723,7 @@ void RenderSystem::TestDraw()
 
 	inFlightFences[current_frame]->Reset();
 
-	if (vkQueueSubmit(m_instance.graphicsQueue.Queue, 1, &submitInfo, inFlightFences[current_frame]->Get()) != VK_SUCCESS)
+	if (vkQueueSubmit(m_instance.graphicsQueue->Queue, 1, &submitInfo, inFlightFences[current_frame]->Get()) != VK_SUCCESS)
 	{
 		Fatal("failed to submit draw command buffer");
 		return; //"failed to submit draw command buffer
@@ -760,7 +738,7 @@ void RenderSystem::TestDraw()
 	present_info.pSwapchains = swapChains;
 	present_info.pImageIndices = &image_index;
 
-	result = vkQueuePresentKHR(m_instance.presentQueue.Queue, &present_info);
+	result = vkQueuePresentKHR(m_instance.presentQueue->Queue, &present_info);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
 		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
