@@ -21,15 +21,16 @@ struct VulkanQueue final
 
 struct InstanceCreateInfo final
 {
-	std::string_view applicationName{ "FPS Game" };
-	std::string_view engineName{ "Nano VK Engine" };
-	uint32_t appVersion{ VK_MAKE_VERSION(0, 0, 1) };
-	uint32_t engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
-	uint32_t requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
-	bool useValidationLayers{ false };
+	std::string_view         applicationName{ "Game" };
+	std::string_view         engineName{ "Nano VK Engine" };
+	uint32_t                 appVersion{ VK_MAKE_VERSION(0, 0, 1) };
+	uint32_t                 engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
+	uint32_t                 requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
+	bool                     useValidationLayers{ false };
 
-	std::vector<std::string> vulkanLayers;     // TODO: доделать
-	std::vector<std::string> vulkanExtensions; // TODO: доделать
+	std::vector<const char*> vulkanExtensions = {
+		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
+	};
 };
 
 class VulkanInstance final
@@ -39,6 +40,10 @@ public:
 
 	[[nodiscard]] bool Setup(const InstanceCreateInfo& createInfo, GLFWwindow* window);
 	void Shutdown();
+
+	[[nodiscard]] const VkPhysicalDeviceLimits& GetDeviceLimits() const { return physicalDeviceProperties.limits; }
+	[[nodiscard]] float GetDeviceTimestampPeriod() const { return physicalDeviceProperties.limits.timestampPeriod; }
+	[[nodiscard]] const char* GetDeviceName() const { return physicalDeviceProperties.deviceName; }
 
 	VkInstance                 instance{ nullptr };
 	VkDebugUtilsMessengerEXT   debugMessenger{ nullptr };
@@ -57,7 +62,9 @@ public:
 	VulkanQueue                computeQueue{};
 
 private:
+	std::optional<vkb::Instance> createInstance(const InstanceCreateInfo& createInfo);
 	VkSurfaceKHR createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator = nullptr);
+	std::optional<vkb::PhysicalDevice> selectDevice(const vkb::Instance& instance);
 	bool getQueues(vkb::Device& vkbDevice);
 	RenderSystem& m_render;
 };

@@ -40,33 +40,14 @@ VulkanInstance::VulkanInstance(RenderSystem& render)
 
 bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* window)
 {
-	bool useValidationLayers = createInfo.useValidationLayers;
-#if defined(_DEBUG)
-	useValidationLayers = true;
-#endif
-
 	if (volkInitialize() != VK_SUCCESS)
 	{
 		Fatal("Failed to initialize volk.");
 		return false;
 	}
 
-	vkb::InstanceBuilder instanceBuilder;
-
-	auto instanceRet = instanceBuilder
-		.set_app_name(createInfo.applicationName.data())
-		.set_engine_name(createInfo.engineName.data())
-		.set_app_version(createInfo.appVersion)
-		.set_engine_version(createInfo.engineVersion)
-		.require_api_version(createInfo.requireVersion)
-		.request_validation_layers(useValidationLayers)
-		.use_default_debug_messenger()
-		.build();
-	if (!instanceRet)
-	{
-		Fatal(instanceRet.error().message());
-		return false;
-	}
+	auto instanceRet = createInstance(createInfo);
+	if (!instanceRet) return false;		
 	vkb::Instance vkbInstance = instanceRet.value();
 	instance = vkbInstance.instance;
 	debugMessenger = vkbInstance.debug_messenger;
@@ -76,6 +57,95 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	surface = createSurfaceGLFW(window);
 	if (surface == VK_NULL_HANDLE) return false;
 
+	auto physicalDeviceRet = selectDevice(vkbInstance);
+	if (!physicalDeviceRet) return false;	
+	vkb::PhysicalDevice vkbPhysicalDevice = physicalDeviceRet.value();
+	physicalDevice = vkbPhysicalDevice.physical_device;
+	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+	vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+	vkb::DeviceBuilder deviceBuilder{ vkbPhysicalDevice };
+	auto deviceRet = deviceBuilder.build();
+	if (!deviceRet)
+	{
+		Fatal(deviceRet.error().message());
+		return false;
+	}
+	vkb::Device vkbDevice = deviceRet.value();
+	device = vkbDevice.device;
+
+	volkLoadDevice(device);
+
+	Print("GPU Used: " + std::string(physicalDeviceProperties.deviceName));
+
+	if (!getQueues(vkbDevice)) return false;
+
+	return true;
+}
+
+void VulkanInstance::Shutdown()
+{
+	if (device)                     vkDestroyDevice(device, nullptr);
+	if (instance && surface)        vkDestroySurfaceKHR(instance, surface, nullptr);
+	if (instance && debugMessenger) vkb::destroy_debug_utils_messenger(instance, debugMessenger);
+	if (instance)                   vkDestroyInstance(instance, nullptr);
+
+	device         = nullptr;
+	surface        = nullptr;
+	debugMessenger = nullptr;
+	instance       = nullptr;
+	volkFinalize();
+}
+
+std::optional<vkb::Instance> VulkanInstance::createInstance(const InstanceCreateInfo& createInfo)
+{
+	bool useValidationLayers = createInfo.useValidationLayers;
+#if defined(_DEBUG)
+	useValidationLayers = true;
+#endif
+
+	vkb::InstanceBuilder instanceBuilder;
+
+	auto instanceRet = instanceBuilder
+		.set_app_name(createInfo.applicationName.data())
+		.set_engine_name(createInfo.engineName.data())
+		.set_app_version(createInfo.appVersion)
+		.set_engine_version(createInfo.engineVersion)
+		.require_api_version(createInfo.requireVersion)
+		.enable_extensions(createInfo.vulkanExtensions)
+		.request_validation_layers(useValidationLayers)
+		.use_default_debug_messenger()
+		.build();
+	if (!instanceRet)
+	{
+		Fatal(instanceRet.error().message());
+		return std::nullopt;
+	}
+
+	return instanceRet.value();
+}
+
+VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator)
+{
+	VkSurfaceKHR surface{ VK_NULL_HANDLE };
+	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &surface);
+	if (err)
+	{
+		const char* errorMsg = nullptr;
+		int ret = glfwGetError(&errorMsg);
+		if (ret != 0)
+		{
+			std::string text = std::to_string(ret) + " ";
+			if (errorMsg != nullptr) text += std::string(errorMsg);
+			Fatal(text);
+		}
+		surface = VK_NULL_HANDLE;
+	}
+	return surface;
+}
+
+std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Instance& instance)
+{
 	// vulkan 1.0 features
 	VkPhysicalDeviceFeatures features10{};
 	features10.samplerAnisotropy = VK_TRUE;
@@ -101,7 +171,6 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
 		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-		//VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
 		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
@@ -112,7 +181,7 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
 	};
 
-	vkb::PhysicalDeviceSelector physicalDeviceSelector{ vkbInstance };
+	vkb::PhysicalDeviceSelector physicalDeviceSelector{ instance };
 
 	auto physicalDeviceRet = physicalDeviceSelector
 		.set_minimum_version(1, 3)
@@ -128,64 +197,10 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	if (!physicalDeviceRet)
 	{
 		Fatal(physicalDeviceRet.error().message());
-		return false;
+		return std::nullopt;
 	}
-	vkb::PhysicalDevice vkbPhysicalDevice = physicalDeviceRet.value();
-	physicalDevice = vkbPhysicalDevice.physical_device;
 
-	vkb::DeviceBuilder deviceBuilder{ vkbPhysicalDevice };
-	auto deviceRet = deviceBuilder.build();
-	if (!deviceRet)
-	{
-		Fatal(deviceRet.error().message());
-		return false;
-	}
-	vkb::Device vkbDevice = deviceRet.value();
-	device = vkbDevice.device;
-
-	volkLoadDevice(device);
-
-	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-	vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
-
-	Print("GPU Used: " + std::string(physicalDeviceProperties.deviceName));
-
-	if (!getQueues(vkbDevice)) return false;
-
-	return true;
-}
-
-void VulkanInstance::Shutdown()
-{
-	if (device) vkDestroyDevice(device, nullptr);
-	if (instance && surface) vkDestroySurfaceKHR(instance, surface, nullptr);
-	if (instance && debugMessenger) vkb::destroy_debug_utils_messenger(instance, debugMessenger);
-	if (instance) vkDestroyInstance(instance, nullptr);
-
-	device = nullptr;
-	surface = nullptr;
-	debugMessenger = nullptr;
-	instance = nullptr;
-	volkFinalize();
-}
-
-VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator)
-{
-	VkSurfaceKHR surface{ VK_NULL_HANDLE };
-	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &surface);
-	if (err)
-	{
-		const char* errorMsg = nullptr;
-		int ret = glfwGetError(&errorMsg);
-		if (ret != 0)
-		{
-			std::string text = std::to_string(ret) + " ";
-			if (errorMsg != nullptr) text += std::string(errorMsg);
-			Fatal(text);
-		}
-		surface = VK_NULL_HANDLE;
-	}
-	return surface;
+	return physicalDeviceRet.value();
 }
 
 bool VulkanInstance::getQueues(vkb::Device& vkbDevice)

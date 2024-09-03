@@ -264,174 +264,174 @@ VulkanImage::VulkanImage(RenderDevice& device, const ImageCreateInfo& createInfo
 	m_concurrentMultiQueueUsage = createInfo.concurrentMultiQueueUsage;
 	m_createFlags = createInfo.createFlags;
 
-	if (!m_pApiObject)
-	{
-		// Create image
-		{
-			VkExtent3D extent = {};
-			extent.width = m_width;
-			extent.height = m_height;
-			extent.depth = m_depth;
+	//if (!m_pApiObject)
+	//{
+	//	// Create image
+	//	{
+	//		VkExtent3D extent = {};
+	//		extent.width = m_width;
+	//		extent.height = m_height;
+	//		extent.depth = m_depth;
 
-			VkImageCreateFlags createFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-			if (m_type == IMAGE_TYPE_CUBE)
-				createFlags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	//		VkImageCreateFlags createFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+	//		if (m_type == IMAGE_TYPE_CUBE)
+	//			createFlags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-			if (m_createFlags.bits.subsampledFormat)
-				createFlags |= VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+	//		if (m_createFlags.bits.subsampledFormat)
+	//			createFlags |= VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
 
-			auto queueIndices = m_device.GetAllQueueFamilyIndices();
+	//		auto queueIndices = m_device.GetAllQueueFamilyIndices();
 
-			VkImageCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-			vkci.flags = createFlags;
-			vkci.imageType = ToVkImageType(m_type);
-			vkci.format = ToVkFormat(m_format);
-			vkci.extent = extent;
-			vkci.mipLevels = m_mipLevelCount;
-			vkci.arrayLayers = m_arrayLayerCount;
-			vkci.samples = ToVkSampleCount(m_sampleCount);
-			vkci.tiling = m_memoryUsage == MEMORY_USAGE_GPU_TO_CPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
-			vkci.usage = ToVkImageUsageFlags(m_usageFlags);
-			vkci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			if (m_concurrentMultiQueueUsage)
-			{
-				vkci.sharingMode = VK_SHARING_MODE_CONCURRENT;
-				vkci.queueFamilyIndexCount = 3;
-				vkci.pQueueFamilyIndices = queueIndices.data();
-			}
-			else
-			{
-				vkci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-				vkci.queueFamilyIndexCount = 0;
-				vkci.pQueueFamilyIndices = nullptr;
-			}
+	//		VkImageCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+	//		vkci.flags = createFlags;
+	//		vkci.imageType = ToVkImageType(m_type);
+	//		vkci.format = ToVkFormat(m_format);
+	//		vkci.extent = extent;
+	//		vkci.mipLevels = m_mipLevelCount;
+	//		vkci.arrayLayers = m_arrayLayerCount;
+	//		vkci.samples = ToVkSampleCount(m_sampleCount);
+	//		vkci.tiling = m_memoryUsage == MEMORY_USAGE_GPU_TO_CPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+	//		vkci.usage = ToVkImageUsageFlags(m_usageFlags);
+	//		vkci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	//		if (m_concurrentMultiQueueUsage)
+	//		{
+	//			vkci.sharingMode = VK_SHARING_MODE_CONCURRENT;
+	//			vkci.queueFamilyIndexCount = 3;
+	//			vkci.pQueueFamilyIndices = queueIndices.data();
+	//		}
+	//		else
+	//		{
+	//			vkci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	//			vkci.queueFamilyIndexCount = 0;
+	//			vkci.pQueueFamilyIndices = nullptr;
+	//		}
 
-			VkAllocationCallbacks* pAllocator = nullptr;
+	//		VkAllocationCallbacks* pAllocator = nullptr;
 
-			VkResult result = vk::CreateImage(ToApi(GetDevice())->GetVkDevice(), &vkci, pAllocator, &m_image);
-			if (result != VK_SUCCESS)
-			{
-				Fatal("vkCreateImage failed: " + std::string(string_VkResult(result)));
-				return;
-			}
-		}
+	//		VkResult result = vk::CreateImage(ToApi(GetDevice())->GetVkDevice(), &vkci, pAllocator, &m_image);
+	//		if (result != VK_SUCCESS)
+	//		{
+	//			Fatal("vkCreateImage failed: " + std::string(string_VkResult(result)));
+	//			return;
+	//		}
+	//	}
 
-		// Allocate memory
-		{
-			VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(m_memoryUsage);
-			if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
-			{
-				Fatal("unknown memory usage");
-				return;
-			}
+	//	// Allocate memory
+	//	{
+	//		VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(m_memoryUsage);
+	//		if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
+	//		{
+	//			Fatal("unknown memory usage");
+	//			return;
+	//		}
 
-			VmaAllocationCreateFlags createFlags = 0;
+	//		VmaAllocationCreateFlags createFlags = 0;
 
-			if ((memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) || (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU))
-			{
-				createFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-			}
+	//		if ((memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) || (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU))
+	//		{
+	//			createFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	//		}
 
-			VmaAllocationCreateInfo vma_alloc_ci = {};
-			vma_alloc_ci.flags = createFlags;
-			vma_alloc_ci.usage = memoryUsage;
-			vma_alloc_ci.requiredFlags = 0;
-			vma_alloc_ci.preferredFlags = 0;
-			vma_alloc_ci.memoryTypeBits = 0;
-			vma_alloc_ci.pool = VK_NULL_HANDLE;
-			vma_alloc_ci.pUserData = nullptr;
+	//		VmaAllocationCreateInfo vma_alloc_ci = {};
+	//		vma_alloc_ci.flags = createFlags;
+	//		vma_alloc_ci.usage = memoryUsage;
+	//		vma_alloc_ci.requiredFlags = 0;
+	//		vma_alloc_ci.preferredFlags = 0;
+	//		vma_alloc_ci.memoryTypeBits = 0;
+	//		vma_alloc_ci.pool = VK_NULL_HANDLE;
+	//		vma_alloc_ci.pUserData = nullptr;
 
-			VkResult result = vmaAllocateMemoryForImage(
-				ToApi(GetDevice())->GetVmaAllocator(),
-				mImage,
-				&vma_alloc_ci,
-				&mAllocation,
-				&mAllocationInfo);
-			if (vresultkres != VK_SUCCESS)
-			{
-				Fatal("vmaAllocateMemoryForImage failed: " + std::string(string_VkResult(result)));
-				return;
-			}
-		}
+	//		VkResult result = vmaAllocateMemoryForImage(
+	//			ToApi(GetDevice())->GetVmaAllocator(),
+	//			mImage,
+	//			&vma_alloc_ci,
+	//			&mAllocation,
+	//			&mAllocationInfo);
+	//		if (vresultkres != VK_SUCCESS)
+	//		{
+	//			Fatal("vmaAllocateMemoryForImage failed: " + std::string(string_VkResult(result)));
+	//			return;
+	//		}
+	//	}
 
-		// Bind memory
-		{
-			VkResult result = vmaBindImageMemory(
-				ToApi(GetDevice())->GetVmaAllocator(),
-				mAllocation,
-				mImage);
-			if (result != VK_SUCCESS) {
-				Fatal("vmaBindImageMemory failed: " + std::string(string_VkResult(result)));
-				return;
-			}
-		}
-	}
-	else
-	{
-		m_image = reinterpret_cast<VkImage>(m_pApiObject);
-	}
+	//	// Bind memory
+	//	{
+	//		VkResult result = vmaBindImageMemory(
+	//			ToApi(GetDevice())->GetVmaAllocator(),
+	//			mAllocation,
+	//			mImage);
+	//		if (result != VK_SUCCESS) {
+	//			Fatal("vmaBindImageMemory failed: " + std::string(string_VkResult(result)));
+	//			return;
+	//		}
+	//	}
+	//}
+	//else
+	//{
+	//	m_image = reinterpret_cast<VkImage>(m_pApiObject);
+	//}
 
-	m_vkFormat = ToVkFormat(m_format);
-	m_imageAspect = DetermineAspectMask(m_vkFormat);
+	//m_vkFormat = ToVkFormat(m_format);
+	//m_imageAspect = DetermineAspectMask(m_vkFormat);
 
-	if ((m_initialState != RESOURCE_STATE_UNDEFINED) && !m_pApiObject)
-	{
-		grfx::QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
-		if (!grfxQueue)
-			return;
+	//if ((m_initialState != RESOURCE_STATE_UNDEFINED) && !m_pApiObject)
+	//{
+	//	grfx::QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
+	//	if (!grfxQueue)
+	//		return;
 
-		// Determine pipeline stage and layout from the initial state
-		VkPipelineStageFlags pipelineStage = 0;
-		VkAccessFlags        accessMask = 0;
-		VkImageLayout        layout = VK_IMAGE_LAYOUT_UNDEFINED;
-		Result               ppxres = ToVkBarrierDst(
-			pCreateInfo->initialState,
-			grfxQueue->GetCommandType(),
-			pDevice->GetDeviceFeatures(),
-			pipelineStage,
-			accessMask,
-			layout);
-		if (Failed(ppxres)) {
-			PPX_ASSERT_MSG(false, "couldn't determine pipeline stage and layout from initial state");
-			return ppxres;
-		}
+	//	// Determine pipeline stage and layout from the initial state
+	//	VkPipelineStageFlags pipelineStage = 0;
+	//	VkAccessFlags        accessMask = 0;
+	//	VkImageLayout        layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	//	Result               ppxres = ToVkBarrierDst(
+	//		pCreateInfo->initialState,
+	//		grfxQueue->GetCommandType(),
+	//		pDevice->GetDeviceFeatures(),
+	//		pipelineStage,
+	//		accessMask,
+	//		layout);
+	//	if (Failed(ppxres)) {
+	//		PPX_ASSERT_MSG(false, "couldn't determine pipeline stage and layout from initial state");
+	//		return ppxres;
+	//	}
 
-		vk::Queue* pQueue = ToApi(grfxQueue.Get());
+	//	vk::Queue* pQueue = ToApi(grfxQueue.Get());
 
-		VkResult vkres = pQueue->TransitionImageLayout(
-			mImage,                       // image
-			mImageAspect,                 // aspectMask
-			0,                            // baseMipLevel
-			pCreateInfo->mipLevelCount,   // levelCount
-			0,                            // baseArrayLayer
-			pCreateInfo->arrayLayerCount, // layerCount
-			VK_IMAGE_LAYOUT_UNDEFINED,    // oldLayout
-			layout,                       // newLayout
-			pipelineStage);               // newPipelineStage)
-		if (vkres != VK_SUCCESS)
-		{
-			Fatal("Queue::TransitionImageLayout failed: " << ToString(vkres));
-			return ppx::ERROR_API_FAILURE;
-		}
-	}
+	//	VkResult vkres = pQueue->TransitionImageLayout(
+	//		mImage,                       // image
+	//		mImageAspect,                 // aspectMask
+	//		0,                            // baseMipLevel
+	//		pCreateInfo->mipLevelCount,   // levelCount
+	//		0,                            // baseArrayLayer
+	//		pCreateInfo->arrayLayerCount, // layerCount
+	//		VK_IMAGE_LAYOUT_UNDEFINED,    // oldLayout
+	//		layout,                       // newLayout
+	//		pipelineStage);               // newPipelineStage)
+	//	if (vkres != VK_SUCCESS)
+	//	{
+	//		Fatal("Queue::TransitionImageLayout failed: " << ToString(vkres));
+	//		return ppx::ERROR_API_FAILURE;
+	//	}
+	//}
 }
 
 VulkanImage::~VulkanImage()
 {
-	// Don't destroy image unless we created it
-	if (m_pApiObject)
-		return;
+	//// Don't destroy image unless we created it
+	//if (m_pApiObject)
+	//	return;
 
-	if (m_allocation)
-	{
-		vmaFreeMemory(ToApi(GetDevice())->GetVmaAllocator(), m_allocation);
-		m_allocationInfo = {};
-	}
+	//if (m_allocation)
+	//{
+	//	vmaFreeMemory(ToApi(GetDevice())->GetVmaAllocator(), m_allocation);
+	//	m_allocationInfo = {};
+	//}
 
-	if (m_image)
-	{
-		vkDestroyImage(ToApi(GetDevice())->GetVkDevice(), m_image, nullptr);
-	}
+	//if (m_image)
+	//{
+	//	vkDestroyImage(ToApi(GetDevice())->GetVkDevice(), m_image, nullptr);
+	//}
 }
 
 ImageViewType VulkanImage::GuessImageViewType(bool isCube) const
@@ -460,22 +460,22 @@ bool VulkanImage::MapMemory(uint64_t offset, void** ppMappedAddress)
 {
 	if (ppMappedAddress) return false;
 
-	VkResult vkres = vmaMapMemory(
-		ToApi(GetDevice())->GetVmaAllocator(),
-		mAllocation,
-		ppMappedAddress);
-	if (vkres != VK_SUCCESS)
-	{
-		PPX_ASSERT_MSG(false, "vmaMapMemory failed: " << ToString(vkres));
-		return ppx::ERROR_API_FAILURE;
-	}
+	//VkResult vkres = vmaMapMemory(
+	//	ToApi(GetDevice())->GetVmaAllocator(),
+	//	mAllocation,
+	//	ppMappedAddress);
+	//if (vkres != VK_SUCCESS)
+	//{
+	//	PPX_ASSERT_MSG(false, "vmaMapMemory failed: " << ToString(vkres));
+	//	return ppx::ERROR_API_FAILURE;
+	//}
 
 	return true;
 }
 
 void VulkanImage::UnmapMemory()
 {
-	vmaUnmapMemory(ToApi(GetDevice())->GetVmaAllocator(), m_allocation);
+	//vmaUnmapMemory(ToApi(GetDevice())->GetVmaAllocator(), m_allocation);
 }
 
 #pragma endregion
