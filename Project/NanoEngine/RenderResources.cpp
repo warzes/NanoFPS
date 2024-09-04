@@ -171,6 +171,177 @@ uint64_t Semaphore::timelineCounterValue() const
 
 #pragma endregion
 
+#pragma region Buffer
+
+Result Buffer::MapMemory(uint64_t offset, void** ppMappedAddress)
+{
+	if (IsNull(ppMappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
+
+	VkResult vkres = vmaMapMemory(GetDevice()->GetVmaAllocator(), m_allocation, ppMappedAddress);
+	if (vkres != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vmaMapMemory failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+void Buffer::UnmapMemory()
+{
+	vmaUnmapMemory(GetDevice()->GetVmaAllocator(), m_allocation);
+}
+
+Result Buffer::CopyFromSource(uint32_t dataSize, const void* pSrcData)
+{
+	if (dataSize > GetSize()) return ERROR_LIMIT_EXCEEDED;
+
+	// Map
+	void* pBufferAddress = nullptr;
+	Result ppxres = MapMemory(0, &pBufferAddress);
+	if (Failed(ppxres)) return ppxres;
+
+	// Copy
+	std::memcpy(pBufferAddress, pSrcData, dataSize);
+
+	// Unmap
+	UnmapMemory();
+
+	return SUCCESS;
+}
+
+Result Buffer::CopyToDest(uint32_t dataSize, void* pDestData)
+{
+	if (dataSize > GetSize()) return ERROR_LIMIT_EXCEEDED;
+
+	// Map
+	void* pBufferAddress = nullptr;
+	Result ppxres = MapMemory(0, &pBufferAddress);
+	if (Failed(ppxres))  return ppxres;
+
+	// Copy
+	std::memcpy(pDestData, pBufferAddress, dataSize);
+
+	// Unmap
+	UnmapMemory();
+
+	return SUCCESS;
+}
+
+Result Buffer::create(const BufferCreateInfo& createInfo)
+{
+#ifndef DISABLE_MINIMUM_BUFFER_SIZE_CHECK
+	// Constant/uniform buffers need to be at least PPX_CONSTANT_BUFFER_ALIGNMENT in size
+	if (createInfo.usageFlags.bits.uniformBuffer && (createInfo.size < CONSTANT_BUFFER_ALIGNMENT))
+	{
+		ASSERT_MSG(false, "constant/uniform buffer sizes must be at least PPX_CONSTANT_BUFFER_ALIGNMENT (" + std::to_string(CONSTANT_BUFFER_ALIGNMENT) + ")");
+		return ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET;
+	}
+
+	// Storage/structured buffers need to be at least STORAGE_BUFFER_ALIGNMENT in size
+	if (createInfo.usageFlags.bits.uniformBuffer && (createInfo.size < STUCTURED_BUFFER_ALIGNMENT))
+	{
+		ASSERT_MSG(false, "storage/structured buffer sizes must be at least PPX_STUCTURED_BUFFER_ALIGNMENT (" + std::to_string(STUCTURED_BUFFER_ALIGNMENT) + ")");
+		return ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET;
+	}
+#endif
+	Result ppxres = DeviceObject<BufferCreateInfo>::create(createInfo);
+	if (Failed(ppxres)) return ppxres;
+
+	return SUCCESS;
+}
+
+Result Buffer::createApiObjects(const BufferCreateInfo& CreateInfo)
+{
+	VkDeviceSize alignedSize = static_cast<VkDeviceSize>(CreateInfo.size);
+	if (CreateInfo.usageFlags.bits.uniformBuffer)
+		alignedSize = RoundUp<VkDeviceSize>(CreateInfo.size, UNIFORM_BUFFER_ALIGNMENT);
+
+	VkBufferCreateInfo createInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	createInfo.size = alignedSize;
+	createInfo.usage = ToVkBufferUsageFlags(CreateInfo.usageFlags);
+	createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VkAllocationCallbacks* pAllocator = nullptr;
+	VkResult vkres = vkCreateBuffer(GetDevice()->GetVkDevice(), &createInfo, pAllocator, &m_buffer);
+	if (vkres != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkCreateBuffer failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+
+	// Allocate memory
+	{
+		VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(CreateInfo.memoryUsage);
+		if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
+		{
+			ASSERT_MSG(false, "unknown memory usage");
+			return ERROR_API_FAILURE;
+		}
+
+		VmaAllocationCreateFlags createFlags = 0;
+		if ((memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) || (memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY))
+		{
+			createFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		}
+
+		VmaAllocationCreateInfo vma_alloc_ci = {};
+		vma_alloc_ci.flags = createFlags;
+		vma_alloc_ci.usage = memoryUsage;
+		vma_alloc_ci.requiredFlags = 0;
+		vma_alloc_ci.preferredFlags = 0;
+		vma_alloc_ci.memoryTypeBits = 0;
+		vma_alloc_ci.pool = VK_NULL_HANDLE;
+		vma_alloc_ci.pUserData = nullptr;
+
+		VkResult vkres = vmaAllocateMemoryForBuffer(
+			GetDevice()->GetVmaAllocator(),
+			m_buffer,
+			&vma_alloc_ci,
+			&m_allocation,
+			&m_allocationInfo);
+		if (vkres != VK_SUCCESS)
+		{
+			ASSERT_MSG(false, "vmaAllocateMemoryForBuffer failed: " + ToString(vkres));
+			return ERROR_API_FAILURE;
+		}
+	}
+
+	// Bind memory
+	{
+		VkResult vkres = vmaBindBufferMemory(
+			GetDevice()->GetVmaAllocator(),
+			m_allocation,
+			m_buffer);
+		if (vkres != VK_SUCCESS)
+		{
+			ASSERT_MSG(false, "vmaBindBufferMemory failed: " + ToString(vkres));
+			return ERROR_API_FAILURE;
+		}
+	}
+
+	return SUCCESS;
+}
+
+void Buffer::destroyApiObjects()
+{
+	if (m_allocation) {
+		vmaFreeMemory(GetDevice()->GetVmaAllocator(), m_allocation);
+		m_allocation.Reset();
+
+		m_allocationInfo = {};
+	}
+
+	if (m_buffer)
+	{
+		vkDestroyBuffer(GetDevice()->GetVkDevice(), m_buffer, nullptr);
+		m_buffer.Reset();
+	}
+}
+
+#pragma endregion
+
+
 //===================================================================
 // OLD
 //===================================================================

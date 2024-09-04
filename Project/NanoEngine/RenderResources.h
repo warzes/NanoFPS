@@ -76,6 +76,66 @@ private:
 
 #pragma endregion
 
+#pragma region Buffer
+
+struct BufferCreateInfo final
+{
+	uint64_t         size = 0;
+	uint32_t         structuredElementStride = 0; // HLSL StructuredBuffer<> only
+	BufferUsageFlags usageFlags = 0;
+	MemoryUsage      memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	ResourceState    initialState = RESOURCE_STATE_GENERAL;
+	Ownership        ownership = OWNERSHIP_REFERENCE;
+};
+
+class Buffer : public DeviceObject<BufferCreateInfo>
+{
+	friend class RenderDevice;
+public:
+	uint64_t                GetSize() const { return m_createInfo.size; }
+	uint32_t                GetStructuredElementStride() const { return m_createInfo.structuredElementStride; }
+	const BufferUsageFlags& GetUsageFlags() const { return m_createInfo.usageFlags; }
+	VkBufferPtr             GetVkBuffer() const { return m_buffer; }
+
+	Result MapMemory(uint64_t offset, void** ppMappedAddress);
+	void   UnmapMemory();
+
+	Result CopyFromSource(uint32_t dataSize, const void* pData);
+	Result CopyToDest(uint32_t dataSize, void* pData);
+
+private:
+	Result create(const BufferCreateInfo& createInfo) final;
+	Result createApiObjects(const BufferCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
+
+	VkBufferPtr m_buffer;
+	VmaAllocationPtr m_allocation;
+	VmaAllocationInfo m_allocationInfo = {};
+};
+
+struct IndexBufferView final
+{
+	IndexBufferView() {}
+	IndexBufferView(const Buffer* pBuffer_, IndexType indexType_, uint64_t offset_ = 0, uint64_t size_ = WHOLE_SIZE) : pBuffer(pBuffer_), indexType(indexType_), offset(offset_), size(size_) {}
+
+	const Buffer* pBuffer = nullptr;
+	IndexType     indexType = INDEX_TYPE_UINT16;
+	uint64_t      offset = 0;
+	uint64_t      size = WHOLE_SIZE; // [D3D12 - REQUIRED] Size in bytes of view
+};
+
+struct VertexBufferView final
+{
+	VertexBufferView() {}
+	VertexBufferView(const Buffer* pBuffer_, uint32_t stride_, uint64_t offset_ = 0, uint64_t size_ = 0) : pBuffer(pBuffer_), stride(stride_), offset(offset_), size(size_) {}
+
+	const Buffer* pBuffer = nullptr;
+	uint32_t      stride = 0; // [D3D12 - REQUIRED] Stride in bytes of vertex entry
+	uint64_t      offset = 0;
+	uint64_t      size = WHOLE_SIZE; // [D3D12 - REQUIRED] Size in bytes of view
+};
+
+#pragma endregion
 
 
 
