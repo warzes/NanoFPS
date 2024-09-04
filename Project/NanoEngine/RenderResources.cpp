@@ -1,9 +1,179 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
-#include "RenderCore.h"
 #include "RenderResources.h"
 #include "RenderDevice.h"
 
+#define REQUIRES_TIMELINE_MSG "invalid semaphore type: operation requires timeline semaphore"
+
+#pragma region VulkanFence
+
+Result Fence::Wait(uint64_t timeout)
+{
+	VkResult vkres = vkWaitForFences(GetDevice()->GetVkDevice(), 1, m_fence, VK_TRUE, timeout);
+	if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
+	return SUCCESS;
+}
+
+Result Fence::Reset()
+{
+	VkResult vkres = vkResetFences(GetDevice()->GetVkDevice(), 1, m_fence);
+	if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
+	return SUCCESS;
+}
+
+Result Fence::WaitAndReset(uint64_t timeout)
+{
+	Result ppxres = Wait(timeout);
+	if (Failed(ppxres)) return ppxres;
+	ppxres = Reset();
+	if (Failed(ppxres)) return ppxres;
+	return SUCCESS;
+}
+
+Result Fence::createApiObjects(const FenceCreateInfo& createInfo)
+{
+	VkFenceCreateInfo vkci = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+	vkci.flags = createInfo.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
+
+	VkResult vkres = vkCreateFence(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_fence);
+	if (vkres != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkCreateFence failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+void Fence::destroyApiObjects()
+{
+	if (m_fence)
+	{
+		vkDestroyFence(GetDevice()->GetVkDevice(), m_fence, nullptr);
+		m_fence.Reset();
+	}
+}
+
+#pragma endregion
+
+#pragma region VulkanSemaphore
+
+Result Semaphore::Wait(uint64_t value, uint64_t timeout) const
+{
+	if (GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	{
+		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
+	}
+
+	auto ppxres = timelineWait(value, timeout);
+	if (Failed(ppxres)) return ppxres;
+
+	return SUCCESS;
+}
+
+Result Semaphore::Signal(uint64_t value) const
+{
+	if (GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	{
+		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
+	}
+
+	auto ppxres = timelineSignal(value);
+	if (Failed(ppxres)) return ppxres;
+
+	return SUCCESS;
+}
+
+uint64_t Semaphore::GetCounterValue() const
+{
+	if (this->GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	{
+		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		return UINT64_MAX;
+	}
+
+	uint64_t value = timelineCounterValue();
+	return value;
+}
+
+Result Semaphore::createApiObjects(const SemaphoreCreateInfo& createInfo)
+{
+	VkSemaphoreTypeCreateInfo timelineCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
+	timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+	timelineCreateInfo.initialValue = createInfo.initialValue;
+
+	VkSemaphoreCreateInfo vkci = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+	vkci.pNext = (createInfo.semaphoreType == SEMAPHORE_TYPE_TIMELINE) ? &timelineCreateInfo : nullptr;
+
+	VkResult vkres = vkCreateSemaphore(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_semaphore);
+	if (vkres != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkCreateSemaphore failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+void Semaphore::destroyApiObjects()
+{
+	if (m_semaphore)
+	{
+		vkDestroySemaphore(GetDevice()->GetVkDevice(), m_semaphore, nullptr);
+		m_semaphore.Reset();
+	}
+}
+
+Result Semaphore::timelineWait(uint64_t value, uint64_t timeout) const
+{
+	VkSemaphore semaphoreHandle = m_semaphore;
+
+	VkSemaphoreWaitInfo waitInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
+	waitInfo.semaphoreCount = 1;
+	waitInfo.pSemaphores = &semaphoreHandle;
+	waitInfo.pValues = &value;
+
+	VkResult vkres = vkWaitSemaphores(GetDevice()->GetVkDevice(), &waitInfo, timeout);
+	if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
+
+	return SUCCESS;
+}
+
+Result Semaphore::timelineSignal(uint64_t value) const
+{
+	// See header for explanation
+	if (value > m_timelineSignaledValue)
+	{
+		VkSemaphore semaphoreHandle = m_semaphore;
+
+		VkSemaphoreSignalInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO };
+		signalInfo.semaphore = m_semaphore;
+		signalInfo.value = value;
+
+		VkResult vkres = vkSignalSemaphore(GetDevice()->GetVkDevice(), &signalInfo);
+		if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
+
+		m_timelineSignaledValue = value;
+	}
+
+	return SUCCESS;
+}
+
+uint64_t Semaphore::timelineCounterValue() const
+{
+	uint64_t value = UINT64_MAX;
+	VkResult vkres = vkGetSemaphoreCounterValue(GetDevice()->GetVkDevice(), m_semaphore, &value);
+	// Not clear if value is written to upon failure so prefer safety.
+	return (vkres == VK_SUCCESS) ? value : UINT64_MAX;
+}
+
+#pragma endregion
+
+//===================================================================
+// OLD
+//===================================================================
 #pragma region VulkanFence
 
 VulkanFence::VulkanFence(RenderDevice& device, const FenceCreateInfo& createInfo)

@@ -2,19 +2,88 @@
 
 #include "RenderCore.h"
 
-class VulkanQueue;
-class VulkanPipelineInterface;
-class VulkanDescriptorSet;
-
-
-using VulkanPipelineInterfacePtr = std::shared_ptr<VulkanPipelineInterface>;
-
 #pragma region VulkanFence
 
 struct FenceCreateInfo final
 {
 	bool signaled = false;
 };
+
+class Fence final : public DeviceObject<FenceCreateInfo>
+{
+	friend class RenderDevice;
+public:
+	Result Wait(uint64_t timeout = UINT64_MAX);
+	Result Reset();
+
+	Result WaitAndReset(uint64_t timeout = UINT64_MAX);
+
+	VkFencePtr GetVkFence() const { return m_fence; }
+
+private:
+	Result createApiObjects(const FenceCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
+
+	VkFencePtr m_fence;
+};
+
+#pragma endregion
+
+#pragma region VulkanSemaphore
+
+struct SemaphoreCreateInfo final
+{
+	SemaphoreType semaphoreType = SEMAPHORE_TYPE_BINARY;
+	uint64_t      initialValue = 0; // Timeline semaphore only
+};
+
+class Semaphore final : public DeviceObject<SemaphoreCreateInfo>
+{
+	friend class RenderDevice;
+public:
+	VkSemaphorePtr GetVkSemaphore() const { return m_semaphore; }
+	SemaphoreType  GetSemaphoreType() const { return m_createInfo.semaphoreType; }
+	bool           IsBinary() const { return m_createInfo.semaphoreType == SEMAPHORE_TYPE_BINARY; }
+	bool           IsTimeline() const { return m_createInfo.semaphoreType == SEMAPHORE_TYPE_TIMELINE; }
+
+	// Timeline semaphore wait
+	Result Wait(uint64_t value, uint64_t timeout = UINT64_MAX) const;
+
+	// Timeline semaphore signal
+	// WARNING: Signaling a value less than what's already been signaled can cause a block or a race condition.
+	Result Signal(uint64_t value) const;
+
+	// Returns current timeline semaphore value
+	uint64_t GetCounterValue() const;
+
+private:
+	Result createApiObjects(const SemaphoreCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
+
+	Result timelineWait(uint64_t value, uint64_t timeout) const;
+	Result timelineSignal(uint64_t value) const;
+	uint64_t timelineCounterValue() const;
+
+	// Why are we storing timeline semaphore signaled values?
+	// Direct3D allows fence objects to signal a value if the value is equal to or greater than what's already been signaled.
+	// Vulkan does not:
+	// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkSemaphoreSignalInfo.html#VUID-VkSemaphoreSignalInfo-value-03258
+	// This is unfortunate, because there are cases where an application may need to signal a value that is equal to what's been signaled.
+	// Even though it's possible to get the current value, add 1 to it, and then signal it - this can create a different problem where a value is signaled too soon and a write-after-read hazard possibly gets introduced.
+	mutable uint64_t m_timelineSignaledValue = 0;
+	VkSemaphorePtr m_semaphore;
+};
+
+#pragma endregion
+
+
+
+
+//===================================================================
+// OLD
+//===================================================================
+
+#pragma region VulkanFence
 
 class VulkanFence final
 {
@@ -42,12 +111,6 @@ using VulkanFencePtr = std::shared_ptr<VulkanFence>;
 #pragma endregion
 
 #pragma region VulkanSemaphore
-
-struct SemaphoreCreateInfo final
-{
-	SemaphoreType semaphoreType = SEMAPHORE_TYPE_BINARY;
-	uint64_t      initialValue = 0; // Timeline semaphore only
-};
 
 class VulkanSemaphore final
 {

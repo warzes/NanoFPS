@@ -21,6 +21,7 @@ class GraphicsPipeline;
 class Image;
 class ImageView;
 class Mesh;
+class Pipeline;
 class PipelineInterface;
 class Queue;
 class Query;
@@ -29,8 +30,8 @@ class Sampler;
 class SamplerYcbcrConversion;
 class Semaphore;
 class ShaderModule;
+class ShadingRatePattern;
 class ShaderProgram;
-class Surface;
 class Swapchain;
 class TextDraw;
 class Texture;
@@ -69,7 +70,6 @@ using SamplerYcbcrConversionPtr = ObjPtr<SamplerYcbcrConversion>;
 using SemaphorePtr = ObjPtr<Semaphore>;
 using ShaderModulePtr = ObjPtr<ShaderModule>;
 using ShaderProgramPtr = ObjPtr<ShaderProgram>;
-using SurfacePtr = ObjPtr<Surface>;
 using SwapchainPtr = ObjPtr<Swapchain>;
 using TextDrawPtr = ObjPtr<TextDraw>;
 using TexturePtr = ObjPtr<Texture>;
@@ -79,6 +79,35 @@ using DepthStencilViewPtr = ObjPtr<DepthStencilView>;
 using RenderTargetViewPtr = ObjPtr<RenderTargetView>;
 using SampledImageViewPtr = ObjPtr<SampledImageView>;
 using StorageImageViewPtr = ObjPtr<StorageImageView>;
+
+using VkBufferPtr = VkHandlePtr<VkBuffer>;
+using VkCommandBufferPtr = VkHandlePtr<VkCommandBuffer>;
+using VkCommandPoolPtr = VkHandlePtr<VkCommandPool>;
+using VkDebugUtilsMessengerPtr = VkHandlePtr<VkDebugUtilsMessengerEXT>;
+using VkDescriptorPoolPtr = VkHandlePtr<VkDescriptorPool>;
+using VkDescriptorSetPtr = VkHandlePtr<VkDescriptorSet>;
+using VkDescriptorSetLayoutPtr = VkHandlePtr<VkDescriptorSetLayout>;
+using VkDevicePtr = VkHandlePtr<VkDevice>;
+using VkFencePtr = VkHandlePtr<VkFence>;
+using VkFramebufferPtr = VkHandlePtr<VkFramebuffer>;
+using VkImagePtr = VkHandlePtr<VkImage>;
+using VkImageViewPtr = VkHandlePtr<VkImageView>;
+using VkInstancePtr = VkHandlePtr<VkInstance>;
+using VkPhysicalDevicePtr = VkHandlePtr<VkPhysicalDevice>;
+using VkPipelinePtr = VkHandlePtr<VkPipeline>;
+using VkPipelineLayoutPtr = VkHandlePtr<VkPipelineLayout>;
+using VkQueryPoolPtr = VkHandlePtr<VkQueryPool>;
+using VkQueuePtr = VkHandlePtr<VkQueue>;
+using VkRenderPassPtr = VkHandlePtr<VkRenderPass>;
+using VkSamplerPtr = VkHandlePtr<VkSampler>;
+using VkSamplerYcbcrConversionPtr = VkHandlePtr<VkSamplerYcbcrConversion>;
+using VkSemaphorePtr = VkHandlePtr<VkSemaphore>;
+using VkShaderModulePtr = VkHandlePtr<VkShaderModule>;
+using VkSurfacePtr = VkHandlePtr<VkSurfaceKHR>;
+using VkSwapchainPtr = VkHandlePtr<VkSwapchainKHR>;
+
+using VmaAllocationPtr = VkHandlePtr<VmaAllocation>;
+using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
 
 #pragma endregion
 
@@ -1532,6 +1561,11 @@ private:
 #pragma endregion
 
 #pragma region Vk Utils
+
+const uint32_t kAllQueueMask      = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+const uint32_t kGraphicsQueueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+const uint32_t kComputeQueueMask  = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+const uint32_t kTransferQueueMask = VK_QUEUE_TRANSFER_BIT;
 
 const char* ToString(VkResult value);
 const char* ToString(VkDescriptorType value);
