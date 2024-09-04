@@ -1,6 +1,88 @@
 ﻿#pragma once
 
-#pragma region Constant
+#include "RenderCore.h"
+
+#pragma region Decl Class
+
+class RenderDevice;
+
+class Buffer;
+class CommandBuffer;
+class CommandPool;
+class ComputePipeline;
+class DescriptorPool;
+class DescriptorSet;
+class DescriptorSetLayout;
+class DrawPass;
+class Fence;
+class ShadingRatePattern;
+class FullscreenQuad;
+class GraphicsPipeline;
+class Image;
+class ImageView;
+class Mesh;
+class PipelineInterface;
+class Queue;
+class Query;
+class RenderPass;
+class Sampler;
+class SamplerYcbcrConversion;
+class Semaphore;
+class ShaderModule;
+class ShaderProgram;
+class Surface;
+class Swapchain;
+class TextDraw;
+class Texture;
+class TextureFont;
+
+class DepthStencilView;
+class RenderTargetView;
+class SampledImageView;
+class StorageImageView;
+
+struct IndexBufferView;
+struct VertexBufferView;
+
+class ImageResourceView;
+
+using BufferPtr = ObjPtr<Buffer>;
+using CommandBufferPtr = ObjPtr<CommandBuffer>;
+using CommandPoolPtr = ObjPtr<CommandPool>;
+using ComputePipelinePtr = ObjPtr<ComputePipeline>;
+using DescriptorPoolPtr = ObjPtr<DescriptorPool>;
+using DescriptorSetPtr = ObjPtr<DescriptorSet>;
+using DescriptorSetLayoutPtr = ObjPtr<DescriptorSetLayout>;
+using DrawPassPtr = ObjPtr<DrawPass>;
+using FencePtr = ObjPtr<Fence>;
+using ShadingRatePatternPtr = ObjPtr<ShadingRatePattern>;
+using FullscreenQuadPtr = ObjPtr<FullscreenQuad>;
+using GraphicsPipelinePtr = ObjPtr<GraphicsPipeline>;
+using ImagePtr = ObjPtr<Image>;
+using MeshPtr = ObjPtr<Mesh>;
+using PipelineInterfacePtr = ObjPtr<PipelineInterface>;
+using QueuePtr = ObjPtr<Queue>;
+using QueryPtr = ObjPtr<Query>;
+using RenderPassPtr = ObjPtr<RenderPass>;
+using SamplerPtr = ObjPtr<Sampler>;
+using SamplerYcbcrConversionPtr = ObjPtr<SamplerYcbcrConversion>;
+using SemaphorePtr = ObjPtr<Semaphore>;
+using ShaderModulePtr = ObjPtr<ShaderModule>;
+using ShaderProgramPtr = ObjPtr<ShaderProgram>;
+using SurfacePtr = ObjPtr<Surface>;
+using SwapchainPtr = ObjPtr<Swapchain>;
+using TextDrawPtr = ObjPtr<TextDraw>;
+using TexturePtr = ObjPtr<Texture>;
+using TextureFontPtr = ObjPtr<TextureFont>;
+
+using DepthStencilViewPtr = ObjPtr<DepthStencilView>;
+using RenderTargetViewPtr = ObjPtr<RenderTargetView>;
+using SampledImageViewPtr = ObjPtr<SampledImageView>;
+using StorageImageViewPtr = ObjPtr<StorageImageView>;
+
+#pragma endregion
+
+#pragma region Constants
 
 #define VALUE_IGNORED                       UINT32_MAX
 
@@ -25,24 +107,11 @@
 
 #define WHOLE_SIZE                          UINT64_MAX
 
-//
-// This value is based on what the majority of the GPUs can
-// support in Vulkan. While D3D12 generally allows about 64
-// DWORDs, a significant amount of Vulkan drivers have a limit
-// of 128 bytes for VkPhysicalDeviceLimits::maxPushConstantsSize.
-// This limits the numberof push constants to 32.
-//
+// This value is based on what the majority of the GPUs can support in Vulkan. While D3D12 generally allows about 64 DWORDs, a significant amount of Vulkan drivers have a limit of 128 bytes for VkPhysicalDeviceLimits::maxPushConstantsSize. This limits the numberof push constants to 32.
 #define MAX_PUSH_CONSTANTS                  32
 
-//
-// Vulkan dynamic uniform/storage buffers requires that offsets are aligned
-// to VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment. 
-// Based on vulkan.gpuinfo.org, the range of this value [1, 256]
-// Meaning that 256 should cover all offset cases.
-// 
-// D3D12 on most(all?) GPUs require that the minimum constant buffer
-// size to be 256.
-//
+// Vulkan dynamic uniform/storage buffers requires that offsets are aligned to VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment. Based on vulkan.gpuinfo.org, the range of this value [1, 256] Meaning that 256 should cover all offset cases.
+// D3D12 on most(all?) GPUs require that the minimum constant buffer size to be 256.
 #define CONSTANT_BUFFER_ALIGNMENT           256
 #define UNIFORM_BUFFER_ALIGNMENT            CONSTANT_BUFFER_ALIGNMENT
 #define STORAGE_BUFFER_ALIGNMENT            CONSTANT_BUFFER_ALIGNMENT
@@ -62,11 +131,11 @@
 #define SEMANTIC_NAME_TEXCOORD  "TEXCOORD"
 #define SEMANTIC_NAME_TANGENT   "TANGENT"
 #define SEMANTIC_NAME_BITANGENT "BITANGENT"
-#define wSEMANTIC_NAME_CUSTOM    "CUSTOM"
+#define wSEMANTIC_NAME_CUSTOM   "CUSTOM"
 
 #pragma endregion
 
-#pragma region Enum
+#pragma region Enums
 
 enum AttachmentLoadOp
 {
@@ -515,8 +584,8 @@ enum TessellationDomainOrigin
 
 enum TransitionFlag
 {
-	TRANSITION_FLAG_API_REQUIRED = 1, // Indicatesa transition that must be executed by the API
-	TRANSITION_FALG_API_OPTIONAL = 2, // Idicates a transition that can be optionally ignored by the API
+	TRANSITION_FLAG_API_REQUIRED = 1, // Indicates a transition that must be executed by the API
+	TRANSITION_FALG_API_OPTIONAL = 2, // Indicates a transition that can be optionally ignored by the API
 };
 
 enum VendorId
@@ -769,7 +838,7 @@ enum FormatLayout
 	FORMAT_LAYOUT_COMPRESSED = 0x4,
 };
 
-struct FormatComponentOffset
+struct FormatComponentOffset final
 {
 	union
 	{
@@ -788,9 +857,9 @@ struct FormatComponentOffset
 	};
 };
 
-struct FormatDesc
+struct FormatDesc final
 {
-	// BigWheels specific format name.
+	// specific format name.
 	const char* name;
 
 	// The texel data type, e.g. UNORM, SNORM, UINT, etc.
@@ -809,22 +878,18 @@ struct FormatDesc
 	uint8_t blockWidth;
 
 	// The number of bytes per component (channel).
-	// In case of combined depth-stencil formats, this is the size of the depth
-	// component only.
-	// In case of packed or compressed formats, this field is invalid
-	// and will be set to -1.
+	// In case of combined depth-stencil formats, this is the size of the depth component only.
+	// In case of packed or compressed formats, this field is invalid and will be set to -1.
 	int8_t bytesPerComponent;
 
 	// The layout of the format (linear, packed, or compressed).
 	FormatLayout layout;
 
-	// The components (channels) represented by the format,
-	// e.g. RGBA, depth-stencil, or a subset of those.
+	// The components (channels) represented by the format, e.g. RGBA, depth-stencil, or a subset of those.
 	FormatComponentBit componentBits;
 
 	// The offset, in bytes, of each component within the texel.
-	// In case of packed or compressed formats, this field is invalid
-	// and the offsets will be set to -1.
+	// In case of packed or compressed formats, this field is invalid and the offsets will be set to -1.
 	FormatComponentOffset componentOffset;
 };
 
@@ -832,61 +897,6 @@ struct FormatDesc
 const FormatDesc* GetFormatDescription(Format format);
 
 const char* ToString(Format format);
-
-#pragma endregion
-
-#pragma region Core Struct
-
-struct ComponentMapping final
-{
-	ComponentSwizzle r = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle g = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle b = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle a = COMPONENT_SWIZZLE_IDENTITY;
-};
-
-struct DepthStencilClearValue final
-{
-	float    depth = 0;
-	uint32_t stencil = 0;
-};
-
-union RenderTargetClearValue final
-{
-	struct
-	{
-		float r;
-		float g;
-		float b;
-		float a;
-	};
-	float rgba[4];
-};
-
-struct Rect final
-{
-	Rect() = default;
-	Rect(int32_t x_, int32_t y_, uint32_t width_, uint32_t height_) : x(x_), y(y_), width(width_), height(height_) {}
-
-	int32_t  x = 0;
-	int32_t  y = 0;
-	uint32_t width = 0;
-	uint32_t height = 0;
-};
-
-struct Viewport final
-{
-	Viewport() = default;
-	Viewport(float x_, float y_, float width_, float height_, float minDepth_ = 0, float maxDepth_ = 1)
-		: x(x_), y(y_), width(width_), height(height_), minDepth(minDepth_), maxDepth(maxDepth_) {}
-
-	float x;
-	float y;
-	float width;
-	float height;
-	float minDepth;
-	float maxDepth;
-};
 
 #pragma endregion
 
@@ -1286,14 +1296,10 @@ struct MultiViewState final
 	uint32_t correlationMask = 0;
 };
 
-//! Storage class for binding number, vertex data stride, and vertex attributes for a vertex buffer
-//! binding.
-//!
-//! ** WARNING **
-//! Adding an attribute updates the stride information based on the current set of attributes.
-//! If a custom stride is required, add all the attributes first then call
-//! VertexBinding::SetStride() to set the stride.
-//!
+// Storage class for binding number, vertex data stride, and vertex attributes for a vertex buffer binding.
+// ** WARNING **
+// Adding an attribute updates the stride information based on the current set of attributes.
+// If a custom stride is required, add all the attributes first then call VertexBinding::SetStride() to set the stride.
 class VertexBinding final
 {
 public:
@@ -1313,7 +1319,7 @@ public:
 	void            SetStride(uint32_t stride);
 	VertexInputRate GetInputRate() const { return m_inputRate; }
 	uint32_t        GetAttributeCount() const { return static_cast<uint32_t>(m_attributes.size()); }
-	bool            GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const;
+	Result          GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const;
 	uint32_t        GetAttributeIndex(VertexSemantic semantic) const;
 	VertexBinding&  AppendAttribute(const VertexAttribute& attribute);
 
@@ -1331,11 +1337,11 @@ private:
 class VertexDescription final
 {
 public:
-	uint32_t             etBindingCount() const { return CountU32(m_bindings); }
-	bool                 GetBinding(uint32_t index, const VertexBinding** ppBinding) const;
+	uint32_t             GetBindingCount() const { return CountU32(m_bindings); }
+	Result               GetBinding(uint32_t index, const VertexBinding** ppBinding) const;
 	const VertexBinding* GetBinding(uint32_t index) const;
 	uint32_t             GetBindingIndex(uint32_t binding) const;
-	bool                 AppendBinding(const VertexBinding& binding);
+	Result               AppendBinding(const VertexBinding& binding);
 
 private:
 	std::vector<VertexBinding> m_bindings;
@@ -1343,7 +1349,193 @@ private:
 
 #pragma endregion
 
-#pragma region VK Utils
+#pragma region Utils
+
+const char* ToString(DescriptorType value);
+const char* ToString(VertexSemantic value);
+const char* ToString(IndexType value);
+
+uint32_t    IndexTypeSize(IndexType value);
+Format      VertexSemanticFormat(VertexSemantic value);
+
+const char* ToString(const gli::target& target);
+const char* ToString(const gli::format& format);
+
+#pragma endregion
+
+#pragma region Core Struct
+
+struct ComponentMapping final
+{
+	ComponentSwizzle r = COMPONENT_SWIZZLE_IDENTITY;
+	ComponentSwizzle g = COMPONENT_SWIZZLE_IDENTITY;
+	ComponentSwizzle b = COMPONENT_SWIZZLE_IDENTITY;
+	ComponentSwizzle a = COMPONENT_SWIZZLE_IDENTITY;
+};
+
+struct DepthStencilClearValue final
+{
+	float    depth = 0;
+	uint32_t stencil = 0;
+};
+
+union RenderTargetClearValue final
+{
+	struct
+	{
+		float r;
+		float g;
+		float b;
+		float a;
+	};
+	float rgba[4];
+};
+
+struct Rect final
+{
+	Rect() = default;
+	Rect(int32_t x_, int32_t y_, uint32_t width_, uint32_t height_) : x(x_), y(y_), width(width_), height(height_) {}
+
+	int32_t  x = 0;
+	int32_t  y = 0;
+	uint32_t width = 0;
+	uint32_t height = 0;
+};
+
+struct Viewport final
+{
+	Viewport() = default;
+	Viewport(float x_, float y_, float width_, float height_, float minDepth_ = 0, float maxDepth_ = 1)
+		: x(x_), y(y_), width(width_), height(height_), minDepth(minDepth_), maxDepth(maxDepth_) {}
+
+	float x;
+	float y;
+	float width;
+	float height;
+	float minDepth;
+	float maxDepth;
+};
+
+//! @enum Ownership
+//!
+//! The purpose of this enum is to help grfx objects manage the lifetime
+//! of their member objects. All grfx objects are created with ownership
+//! set to OWNERSHIP_REFERENCE. This means that the object lifetime is
+//! left up to either Device or Instance unless the application
+//! explicitly destroys it.
+//!
+//! If a member object's ownership is set to OWNERSHIP_EXCLUSIVE or
+//! OWNERSHIP_RESTRICTED, this means that the containing object must
+//! destroy it during the destruction process.
+//!
+//! If the containing object fails to destroy OWNERSHIP_EXCLUSIVE and
+//! OWNERSHIP_RESTRICTED objects, then either Device or Instance
+//! will destroy it in their destruction proces.
+//!
+//! If an object's ownership is set to OWNERSHIP_RESTRICTED then its
+//! ownership cannot be changed. Calling SetOwnership() will have no effect.
+//!
+//! Examples of objects with OWNERSHIP_EXCLUSIVE ownership:
+//!   - Draw passes and render passes have create infos where only the
+//!     format of the render target and/or depth stencil are known.
+//!     In these cases draw passes and render passes will create the
+//!     necessary backing images and views. These objects will be created
+//!     with ownership set to EXCLUSIVE. The render pass will destroy
+//!     these objects when it itself is destroyed.
+//!
+//!   - Model's buffers and textures typically have OWNERSHIP_REFERENCE
+//!     ownership. However, the application is free to change ownership
+//!     to EXCLUSIVE as it sees fit.
+enum Ownership
+{
+	OWNERSHIP_REFERENCE = 0,
+	OWNERSHIP_EXCLUSIVE = 1,
+	OWNERSHIP_RESTRICTED = 2,
+};
+
+class OwnershipTrait
+{
+public:
+	Ownership GetOwnership() const { return m_ownership; }
+
+	void SetOwnership(Ownership ownership)
+	{
+		// Cannot change to or from OWNERSHIP_RESTRICTED
+		if ((ownership == OWNERSHIP_RESTRICTED) || (m_ownership == OWNERSHIP_RESTRICTED)) return;
+		m_ownership = ownership;
+	}
+
+private:
+	Ownership m_ownership = OWNERSHIP_REFERENCE;
+};
+
+template <typename CreatInfoT>
+class CreateDestroyTraits : public OwnershipTrait
+{
+	friend class RenderDevice;
+protected:
+	virtual Result create(const CreatInfoT& createInfo)
+	{
+		// Copy create info
+		m_createInfo = createInfo;
+		// Create API objects
+		Result ppxres = createApiObjects(createInfo);
+		if (ppxres != SUCCESS)
+		{
+			destroyApiObjects();
+			return ppxres;
+		}
+		// Success
+		return SUCCESS;
+	}
+
+	virtual void destroy()
+	{
+		destroyApiObjects();
+	}
+
+	virtual Result createApiObjects(const CreatInfoT& createInfo) = 0;
+	virtual void   destroyApiObjects() = 0;
+
+	CreatInfoT m_createInfo = {};
+};
+
+class NamedObjectTrait
+{
+public:
+	const std::string& GetName() const { return m_name; }
+	void               SetName(const std::string& name) { m_name = name; }
+
+private:
+	std::string m_name;
+};
+
+template <typename CreatInfoT>
+class DeviceObject : public CreateDestroyTraits<CreatInfoT>, public NamedObjectTrait
+{
+	friend class RenderDevice;
+public:
+	RenderDevice* GetDevice() const
+	{
+		return m_device;
+	}
+
+private:
+	void setParent(RenderDevice* device)
+	{
+		m_device = device;
+	}
+
+	RenderDevice* m_device{ nullptr };
+};
+
+#pragma endregion
+
+#pragma region Vk Utils
+
+const char* ToString(VkResult value);
+const char* ToString(VkDescriptorType value);
+const char* ToString(VkPresentModeKHR value);
 
 VkAttachmentLoadOp            ToVkAttachmentLoadOp(AttachmentLoadOp value);
 VkAttachmentStoreOp           ToVkAttachmentStoreOp(AttachmentStoreOp value);
@@ -1384,20 +1576,20 @@ VkVertexInputRate             ToVkVertexInputRate(VertexInputRate value);
 VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion value);
 VkSamplerYcbcrRange           ToVkYcbcrRange(YcbcrRange value);
 
-bool ToVkBarrierSrc(
+Result ToVkBarrierSrc(
 	ResourceState                   state,
-	CommandType                     commandType,
+	CommandType               commandType,
 	const VkPhysicalDeviceFeatures& features,
-	VkPipelineStageFlags&           stageMask,
-	VkAccessFlags&                  accessMask,
-	VkImageLayout&                  layout);
-bool ToVkBarrierDst(
+	VkPipelineStageFlags& stageMask,
+	VkAccessFlags& accessMask,
+	VkImageLayout& layout);
+Result ToVkBarrierDst(
 	ResourceState                   state,
-	CommandType                     commandType,
+	CommandType               commandType,
 	const VkPhysicalDeviceFeatures& features,
-	VkPipelineStageFlags&           stageMask,
-	VkAccessFlags&                  accessMask,
-	VkImageLayout&                  layout);
+	VkPipelineStageFlags& stageMask,
+	VkAccessFlags& accessMask,
+	VkImageLayout& layout);
 
 VkImageAspectFlags DetermineAspectMask(VkFormat format);
 
@@ -1413,76 +1605,18 @@ void InsertPNext(TVkStruct1& baseStruct, TVkStruct2& nextStruct)
 
 #pragma endregion
 
-#pragma region Command
+#pragma region DeviceQueue
 
-struct BufferToBufferCopyInfo final
+class DeviceQueue final
 {
-	uint64_t size = 0;
-
-	struct srcBuffer
-	{
-		uint64_t offset = 0;
-	} srcBuffer;
-
-	struct
-	{
-		uint32_t offset = 0;
-	} dstBuffer;
+	friend class VulkanInstance;
+public:
+	VkQueue     Queue{ nullptr };
+	uint32_t    QueueFamily{ 0 };
+	CommandType CommandType{ COMMAND_TYPE_UNDEFINED };
+private:
+	bool init(vkb::Device& vkbDevice, vkb::QueueType type);
 };
-
-struct BufferToImageCopyInfo final
-{
-	struct
-	{
-		uint32_t imageWidth = 0; // [pixels]
-		uint32_t imageHeight = 0; // [pixels]
-		uint32_t imageRowStride = 0; // [bytes]
-		uint64_t footprintOffset = 0; // [bytes]
-		uint32_t footprintWidth = 0; // [pixels]
-		uint32_t footprintHeight = 0; // [pixels]
-		uint32_t footprintDepth = 0; // [pixels]
-	} srcBuffer;
-
-	struct
-	{
-		uint32_t mipLevel = 0;
-		uint32_t arrayLayer = 0; // Must be 0 for 3D images
-		uint32_t arrayLayerCount = 0; // Must be 1 for 3D images
-		uint32_t x = 0; // [pixels]
-		uint32_t y = 0; // [pixels]
-		uint32_t z = 0; // [pixels]
-		uint32_t width = 0; // [pixels]
-		uint32_t height = 0; // [pixels]
-		uint32_t depth = 0; // [pixels]
-	} dstImage;
-};
-
-struct ImageToBufferCopyInfo final
-{
-	struct
-	{
-		uint32_t mipLevel = 0;
-		uint32_t arrayLayer = 0; // Must be 0 for 3D images
-		uint32_t arrayLayerCount = 1; // Must be 1 for 3D images
-		struct
-		{
-			uint32_t x = 0; // [pixels]
-			uint32_t y = 0; // [pixels]
-			uint32_t z = 0; // [pixels]
-		} offset;
-	} srcImage;
-
-	struct
-	{
-		uint32_t x = 0; // [pixels]
-		uint32_t y = 0; // [pixels]
-		uint32_t z = 0; // [pixels]
-	} extent;
-};
-
-struct ImageToBufferOutputPitch
-{
-	uint32_t rowPitch = 0;
-};
+using DeviceQueuePtr = std::shared_ptr<DeviceQueue>;
 
 #pragma endregion

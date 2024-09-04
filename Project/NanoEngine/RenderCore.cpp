@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Core.h"
 #include "RenderCore.h"
 
@@ -170,14 +170,14 @@ static_assert(formatDescsSize == FORMAT_COUNT, "Missing format descriptions");
 const FormatDesc* GetFormatDescription(Format format)
 {
 	uint32_t formatIndex = static_cast<uint32_t>(format);
-	assert(format != FORMAT_UNDEFINED && formatIndex < formatDescsSize && "invalid format");
+	ASSERT_MSG(format != FORMAT_UNDEFINED && formatIndex < formatDescsSize, "invalid format");
 	return &formatDescs[formatIndex];
 }
 
 const char* ToString(Format format)
 {
 	uint32_t formatIndex = static_cast<uint32_t>(format);
-	assert(formatIndex < formatDescsSize && "invalid format");
+	ASSERT_MSG(formatIndex < formatDescsSize, "invalid format");
 	return formatDescs[formatIndex].name;
 }
 
@@ -210,13 +210,13 @@ void VertexBinding::SetStride(uint32_t stride)
 	m_stride = stride;
 }
 
-bool VertexBinding::GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const
+Result VertexBinding::GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const
 {
-	if (!IsIndexInRange(index, m_attributes))
-		return false;
-
+	if (!IsIndexInRange(index, m_attributes)) {
+		return ERROR_OUT_OF_RANGE;
+	}
 	*ppAttribute = &m_attributes[index];
-	return true;
+	return SUCCESS;
 }
 
 uint32_t VertexBinding::GetAttributeIndex(VertexSemantic semantic) const
@@ -278,16 +278,15 @@ VertexBinding& VertexBinding::operator+=(const VertexAttribute& rhs)
 	return *this;
 }
 
-bool VertexDescription::GetBinding(uint32_t index, const VertexBinding** ppBinding) const
+Result VertexDescription::GetBinding(uint32_t index, const VertexBinding** ppBinding) const
 {
 	if (!IsIndexInRange(index, m_bindings))
-		return false;
+		return ERROR_OUT_OF_RANGE;
 
-	if (ppBinding != nullptr)
-	{
+	if (!IsNull(ppBinding))
 		*ppBinding = &m_bindings[index];
-	}
-	return true;
+
+	return SUCCESS;
 }
 
 const VertexBinding* VertexDescription::GetBinding(uint32_t index) const
@@ -311,7 +310,7 @@ uint32_t VertexDescription::GetBindingIndex(uint32_t binding) const
 	return index;
 }
 
-bool VertexDescription::AppendBinding(const VertexBinding& binding)
+Result VertexDescription::AppendBinding(const VertexBinding& binding)
 {
 	auto it = FindIf(
 		m_bindings,
@@ -319,20 +318,415 @@ bool VertexDescription::AppendBinding(const VertexBinding& binding)
 			bool isSame = (elem.GetBinding() == binding.GetBinding());
 			return isSame; });
 	if (it != std::end(m_bindings)) {
-		return false;
+		return ERROR_DUPLICATE_ELEMENT;
 	}
 	m_bindings.push_back(binding);
-	return true;
+	return SUCCESS;
+}
+#pragma endregion
+
+#pragma region Utils
+
+const char* ToString(DescriptorType value)
+{
+	switch (value) {
+	default: break;
+	case DESCRIPTOR_TYPE_SAMPLER: return "DESCRIPTOR_TYPE_SAMPLER"; break;
+	case DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return "DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
+	case DESCRIPTOR_TYPE_SAMPLED_IMAGE: return "DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
+	case DESCRIPTOR_TYPE_STORAGE_IMAGE: return "DESCRIPTOR_TYPE_STORAGE_IMAGE"; break;
+	case DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: return "DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER  "; break;
+	case DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: return "DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER  "; break;
+	case DESCRIPTOR_TYPE_UNIFORM_BUFFER: return "DESCRIPTOR_TYPE_UNIFORM_BUFFER"; break;
+	case DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER: return "DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER"; break;
+	case DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return "DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC"; break;
+	case DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return "DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC"; break;
+	case DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return "DESCRIPTOR_TYPE_INPUT_ATTACHMENT"; break;
+	}
+	return "<unknown descriptor type>";
+}
+
+const char* ToString(VertexSemantic value)
+{
+	switch (value) {
+	default: break;
+	case VERTEX_SEMANTIC_POSITION: return "POSITION"; break;
+	case VERTEX_SEMANTIC_NORMAL: return "NORMAL"; break;
+	case VERTEX_SEMANTIC_COLOR: return "COLOR"; break;
+	case VERTEX_SEMANTIC_TANGENT: return "TANGENT"; break;
+	case VERTEX_SEMANTIC_BITANGENT: return "BITANGENT"; break;
+	case VERTEX_SEMANTIC_TEXCOORD: return "TEXCOORD"; break;
+	case VERTEX_SEMANTIC_TEXCOORD0: return "TEXCOORD0"; break;
+	case VERTEX_SEMANTIC_TEXCOORD1: return "TEXCOORD1"; break;
+	case VERTEX_SEMANTIC_TEXCOORD2: return "TEXCOORD2"; break;
+	case VERTEX_SEMANTIC_TEXCOORD3: return "TEXCOORD3"; break;
+	case VERTEX_SEMANTIC_TEXCOORD4: return "TEXCOORD4"; break;
+	case VERTEX_SEMANTIC_TEXCOORD5: return "TEXCOORD5"; break;
+	case VERTEX_SEMANTIC_TEXCOORD6: return "TEXCOORD6"; break;
+	case VERTEX_SEMANTIC_TEXCOORD7: return "TEXCOORD7"; break;
+	case VERTEX_SEMANTIC_TEXCOORD8: return "TEXCOORD8"; break;
+	case VERTEX_SEMANTIC_TEXCOORD9: return "TEXCOORD9"; break;
+	case VERTEX_SEMANTIC_TEXCOORD10: return "TEXCOORD10"; break;
+	case VERTEX_SEMANTIC_TEXCOORD11: return "TEXCOORD11"; break;
+	case VERTEX_SEMANTIC_TEXCOORD12: return "TEXCOORD12"; break;
+	case VERTEX_SEMANTIC_TEXCOORD13: return "TEXCOORD13"; break;
+	case VERTEX_SEMANTIC_TEXCOORD14: return "TEXCOORD14"; break;
+	case VERTEX_SEMANTIC_TEXCOORD15: return "TEXCOORD15"; break;
+	case VERTEX_SEMANTIC_TEXCOORD16: return "TEXCOORD16"; break;
+	case VERTEX_SEMANTIC_TEXCOORD17: return "TEXCOORD17"; break;
+	case VERTEX_SEMANTIC_TEXCOORD18: return "TEXCOORD18"; break;
+	case VERTEX_SEMANTIC_TEXCOORD19: return "TEXCOORD19"; break;
+	case VERTEX_SEMANTIC_TEXCOORD20: return "TEXCOORD20"; break;
+	case VERTEX_SEMANTIC_TEXCOORD21: return "TEXCOORD21"; break;
+	case VERTEX_SEMANTIC_TEXCOORD22: return "TEXCOORD22"; break;
+	}
+	return "";
+}
+
+const char* ToString(IndexType value)
+{
+	switch (value) {
+	default: break;
+	case INDEX_TYPE_UNDEFINED: return "INDEX_TYPE_UNDEFINED";
+	case INDEX_TYPE_UINT16: return "INDEX_TYPE_UINT16";
+	case INDEX_TYPE_UINT32: return "INDEX_TYPE_UINT32";
+	}
+	return "<unknown IndexType>";
+}
+
+uint32_t IndexTypeSize(IndexType value)
+{
+	switch (value) {
+	default: break;
+	case INDEX_TYPE_UINT16: return sizeof(uint16_t); break;
+	case INDEX_TYPE_UINT32: return sizeof(uint32_t); break;
+	}
+	return 0;
+}
+
+Format VertexSemanticFormat(VertexSemantic value)
+{
+	switch (value) {
+	default: break;
+	case VERTEX_SEMANTIC_POSITION: return FORMAT_R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_NORMAL: return FORMAT_R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_COLOR: return FORMAT_R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_TANGENT: return FORMAT_R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_BITANGENT: return FORMAT_R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD0: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD1: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD2: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD3: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD4: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD5: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD6: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD7: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD8: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD9: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD10: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD11: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD12: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD13: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD14: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD15: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD16: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD17: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD18: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD19: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD20: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD21: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD22: return FORMAT_R32G32_FLOAT; break;
+	}
+	return FORMAT_UNDEFINED;
+}
+
+const char* ToString(const gli::target& target)
+{
+	switch (target) {
+	case gli::TARGET_1D:         return "TARGET_1D";
+	case gli::TARGET_1D_ARRAY:   return "TARGET_1D_ARRAY";
+	case gli::TARGET_2D:         return "TARGET_2D";
+	case gli::TARGET_2D_ARRAY:   return "TARGET_2D_ARRAY";
+	case gli::TARGET_3D:         return "TARGET_3D";
+	case gli::TARGET_RECT:       return "TARGET_RECT";
+	case gli::TARGET_RECT_ARRAY: return "TARGET_RECT_ARRAY";
+	case gli::TARGET_CUBE:       return "TARGET_CUBE";
+	case gli::TARGET_CUBE_ARRAY: return "TARGET_CUBE_ARRAY";
+	}
+	return "TARGET_UNKNOWN";
+}
+
+const char* ToString(const gli::format& format)
+{
+	switch (format) {
+	case gli::FORMAT_UNDEFINED: return "FORMAT_UNDEFINED";
+	case gli::FORMAT_RG4_UNORM_PACK8: return "FORMAT_RG4_UNORM_PACK8";
+	case gli::FORMAT_RGBA4_UNORM_PACK16: return "FORMAT_RGBA4_UNORM_PACK16";
+	case gli::FORMAT_BGRA4_UNORM_PACK16: return "FORMAT_BGRA4_UNORM_PACK16";
+	case gli::FORMAT_R5G6B5_UNORM_PACK16: return "FORMAT_R5G6B5_UNORM_PACK16";
+	case gli::FORMAT_B5G6R5_UNORM_PACK16: return "FORMAT_B5G6R5_UNORM_PACK16";
+	case gli::FORMAT_RGB5A1_UNORM_PACK16: return "FORMAT_RGB5A1_UNORM_PACK16";
+	case gli::FORMAT_BGR5A1_UNORM_PACK16: return "FORMAT_BGR5A1_UNORM_PACK16";
+	case gli::FORMAT_A1RGB5_UNORM_PACK16: return "FORMAT_A1RGB5_UNORM_PACK16";
+
+	case gli::FORMAT_R8_UNORM_PACK8: return "FORMAT_R8_UNORM_PACK8";
+	case gli::FORMAT_R8_SNORM_PACK8: return "FORMAT_R8_SNORM_PACK8";
+	case gli::FORMAT_R8_USCALED_PACK8: return "FORMAT_R8_USCALED_PACK8";
+	case gli::FORMAT_R8_SSCALED_PACK8: return "FORMAT_R8_SSCALED_PACK8";
+	case gli::FORMAT_R8_UINT_PACK8: return "FORMAT_R8_UINT_PACK8";
+	case gli::FORMAT_R8_SINT_PACK8: return "FORMAT_R8_SINT_PACK8";
+	case gli::FORMAT_R8_SRGB_PACK8: return "FORMAT_R8_SRGB_PACK8";
+
+	case gli::FORMAT_RG8_UNORM_PACK8: return "FORMAT_RG8_UNORM_PACK8";
+	case gli::FORMAT_RG8_SNORM_PACK8: return "FORMAT_RG8_SNORM_PACK8";
+	case gli::FORMAT_RG8_USCALED_PACK8: return "FORMAT_RG8_USCALED_PACK8";
+	case gli::FORMAT_RG8_SSCALED_PACK8: return "FORMAT_RG8_SSCALED_PACK8";
+	case gli::FORMAT_RG8_UINT_PACK8: return "FORMAT_RG8_UINT_PACK8";
+	case gli::FORMAT_RG8_SINT_PACK8: return "FORMAT_RG8_SINT_PACK8";
+	case gli::FORMAT_RG8_SRGB_PACK8: return "FORMAT_RG8_SRGB_PACK8";
+
+	case gli::FORMAT_RGB8_UNORM_PACK8: return "FORMAT_RGB8_UNORM_PACK8";
+	case gli::FORMAT_RGB8_SNORM_PACK8: return "FORMAT_RGB8_SNORM_PACK8";
+	case gli::FORMAT_RGB8_USCALED_PACK8: return "FORMAT_RGB8_USCALED_PACK8";
+	case gli::FORMAT_RGB8_SSCALED_PACK8: return "FORMAT_RGB8_SSCALED_PACK8";
+	case gli::FORMAT_RGB8_UINT_PACK8: return "FORMAT_RGB8_UINT_PACK8";
+	case gli::FORMAT_RGB8_SINT_PACK8: return "FORMAT_RGB8_SINT_PACK8";
+	case gli::FORMAT_RGB8_SRGB_PACK8: return "FORMAT_RGB8_SRGB_PACK8";
+
+	case gli::FORMAT_BGR8_UNORM_PACK8: return "FORMAT_BGR8_UNORM_PACK8";
+	case gli::FORMAT_BGR8_SNORM_PACK8: return "FORMAT_BGR8_SNORM_PACK8";
+	case gli::FORMAT_BGR8_USCALED_PACK8: return "FORMAT_BGR8_USCALED_PACK8";
+	case gli::FORMAT_BGR8_SSCALED_PACK8: return "FORMAT_BGR8_SSCALED_PACK8";
+	case gli::FORMAT_BGR8_UINT_PACK8: return "FORMAT_BGR8_UINT_PACK8";
+	case gli::FORMAT_BGR8_SINT_PACK8: return "FORMAT_BGR8_SINT_PACK8";
+	case gli::FORMAT_BGR8_SRGB_PACK8: return "FORMAT_BGR8_SRGB_PACK8";
+
+	case gli::FORMAT_RGBA8_UNORM_PACK8: return "FORMAT_RGBA8_UNORM_PACK8";
+	case gli::FORMAT_RGBA8_SNORM_PACK8: return "FORMAT_RGBA8_SNORM_PACK8";
+	case gli::FORMAT_RGBA8_USCALED_PACK8: return "FORMAT_RGBA8_USCALED_PACK8";
+	case gli::FORMAT_RGBA8_SSCALED_PACK8: return "FORMAT_RGBA8_SSCALED_PACK8";
+	case gli::FORMAT_RGBA8_UINT_PACK8: return "FORMAT_RGBA8_UINT_PACK8";
+	case gli::FORMAT_RGBA8_SINT_PACK8: return "FORMAT_RGBA8_SINT_PACK8";
+	case gli::FORMAT_RGBA8_SRGB_PACK8: return "FORMAT_RGBA8_SRGB_PACK8";
+
+	case gli::FORMAT_BGRA8_UNORM_PACK8: return "FORMAT_BGRA8_UNORM_PACK8";
+	case gli::FORMAT_BGRA8_SNORM_PACK8: return "FORMAT_BGRA8_SNORM_PACK8";
+	case gli::FORMAT_BGRA8_USCALED_PACK8: return "FORMAT_BGRA8_USCALED_PACK8";
+	case gli::FORMAT_BGRA8_SSCALED_PACK8: return "FORMAT_BGRA8_SSCALED_PACK8";
+	case gli::FORMAT_BGRA8_UINT_PACK8: return "FORMAT_BGRA8_UINT_PACK8";
+	case gli::FORMAT_BGRA8_SINT_PACK8: return "FORMAT_BGRA8_SINT_PACK8";
+	case gli::FORMAT_BGRA8_SRGB_PACK8: return "FORMAT_BGRA8_SRGB_PACK8";
+
+	case gli::FORMAT_RGBA8_UNORM_PACK32: return "FORMAT_RGBA8_UNORM_PACK32";
+	case gli::FORMAT_RGBA8_SNORM_PACK32: return "FORMAT_RGBA8_SNORM_PACK32";
+	case gli::FORMAT_RGBA8_USCALED_PACK32: return "FORMAT_RGBA8_USCALED_PACK32";
+	case gli::FORMAT_RGBA8_SSCALED_PACK32: return "FORMAT_RGBA8_SSCALED_PACK32";
+	case gli::FORMAT_RGBA8_UINT_PACK32: return "FORMAT_RGBA8_UINT_PACK32";
+	case gli::FORMAT_RGBA8_SINT_PACK32: return "FORMAT_RGBA8_SINT_PACK32";
+	case gli::FORMAT_RGBA8_SRGB_PACK32: return "FORMAT_RGBA8_SRGB_PACK32";
+
+	case gli::FORMAT_RGB10A2_UNORM_PACK32: return "FORMAT_RGB10A2_UNORM_PACK32";
+	case gli::FORMAT_RGB10A2_SNORM_PACK32: return "FORMAT_RGB10A2_SNORM_PACK32";
+	case gli::FORMAT_RGB10A2_USCALED_PACK32: return "FORMAT_RGB10A2_USCALED_PACK32";
+	case gli::FORMAT_RGB10A2_SSCALED_PACK32: return "FORMAT_RGB10A2_SSCALED_PACK32";
+	case gli::FORMAT_RGB10A2_UINT_PACK32: return "FORMAT_RGB10A2_UINT_PACK32";
+	case gli::FORMAT_RGB10A2_SINT_PACK32: return "FORMAT_RGB10A2_SINT_PACK32";
+
+	case gli::FORMAT_BGR10A2_UNORM_PACK32: return "FORMAT_BGR10A2_UNORM_PACK32";
+	case gli::FORMAT_BGR10A2_SNORM_PACK32: return "FORMAT_BGR10A2_SNORM_PACK32";
+	case gli::FORMAT_BGR10A2_USCALED_PACK32: return "FORMAT_BGR10A2_USCALED_PACK32";
+	case gli::FORMAT_BGR10A2_SSCALED_PACK32: return "FORMAT_BGR10A2_SSCALED_PACK32";
+	case gli::FORMAT_BGR10A2_UINT_PACK32: return "FORMAT_BGR10A2_UINT_PACK32";
+	case gli::FORMAT_BGR10A2_SINT_PACK32: return "FORMAT_BGR10A2_SINT_PACK32";
+
+	case gli::FORMAT_R16_UNORM_PACK16: return "FORMAT_R16_UNORM_PACK16";
+	case gli::FORMAT_R16_SNORM_PACK16: return "FORMAT_R16_SNORM_PACK16";
+	case gli::FORMAT_R16_USCALED_PACK16: return "FORMAT_R16_USCALED_PACK16";
+	case gli::FORMAT_R16_SSCALED_PACK16: return "FORMAT_R16_SSCALED_PACK16";
+	case gli::FORMAT_R16_UINT_PACK16: return "FORMAT_R16_UINT_PACK16";
+	case gli::FORMAT_R16_SINT_PACK16: return "FORMAT_R16_SINT_PACK16";
+	case gli::FORMAT_R16_SFLOAT_PACK16: return "FORMAT_R16_SFLOAT_PACK16";
+
+	case gli::FORMAT_RG16_UNORM_PACK16: return "FORMAT_RG16_UNORM_PACK16";
+	case gli::FORMAT_RG16_SNORM_PACK16: return "FORMAT_RG16_SNORM_PACK16";
+	case gli::FORMAT_RG16_USCALED_PACK16: return "FORMAT_RG16_USCALED_PACK16";
+	case gli::FORMAT_RG16_SSCALED_PACK16: return "FORMAT_RG16_SSCALED_PACK16";
+	case gli::FORMAT_RG16_UINT_PACK16: return "FORMAT_RG16_UINT_PACK16";
+	case gli::FORMAT_RG16_SINT_PACK16: return "FORMAT_RG16_SINT_PACK16";
+	case gli::FORMAT_RG16_SFLOAT_PACK16: return "FORMAT_RG16_SFLOAT_PACK16";
+
+	case gli::FORMAT_RGB16_UNORM_PACK16: return "FORMAT_RGB16_UNORM_PACK16";
+	case gli::FORMAT_RGB16_SNORM_PACK16: return "FORMAT_RGB16_SNORM_PACK16";
+	case gli::FORMAT_RGB16_USCALED_PACK16: return "FORMAT_RGB16_USCALED_PACK16";
+	case gli::FORMAT_RGB16_SSCALED_PACK16: return "FORMAT_RGB16_SSCALED_PACK16";
+	case gli::FORMAT_RGB16_UINT_PACK16: return "FORMAT_RGB16_UINT_PACK16";
+	case gli::FORMAT_RGB16_SINT_PACK16: return "FORMAT_RGB16_SINT_PACK16";
+	case gli::FORMAT_RGB16_SFLOAT_PACK16: return "FORMAT_RGB16_SFLOAT_PACK16";
+
+	case gli::FORMAT_RGBA16_UNORM_PACK16: return "FORMAT_RGBA16_UNORM_PACK16";
+	case gli::FORMAT_RGBA16_SNORM_PACK16: return "FORMAT_RGBA16_SNORM_PACK16";
+	case gli::FORMAT_RGBA16_USCALED_PACK16: return "FORMAT_RGBA16_USCALED_PACK16";
+	case gli::FORMAT_RGBA16_SSCALED_PACK16: return "FORMAT_RGBA16_SSCALED_PACK16";
+	case gli::FORMAT_RGBA16_UINT_PACK16: return "FORMAT_RGBA16_UINT_PACK16";
+	case gli::FORMAT_RGBA16_SINT_PACK16: return "FORMAT_RGBA16_SINT_PACK16";
+	case gli::FORMAT_RGBA16_SFLOAT_PACK16: return "FORMAT_RGBA16_SFLOAT_PACK16";
+
+	case gli::FORMAT_R32_UINT_PACK32: return "FORMAT_R32_UINT_PACK32";
+	case gli::FORMAT_R32_SINT_PACK32: return "FORMAT_R32_SINT_PACK32";
+	case gli::FORMAT_R32_SFLOAT_PACK32: return "FORMAT_R32_SFLOAT_PACK32";
+
+	case gli::FORMAT_RG32_UINT_PACK32: return "FORMAT_RG32_UINT_PACK32";
+	case gli::FORMAT_RG32_SINT_PACK32: return "FORMAT_RG32_SINT_PACK32";
+	case gli::FORMAT_RG32_SFLOAT_PACK32: return "FORMAT_RG32_SFLOAT_PACK32";
+
+	case gli::FORMAT_RGB32_UINT_PACK32: return "FORMAT_RGB32_UINT_PACK32";
+	case gli::FORMAT_RGB32_SINT_PACK32: return "FORMAT_RGB32_SINT_PACK32";
+	case gli::FORMAT_RGB32_SFLOAT_PACK32: return "FORMAT_RGB32_SFLOAT_PACK32";
+
+	case gli::FORMAT_RGBA32_UINT_PACK32: return "FORMAT_RGBA32_UINT_PACK32";
+	case gli::FORMAT_RGBA32_SINT_PACK32: return "FORMAT_RGBA32_SINT_PACK32";
+	case gli::FORMAT_RGBA32_SFLOAT_PACK32: return "FORMAT_RGBA32_SFLOAT_PACK32";
+
+	case gli::FORMAT_R64_UINT_PACK64: return "FORMAT_R64_UINT_PACK64";
+	case gli::FORMAT_R64_SINT_PACK64: return "FORMAT_R64_SINT_PACK64";
+	case gli::FORMAT_R64_SFLOAT_PACK64: return "FORMAT_R64_SFLOAT_PACK64";
+
+	case gli::FORMAT_RG64_UINT_PACK64: return "FORMAT_RG64_UINT_PACK64";
+	case gli::FORMAT_RG64_SINT_PACK64: return "FORMAT_RG64_SINT_PACK64";
+	case gli::FORMAT_RG64_SFLOAT_PACK64: return "FORMAT_RG64_SFLOAT_PACK64";
+
+	case gli::FORMAT_RGB64_UINT_PACK64: return "FORMAT_RGB64_UINT_PACK64";
+	case gli::FORMAT_RGB64_SINT_PACK64: return "FORMAT_RGB64_SINT_PACK64";
+	case gli::FORMAT_RGB64_SFLOAT_PACK64: return "FORMAT_RGB64_SFLOAT_PACK64";
+
+	case gli::FORMAT_RGBA64_UINT_PACK64: return "FORMAT_RGBA64_UINT_PACK64";
+	case gli::FORMAT_RGBA64_SINT_PACK64: return "FORMAT_RGBA64_SINT_PACK64";
+	case gli::FORMAT_RGBA64_SFLOAT_PACK64: return "FORMAT_RGBA64_SFLOAT_PACK64";
+
+	case gli::FORMAT_RG11B10_UFLOAT_PACK32: return "FORMAT_RG11B10_UFLOAT_PACK32";
+	case gli::FORMAT_RGB9E5_UFLOAT_PACK32: return "FORMAT_RGB9E5_UFLOAT_PACK32";
+
+	case gli::FORMAT_D16_UNORM_PACK16: return "FORMAT_D16_UNORM_PACK16";
+	case gli::FORMAT_D24_UNORM_PACK32: return "FORMAT_D24_UNORM_PACK32";
+	case gli::FORMAT_D32_SFLOAT_PACK32: return "FORMAT_D32_SFLOAT_PACK32";
+	case gli::FORMAT_S8_UINT_PACK8: return "FORMAT_S8_UINT_PACK8";
+	case gli::FORMAT_D16_UNORM_S8_UINT_PACK32: return "FORMAT_D16_UNORM_S8_UINT_PACK32";
+	case gli::FORMAT_D24_UNORM_S8_UINT_PACK32: return "FORMAT_D24_UNORM_S8_UINT_PACK32";
+	case gli::FORMAT_D32_SFLOAT_S8_UINT_PACK64: return "FORMAT_D32_SFLOAT_S8_UINT_PACK64";
+
+	case gli::FORMAT_RGB_DXT1_UNORM_BLOCK8: return "FORMAT_RGB_DXT1_UNORM_BLOCK8";
+	case gli::FORMAT_RGB_DXT1_SRGB_BLOCK8: return "FORMAT_RGB_DXT1_SRGB_BLOCK8";
+	case gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8: return "FORMAT_RGBA_DXT1_UNORM_BLOCK8";
+	case gli::FORMAT_RGBA_DXT1_SRGB_BLOCK8: return "FORMAT_RGBA_DXT1_SRGB_BLOCK8";
+	case gli::FORMAT_RGBA_DXT3_UNORM_BLOCK16: return "FORMAT_RGBA_DXT3_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_DXT3_SRGB_BLOCK16: return "FORMAT_RGBA_DXT3_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16: return "FORMAT_RGBA_DXT5_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_DXT5_SRGB_BLOCK16: return "FORMAT_RGBA_DXT5_SRGB_BLOCK16";
+	case gli::FORMAT_R_ATI1N_UNORM_BLOCK8: return "FORMAT_R_ATI1N_UNORM_BLOCK8";
+	case gli::FORMAT_R_ATI1N_SNORM_BLOCK8: return "FORMAT_R_ATI1N_SNORM_BLOCK8";
+	case gli::FORMAT_RG_ATI2N_UNORM_BLOCK16: return "FORMAT_RG_ATI2N_UNORM_BLOCK16";
+	case gli::FORMAT_RG_ATI2N_SNORM_BLOCK16: return "FORMAT_RG_ATI2N_SNORM_BLOCK16";
+	case gli::FORMAT_RGB_BP_UFLOAT_BLOCK16: return "FORMAT_RGB_BP_UFLOAT_BLOCK16";
+	case gli::FORMAT_RGB_BP_SFLOAT_BLOCK16: return "FORMAT_RGB_BP_SFLOAT_BLOCK16";
+	case gli::FORMAT_RGBA_BP_UNORM_BLOCK16: return "FORMAT_RGBA_BP_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_BP_SRGB_BLOCK16: return "FORMAT_RGBA_BP_SRGB_BLOCK16";
+
+	case gli::FORMAT_RGB_ETC2_UNORM_BLOCK8: return "FORMAT_RGB_ETC2_UNORM_BLOCK8";
+	case gli::FORMAT_RGB_ETC2_SRGB_BLOCK8: return "FORMAT_RGB_ETC2_SRGB_BLOCK8";
+	case gli::FORMAT_RGBA_ETC2_UNORM_BLOCK8: return "FORMAT_RGBA_ETC2_UNORM_BLOCK8";
+	case gli::FORMAT_RGBA_ETC2_SRGB_BLOCK8: return "FORMAT_RGBA_ETC2_SRGB_BLOCK8";
+	case gli::FORMAT_RGBA_ETC2_UNORM_BLOCK16: return "FORMAT_RGBA_ETC2_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ETC2_SRGB_BLOCK16: return "FORMAT_RGBA_ETC2_SRGB_BLOCK16";
+	case gli::FORMAT_R_EAC_UNORM_BLOCK8: return "FORMAT_R_EAC_UNORM_BLOCK8";
+	case gli::FORMAT_R_EAC_SNORM_BLOCK8: return "FORMAT_R_EAC_SNORM_BLOCK8";
+	case gli::FORMAT_RG_EAC_UNORM_BLOCK16: return "FORMAT_RG_EAC_UNORM_BLOCK16";
+	case gli::FORMAT_RG_EAC_SNORM_BLOCK16: return "FORMAT_RG_EAC_SNORM_BLOCK16";
+
+	case gli::FORMAT_RGBA_ASTC_4X4_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_4X4_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_4X4_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_4X4_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_5X4_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_5X4_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_5X4_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_5X4_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_5X5_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_5X5_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_5X5_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_5X5_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_6X5_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_6X5_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_6X5_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_6X5_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_6X6_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_6X6_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_6X6_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_6X6_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X5_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_8X5_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X5_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_8X5_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X6_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_8X6_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X6_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_8X6_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X8_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_8X8_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_8X8_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_8X8_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X5_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_10X5_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X5_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_10X5_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X6_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_10X6_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X6_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_10X6_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X8_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_10X8_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X8_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_10X8_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X10_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_10X10_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_10X10_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_10X10_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_12X10_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_12X10_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_12X10_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_12X10_SRGB_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_12X12_UNORM_BLOCK16: return "FORMAT_RGBA_ASTC_12X12_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ASTC_12X12_SRGB_BLOCK16: return "FORMAT_RGBA_ASTC_12X12_SRGB_BLOCK16";
+
+	case gli::FORMAT_RGB_PVRTC1_8X8_UNORM_BLOCK32: return "FORMAT_RGB_PVRTC1_8X8_UNORM_BLOCK32";
+	case gli::FORMAT_RGB_PVRTC1_8X8_SRGB_BLOCK32: return "FORMAT_RGB_PVRTC1_8X8_SRGB_BLOCK32";
+	case gli::FORMAT_RGB_PVRTC1_16X8_UNORM_BLOCK32: return "FORMAT_RGB_PVRTC1_16X8_UNORM_BLOCK32";
+	case gli::FORMAT_RGB_PVRTC1_16X8_SRGB_BLOCK32: return "FORMAT_RGB_PVRTC1_16X8_SRGB_BLOCK32";
+	case gli::FORMAT_RGBA_PVRTC1_8X8_UNORM_BLOCK32: return "FORMAT_RGBA_PVRTC1_8X8_UNORM_BLOCK32";
+	case gli::FORMAT_RGBA_PVRTC1_8X8_SRGB_BLOCK32: return "FORMAT_RGBA_PVRTC1_8X8_SRGB_BLOCK32";
+	case gli::FORMAT_RGBA_PVRTC1_16X8_UNORM_BLOCK32: return "FORMAT_RGBA_PVRTC1_16X8_UNORM_BLOCK32";
+	case gli::FORMAT_RGBA_PVRTC1_16X8_SRGB_BLOCK32: return "FORMAT_RGBA_PVRTC1_16X8_SRGB_BLOCK32";
+	case gli::FORMAT_RGBA_PVRTC2_4X4_UNORM_BLOCK8: return "FORMAT_RGBA_PVRTC2_4X4_UNORM_BLOCK8";
+	case gli::FORMAT_RGBA_PVRTC2_4X4_SRGB_BLOCK8: return "FORMAT_RGBA_PVRTC2_4X4_SRGB_BLOCK8";
+	case gli::FORMAT_RGBA_PVRTC2_8X4_UNORM_BLOCK8: return "FORMAT_RGBA_PVRTC2_8X4_UNORM_BLOCK8";
+	case gli::FORMAT_RGBA_PVRTC2_8X4_SRGB_BLOCK8: return "FORMAT_RGBA_PVRTC2_8X4_SRGB_BLOCK8";
+
+	case gli::FORMAT_RGB_ETC_UNORM_BLOCK8: return "FORMAT_RGB_ETC_UNORM_BLOCK8";
+	case gli::FORMAT_RGB_ATC_UNORM_BLOCK8: return "FORMAT_RGB_ATC_UNORM_BLOCK8";
+	case gli::FORMAT_RGBA_ATCA_UNORM_BLOCK16: return "FORMAT_RGBA_ATCA_UNORM_BLOCK16";
+	case gli::FORMAT_RGBA_ATCI_UNORM_BLOCK16: return "FORMAT_RGBA_ATCI_UNORM_BLOCK16";
+
+	case gli::FORMAT_L8_UNORM_PACK8: return "FORMAT_L8_UNORM_PACK8";
+	case gli::FORMAT_A8_UNORM_PACK8: return "FORMAT_A8_UNORM_PACK8";
+	case gli::FORMAT_LA8_UNORM_PACK8: return "FORMAT_LA8_UNORM_PACK8";
+	case gli::FORMAT_L16_UNORM_PACK16: return "FORMAT_L16_UNORM_PACK16";
+	case gli::FORMAT_A16_UNORM_PACK16: return "FORMAT_A16_UNORM_PACK16";
+	case gli::FORMAT_LA16_UNORM_PACK16: return "FORMAT_LA16_UNORM_PACK16";
+
+	case gli::FORMAT_BGR8_UNORM_PACK32: return "FORMAT_BGR8_UNORM_PACK32";
+	case gli::FORMAT_BGR8_SRGB_PACK32: return "FORMAT_BGR8_SRGB_PACK32";
+
+	case gli::FORMAT_RG3B2_UNORM_PACK8: return "FORMAT_RG3B2_UNORM_PACK8";
+	}
+	return "FORMAT_UNKNOWN";
 }
 
 #pragma endregion
 
-#pragma region VK Utils
+#pragma region Vk Utils
+
+const char* ToString(VkResult value)
+{
+	return string_VkResult(value);
+}
+
+const char* ToString(VkDescriptorType value)
+{
+	return string_VkDescriptorType(value);	
+}
+
+const char* ToString(VkPresentModeKHR value)
+{
+	return string_VkPresentModeKHR(value);
+}
 
 VkAttachmentLoadOp ToVkAttachmentLoadOp(AttachmentLoadOp value)
 {
-	switch (value)
-	{
+	switch (value) {
 	default: break;
 	case ATTACHMENT_LOAD_OP_LOAD: return VK_ATTACHMENT_LOAD_OP_LOAD; break;
 	case ATTACHMENT_LOAD_OP_CLEAR: return VK_ATTACHMENT_LOAD_OP_CLEAR; break;
@@ -614,7 +1008,7 @@ VkFormat ToVkFormat(Format value)
 	switch (value) {
 	default: break;
 
-		// 8-bit signed normalized
+	// 8-bit signed normalized
 	case FORMAT_R8_SNORM: return VK_FORMAT_R8_SNORM; break;
 	case FORMAT_R8G8_SNORM: return VK_FORMAT_R8G8_SNORM; break;
 	case FORMAT_R8G8B8_SNORM: return VK_FORMAT_R8G8B8_SNORM; break;
@@ -740,7 +1134,6 @@ VkFormat ToVkFormat(Format value)
 	case FORMAT_BC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK; break;
 	case FORMAT_BC7_SRGB: return VK_FORMAT_BC7_SRGB_BLOCK; break;
 	}
-
 	return VK_FORMAT_UNDEFINED;
 }
 
@@ -799,13 +1192,11 @@ VkImageViewType ToVkImageViewType(ImageViewType value)
 
 VkIndexType ToVkIndexType(IndexType value)
 {
-	// clang-format off
 	switch (value) {
 	default: break;
 	case INDEX_TYPE_UINT16: return VK_INDEX_TYPE_UINT16; break;
 	case INDEX_TYPE_UINT32: return VK_INDEX_TYPE_UINT32; break;
 	}
-	// clang-format on
 	return InvalidValue<VkIndexType>();
 }
 
@@ -975,14 +1366,14 @@ VkVertexInputRate ToVkVertexInputRate(VertexInputRate value)
 	return InvalidValue<VkVertexInputRate>();
 }
 
-static bool ToVkBarrier(
+static Result ToVkBarrier(
 	ResourceState                   state,
-	CommandType                     commandType,
+	CommandType               commandType,
 	const VkPhysicalDeviceFeatures& features,
 	bool                            isSource,
-	VkPipelineStageFlags&           stageMask,
-	VkAccessFlags&                  accessMask,
-	VkImageLayout&                  layout)
+	VkPipelineStageFlags& stageMask,
+	VkAccessFlags& accessMask,
+	VkImageLayout& layout)
 {
 	VkPipelineStageFlags PIPELINE_STAGE_ALL_SHADER_STAGES = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	if (commandType == CommandType::COMMAND_TYPE_GRAPHICS) {
@@ -1009,7 +1400,7 @@ static bool ToVkBarrier(
 	}
 
 	switch (state) {
-	default: return false; break;
+	default: return ERROR_FAILED; break;
 
 	case RESOURCE_STATE_UNDEFINED: {
 		stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -1157,27 +1548,27 @@ static bool ToVkBarrier(
 	} break;
 	}
 
-	return true;
+	return SUCCESS;
 }
 
-bool ToVkBarrierSrc(
+Result ToVkBarrierSrc(
 	ResourceState                   state,
-	CommandType                     commandType,
+	CommandType               commandType,
 	const VkPhysicalDeviceFeatures& features,
-	VkPipelineStageFlags&           stageMask,
-	VkAccessFlags&                  accessMask,
-	VkImageLayout&                  layout)
+	VkPipelineStageFlags& stageMask,
+	VkAccessFlags& accessMask,
+	VkImageLayout& layout)
 {
 	return ToVkBarrier(state, commandType, features, true, stageMask, accessMask, layout);
 }
 
-bool ToVkBarrierDst(
+Result ToVkBarrierDst(
 	ResourceState                   state,
-	CommandType                     commandType,
+	CommandType               commandType,
 	const VkPhysicalDeviceFeatures& features,
-	VkPipelineStageFlags&           stageMask,
-	VkAccessFlags&                  accessMask,
-	VkImageLayout&                  layout)
+	VkPipelineStageFlags& stageMask,
+	VkAccessFlags& accessMask,
+	VkImageLayout& layout)
 {
 	return ToVkBarrier(state, commandType, features, false, stageMask, accessMask, layout);
 }
@@ -1192,7 +1583,7 @@ VkImageAspectFlags DetermineAspectMask(VkFormat format)
 		return VK_IMAGE_ASPECT_DEPTH_BIT;
 	} break;
 
-	// Stencil
+	 // Stencil
 	case VK_FORMAT_S8_UINT: {
 		return VK_IMAGE_ASPECT_STENCIL_BIT;
 	} break;
@@ -1204,7 +1595,7 @@ VkImageAspectFlags DetermineAspectMask(VkFormat format)
 		return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	} break;
 
-	 // Assume everything else is color
+	// Assume everything else is color
 	default: break;
 	}
 	return VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1243,6 +1634,39 @@ VkSamplerYcbcrRange ToVkYcbcrRange(YcbcrRange value)
 	case YCBCR_RANGE_ITU_NARROW: return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
 	}
 	return InvalidValue<VkSamplerYcbcrRange>();
+}
+
+#pragma endregion
+
+#pragma region DeviceQueue
+
+bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
+{
+	switch (type)
+	{
+	case vkb::QueueType::present:  CommandType = COMMAND_TYPE_PRESENT; break;
+	case vkb::QueueType::graphics: CommandType = COMMAND_TYPE_GRAPHICS; break;
+	case vkb::QueueType::compute:  CommandType = COMMAND_TYPE_COMPUTE; break;
+	case vkb::QueueType::transfer: CommandType = COMMAND_TYPE_TRANSFER; break;
+	}
+
+	auto queueRet = vkbDevice.get_queue(type);
+	if (!queueRet.has_value())
+	{
+		Fatal("failed to get queue: " + queueRet.error().message());
+		return false;
+	}
+	Queue = queueRet.value();
+
+	auto queueFamilyRet = vkbDevice.get_queue_index(type);
+	if (!queueFamilyRet.has_value())
+	{
+		Fatal("failed to get queue index: " + queueFamilyRet.error().message());
+		return false;
+	}
+	QueueFamily = queueFamilyRet.value();
+
+	return true;
 }
 
 #pragma endregion

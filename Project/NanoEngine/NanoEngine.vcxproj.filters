@@ -10,24 +10,24 @@
     <ClCompile Include="Platform.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="RenderCore.cpp">
-      <Filter>engine\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderResources.cpp">
-      <Filter>engine\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderDevice.cpp">
-      <Filter>engine\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderSystem.cpp">
-      <Filter>engine\Render</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
       <Filter>3rdparty\VkBootstrap</Filter>
     </ClCompile>
     <ClCompile Include="..\3rdparty\volk\volk.c">
       <Filter>3rdparty\volk</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderDevice.cpp">
+      <Filter>engine\Render\old</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderResources.cpp">
+      <Filter>engine\Render\old</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderSystem.cpp">
+      <Filter>engine\Render\old</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderCore.cpp">
+      <Filter>engine\Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -46,6 +46,9 @@
     <Filter Include="3rdparty\volk">
       <UniqueIdentifier>{13fc360a-0b70-4413-8b6a-7e0ace1b33df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="engine\Render\old">
+      <UniqueIdentifier>{74c5a0fa-c1d4-46ad-ad57-01f6dd02d002}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NanoEngine.h" />
@@ -61,18 +64,6 @@
     <ClInclude Include="Platform.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="RenderCore.h">
-      <Filter>engine\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderResources.h">
-      <Filter>engine\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderDevice.h">
-      <Filter>engine\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderSystem.h">
-      <Filter>engine\Render</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
       <Filter>3rdparty\VkBootstrap</Filter>
@@ -82,6 +73,18 @@
     </ClInclude>
     <ClInclude Include="..\3rdparty\volk\volk.h">
       <Filter>3rdparty\volk</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderDevice.h">
+      <Filter>engine\Render\old</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderResources.h">
+      <Filter>engine\Render\old</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>engine\Render\old</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderCore.h">
+      <Filter>engine\Render</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

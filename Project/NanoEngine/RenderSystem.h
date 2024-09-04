@@ -118,7 +118,7 @@ public:
 	DeviceQueuePtr GetVkTransferQueue() { return m_instance.transferQueue; }
 	DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
-	RenderDevice& GetDevice() { return m_device; }
+	RenderDevice& GetRenderDevice() { return m_device; }
 
 private:
 	EngineApplication& m_engine;

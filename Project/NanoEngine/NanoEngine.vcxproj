@@ -107,8 +107,8 @@
     </ClCompile>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Core.cpp" />
-    <ClCompile Include="Platform.cpp" />
     <ClCompile Include="RenderCore.cpp" />
+    <ClCompile Include="Platform.cpp" />
     <ClCompile Include="RenderDevice.cpp" />
     <ClCompile Include="RenderResources.cpp" />
     <ClCompile Include="RenderSystem.cpp" />
@@ -125,8 +125,8 @@
     <ClInclude Include="Base.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="NanoEngine.h" />
-    <ClInclude Include="Platform.h" />
     <ClInclude Include="RenderCore.h" />
+    <ClInclude Include="Platform.h" />
     <ClInclude Include="RenderDevice.h" />
     <ClInclude Include="RenderResources.h" />
     <ClInclude Include="RenderSystem.h" />

@@ -124,6 +124,9 @@ Left handed
 #include <stb/stb_image.h>
 //#include <stb/stb_truetype.h>
 
+#include <gli/target.hpp>
+#include <gli/format.hpp>
+
 #include <tiny_obj_loader.h>
 
 //#include <utf8.h>

@@ -12,7 +12,7 @@ VulkanFence::VulkanFence(RenderDevice& device, const FenceCreateInfo& createInfo
 	VkFenceCreateInfo fenceInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 	fenceInfo.flags             = createInfo.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
-	VkResult result = vkCreateFence(m_device.Device(), &fenceInfo, nullptr, &m_fence);
+	VkResult result = vkCreateFence(m_device.GetVkDevice(), &fenceInfo, nullptr, &m_fence);
 	if (result != VK_SUCCESS)
 	{
 		Fatal("Failed to create fence objects:" + std::string(string_VkResult(result)));
@@ -23,14 +23,14 @@ VulkanFence::VulkanFence(RenderDevice& device, const FenceCreateInfo& createInfo
 VulkanFence::~VulkanFence()
 {
 	if (m_fence)
-		vkDestroyFence(m_device.Device(), m_fence, nullptr);
+		vkDestroyFence(m_device.GetVkDevice(), m_fence, nullptr);
 }
 
 bool VulkanFence::Wait(uint64_t timeout)
 {
 	if (!IsValid()) return false;
 
-	VkResult result = vkWaitForFences(m_device.Device(), 1, &m_fence, VK_TRUE, timeout);
+	VkResult result = vkWaitForFences(m_device.GetVkDevice(), 1, &m_fence, VK_TRUE, timeout);
 	if (result != VK_SUCCESS)
 	{
 		Fatal("Failed to wait fence objects:" + std::string(string_VkResult(result)));
@@ -44,7 +44,7 @@ bool VulkanFence::Reset()
 {
 	if (!IsValid()) return false;
 
-	VkResult result = vkResetFences(m_device.Device(), 1, &m_fence);
+	VkResult result = vkResetFences(m_device.GetVkDevice(), 1, &m_fence);
 	if (result != VK_SUCCESS)
 	{
 		Fatal("Failed to reset fence objects:" + std::string(string_VkResult(result)));
@@ -63,7 +63,7 @@ bool VulkanFence::WaitAndReset(uint64_t timeout)
 
 VkResult VulkanFence::Status() const
 {
-	return vkGetFenceStatus(m_device.Device(), m_fence);
+	return vkGetFenceStatus(m_device.GetVkDevice(), m_fence);
 }
 
 #pragma endregion
@@ -82,7 +82,7 @@ VulkanSemaphore::VulkanSemaphore(RenderDevice& device, const SemaphoreCreateInfo
 	VkSemaphoreCreateInfo semaphoreInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 	semaphoreInfo.pNext = (createInfo.semaphoreType == SEMAPHORE_TYPE_TIMELINE) ? &timelineCreateInfo : nullptr;
 
-	VkResult result = vkCreateSemaphore(m_device.Device(), &semaphoreInfo, nullptr, &m_semaphore);
+	VkResult result = vkCreateSemaphore(m_device.GetVkDevice(), &semaphoreInfo, nullptr, &m_semaphore);
 	if (result != VK_SUCCESS)
 	{
 		Fatal("Failed to create semaphore objects:" + std::string(string_VkResult(result)));
@@ -93,7 +93,7 @@ VulkanSemaphore::VulkanSemaphore(RenderDevice& device, const SemaphoreCreateInfo
 VulkanSemaphore::~VulkanSemaphore()
 {
 	if (m_semaphore)
-		vkDestroySemaphore(m_device.Device(), m_semaphore, nullptr);
+		vkDestroySemaphore(m_device.GetVkDevice(), m_semaphore, nullptr);
 }
 
 uint64_t VulkanSemaphore::GetCounterValue() const
@@ -134,7 +134,7 @@ bool VulkanSemaphore::timelineWait(uint64_t value, uint64_t timeout) const
 	waitInfo.pSemaphores         = &m_semaphore;
 	waitInfo.pValues             = &value;
 
-	VkResult result = vkWaitSemaphores(m_device.Device(), &waitInfo, timeout);
+	VkResult result = vkWaitSemaphores(m_device.GetVkDevice(), &waitInfo, timeout);
 	if (result != VK_SUCCESS) return false;
 
 	return true;
@@ -149,7 +149,7 @@ bool VulkanSemaphore::timelineSignal(uint64_t value) const
 		signalInfo.semaphore             = m_semaphore;
 		signalInfo.value                 = value;
 
-		VkResult result = vkSignalSemaphore(m_device.Device(), &signalInfo);
+		VkResult result = vkSignalSemaphore(m_device.GetVkDevice(), &signalInfo);
 		if (result != VK_SUCCESS) return false;
 
 		m_timelineSignaledValue = value;
@@ -161,7 +161,7 @@ bool VulkanSemaphore::timelineSignal(uint64_t value) const
 uint64_t VulkanSemaphore::timelineCounterValue() const
 {
 	uint64_t value = UINT64_MAX;
-	VkResult result = vkGetSemaphoreCounterValue(m_device.Device(), m_semaphore, &value);
+	VkResult result = vkGetSemaphoreCounterValue(m_device.GetVkDevice(), m_semaphore, &value);
 	// Not clear if value is written to upon failure so prefer safety.
 	return (result == VK_SUCCESS) ? value : UINT64_MAX;
 }
@@ -476,87 +476,6 @@ bool VulkanImage::MapMemory(uint64_t offset, void** ppMappedAddress)
 void VulkanImage::UnmapMemory()
 {
 	//vmaUnmapMemory(ToApi(GetDevice())->GetVmaAllocator(), m_allocation);
-}
-
-#pragma endregion
-
-#pragma region DeviceQueue
-
-bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
-{
-	switch (type)
-	{
-	case vkb::QueueType::present:  CommandType = COMMAND_TYPE_PRESENT; break;
-	case vkb::QueueType::graphics: CommandType = COMMAND_TYPE_GRAPHICS; break;
-	case vkb::QueueType::compute:  CommandType = COMMAND_TYPE_COMPUTE; break;
-	case vkb::QueueType::transfer: CommandType = COMMAND_TYPE_TRANSFER; break;
-	}
-
-	auto queueRet = vkbDevice.get_queue(type);
-	if (!queueRet.has_value())
-	{
-		Fatal("failed to get queue: " + queueRet.error().message());
-		return false;
-	}
-	Queue = queueRet.value();
-
-	auto queueFamilyRet = vkbDevice.get_queue_index(type);
-	if (!queueFamilyRet.has_value())
-	{
-		Fatal("failed to get queue index: " + queueFamilyRet.error().message());
-		return false;
-	}
-	QueueFamily = queueFamilyRet.value();
-
-	return true;
-}
-
-#pragma endregion
-
-#pragma region VulkanQueue
-
-VulkanQueue::VulkanQueue(RenderDevice& device, const QueueCreateInfo& createInfo)
-	: m_device(device)
-{
-	switch (createInfo.CommandType)
-	{
-	case COMMAND_TYPE_PRESENT:  m_deviceQueue = device.GetPresentQueue();  break;
-	case COMMAND_TYPE_GRAPHICS: m_deviceQueue = device.GetGraphicsQueue(); break;
-	case COMMAND_TYPE_COMPUTE:  m_deviceQueue = device.GetComputeQueue();  break;
-	case COMMAND_TYPE_TRANSFER: m_deviceQueue = device.GetTransferQueue(); break;
-	}
-
-	VkCommandPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-	vkci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	vkci.queueFamilyIndex = m_deviceQueue->QueueFamily;
-
-	VkResult result = vkCreateCommandPool(m_device.Device(), &vkci, nullptr, &m_transientPool);
-	if (result != VK_SUCCESS)
-	{
-		Fatal("vkCreateCommandPool failed" + std::string(string_VkResult(result)));
-		return;
-	}
-}
-
-VulkanQueue::~VulkanQueue()
-{
-	if (m_transientPool)
-		vkDestroyCommandPool(m_device.Device(), m_transientPool, nullptr);
-}
-
-bool VulkanQueue::WaitIdle()
-{
-	// Synchronized queue access
-	std::lock_guard<std::mutex> lock(m_queueMutex);
-
-	VkResult result = vkQueueWaitIdle(m_deviceQueue->Queue);
-	if (result != VK_SUCCESS)
-	{
-		Fatal("vkQueueWaitIdle failed" + std::string(string_VkResult(result)));
-		return false;
-	}
-
-	return true;
 }
 
 #pragma endregion
