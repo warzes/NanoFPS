@@ -14,6 +14,7 @@ public:
 	RenderDevice(EngineApplication& engine, RenderSystem& render);
 
 	VkDevice& GetVkDevice();
+	VmaAllocatorPtr GetVmaAllocator();
 
 	DeviceQueuePtr GetGraphicsQueue() const;
 	DeviceQueuePtr GetPresentQueue() const;

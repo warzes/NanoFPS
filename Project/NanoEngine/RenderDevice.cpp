@@ -18,6 +18,11 @@ VkDevice& RenderDevice::GetVkDevice()
 	return m_render.GetVkDevice();
 }
 
+VmaAllocatorPtr RenderDevice::GetVmaAllocator()
+{
+	return m_render.GetVmaAllocator();
+}
+
 DeviceQueuePtr RenderDevice::GetGraphicsQueue() const
 {
 	return m_render.GetVkGraphicsQueue();

@@ -5,8 +5,6 @@
 class EngineApplication;
 class RenderSystem;
 
-
-
 #pragma region VulkanInstance
 
 struct InstanceCreateInfo final
@@ -18,9 +16,49 @@ struct InstanceCreateInfo final
 	uint32_t                 requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
 	bool                     useValidationLayers{ false };
 
-	std::vector<const char*> vulkanExtensions = {
+	std::vector<const char*> instanceExtensions = {
 		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
 	};
+
+	// TODO: перенести
+	// TODO: на релизе убрать лишнее
+	// TODO: обязательное для движка вынести в инициализацию
+	std::vector<const char*> deviceExtensions = 
+	{
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
+		VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,    // Variable rate shading -> ShadingRateMode::SHADING_RATE_VRS
+		//VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,   // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
+		//VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
+		VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,      // Variable rate shading or Fragment density map
+		VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, 
+		VK_KHR_MULTIVIEW_EXTENSION_NAME,
+		VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
+		VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
+		VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
+
+		//VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE2_EXTENSION_NAME,
+
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		//VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+
+		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
+		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+		//VK_NV_MESH_SHADER_EXTENSION_NAME,
+	};
+
 };
 
 class VulkanInstance final
@@ -51,11 +89,14 @@ public:
 	DeviceQueuePtr             transferQueue{ new DeviceQueue() };
 	DeviceQueuePtr             computeQueue{ new DeviceQueue() };
 
+	VmaAllocatorPtr            vmaAllocator{ nullptr };
+
 private:
 	std::optional<vkb::Instance> createInstance(const InstanceCreateInfo& createInfo);
 	VkSurfaceKHR createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator = nullptr);
-	std::optional<vkb::PhysicalDevice> selectDevice(const vkb::Instance& instance);
+	std::optional<vkb::PhysicalDevice> selectDevice(const vkb::Instance& instance, const InstanceCreateInfo& createInfo);
 	bool getQueues(vkb::Device& vkbDevice);
+	bool initVma();
 	RenderSystem& m_render;
 };
 
@@ -112,6 +153,7 @@ public:
 	VkSurfaceKHR& GetVkSurface() { return m_instance.surface; }
 	VkPhysicalDevice& GetVkPhysicalDevice() { return m_instance.physicalDevice; }
 	VkDevice& GetVkDevice() { return m_instance.device; }
+	VmaAllocatorPtr GetVmaAllocator() { return m_instance.vmaAllocator; }
 
 	DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
 	DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }
@@ -119,6 +161,7 @@ public:
 	DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
 	RenderDevice& GetRenderDevice() { return m_device; }
+
 
 private:
 	EngineApplication& m_engine;

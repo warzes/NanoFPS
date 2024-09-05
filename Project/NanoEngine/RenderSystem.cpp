@@ -32,7 +32,7 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	surface = createSurfaceGLFW(window);
 	if (surface == VK_NULL_HANDLE) return false;
 
-	auto physicalDeviceRet = selectDevice(vkbInstance);
+	auto physicalDeviceRet = selectDevice(vkbInstance, createInfo);
 	if (!physicalDeviceRet) return false;	
 	vkb::PhysicalDevice vkbPhysicalDevice = physicalDeviceRet.value();
 	physicalDevice = vkbPhysicalDevice.physical_device;
@@ -54,12 +54,22 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	Print("GPU Used: " + std::string(physicalDeviceProperties.deviceName));
 
 	if (!getQueues(vkbDevice)) return false;
+	if (!initVma()) return false;
 
 	return true;
 }
 
 void VulkanInstance::Shutdown()
 {
+	if (vmaAllocator)
+	{
+		VmaTotalStatistics stats;
+		vmaCalculateStatistics(vmaAllocator, &stats);
+		Print("Total device memory leaked: " + std::to_string(stats.total.statistics.allocationBytes) + " bytes.");
+		vmaDestroyAllocator(vmaAllocator);
+		vmaAllocator = VK_NULL_HANDLE;
+	}
+
 	graphicsQueue.reset();
 	presentQueue.reset();
 	transferQueue.reset();
@@ -92,7 +102,7 @@ std::optional<vkb::Instance> VulkanInstance::createInstance(const InstanceCreate
 		.set_app_version(createInfo.appVersion)
 		.set_engine_version(createInfo.engineVersion)
 		.require_api_version(createInfo.requireVersion)
-		.enable_extensions(createInfo.vulkanExtensions)
+		.enable_extensions(createInfo.instanceExtensions)
 		.request_validation_layers(useValidationLayers)
 		.use_default_debug_messenger()
 		.build();
@@ -124,50 +134,45 @@ VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationC
 	return surface;
 }
 
-std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Instance& instance)
+std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Instance& instance, const InstanceCreateInfo& createInfo)
 {
 	// vulkan 1.0 features
 	VkPhysicalDeviceFeatures features10{};
-	features10.samplerAnisotropy = VK_TRUE;
-	features10.geometryShader = VK_TRUE;
-	features10.fillModeNonSolid = VK_TRUE;
+	features10.fillModeNonSolid                        = VK_TRUE;
+	features10.fullDrawIndexUint32                     = VK_TRUE;
+	features10.imageCubeArray                          = VK_TRUE;
+	features10.independentBlend                        = VK_TRUE;
+	features10.pipelineStatisticsQuery                 = VK_TRUE;
+	features10.geometryShader                          = VK_TRUE;
+	features10.tessellationShader                      = VK_TRUE;
+	features10.fragmentStoresAndAtomics                = VK_TRUE;
+	features10.shaderStorageImageReadWithoutFormat     = VK_TRUE;
+	features10.shaderStorageImageWriteWithoutFormat    = VK_TRUE;
+	features10.shaderStorageImageMultisample           = VK_TRUE;
+	features10.samplerAnisotropy                       = VK_TRUE;
+	features10.shaderUniformBufferArrayDynamicIndexing = VK_TRUE;
+	features10.shaderSampledImageArrayDynamicIndexing  = VK_TRUE;
+	features10.shaderStorageBufferArrayDynamicIndexing = VK_TRUE;
+	features10.shaderStorageImageArrayDynamicIndexing  = VK_TRUE;
+
 	// vulkan 1.1 features
 	VkPhysicalDeviceVulkan11Features features11{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
 	// vulkan 1.2 features
 	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
-	features12.bufferDeviceAddress = true;
-	features12.descriptorIndexing = true;
+	features12.bufferDeviceAddress = VK_TRUE;
+	features12.descriptorIndexing = VK_TRUE;
 	// vulkan 1.3 features
 	VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
-	features13.dynamicRendering = true;
-	features13.synchronization2 = true;
-
-	std::vector<const char*> requiredExtensions =
-	{
-		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		//VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-		//VK_KHR_RAY_QUERY_EXTENSION_NAME,
-		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
-		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-		//VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
-		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-		//VK_NV_MESH_SHADER_EXTENSION_NAME,
-		//VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
-	};
-
+	features13.dynamicRendering = VK_TRUE;
+	features13.synchronization2 = VK_TRUE;
+	
 	vkb::PhysicalDeviceSelector physicalDeviceSelector{ instance };
 
 	auto physicalDeviceRet = physicalDeviceSelector
 		.set_minimum_version(1, 3)
 		.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete)
 		.allow_any_gpu_device_type(false)
-		.add_required_extensions(requiredExtensions)
+		.add_required_extensions(createInfo.deviceExtensions)
 		.set_required_features_13(features13)
 		.set_required_features_12(features12)
 		.set_required_features_11(features11)
@@ -189,6 +194,47 @@ bool VulkanInstance::getQueues(vkb::Device& vkbDevice)
 	if (!presentQueue->init(vkbDevice, vkb::QueueType::present)) return false;
 	if (!transferQueue->init(vkbDevice, vkb::QueueType::transfer)) return false;
 	if (!computeQueue->init(vkbDevice, vkb::QueueType::compute)) return false;
+
+	return true;
+}
+
+bool VulkanInstance::initVma()
+{
+	// initialize the memory allocator
+	VmaVulkanFunctions vmaVulkanFunc{};
+	vmaVulkanFunc.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+	vmaVulkanFunc.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+	vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
+	vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
+	vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
+	vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
+	vmaVulkanFunc.vkCreateImage = vkCreateImage;
+	vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
+	vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
+	vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+	vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
+	vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+	vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+	vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+	vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+	vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+	vmaVulkanFunc.vkMapMemory = vkMapMemory;
+	vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
+	vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
+	vmaVulkanFunc.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
+
+	VmaAllocatorCreateInfo vmaCreateInfo = {};
+	vmaCreateInfo.physicalDevice = physicalDevice;
+	vmaCreateInfo.device         = device;
+	vmaCreateInfo.instance       = instance;
+	vmaCreateInfo.pVulkanFunctions = &vmaVulkanFunc;
+
+	VkResult result = vmaCreateAllocator(&vmaCreateInfo, &vmaAllocator);
+	if (result != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vmaCreateAllocator failed: " + ToString(result));
+		return false;
+	}
 
 	return true;
 }

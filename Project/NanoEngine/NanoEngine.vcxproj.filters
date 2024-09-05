@@ -29,6 +29,9 @@
     <ClCompile Include="RenderCore.cpp">
       <Filter>engine\Render</Filter>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\vk_mem_alloc.cpp">
+      <Filter>3rdparty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -85,6 +88,9 @@
     </ClInclude>
     <ClInclude Include="RenderCore.h">
       <Filter>engine\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\vk_mem_alloc.h">
+      <Filter>3rdparty</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

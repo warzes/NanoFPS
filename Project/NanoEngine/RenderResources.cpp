@@ -258,9 +258,9 @@ Result Buffer::createApiObjects(const BufferCreateInfo& CreateInfo)
 		alignedSize = RoundUp<VkDeviceSize>(CreateInfo.size, UNIFORM_BUFFER_ALIGNMENT);
 
 	VkBufferCreateInfo createInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	createInfo.size = alignedSize;
-	createInfo.usage = ToVkBufferUsageFlags(CreateInfo.usageFlags);
-	createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	createInfo.size               = alignedSize;
+	createInfo.usage              = ToVkBufferUsageFlags(CreateInfo.usageFlags);
+	createInfo.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
 
 	VkAllocationCallbacks* pAllocator = nullptr;
 	VkResult vkres = vkCreateBuffer(GetDevice()->GetVkDevice(), &createInfo, pAllocator, &m_buffer);
