@@ -288,12 +288,9 @@ struct DepthStencilViewCreateInfo final
 	static DepthStencilViewCreateInfo GuessFromImage(Image* pImage);
 };
 
-class DepthStencilView : public DeviceObject<DepthStencilViewCreateInfo>, public ImageView
+class DepthStencilView final : public DeviceObject<DepthStencilViewCreateInfo>, public ImageView
 {
 public:
-	DepthStencilView() {}
-	virtual ~DepthStencilView() {}
-
 	ImagePtr          GetImage() const { return m_createInfo.pImage; }
 	Format            GetFormat() const { return m_createInfo.format; }
 	SampleCount       GetSampleCount() const { return GetImage()->GetSampleCount(); }
@@ -307,13 +304,13 @@ public:
 
 struct RenderTargetViewCreateInfo
 {
-	Image* pImage = nullptr;
+	Image*            pImage = nullptr;
 	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
 	Format            format = FORMAT_UNDEFINED;
-	uint32_t                mipLevel = 0;
-	uint32_t                mipLevelCount = 0;
-	uint32_t                arrayLayer = 0;
-	uint32_t                arrayLayerCount = 0;
+	uint32_t          mipLevel = 0;
+	uint32_t          mipLevelCount = 0;
+	uint32_t          arrayLayer = 0;
+	uint32_t          arrayLayerCount = 0;
 	ComponentMapping  components = {};
 	AttachmentLoadOp  loadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp storeOp = ATTACHMENT_STORE_OP_STORE;
@@ -322,7 +319,169 @@ struct RenderTargetViewCreateInfo
 	static RenderTargetViewCreateInfo GuessFromImage(Image* pImage);
 };
 
+class RenderTargetView : public DeviceObject<RenderTargetViewCreateInfo>, public ImageView
+{
+public:
+	ImagePtr          GetImage() const { return m_createInfo.pImage; }
+	Format            GetFormat() const { return m_createInfo.format; }
+	SampleCount       GetSampleCount() const { return GetImage()->GetSampleCount(); }
+	uint32_t          GetMipLevel() const { return m_createInfo.mipLevel; }
+	uint32_t         GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	AttachmentLoadOp  GetLoadOp() const { return m_createInfo.loadOp; }
+	AttachmentStoreOp GetStoreOp() const { return m_createInfo.storeOp; }
+};
+
+struct SampledImageViewCreateInfo
+{
+	Image*                  pImage = nullptr;
+	ImageViewType           imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Format                  format = FORMAT_UNDEFINED;
+	SampleCount             sampleCount = SAMPLE_COUNT_1;
+	uint32_t                mipLevel = 0;
+	uint32_t                mipLevelCount = 0;
+	uint32_t                arrayLayer = 0;
+	uint32_t                arrayLayerCount = 0;
+	ComponentMapping        components = {};
+	SamplerYcbcrConversion* pYcbcrConversion = nullptr; // Leave null if not required.
+	Ownership               ownership = OWNERSHIP_REFERENCE;
+
+	static SampledImageViewCreateInfo GuessFromImage(Image* pImage);
+};
+
+class SampledImageView final : public DeviceObject<SampledImageViewCreateInfo>, public ImageView
+{
+public:
+	ImagePtr                GetImage() const { return m_createInfo.pImage; }
+	ImageViewType           GetImageViewType() const { return m_createInfo.imageViewType; }
+	Format                  GetFormat() const { return m_createInfo.format; }
+	SampleCount             GetSampleCount() const { return GetImage()->GetSampleCount(); }
+	uint32_t                GetMipLevel() const { return m_createInfo.mipLevel; }
+	uint32_t                GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
+	uint32_t                GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	uint32_t                GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
+	const ComponentMapping& GetComponents() const { return m_createInfo.components; }
+};
+
+// SamplerYcbcrConversionCreateInfo defines a color model conversion for a texture, sampler, or sampled image.
+struct SamplerYcbcrConversionCreateInfo final
+{
+	Format               format = FORMAT_UNDEFINED;
+	YcbcrModelConversion ycbcrModel = YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+	YcbcrRange           ycbcrRange = YCBCR_RANGE_ITU_FULL;
+	ComponentMapping     components = {};
+	ChromaLocation       xChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
+	ChromaLocation       yChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
+	Filter               filter = FILTER_LINEAR;
+	bool                 forceExplicitReconstruction = false;
+};
+
+class SamplerYcbcrConversion : public DeviceObject<SamplerYcbcrConversionCreateInfo>
+{
+public:
+	SamplerYcbcrConversion() {}
+	virtual ~SamplerYcbcrConversion() {}
+};
+
+struct StorageImageViewCreateInfo
+{
+	Image* pImage = nullptr;
+	ImageViewType    imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Format           format = FORMAT_UNDEFINED;
+	uint32_t         mipLevel = 0;
+	uint32_t         mipLevelCount = 0;
+	uint32_t         arrayLayer = 0;
+	uint32_t         arrayLayerCount = 0;
+	ComponentMapping components = {};
+	Ownership        ownership = OWNERSHIP_REFERENCE;
+
+	static StorageImageViewCreateInfo GuessFromImage(Image* pImage);
+};
+
+class StorageImageView final : public DeviceObject<StorageImageViewCreateInfo>, public ImageView
+{
+public:
+	ImagePtr      GetImage() const { return m_createInfo.pImage; }
+	ImageViewType GetImageViewType() const { return m_createInfo.imageViewType; }
+	Format        GetFormat() const { return m_createInfo.format; }
+	SampleCount   GetSampleCount() const { return GetImage()->GetSampleCount(); }
+	uint32_t      GetMipLevel() const { return m_createInfo.mipLevel; }
+	uint32_t      GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
+	uint32_t      GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	uint32_t      GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
+};
+
 #pragma endregion
+
+#pragma region Texture
+
+struct TextureCreateInfo final
+{
+	Image*                  pImage = nullptr;
+	ImageType               imageType = IMAGE_TYPE_2D;
+	uint32_t                width = 0;
+	uint32_t                height = 0;
+	uint32_t                depth = 0;
+	Format                  imageFormat = FORMAT_UNDEFINED;
+	SampleCount             sampleCount = SAMPLE_COUNT_1;
+	uint32_t                mipLevelCount = 1;
+	uint32_t                arrayLayerCount = 1;
+	ImageUsageFlags         usageFlags = ImageUsageFlags::SampledImage();
+	MemoryUsage             memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	ResourceState           initialState = RESOURCE_STATE_GENERAL;            // This may not be the best choice
+	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                   // Optimized RTV clear value
+	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                   // Optimized DSV clear value
+	ImageViewType           sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED; // Guesses from image if UNDEFINED
+	Format                  sampledImageViewFormat = FORMAT_UNDEFINED;        // Guesses from image if UNDEFINED
+	SamplerYcbcrConversion* pSampledImageYcbcrConversion = nullptr;           // Leave null if not Ycbcr, or not using sampled image.
+	Format                  renderTargetViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
+	Format                  depthStencilViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
+	Format                  storageImageViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
+	Ownership               ownership = OWNERSHIP_REFERENCE;
+	bool                    concurrentMultiQueueUsage = false;
+	ImageCreateFlags        imageCreateFlags = {};
+};
+
+class Texture : public DeviceObject<TextureCreateInfo>
+{
+	friend class RenderDevice;
+public:
+	ImageType              GetImageType() const;
+	uint32_t               GetWidth() const;
+	uint32_t               GetHeight() const;
+	uint32_t               GetDepth() const;
+	Format                 GetImageFormat() const;
+	SampleCount            GetSampleCount() const;
+	uint32_t               GetMipLevelCount() const;
+	uint32_t               GetArrayLayerCount() const;
+	const ImageUsageFlags& GetUsageFlags() const;
+	MemoryUsage            GetMemoryUsage() const;
+
+	Format GetSampledImageViewFormat() const;
+	Format GetRenderTargetViewFormat() const;
+	Format GetDepthStencilViewFormat() const;
+	Format GetStorageImageViewFormat() const;
+
+	ImagePtr            GetImage() const { return m_image; }
+	SampledImageViewPtr GetSampledImageView() const { return m_sampledImageView; }
+	RenderTargetViewPtr GetRenderTargetView() const { return m_renderTargetView; }
+	DepthStencilViewPtr GetDepthStencilView() const { return m_depthStencilView; }
+	StorageImageViewPtr GetStorageImageView() const { return m_storageImageView; }
+
+private:
+	Result create(const TextureCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const TextureCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	ImagePtr            m_image;
+	SampledImageViewPtr m_sampledImageView;
+	RenderTargetViewPtr m_renderTargetView;
+	DepthStencilViewPtr m_depthStencilView;
+	StorageImageViewPtr m_storageImageView;
+};
+
+
+#pragma endregion
+
 
 
 //===================================================================
@@ -408,6 +567,7 @@ struct ImageCreateInfo final
 	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
 	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
+	Ownership              ownership = OWNERSHIP_REFERENCE;
 	bool                   concurrentMultiQueueUsage = false;
 	ImageCreateFlags       createFlags = {};
 

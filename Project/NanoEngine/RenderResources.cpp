@@ -341,6 +341,428 @@ void Buffer::destroyApiObjects()
 
 #pragma endregion
 
+#pragma region Image
+
+ImageCreateInfo ImageCreateInfo::SampledImage2D(
+	uint32_t    width,
+	uint32_t    height,
+	Format      format,
+	SampleCount sampleCount,
+	MemoryUsage memoryUsage)
+{
+	ImageCreateInfo ci = {};
+	ci.type = IMAGE_TYPE_2D;
+	ci.width = width;
+	ci.height = height;
+	ci.depth = 1;
+	ci.format = format;
+	ci.sampleCount = sampleCount;
+	ci.mipLevelCount = 1;
+	ci.arrayLayerCount = 1;
+	ci.usageFlags.bits.sampled = true;
+	ci.memoryUsage = memoryUsage;
+	ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+	ci.pApiObject = nullptr;
+	return ci;
+}
+
+ImageCreateInfo ImageCreateInfo::DepthStencilTarget(
+	uint32_t    width,
+	uint32_t    height,
+	Format      format,
+	SampleCount sampleCount)
+{
+	ImageCreateInfo ci = {};
+	ci.type = IMAGE_TYPE_2D;
+	ci.width = width;
+	ci.height = height;
+	ci.depth = 1;
+	ci.format = format;
+	ci.sampleCount = sampleCount;
+	ci.mipLevelCount = 1;
+	ci.arrayLayerCount = 1;
+	ci.usageFlags.bits.sampled = true;
+	ci.usageFlags.bits.depthStencilAttachment = true;
+	ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	ci.initialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ci.pApiObject = nullptr;
+	return ci;
+}
+
+ImageCreateInfo ImageCreateInfo::RenderTarget2D(
+	uint32_t    width,
+	uint32_t    height,
+	Format      format,
+	SampleCount sampleCount)
+{
+	ImageCreateInfo ci = {};
+	ci.type = IMAGE_TYPE_2D;
+	ci.width = width;
+	ci.height = height;
+	ci.depth = 1;
+	ci.format = format;
+	ci.sampleCount = sampleCount;
+	ci.mipLevelCount = 1;
+	ci.arrayLayerCount = 1;
+	ci.usageFlags.bits.sampled = true;
+	ci.usageFlags.bits.colorAttachment = true;
+	ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	ci.pApiObject = nullptr;
+	return ci;
+}
+
+Result Image::create(const ImageCreateInfo& pCreateInfo)
+{
+	if ((pCreateInfo.type == IMAGE_TYPE_CUBE) && (pCreateInfo.arrayLayerCount != 6))
+	{
+		ASSERT_MSG(false, "arrayLayerCount must be 6 if type is IMAGE_TYPE_CUBE");
+		return ERROR_INVALID_CREATE_ARGUMENT;
+	}
+
+	Result ppxres = DeviceObject<ImageCreateInfo>::create(pCreateInfo);
+	if (Failed(ppxres)) return ppxres;
+
+	return SUCCESS;
+}
+
+ImageViewType Image::GuessImageViewType(bool isCube) const
+{
+	const uint32_t arrayLayerCount = GetArrayLayerCount();
+
+	if (isCube)
+	{
+		return (arrayLayerCount > 0) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE;
+	}
+	else
+	{
+		switch (m_createInfo.type) {
+		default: break;
+		case IMAGE_TYPE_1D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_1D_ARRAY : IMAGE_VIEW_TYPE_1D; break;
+		case IMAGE_TYPE_2D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_2D_ARRAY : IMAGE_VIEW_TYPE_2D; break;
+		case IMAGE_TYPE_CUBE: return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
+		}
+	}
+
+	return IMAGE_VIEW_TYPE_UNDEFINED;
+}
+
+DepthStencilViewCreateInfo DepthStencilViewCreateInfo::GuessFromImage(Image* pImage)
+{
+	DepthStencilViewCreateInfo ci = {};
+	ci.pImage = pImage;
+	ci.imageViewType = pImage->GuessImageViewType();
+	ci.format = pImage->GetFormat();
+	ci.mipLevel = 0;
+	ci.mipLevelCount = 1;
+	ci.arrayLayer = 0;
+	ci.arrayLayerCount = 1;
+	ci.components = {};
+	ci.depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+	ci.depthStoreOp = ATTACHMENT_STORE_OP_STORE;
+	ci.stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+	ci.stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	ci.ownership = OWNERSHIP_REFERENCE;
+	return ci;
+}
+
+RenderTargetViewCreateInfo RenderTargetViewCreateInfo::GuessFromImage(Image* pImage)
+{
+	RenderTargetViewCreateInfo ci = {};
+	ci.pImage = pImage;
+	ci.imageViewType = pImage->GuessImageViewType();
+	ci.format = pImage->GetFormat();
+	ci.mipLevel = 0;
+	ci.mipLevelCount = 1;
+	ci.arrayLayer = 0;
+	ci.arrayLayerCount = 1;
+	ci.components = {};
+	ci.loadOp = ATTACHMENT_LOAD_OP_LOAD;
+	ci.storeOp = ATTACHMENT_STORE_OP_STORE;
+	ci.ownership = OWNERSHIP_REFERENCE;
+	return ci;
+}
+
+SampledImageViewCreateInfo SampledImageViewCreateInfo::GuessFromImage(Image* pImage)
+{
+	SampledImageViewCreateInfo ci = {};
+	ci.pImage = pImage;
+	ci.imageViewType = pImage->GuessImageViewType();
+	ci.format = pImage->GetFormat();
+	ci.mipLevel = 0;
+	ci.mipLevelCount = pImage->GetMipLevelCount();
+	ci.arrayLayer = 0;
+	ci.arrayLayerCount = pImage->GetArrayLayerCount();
+	ci.components = {};
+	ci.ownership = OWNERSHIP_REFERENCE;
+	return ci;
+}
+
+StorageImageViewCreateInfo StorageImageViewCreateInfo::GuessFromImage(Image* pImage)
+{
+	StorageImageViewCreateInfo ci = {};
+	ci.pImage = pImage;
+	ci.imageViewType = pImage->GuessImageViewType();
+	ci.format = pImage->GetFormat();
+	ci.mipLevel = 0;
+	ci.mipLevelCount = pImage->GetMipLevelCount();
+	ci.arrayLayer = 0;
+	ci.arrayLayerCount = pImage->GetArrayLayerCount();
+	ci.components = {};
+	ci.ownership = OWNERSHIP_REFERENCE;
+	return ci;
+}
+
+#pragma endregion
+
+#pragma region Texture
+
+Result Texture::create(const TextureCreateInfo& pCreateInfo)
+{
+	// Copy in case view types and formats are specified:
+	//   - if an image is supplied, then the next section
+	//     will overwrite all the image related fields with
+	//     values from the supplied image.
+	//   - if an image is NOT supplied, then nothing gets
+	//     overwritten.
+	//
+	m_createInfo = pCreateInfo;
+
+	if (!IsNull(pCreateInfo.pImage)) 
+	{
+		m_image = pCreateInfo.pImage;
+		m_createInfo.imageType = m_image->GetType();
+		m_createInfo.width = m_image->GetWidth();
+		m_createInfo.height = m_image->GetHeight();
+		m_createInfo.depth = m_image->GetDepth();
+		m_createInfo.imageFormat = m_image->GetFormat();
+		m_createInfo.sampleCount = m_image->GetSampleCount();
+		m_createInfo.mipLevelCount = m_image->GetMipLevelCount();
+		m_createInfo.arrayLayerCount = m_image->GetArrayLayerCount();
+		m_createInfo.usageFlags = m_image->GetUsageFlags();
+		m_createInfo.memoryUsage = m_image->GetMemoryUsage();
+		m_createInfo.initialState = m_image->GetInitialState();
+		m_createInfo.RTVClearValue = m_image->GetRTVClearValue();
+		m_createInfo.DSVClearValue = m_image->GetDSVClearValue();
+		m_createInfo.concurrentMultiQueueUsage = m_image->GetConcurrentMultiQueueUsageEnabled();
+	}
+
+	// Yes, mCreateInfo will self overwrite in the following function call.
+	Result ppxres = DeviceObject<TextureCreateInfo>::create(pCreateInfo);
+	if (Failed(ppxres)) return ppxres;
+
+	return SUCCESS;
+}
+
+Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
+{
+	// Image
+	if (IsNull(pCreateInfo.pImage))
+	{
+		if (pCreateInfo.usageFlags.bits.colorAttachment && pCreateInfo.usageFlags.bits.depthStencilAttachment)
+		{
+			ASSERT_MSG(false, "texture cannot be both color attachment and depth stencil attachment");
+			return ERROR_INVALID_CREATE_ARGUMENT;
+		}
+
+		ImageCreateInfo ci = {};
+		ci.type = pCreateInfo.imageType;
+		ci.width = pCreateInfo.width;
+		ci.height = pCreateInfo.height;
+		ci.depth = pCreateInfo.depth;
+		ci.format = pCreateInfo.imageFormat;
+		ci.sampleCount = pCreateInfo.sampleCount;
+		ci.mipLevelCount = pCreateInfo.mipLevelCount;
+		ci.arrayLayerCount = pCreateInfo.arrayLayerCount;
+		ci.usageFlags = pCreateInfo.usageFlags;
+		ci.memoryUsage = pCreateInfo.memoryUsage;
+		ci.initialState = pCreateInfo.initialState;
+		ci.RTVClearValue = pCreateInfo.RTVClearValue;
+		ci.DSVClearValue = pCreateInfo.DSVClearValue;
+		ci.pApiObject = nullptr;
+		ci.ownership = pCreateInfo.ownership;
+		ci.concurrentMultiQueueUsage = pCreateInfo.concurrentMultiQueueUsage;
+		ci.createFlags = pCreateInfo.imageCreateFlags;
+
+		Result ppxres = GetDevice()->CreateImage(&ci, &m_image);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "texture create image failed");
+			return ppxres;
+		}
+	}
+
+	if (pCreateInfo.usageFlags.bits.sampled)
+	{
+		SampledImageViewCreateInfo ci = SampledImageViewCreateInfo::GuessFromImage(m_image);
+		if (pCreateInfo.sampledImageViewType != IMAGE_VIEW_TYPE_UNDEFINED) 
+		{
+			ci.imageViewType = pCreateInfo.sampledImageViewType;
+		}
+		ci.pYcbcrConversion = pCreateInfo.pSampledImageYcbcrConversion;
+
+		Result ppxres = GetDevice()->CreateSampledImageView(&ci, &m_sampledImageView);
+		if (Failed(ppxres)) 
+		{
+			ASSERT_MSG(false, "texture create sampled image view failed");
+			return ppxres;
+		}
+	}
+
+	if (pCreateInfo.usageFlags.bits.colorAttachment)
+	{
+		RenderTargetViewCreateInfo ci = RenderTargetViewCreateInfo::GuessFromImage(m_image);
+		if (pCreateInfo.renderTargetViewFormat != FORMAT_UNDEFINED)
+		{
+			ci.format = pCreateInfo.renderTargetViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateRenderTargetView(&ci, &m_renderTargetView);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "texture create render target view failed");
+			return ppxres;
+		}
+	}
+
+	if (pCreateInfo.usageFlags.bits.depthStencilAttachment)
+	{
+		DepthStencilViewCreateInfo ci = DepthStencilViewCreateInfo::GuessFromImage(m_image);
+		if (pCreateInfo.depthStencilViewFormat != FORMAT_UNDEFINED)
+		{
+			ci.format = pCreateInfo.depthStencilViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateDepthStencilView(&ci, &m_depthStencilView);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "texture create depth stencil view failed");
+			return ppxres;
+		}
+	}
+
+	if (pCreateInfo.usageFlags.bits.storage)
+	{
+		StorageImageViewCreateInfo ci = StorageImageViewCreateInfo::GuessFromImage(m_image);
+		if (pCreateInfo.storageImageViewFormat != FORMAT_UNDEFINED)
+		{
+			ci.format = pCreateInfo.storageImageViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateStorageImageView(&ci, &m_storageImageView);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "texture create storage image view failed");
+			return ppxres;
+		}
+	}
+
+	return SUCCESS;
+}
+
+void Texture::destroyApiObjects()
+{
+	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != OWNERSHIP_REFERENCE))
+	{
+		GetDevice()->DestroySampledImageView(m_sampledImageView);
+		mSampledImageView.Reset();
+	}
+
+	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != OWNERSHIP_REFERENCE))
+	{
+		GetDevice()->DestroyRenderTargetView(m_renderTargetView);
+		m_renderTargetView.Reset();
+	}
+
+	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != OWNERSHIP_REFERENCE))
+	{
+		GetDevice()->DestroyDepthStencilView(m_depthStencilView);
+		m_depthStencilView.Reset();
+	}
+
+	if (m_storageImageView && (m_storageImageView->GetOwnership() != OWNERSHIP_REFERENCE))
+	{
+		GetDevice()->DestroyStorageImageView(m_storageImageView);
+		m_storageImageView.Reset();
+	}
+
+	if (m_image && (m_image->GetOwnership() != OWNERSHIP_REFERENCE))
+	{
+		GetDevice()->DestroyImage(m_image);
+		m_image.Reset();
+	}
+}
+
+ImageType Texture::GetImageType() const
+{
+	return m_image->GetType();
+}
+
+uint32_t Texture::GetWidth() const
+{
+	return m_image->GetWidth();
+}
+
+uint32_t Texture::GetHeight() const
+{
+	return m_image->GetHeight();
+}
+
+uint32_t Texture::GetDepth() const
+{
+	return m_image->GetDepth();
+}
+
+Format Texture::GetImageFormat() const
+{
+	return m_image->GetFormat();
+}
+
+SampleCount Texture::GetSampleCount() const
+{
+	return m_image->GetSampleCount();
+}
+
+uint32_t Texture::GetMipLevelCount() const
+{
+	return m_image->GetMipLevelCount();
+}
+
+uint32_t Texture::GetArrayLayerCount() const
+{
+	return m_image->GetArrayLayerCount();
+}
+
+const ImageUsageFlags& Texture::GetUsageFlags() const
+{
+	return m_image->GetUsageFlags();
+}
+
+MemoryUsage Texture::GetMemoryUsage() const
+{
+	return m_image->GetMemoryUsage();
+}
+
+Format Texture::GetSampledImageViewFormat() const
+{
+	return m_sampledImageView ? m_sampledImageView->GetFormat() : FORMAT_UNDEFINED;
+}
+
+Format Texture::GetRenderTargetViewFormat() const
+{
+	return m_renderTargetView ? m_renderTargetView->GetFormat() : FORMAT_UNDEFINED;
+}
+
+Format Texture::GetDepthStencilViewFormat() const
+{
+	return m_depthStencilView ? m_depthStencilView->GetFormat() : FORMAT_UNDEFINED;
+}
+
+Format Texture::GetStorageImageViewFormat() const
+{
+	return m_storageImageView ? m_storageImageView->GetFormat() : FORMAT_UNDEFINED;
+}
+
+#pragma endregion
 
 //===================================================================
 // OLD
@@ -717,7 +1139,7 @@ VulkanImage::VulkanImage(RenderDevice& device, const ImageCreateInfo& createInfo
 
 	//if ((m_initialState != RESOURCE_STATE_UNDEFINED) && !m_pApiObject)
 	//{
-	//	grfx::QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
+	//	QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
 	//	if (!grfxQueue)
 	//		return;
 
