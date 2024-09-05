@@ -288,6 +288,40 @@ struct DepthStencilViewCreateInfo final
 	static DepthStencilViewCreateInfo GuessFromImage(Image* pImage);
 };
 
+class DepthStencilView : public DeviceObject<DepthStencilViewCreateInfo>, public ImageView
+{
+public:
+	DepthStencilView() {}
+	virtual ~DepthStencilView() {}
+
+	ImagePtr          GetImage() const { return m_createInfo.pImage; }
+	Format            GetFormat() const { return m_createInfo.format; }
+	SampleCount       GetSampleCount() const { return GetImage()->GetSampleCount(); }
+	uint32_t          GetMipLevel() const { return m_createInfo.mipLevel; }
+	uint32_t          GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	AttachmentLoadOp  GetDepthLoadOp() const { return m_createInfo.depthLoadOp; }
+	AttachmentStoreOp GetDepthStoreOp() const { return m_createInfo.depthStoreOp; }
+	AttachmentLoadOp  GetStencilLoadOp() const { return m_createInfo.stencilLoadOp; }
+	AttachmentStoreOp GetStencilStoreOp() const { return m_createInfo.stencilStoreOp; }
+};
+
+struct RenderTargetViewCreateInfo
+{
+	Image* pImage = nullptr;
+	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Format            format = FORMAT_UNDEFINED;
+	uint32_t                mipLevel = 0;
+	uint32_t                mipLevelCount = 0;
+	uint32_t                arrayLayer = 0;
+	uint32_t                arrayLayerCount = 0;
+	ComponentMapping  components = {};
+	AttachmentLoadOp  loadOp = ATTACHMENT_LOAD_OP_LOAD;
+	AttachmentStoreOp storeOp = ATTACHMENT_STORE_OP_STORE;
+	Ownership         ownership = OWNERSHIP_REFERENCE;
+
+	static RenderTargetViewCreateInfo GuessFromImage(Image* pImage);
+};
+
 #pragma endregion
 
 
