@@ -88,7 +88,7 @@ struct BufferCreateInfo final
 	Ownership        ownership = OWNERSHIP_REFERENCE;
 };
 
-class Buffer : public DeviceObject<BufferCreateInfo>
+class Buffer final : public DeviceObject<BufferCreateInfo>
 {
 	friend class RenderDevice;
 public:
@@ -137,6 +137,158 @@ struct VertexBufferView final
 
 #pragma endregion
 
+#pragma region Image
+
+struct ImageCreateInfo final
+{
+	ImageType              type = IMAGE_TYPE_2D;
+	uint32_t               width = 0;
+	uint32_t               height = 0;
+	uint32_t               depth = 0;
+	Format                 format = FORMAT_UNDEFINED;
+	SampleCount            sampleCount = SAMPLE_COUNT_1;
+	uint32_t               mipLevelCount = 1;
+	uint32_t               arrayLayerCount = 1;
+	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
+	MemoryUsage            memoryUsage = MEMORY_USAGE_GPU_ONLY;   // D3D12 will fail on any other memory usage
+	ResourceState          initialState = RESOURCE_STATE_GENERAL; // This may not be the best choice
+	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
+	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
+	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
+	Ownership              ownership = OWNERSHIP_REFERENCE;
+	bool                   concurrentMultiQueueUsage = false;
+	ImageCreateFlags       createFlags = {};
+
+	// Returns a create info for sampled image
+	static ImageCreateInfo SampledImage2D(
+		uint32_t    width,
+		uint32_t    height,
+		Format      format,
+		SampleCount sampleCount = SAMPLE_COUNT_1,
+		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY);
+
+	// Returns a create info for sampled image and depth stencil target
+	static ImageCreateInfo DepthStencilTarget(
+		uint32_t    width,
+		uint32_t    height,
+		Format      format,
+		SampleCount sampleCount = SAMPLE_COUNT_1);
+
+	// Returns a create info for sampled image and render target
+	static ImageCreateInfo RenderTarget2D(
+		uint32_t    width,
+		uint32_t    height,
+		Format      format,
+		SampleCount sampleCount = SAMPLE_COUNT_1);
+};
+
+class Image final : public DeviceObject<ImageCreateInfo>
+{
+	friend class RenderDevice;
+public:
+	ImageType                     GetType() const { return m_createInfo.type; }
+	uint32_t                      GetWidth() const { return m_createInfo.width; }
+	uint32_t                      GetHeight() const { return m_createInfo.height; }
+	uint32_t                      GetDepth() const { return m_createInfo.depth; }
+	Format                        GetFormat() const { return m_createInfo.format; }
+	SampleCount                   GetSampleCount() const { return m_createInfo.sampleCount; }
+	uint32_t                      GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
+	uint32_t                      GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
+	const ImageUsageFlags&        GetUsageFlags() const { return m_createInfo.usageFlags; }
+	MemoryUsage                   GetMemoryUsage() const { return m_createInfo.memoryUsage; }
+	ResourceState                 GetInitialState() const { return m_createInfo.initialState; }
+	const RenderTargetClearValue& GetRTVClearValue() const { return m_createInfo.RTVClearValue; }
+	const DepthStencilClearValue& GetDSVClearValue() const { return m_createInfo.DSVClearValue; }
+	bool                          GetConcurrentMultiQueueUsageEnabled() const { return m_createInfo.concurrentMultiQueueUsage; }
+	ImageCreateFlags              GetCreateFlags() const { return m_createInfo.createFlags; }
+
+	// Convenience functions
+	ImageViewType GuessImageViewType(bool isCube = false) const;
+
+	Result MapMemory(uint64_t offset, void** ppMappedAddress);
+	void   UnmapMemory();
+
+private:
+	Result create(const ImageCreateInfo& pCreateInfo) final;
+};
+
+namespace internal
+{
+	class ImageResourceView
+	{
+	public:
+		ImageResourceView() {}
+		virtual ~ImageResourceView() {}
+	};
+} // namespace internal
+
+// This class exists to genericize descriptor updates for Vulkan's 'image' based resources.
+class ImageView
+{
+public:
+	ImageView() {}
+	virtual ~ImageView() {}
+
+	const internal::ImageResourceView* GetResourceView() const { return m_resourceView.get(); }
+
+protected:
+	void setResourceView(std::unique_ptr<internal::ImageResourceView>&& view)
+	{
+		m_resourceView = std::move(view);
+	}
+
+private:
+	std::unique_ptr<internal::ImageResourceView> m_resourceView;
+};
+
+struct SamplerCreateInfo final
+{
+	Filter                  magFilter = FILTER_NEAREST;
+	Filter                  minFilter = FILTER_NEAREST;
+	SamplerMipmapMode       mipmapMode = SAMPLER_MIPMAP_MODE_NEAREST;
+	SamplerAddressMode      addressModeU = SAMPLER_ADDRESS_MODE_REPEAT;
+	SamplerAddressMode      addressModeV = SAMPLER_ADDRESS_MODE_REPEAT;
+	SamplerAddressMode      addressModeW = SAMPLER_ADDRESS_MODE_REPEAT;
+	float                   mipLodBias = 0.0f;
+	bool                    anisotropyEnable = false;
+	float                   maxAnisotropy = 0.0f;
+	bool                    compareEnable = false;
+	CompareOp               compareOp = COMPARE_OP_NEVER;
+	float                   minLod = 0.0f;
+	float                   maxLod = 1.0f;
+	BorderColor             borderColor = BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+	SamplerYcbcrConversion* pYcbcrConversion = nullptr; // Leave null if not required.
+	Ownership               ownership = OWNERSHIP_REFERENCE;
+	SamplerCreateFlags      createFlags = {};
+};
+
+class Sampler : public DeviceObject<SamplerCreateInfo>
+{
+public:
+	Sampler() {}
+	virtual ~Sampler() {}
+};
+
+struct DepthStencilViewCreateInfo final
+{
+	Image* pImage = nullptr;
+	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Format            format = FORMAT_UNDEFINED;
+	uint32_t          mipLevel = 0;
+	uint32_t          mipLevelCount = 0;
+	uint32_t          arrayLayer = 0;
+	uint32_t          arrayLayerCount = 0;
+	ComponentMapping  components = {};
+	AttachmentLoadOp  depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+	AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_STORE;
+	AttachmentLoadOp  stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+	AttachmentStoreOp stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	Ownership         ownership = OWNERSHIP_REFERENCE;
+
+	static DepthStencilViewCreateInfo GuessFromImage(Image* pImage);
+};
+
+#pragma endregion
 
 
 //===================================================================
