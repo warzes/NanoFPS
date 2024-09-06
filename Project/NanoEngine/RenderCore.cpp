@@ -2382,6 +2382,183 @@ Result Bitmap::LoadFromMemory(const size_t dataSize, const void* pData, Bitmap* 
 
 #pragma endregion
 
+#pragma region Font
+
+Font::Font()
+{
+}
+
+Font::~Font()
+{
+}
+
+void Font::AcquireFontMetrics()
+{
+	stbtt_GetFontVMetrics(
+		&mObject->fontInfo,
+		&mObject->ascent,
+		&mObject->descent,
+		&mObject->lineGap);
+}
+
+Result Font::CreateFromFile(const std::filesystem::path& path, Font* pFont)
+{
+	if (IsNull(pFont)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	if (!std::filesystem::exists(path)) {
+		return ERROR_PATH_DOES_NOT_EXIST;
+	}
+
+	std::ifstream is(path.c_str(), std::ios::binary);
+	if (!is.is_open()) {
+		return ERROR_BAD_DATA_SOURCE;
+	}
+
+	is.seekg(0, std::ios::end);
+	size_t size = is.tellg();
+	is.seekg(0, std::ios::beg);
+
+	auto object = std::make_shared<Font::Object>();
+	if (!object) {
+		return ERROR_ALLOCATION_FAILED;
+	}
+
+	object->fontData.resize(size);
+	is.read(reinterpret_cast<char*>(object->fontData.data()), size);
+
+	int stbres = stbtt_InitFont(&object->fontInfo, object->fontData.data(), 0);
+	if (stbres == 0) {
+		return Result::ERROR_FONT_PARSE_FAILED;
+	}
+
+	pFont->mObject = object;
+	pFont->AcquireFontMetrics();
+
+	return SUCCESS;
+}
+
+Result Font::CreateFromMemory(size_t size, const char* pData, Font* pFont)
+{
+	if (IsNull(pFont)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	if ((size == 0) || IsNull(pData)) {
+		return ERROR_BAD_DATA_SOURCE;
+	}
+
+	auto object = std::make_shared<Font::Object>();
+	if (!object) {
+		return ERROR_ALLOCATION_FAILED;
+	}
+
+	object->fontData.resize(size);
+	std::memcpy(object->fontData.data(), pData, size);
+
+	int stbres = stbtt_InitFont(&object->fontInfo, object->fontData.data(), 0);
+	if (stbres == 0) {
+		return Result::ERROR_FONT_PARSE_FAILED;
+	}
+
+	pFont->mObject = object;
+	pFont->AcquireFontMetrics();
+
+	return SUCCESS;
+}
+
+float Font::GetScale(float fontSizeInPixels) const
+{
+	float scale = stbtt_ScaleForPixelHeight(&mObject->fontInfo, fontSizeInPixels);
+	return scale;
+}
+
+void Font::GetFontMetrics(float fontSizeInPixels, FontMetrics* pMetrics) const
+{
+	if (IsNull(pMetrics)) {
+		return;
+	}
+
+	float scale = stbtt_ScaleForPixelHeight(&mObject->fontInfo, fontSizeInPixels);
+
+	int ascent = 0;
+	int descent = 0;
+	int lineGap = 0;
+	stbtt_GetFontVMetrics(
+		&mObject->fontInfo,
+		&ascent,
+		&descent,
+		&lineGap);
+
+	pMetrics->ascent = ascent * scale;
+	pMetrics->descent = descent * scale;
+	pMetrics->lineGap = lineGap * scale;
+}
+
+void Font::GetGlyphMetrics(
+	float         fontSizeInPixels,
+	uint32_t      codepoint,
+	float         subpixelShiftX,
+	float         subpixelShiftY,
+	GlyphMetrics* pMetrics) const
+{
+	if (IsNull(pMetrics)) {
+		return;
+	}
+
+	float scale = GetScale(fontSizeInPixels);
+
+	int advanceWidth = 0;
+	int leftBearing = 0;
+	stbtt_GetCodepointHMetrics(
+		&mObject->fontInfo,
+		static_cast<int>(codepoint),
+		&advanceWidth,
+		&leftBearing);
+	pMetrics->advance = advanceWidth * scale;
+	pMetrics->leftBearing = leftBearing * scale;
+
+	stbtt_GetCodepointBitmapBoxSubpixel(
+		&mObject->fontInfo,
+		static_cast<int>(codepoint),
+		scale,
+		scale,
+		subpixelShiftX,
+		subpixelShiftY,
+		&pMetrics->box.x0,
+		&pMetrics->box.y0,
+		&pMetrics->box.x1,
+		&pMetrics->box.y1);
+}
+
+void Font::RenderGlyphBitmap(
+	float          fontSizeInPixels,
+	uint32_t       codepoint,
+	float          subpixelShiftX,
+	float          subpixelShiftY,
+	uint32_t       glyphWidth,
+	uint32_t       glyphHeight,
+	uint32_t       rowStride,
+	unsigned char* pOutput) const
+{
+	float scale = stbtt_ScaleForPixelHeight(&mObject->fontInfo, fontSizeInPixels);
+
+	stbtt_MakeCodepointBitmapSubpixel(
+		&mObject->fontInfo,
+		pOutput,
+		static_cast<int>(glyphWidth),
+		static_cast<int>(glyphHeight),
+		static_cast<int>(rowStride),
+		scale,
+		scale,
+		subpixelShiftX,
+		subpixelShiftY,
+		static_cast<int>(codepoint));
+}
+
+#pragma endregion
+
 #pragma region TriMesh
 
 TriMesh::TriMesh()
@@ -5595,7 +5772,8 @@ Result Mipmap::SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap
 
 #pragma region grfx util
 
-namespace grfx_util {
+namespace grfx_util
+{
 
 	Format ToGrfxFormat(Bitmap::Format value)
 	{

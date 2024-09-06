@@ -123,7 +123,7 @@ Left handed
 
 #include <stb/stb_image.h>
 #include <stb/stb_image_resize.h>
-//#include <stb/stb_truetype.h>
+#include <stb/stb_truetype.h>
 
 #include <gli/gli.hpp>
 #include <gli/target.hpp>
@@ -131,7 +131,7 @@ Left handed
 
 #include <tiny_obj_loader.h>
 
-//#include <utf8.h>
+#include <utf8.h>
 
 #undef near
 #undef far

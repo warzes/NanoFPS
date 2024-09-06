@@ -25,6 +25,29 @@ public:
 	uint32_t GetTransferQueueFamilyIndex() const;
 	std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
 
+	Result CreateBuffer(const BufferCreateInfo& createInfo, Buffer** ppBuffer);
+	void   DestroyBuffer(const Buffer* pBuffer);
+
+	Result CreateCommandPool(const CommandPoolCreateInfo& createInfo, CommandPool** ppCommandPool);
+	void   DestroyCommandPool(const CommandPool* pCommandPool);
+
+	Result CreateComputePipeline(const ComputePipelineCreateInfo& createInfo, ComputePipeline** ppComputePipeline);
+	void   DestroyComputePipeline(const ComputePipeline* pComputePipeline);
+
+	Result CreateDepthStencilView(const DepthStencilViewCreateInfo& createInfo, DepthStencilView** ppDepthStencilView);
+	void   DestroyDepthStencilView(const DepthStencilView* pDepthStencilView);
+
+	Result CreateDescriptorPool(const DescriptorPoolCreateInfo& pCreateInfo, DescriptorPool** ppDescriptorPool);
+	void   DestroyDescriptorPool(const DescriptorPool* pDescriptorPool);
+
+	Result CreateDescriptorSetLayout(const DescriptorSetLayoutCreateInfo* pCreateInfo, DescriptorSetLayout** ppDescriptorSetLayout);
+	void   DestroyDescriptorSetLayout(const DescriptorSetLayout* pDescriptorSetLayout);
+
+	Result CreateDrawPass(const grfx::DrawPassCreateInfo* pCreateInfo, grfx::DrawPass** ppDrawPass);
+	Result CreateDrawPass(const grfx::DrawPassCreateInfo2* pCreateInfo, grfx::DrawPass** ppDrawPass);
+	Result CreateDrawPass(const grfx::DrawPassCreateInfo3* pCreateInfo, grfx::DrawPass** ppDrawPass);
+	void   DestroyDrawPass(const grfx::DrawPass* pDrawPass);
+
 	Result CreateFence(const FenceCreateInfo& createInfo, Fence** ppFence);
 	void   DestroyFence(const Fence* pFence);
 

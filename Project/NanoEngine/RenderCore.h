@@ -1882,6 +1882,77 @@ void Bitmap::Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataTy
 
 #pragma endregion
 
+#pragma region Font
+
+struct FontMetrics
+{
+	float ascent = 0;
+	float descent = 0;
+	float lineGap = 0;
+};
+
+struct GlyphBox
+{
+	int32_t x0 = 0;
+	int32_t y0 = 0;
+	int32_t x1 = 0;
+	int32_t y1 = 0;
+};
+
+struct GlyphMetrics
+{
+	float    advance = 0;
+	float    leftBearing = 0;
+	GlyphBox box = {};
+};
+
+class Font
+{
+public:
+	Font();
+	virtual ~Font();
+
+	static Result CreateFromFile(const std::filesystem::path& path, Font* pFont);
+	static Result CreateFromMemory(size_t size, const char* pData, Font* pFont);
+
+	float GetScale(float fontSizeInPixels) const;
+
+	void GetFontMetrics(float fontSizeInPixels, FontMetrics* pMetrics) const;
+
+	void GetGlyphMetrics(
+		float         fontSizeInPixels,
+		uint32_t      codepoint,
+		float         subpixelShiftX,
+		float         subpixelShiftY,
+		GlyphMetrics* pMetrics) const;
+
+	void RenderGlyphBitmap(
+		float          fontSizeInPixels,
+		uint32_t       codepoint,
+		float          subpixelShiftX,
+		float          subpixelShiftY,
+		uint32_t       glyphWidth,
+		uint32_t       glyphHeight,
+		uint32_t       rowStride,
+		unsigned char* pOutput) const;
+
+private:
+	void AcquireFontMetrics();
+
+private:
+	struct Object
+	{
+		std::vector<unsigned char> fontData;
+		stbtt_fontinfo             fontInfo;
+		int                        ascent = 0;
+		int                        descent = 0;
+		int                        lineGap = 0;
+	};
+	std::shared_ptr<Object> mObject;
+};
+
+#pragma endregion
+
 #pragma region TriMesh
 
 enum TriMeshAttributeDim
@@ -2483,297 +2554,300 @@ private:
 
 #pragma region grfx util
 
-class ImageOptions
+namespace grfx_util
 {
-public:
-	ImageOptions() {}
-	~ImageOptions() {}
 
-	ImageOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
-	ImageOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
+	class ImageOptions
+	{
+	public:
+		ImageOptions() {}
+		~ImageOptions() {}
 
-private:
-	ImageUsageFlags mAdditionalUsage = ImageUsageFlags();
-	uint32_t              mMipLevelCount = REMAINING_MIP_LEVELS;
+		ImageOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
+		ImageOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
 
-	friend Result CreateImageFromBitmap(
+	private:
+		ImageUsageFlags mAdditionalUsage = ImageUsageFlags();
+		uint32_t              mMipLevelCount = REMAINING_MIP_LEVELS;
+
+		friend Result CreateImageFromBitmap(
+			Queue* pQueue,
+			const Bitmap* pBitmap,
+			Image** ppImage,
+			const ImageOptions& options);
+
+		friend Result CreateImageFromCompressedImage(
+			Queue* pQueue,
+			const gli::texture& image,
+			Image** ppImage,
+			const ImageOptions& options);
+
+		friend Result CreateImageFromFile(
+			Queue* pQueue,
+			const std::filesystem::path& path,
+			Image** ppImage,
+			const ImageOptions& options,
+			bool                         useGpu);
+
+		friend Result CreateImageFromBitmapGpu(
+			Queue* pQueue,
+			const Bitmap* pBitmap,
+			Image** ppImage,
+			const ImageOptions& options);
+	};
+
+	Result CopyBitmapToImage(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image* pImage,
+		uint32_t            mipLevel,
+		uint32_t            arrayLayer,
+		ResourceState stateBefore,
+		ResourceState stateAfter);
+
+	Result CreateImageFromBitmap(
 		Queue* pQueue,
 		const Bitmap* pBitmap,
 		Image** ppImage,
-		const ImageOptions& options);
+		const ImageOptions& options = ImageOptions());
 
-	friend Result CreateImageFromCompressedImage(
-		Queue* pQueue,
-		const gli::texture& image,
-		Image** ppImage,
-		const ImageOptions& options);
-
-	friend Result CreateImageFromFile(
+	Result CreateImageFromFile(
 		Queue* pQueue,
 		const std::filesystem::path& path,
 		Image** ppImage,
-		const ImageOptions& options,
-		bool                         useGpu);
+		const ImageOptions& options = ImageOptions(),
+		bool                         useGpu = false);
 
-	friend Result CreateImageFromBitmapGpu(
+	Result CreateImageFromBitmapGpu(
 		Queue* pQueue,
 		const Bitmap* pBitmap,
 		Image** ppImage,
-		const ImageOptions& options);
-};
+		const ImageOptions& options = ImageOptions());
 
-Result CopyBitmapToImage(
-	Queue* pQueue,
-	const Bitmap* pBitmap,
-	Image* pImage,
-	uint32_t            mipLevel,
-	uint32_t            arrayLayer,
-	ResourceState stateBefore,
-	ResourceState stateAfter);
+	class TextureOptions
+	{
+	public:
+		TextureOptions() {}
+		~TextureOptions() {}
 
-Result CreateImageFromBitmap(
-	Queue* pQueue,
-	const Bitmap* pBitmap,
-	Image** ppImage,
-	const ImageOptions& options = ImageOptions());
+		TextureOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
+		TextureOptions& InitialState(ResourceState state) { mInitialState = state; return *this; }
+		TextureOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
+		TextureOptions& SamplerYcbcrConversion(SamplerYcbcrConversion* pYcbcrConversion) { mYcbcrConversion = pYcbcrConversion; return *this; }
 
-Result CreateImageFromFile(
-	Queue* pQueue,
-	const std::filesystem::path& path,
-	Image** ppImage,
-	const ImageOptions& options = ImageOptions(),
-	bool                         useGpu = false);
+	private:
+		ImageUsageFlags         mAdditionalUsage = ImageUsageFlags();
+		ResourceState           mInitialState = ResourceState::RESOURCE_STATE_SHADER_RESOURCE;
+		uint32_t                      mMipLevelCount = 1;
+		::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
 
-Result CreateImageFromBitmapGpu(
-	Queue* pQueue,
-	const Bitmap* pBitmap,
-	Image** ppImage,
-	const ImageOptions& options = ImageOptions());
+		friend Result CreateTextureFromBitmap(
+			Queue* pQueue,
+			const Bitmap* pBitmap,
+			Texture** ppTexture,
+			const TextureOptions& options);
 
-class TextureOptions
-{
-public:
-	TextureOptions() {}
-	~TextureOptions() {}
+		friend Result CreateTextureFromMipmap(
+			Queue* pQueue,
+			const Mipmap* pMipmap,
+			Texture** ppTexture,
+			const TextureOptions& options);
 
-	TextureOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
-	TextureOptions& InitialState(ResourceState state) { mInitialState = state; return *this; }
-	TextureOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
-	TextureOptions& SamplerYcbcrConversion(SamplerYcbcrConversion* pYcbcrConversion) { mYcbcrConversion = pYcbcrConversion; return *this; }
+		friend Result CreateTextureFromFile(
+			Queue* pQueue,
+			const std::filesystem::path& path,
+			Texture** ppTexture,
+			const TextureOptions& options);
+	};
 
-private:
-	ImageUsageFlags         mAdditionalUsage = ImageUsageFlags();
-	ResourceState           mInitialState = ResourceState::RESOURCE_STATE_SHADER_RESOURCE;
-	uint32_t                      mMipLevelCount = 1;
-	::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
+	Result CopyBitmapToTexture(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Texture* pTexture,
+		uint32_t            mipLevel,
+		uint32_t            arrayLayer,
+		ResourceState stateBefore,
+		ResourceState stateAfter);
 
-	friend Result CreateTextureFromBitmap(
+	Result CreateTextureFromBitmap(
 		Queue* pQueue,
 		const Bitmap* pBitmap,
 		Texture** ppTexture,
-		const TextureOptions& options);
+		const TextureOptions& options = TextureOptions());
 
-	friend Result CreateTextureFromMipmap(
+	// Mip level count from pMipmap is used. Mip level count from options is ignored.
+	Result CreateTextureFromMipmap(
 		Queue* pQueue,
 		const Mipmap* pMipmap,
 		Texture** ppTexture,
-		const TextureOptions& options);
+		const TextureOptions& options = TextureOptions());
 
-	friend Result CreateTextureFromFile(
+	Result CreateTextureFromFile(
 		Queue* pQueue,
 		const std::filesystem::path& path,
 		Texture** ppTexture,
-		const TextureOptions& options);
-};
+		const TextureOptions& options = TextureOptions());
 
-Result CopyBitmapToTexture(
-	Queue* pQueue,
-	const Bitmap* pBitmap,
-	Texture* pTexture,
-	uint32_t            mipLevel,
-	uint32_t            arrayLayer,
-	ResourceState stateBefore,
-	ResourceState stateAfter);
+	// Create a 1x1 texture with the specified pixel data. The format for the texture is derived from the pixel data type, which can be one of uint8, uint16, uint32 or float.
+	template <typename PixelDataType>
+	Result CreateTexture1x1(
+		Queue* pQueue,
+		const std::array<PixelDataType, 4> color,
+		Texture** ppTexture,
+		const TextureOptions& options = TextureOptions())
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppTexture);
 
-Result CreateTextureFromBitmap(
-	Queue* pQueue,
-	const Bitmap* pBitmap,
-	Texture** ppTexture,
-	const TextureOptions& options = TextureOptions());
+		Bitmap::Format format = Bitmap::FORMAT_UNDEFINED;
+		if constexpr (std::is_same_v<PixelDataType, float>) {
+			format = Bitmap::FORMAT_RGBA_FLOAT;
+		}
+		else if constexpr (std::is_same_v<PixelDataType, uint32_t>) {
+			format = Bitmap::FORMAT_RGBA_UINT32;
+		}
+		else if constexpr (std::is_same_v<PixelDataType, uint16_t>) {
+			format = Bitmap::FORMAT_RGBA_UINT16;
+		}
+		else if constexpr (std::is_same_v<PixelDataType, uint8_t>) {
+			format = Bitmap::FORMAT_RGBA_UINT8;
+		}
+		else {
+			ASSERT_MSG(false, "Invalid pixel data type: must be one of uint8, uint16, uint32 or float.")
+				return ERROR_INVALID_CREATE_ARGUMENT;
+		}
 
-// Mip level count from pMipmap is used. Mip level count from options is ignored.
-Result CreateTextureFromMipmap(
-	Queue* pQueue,
-	const Mipmap* pMipmap,
-	Texture** ppTexture,
-	const TextureOptions& options = TextureOptions());
+		// Create bitmap
+		Result ppxres = SUCCESS;
+		Bitmap bitmap = Bitmap::Create(1, 1, format, &ppxres);
+		if (Failed(ppxres)) {
+			return ERROR_BITMAP_CREATE_FAILED;
+		}
 
-Result CreateTextureFromFile(
-	Queue* pQueue,
-	const std::filesystem::path& path,
-	Texture** ppTexture,
-	const TextureOptions& options = TextureOptions());
+		// Fill color
+		bitmap.Fill(color[0], color[1], color[2], color[3]);
 
-// Create a 1x1 texture with the specified pixel data. The format for the texture is derived from the pixel data type, which can be one of uint8, uint16, uint32 or float.
-template <typename PixelDataType>
-Result CreateTexture1x1(
-	Queue* pQueue,
-	const std::array<PixelDataType, 4> color,
-	Texture** ppTexture,
-	const TextureOptions& options = TextureOptions())
-{
-	ASSERT_NULL_ARG(pQueue);
-	ASSERT_NULL_ARG(ppTexture);
-
-	Bitmap::Format format = Bitmap::FORMAT_UNDEFINED;
-	if constexpr (std::is_same_v<PixelDataType, float>) {
-		format = Bitmap::FORMAT_RGBA_FLOAT;
-	}
-	else if constexpr (std::is_same_v<PixelDataType, uint32_t>) {
-		format = Bitmap::FORMAT_RGBA_UINT32;
-	}
-	else if constexpr (std::is_same_v<PixelDataType, uint16_t>) {
-		format = Bitmap::FORMAT_RGBA_UINT16;
-	}
-	else if constexpr (std::is_same_v<PixelDataType, uint8_t>) {
-		format = Bitmap::FORMAT_RGBA_UINT8;
-	}
-	else {
-		ASSERT_MSG(false, "Invalid pixel data type: must be one of uint8, uint16, uint32 or float.")
-		return ERROR_INVALID_CREATE_ARGUMENT;
+		return CreateTextureFromBitmap(pQueue, &bitmap, ppTexture, options);
 	}
 
-	// Create bitmap
-	Result ppxres = SUCCESS;
-	Bitmap bitmap = Bitmap::Create(1, 1, format, &ppxres);
-	if (Failed(ppxres)) {
-		return ERROR_BITMAP_CREATE_FAILED;
-	}
+	// Creates an irradiance and an environment texture from an *.ibl file
+	Result CreateIBLTexturesFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Texture** ppIrradianceTexture,
+		Texture** ppEnvironmentTexture);
+	/*
 
-	// Fill color
-	bitmap.Fill(color[0], color[1], color[2], color[3]);
+	Cross Horizontal Left:
+			   _____
+			  |  0  |
+		 _____|_____|_____ _____
+		|  1  |  2  |  3  |  4  |
+		|_____|_____|_____|_____|
+			  |  5  |
+			  |_____|
 
-	return CreateTextureFromBitmap(pQueue, &bitmap, ppTexture, options);
-}
+	Cross Horizontal Right:
+					 _____
+					|  0  |
+		 ___________|_____|_____
+		|  1  |  2  |  3  |  4  |
+		|_____|_____|_____|_____|
+					|  5  |
+					|_____|
 
-// Creates an irradiance and an environment texture from an *.ibl file
-Result CreateIBLTexturesFromFile(
-	Queue* pQueue,
-	const std::filesystem::path& path,
-	Texture** ppIrradianceTexture,
-	Texture** ppEnvironmentTexture);
-/*
+	Cross Vertical Top:
+			   _____
+			  |  0  |
+		 _____|_____|_____
+		|  1  |  2  |  3  |
+		|_____|_____|_____|
+			  |  4  |
+			  |_____|
+			  |  5  |
+			  |_____|
 
-Cross Horizontal Left:
-		   _____
-		  |  0  |
-	 _____|_____|_____ _____
-	|  1  |  2  |  3  |  4  |
-	|_____|_____|_____|_____|
-		  |  5  |
-		  |_____|
+	Cross Vertical Bottom:
+			   _____
+			  |  0  |
+			  |_____|
+			  |  1  |
+		 _____|_____|_____
+		|  2  |  3  |  4  |
+		|_____|_____|_____|
+			  |  5  |
+			  |_____|
 
-Cross Horizontal Right:
-				 _____
-				|  0  |
-	 ___________|_____|_____
-	|  1  |  2  |  3  |  4  |
-	|_____|_____|_____|_____|
-				|  5  |
-				|_____|
+	Lat Long Horizontal:
+		 _____ _____ _____
+		|  0  |  1  |  2  |
+		|_____|_____|_____|
+		|  3  |  4  |  5  |
+		|_____|_____|_____|
 
-Cross Vertical Top:
-		   _____
-		  |  0  |
-	 _____|_____|_____
-	|  1  |  2  |  3  |
-	|_____|_____|_____|
-		  |  4  |
-		  |_____|
-		  |  5  |
-		  |_____|
+	Lat Long Vertical:
+		 _____ _____
+		|  0  |  1  |
+		|_____|_____|
+		|  2  |  3  |
+		|_____|_____|
+		|  4  |  5  |
+		|_____|_____|
 
-Cross Vertical Bottom:
-		   _____
-		  |  0  |
-		  |_____|
-		  |  1  |
-	 _____|_____|_____
-	|  2  |  3  |  4  |
-	|_____|_____|_____|
-		  |  5  |
-		  |_____|
-
-Lat Long Horizontal:
-	 _____ _____ _____
-	|  0  |  1  |  2  |
-	|_____|_____|_____|
-	|  3  |  4  |  5  |
-	|_____|_____|_____|
-
-Lat Long Vertical:
-	 _____ _____
-	|  0  |  1  |
-	|_____|_____|
-	|  2  |  3  |
-	|_____|_____|
-	|  4  |  5  |
-	|_____|_____|
-
-Strip Horizontal:
-	 _____ _____ _____ _____ _____ _____
-	|  0  |  1  |  2  |  3  |  4  |  5  |
-	|_____|_____|_____|_____|_____|_____|
+	Strip Horizontal:
+		 _____ _____ _____ _____ _____ _____
+		|  0  |  1  |  2  |  3  |  4  |  5  |
+		|_____|_____|_____|_____|_____|_____|
 
 
-Strip Vertical:
-	 _____
-	|  0  |
-	|_____|
-	|  1  |
-	|_____|
-	|  2  |
-	|_____|
-	|  3  |
-	|_____|
-	|  4  |
-	|_____|
-	|  5  |
-	|_____|
+	Strip Vertical:
+		 _____
+		|  0  |
+		|_____|
+		|  1  |
+		|_____|
+		|  2  |
+		|_____|
+		|  3  |
+		|_____|
+		|  4  |
+		|_____|
+		|  5  |
+		|_____|
 
-*/
-enum CubeImageLayout
-{
-	CUBE_IMAGE_LAYOUT_UNDEFINED = 0,
-	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT = 1,
-	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_RIGHT = 2,
-	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP = 3,
-	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_BOTTOM = 4,
-	CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL = 5,
-	CUBE_IMAGE_LAYOUT_LAT_LONG_VERTICAL = 6,
-	CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL = 7,
-	CUBE_IMAGE_LAYOUT_STRIP_VERTICAL = 8,
-	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT,
-	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL = CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP,
-	CUBE_IMAGE_LAYOUT_LAT_LONG = CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL,
-	CUBE_IMAGE_LAYOUT_STRIP = CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL,
-};
+	*/
+	enum CubeImageLayout
+	{
+		CUBE_IMAGE_LAYOUT_UNDEFINED = 0,
+		CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT = 1,
+		CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_RIGHT = 2,
+		CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP = 3,
+		CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_BOTTOM = 4,
+		CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL = 5,
+		CUBE_IMAGE_LAYOUT_LAT_LONG_VERTICAL = 6,
+		CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL = 7,
+		CUBE_IMAGE_LAYOUT_STRIP_VERTICAL = 8,
+		CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT,
+		CUBE_IMAGE_LAYOUT_CROSS_VERTICAL = CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP,
+		CUBE_IMAGE_LAYOUT_LAT_LONG = CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL,
+		CUBE_IMAGE_LAYOUT_STRIP = CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL,
+	};
 
-// Rotation is always clockwise.
-enum CubeFaceOp
-{
-	CUBE_FACE_OP_NONE = 0,
-	CUBE_FACE_OP_ROTATE_90 = 1,
-	CUBE_FACE_OP_ROTATE_180 = 2,
-	CUBE_FACE_OP_ROTATE_270 = 3,
-	CUBE_FACE_OP_INVERT_HORIZONTAL = 4,
-	CUBE_FACE_OP_INVERT_VERTICAL = 5,
-};
+	// Rotation is always clockwise.
+	enum CubeFaceOp
+	{
+		CUBE_FACE_OP_NONE = 0,
+		CUBE_FACE_OP_ROTATE_90 = 1,
+		CUBE_FACE_OP_ROTATE_180 = 2,
+		CUBE_FACE_OP_ROTATE_270 = 3,
+		CUBE_FACE_OP_INVERT_HORIZONTAL = 4,
+		CUBE_FACE_OP_INVERT_VERTICAL = 5,
+	};
 
-// See enum CubeImageLayout for explanation of layouts
-// Example - Use subimage 0 with 90 degrees CW rotation for posX face:
-//   layout = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
-//   posX   = PPX_ENCODE_CUBE_FACE(0, CUBE_FACE_OP_ROTATE_90, :CUBE_FACE_OP_NONE);
+	// See enum CubeImageLayout for explanation of layouts
+	// Example - Use subimage 0 with 90 degrees CW rotation for posX face:
+	//   layout = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
+	//   posX   = PPX_ENCODE_CUBE_FACE(0, CUBE_FACE_OP_ROTATE_90, :CUBE_FACE_OP_NONE);
 #define CUBE_OP_MASK           0xFF
 #define CUBE_OP_SUBIMAGE_SHIFT 0
 #define CUBE_OP_OP1_SHIFT      8
@@ -2788,45 +2862,47 @@ enum CubeFaceOp
 #define DECODE_CUBE_FACE_OP1(FACE)      (FACE >> CUBE_OP_OP1_SHIFT) & CUBE_OP_MASK
 #define DECODE_CUBE_FACE_OP2(FACE)      (FACE >> CUBE_OP_OP2_SHIFT) & CUBE_OP_MASK
 
-struct CubeMapCreateInfo
-{
-	CubeImageLayout layout = CUBE_IMAGE_LAYOUT_UNDEFINED;
-	uint32_t        posX = VALUE_IGNORED;
-	uint32_t        negX = VALUE_IGNORED;
-	uint32_t        posY = VALUE_IGNORED;
-	uint32_t        negY = VALUE_IGNORED;
-	uint32_t        posZ = VALUE_IGNORED;
-	uint32_t        negZ = VALUE_IGNORED;
-};
+	struct CubeMapCreateInfo
+	{
+		CubeImageLayout layout = CUBE_IMAGE_LAYOUT_UNDEFINED;
+		uint32_t        posX = VALUE_IGNORED;
+		uint32_t        negX = VALUE_IGNORED;
+		uint32_t        posY = VALUE_IGNORED;
+		uint32_t        negY = VALUE_IGNORED;
+		uint32_t        posZ = VALUE_IGNORED;
+		uint32_t        negZ = VALUE_IGNORED;
+	};
 
-Result CreateCubeMapFromFile(
-	Queue* pQueue,
-	const std::filesystem::path& path,
-	const CubeMapCreateInfo* pCreateInfo,
-	Image** ppImage,
-	const ImageUsageFlags& additionalImageUsage = ImageUsageFlags());
+	Result CreateCubeMapFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		const CubeMapCreateInfo* pCreateInfo,
+		Image** ppImage,
+		const ImageUsageFlags& additionalImageUsage = ImageUsageFlags());
 
-Result CreateMeshFromGeometry(
-	Queue* pQueue,
-	const Geometry* pGeometry,
-	Mesh** ppMesh);
+	Result CreateMeshFromGeometry(
+		Queue* pQueue,
+		const Geometry* pGeometry,
+		Mesh** ppMesh);
 
-Result CreateMeshFromTriMesh(
-	Queue* pQueue,
-	const TriMesh* pTriMesh,
-	Mesh** ppMesh);
+	Result CreateMeshFromTriMesh(
+		Queue* pQueue,
+		const TriMesh* pTriMesh,
+		Mesh** ppMesh);
 
-Result CreateMeshFromWireMesh(
-	Queue* pQueue,
-	const WireMesh* pWireMesh,
-	Mesh** ppMesh);
+	Result CreateMeshFromWireMesh(
+		Queue* pQueue,
+		const WireMesh* pWireMesh,
+		Mesh** ppMesh);
 
-Result CreateMeshFromFile(
-	Queue* pQueue,
-	const std::filesystem::path& path,
-	Mesh** ppMesh,
-	const TriMeshOptions& options = TriMeshOptions());
+	Result CreateMeshFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Mesh** ppMesh,
+		const TriMeshOptions& options = TriMeshOptions());
 
-Format ToGrfxFormat(Bitmap::Format value);
+	Format ToGrfxFormat(Bitmap::Format value);
+
+}
 
 #pragma endregion
