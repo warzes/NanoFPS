@@ -160,7 +160,7 @@ using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
 #define SEMANTIC_NAME_TEXCOORD  "TEXCOORD"
 #define SEMANTIC_NAME_TANGENT   "TANGENT"
 #define SEMANTIC_NAME_BITANGENT "BITANGENT"
-#define wSEMANTIC_NAME_CUSTOM   "CUSTOM"
+#define SEMANTIC_NAME_CUSTOM    "CUSTOM"
 
 #pragma endregion
 
@@ -1394,6 +1394,23 @@ const char* ToString(const gli::format& format);
 
 #pragma region Core Struct
 
+struct RangeU32 final
+{
+	uint32_t start;
+	uint32_t end;
+};
+
+inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
+{
+	return HasOverlapHalfOpen(r0.start, r0.end, r1.start, r1.end);
+}
+
+struct Extent2D final
+{
+	uint32_t width;
+	uint32_t height;
+};
+
 struct ComponentMapping final
 {
 	ComponentSwizzle r = COMPONENT_SWIZZLE_IDENTITY;
@@ -1652,5 +1669,1164 @@ private:
 	bool init(vkb::Device& vkbDevice, vkb::QueueType type);
 };
 using DeviceQueuePtr = std::shared_ptr<DeviceQueue>;
+
+#pragma endregion
+
+#pragma region Bitmap
+
+class Bitmap final
+{
+public:
+	enum DataType
+	{
+		DATA_TYPE_UNDEFINED = 0,
+		DATA_TYPE_UINT8,
+		DATA_TYPE_UINT16,
+		DATA_TYPE_UINT32,
+		DATA_TYPE_FLOAT,
+	};
+
+	enum Format
+	{
+		FORMAT_UNDEFINED = 0,
+		FORMAT_R_UINT8,
+		FORMAT_RG_UINT8,
+		FORMAT_RGB_UINT8,
+		FORMAT_RGBA_UINT8,
+		FORMAT_R_UINT16,
+		FORMAT_RG_UINT16,
+		FORMAT_RGB_UINT16,
+		FORMAT_RGBA_UINT16,
+		FORMAT_R_UINT32,
+		FORMAT_RG_UINT32,
+		FORMAT_RGB_UINT32,
+		FORMAT_RGBA_UINT32,
+		FORMAT_R_FLOAT,
+		FORMAT_RG_FLOAT,
+		FORMAT_RGB_FLOAT,
+		FORMAT_RGBA_FLOAT,
+	};
+
+	Bitmap();
+	Bitmap(const Bitmap& obj);
+	~Bitmap();
+
+	Bitmap& operator=(const Bitmap& rhs);
+
+	//! Creates a bitmap with internal storage.
+	static Result Create(uint32_t width, uint32_t height, Bitmap::Format format, Bitmap* pBitmap);
+	//! Creates a bitmap with external storage. If \b rowStride is 0, default row stride for format is used.
+	static Result Create(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage, Bitmap* pBitmap);
+	//! Creates a bitmap with external storage.
+	static Result Create(uint32_t width, uint32_t height, Bitmap::Format format, char* pExternalStorage, Bitmap* pBitmap);
+	//! Returns a bitmap with internal storage.
+	static Bitmap Create(uint32_t width, uint32_t height, Bitmap::Format format, Result* pResult = nullptr);
+	//! Returns a bitmap with external storage. If \b rowStride is 0, default row stride for format is used.
+	static Bitmap Create(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage, Result* pResult = nullptr);
+	//! Returns a bitmap with external storage.
+	static Bitmap Create(uint32_t width, uint32_t height, Bitmap::Format format, char* pExternalStorage, Result* pResult = nullptr);
+
+	// Returns true if dimensions are greater than one, format is valid, and storage is valid
+	bool IsOk() const;
+
+	uint32_t       GetWidth() const { return mWidth; }
+	uint32_t       GetHeight() const { return mHeight; }
+	Bitmap::Format GetFormat() const { return mFormat; };
+	uint32_t       GetChannelCount() const { return mChannelCount; }
+	uint32_t       GetPixelStride() const { return mPixelStride; }
+	uint32_t       GetRowStride() const { return mRowStride; }
+	char* GetData() const { return mData; }
+	uint64_t       GetFootprintSize(uint32_t rowStrideAlignment = 1) const;
+
+	Result Resize(uint32_t width, uint32_t height);
+	Result ScaleTo(Bitmap* pTargetBitmap) const;
+	Result ScaleTo(Bitmap* pTargetBitmap, stbir_filter filterType) const;
+
+	template <typename PixelDataType>
+	void Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataType a);
+
+	// Returns byte address of pixel at (x,y)
+	char* GetPixelAddress(uint32_t x, uint32_t y);
+	const char* GetPixelAddress(uint32_t x, uint32_t y) const;
+
+	// These functions will return null if the Bitmap's format doesn't the function. For example, GetPixel8u() returns null if the format is FORMAT_RGBA_FLOAT.
+	uint8_t* GetPixel8u(uint32_t x, uint32_t y);
+	const uint8_t* GetPixel8u(uint32_t x, uint32_t y) const;
+	uint16_t* GetPixel16u(uint32_t x, uint32_t y);
+	const uint16_t* GetPixel16u(uint32_t x, uint32_t y) const;
+	uint32_t* GetPixel32u(uint32_t x, uint32_t y);
+	const uint32_t* GetPixel32u(uint32_t x, uint32_t y) const;
+	float* GetPixel32f(uint32_t x, uint32_t y);
+	const float* GetPixel32f(uint32_t x, uint32_t y) const;
+
+	static uint32_t         ChannelSize(Bitmap::Format value);
+	static uint32_t         ChannelCount(Bitmap::Format value);
+	static Bitmap::DataType ChannelDataType(Bitmap::Format value);
+	static uint32_t         FormatSize(Bitmap::Format value);
+	static uint64_t         StorageFootprint(uint32_t width, uint32_t height, Bitmap::Format format);
+
+	static Result GetFileProperties(const std::filesystem::path& path, uint32_t* pWidth, uint32_t* pHeight, Bitmap::Format* pFormat);
+	static Result LoadFile(const std::filesystem::path& path, Bitmap* pBitmap);
+	//static Result SaveFilePNG(const std::filesystem::path& path, const Bitmap* pBitmap);
+	static bool   IsBitmapFile(const std::filesystem::path& path);
+
+	static Result LoadFromMemory(const size_t dataSize, const void* pData, Bitmap* pBitmap);
+
+	class PixelIterator
+	{
+	private:
+		friend class Bitmap;
+
+		PixelIterator(Bitmap* pBitmap)
+			: mBitmap(pBitmap)
+		{
+			Reset();
+		}
+
+	public:
+		void Reset()
+		{
+			mX = 0;
+			mY = 0;
+			mPixelAddress = mBitmap->GetPixelAddress(mX, mY);
+		}
+
+		bool Done() const
+		{
+			bool done = (mY >= mBitmap->GetHeight());
+			return done;
+		}
+
+		bool Next()
+		{
+			if (Done()) {
+				return false;
+			}
+
+			mX += 1;
+			mPixelAddress += mBitmap->GetPixelStride();
+			if (mX == mBitmap->GetWidth()) {
+				mY += 1;
+				mX = 0;
+				mPixelAddress = mBitmap->GetPixelAddress(mX, mY);
+			}
+
+			return Done() ? false : true;
+		}
+
+		uint32_t       GetX() const { return mX; }
+		uint32_t       GetY() const { return mY; }
+		Bitmap::Format GetFormat() const { return mBitmap->GetFormat(); }
+		uint32_t       GetChannelCount() const { return Bitmap::ChannelCount(GetFormat()); }
+
+		template <typename T>
+		T* GetPixelAddress() const { return reinterpret_cast<T*>(mPixelAddress); }
+
+	private:
+		Bitmap* mBitmap = nullptr;
+		uint32_t mX = 0;
+		uint32_t mY = 0;
+		char* mPixelAddress = nullptr;
+	};
+
+	PixelIterator GetPixelIterator() { return PixelIterator(this); }
+
+private:
+	void   InternalCtor();
+	Result InternalInitialize(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage);
+	Result InternalCopy(const Bitmap& obj);
+	void   FreeStbiDataIfNeeded();
+
+	// Stbi-specific functions/wrappers.
+	// These arguments generally mirror those for stbi_load, except format which is used to determine whether the call should be made to stbi_load or stbi_loadf (that is, whether the file to be read is in integer or floating point format).
+	static char* StbiLoad(const std::filesystem::path& path, Bitmap::Format format, int* pWidth, int* pHeight, int* pChannels, int desiredChannels);
+	// These arugments mirror those for stbi_info.
+	static Result StbiInfo(const std::filesystem::path& path, int* pX, int* pY, int* pComp);
+
+private:
+	uint32_t          mWidth = 0;
+	uint32_t          mHeight = 0;
+	Bitmap::Format    mFormat = Bitmap::FORMAT_UNDEFINED;
+	uint32_t          mChannelCount = 0;
+	uint32_t          mPixelStride = 0;
+	uint32_t          mRowStride = 0;
+	char* mData = nullptr;
+	bool              mDataIsFromStbi = false;
+	std::vector<char> mInternalStorage = {};
+};
+
+template <typename PixelDataType>
+void Bitmap::Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataType a)
+{
+	ASSERT_MSG(mData != nullptr, "data is null");
+	ASSERT_MSG(mFormat != Bitmap::FORMAT_UNDEFINED, "format is undefined");
+
+	PixelDataType rgba[4] = { r, g, b, a };
+
+	const uint32_t channelCount = Bitmap::ChannelCount(mFormat);
+
+	char* pData = mData;
+	for (uint32_t y = 0; y < mHeight; ++y)
+	{
+		for (uint32_t x = 0; x < mWidth; ++x)
+		{
+			PixelDataType* pPixelData = reinterpret_cast<PixelDataType*>(pData);
+			for (uint32_t c = 0; c < channelCount; ++c)
+			{
+				pPixelData[c] = rgba[c];
+			}
+			pData += mPixelStride;
+		}
+	}
+}
+
+#pragma endregion
+
+#pragma region TriMesh
+
+enum TriMeshAttributeDim
+{
+	TRI_MESH_ATTRIBUTE_DIM_UNDEFINED = 0,
+	TRI_MESH_ATTRIBUTE_DIM_2 = 2,
+	TRI_MESH_ATTRIBUTE_DIM_3 = 3,
+	TRI_MESH_ATTRIBUTE_DIM_4 = 4,
+};
+
+enum TriMeshPlane
+{
+	TRI_MESH_PLANE_POSITIVE_X = 0,
+	TRI_MESH_PLANE_NEGATIVE_X = 1,
+	TRI_MESH_PLANE_POSITIVE_Y = 2,
+	TRI_MESH_PLANE_NEGATIVE_Y = 3,
+	TRI_MESH_PLANE_POSITIVE_Z = 4,
+	TRI_MESH_PLANE_NEGATIVE_Z = 5,
+};
+
+struct TriMeshVertexData
+{
+	float3 position;
+	float3 color;
+	float3 normal;
+	float2 texCoord;
+	float4 tangent;
+	float3 bitangent;
+};
+
+struct TriMeshVertexDataCompressed
+{
+	half4  position;
+	half3  color;
+	i8vec4 normal;
+	half2  texCoord;
+	i8vec4 tangent;
+	i8vec3 bitangent;
+};
+
+class TriMeshOptions
+{
+public:
+	TriMeshOptions() {}
+	~TriMeshOptions() {}
+	// clang-format off
+	//! Enable/disable indices
+	TriMeshOptions& Indices(bool value = true) { mEnableIndices = value; return *this; }
+	//! Enable/disable vertex colors
+	TriMeshOptions& VertexColors(bool value = true) { mEnableVertexColors = value; return *this; }
+	//! Enable/disable normals
+	TriMeshOptions& Normals(bool value = true) { mEnableNormals = value; return *this; }
+	//! Enable/disable texture coordinates, most geometry will have 2-dimensional texture coordinates
+	TriMeshOptions& TexCoords(bool value = true) { mEnableTexCoords = value; return *this; }
+	//! Enable/disable tangent and bitangent creation flag
+	TriMeshOptions& Tangents(bool value = true) { mEnableTangents = value; return *this; }
+	//! Set and/or enable/disable object color, object color will override vertex colors
+	TriMeshOptions& ObjectColor(const float3& color, bool enable = true) { mObjectColor = color; mEnableObjectColor = enable; return *this; }
+	//! Set the translate of geometry position, default is (0, 0, 0)
+	TriMeshOptions& Translate(const float3& translate) { mTranslate = translate; return *this; }
+	//! Set the scale of geometry position, default is (1, 1, 1)
+	TriMeshOptions& Scale(const float3& scale) { mScale = scale; return *this; }
+	//! Sets the UV texture coordinate scale, default is (1, 1)
+	TriMeshOptions& TexCoordScale(const float2& scale) { mTexCoordScale = scale; return *this; }
+	//! Enable all attributes
+	TriMeshOptions& AllAttributes() { mEnableVertexColors = true; mEnableNormals = true; mEnableTexCoords = true; mEnableTangents = true; return *this; }
+	//! Inverts tex coords vertically
+	TriMeshOptions& InvertTexCoordsV() { mInvertTexCoordsV = true; return *this; }
+	//! Inverts winding order of ONLY indices
+	TriMeshOptions& InvertWinding() { mInvertWinding = true; return *this; }
+	// clang-format on
+private:
+	bool   mEnableIndices = false;
+	bool   mEnableVertexColors = false;
+	bool   mEnableNormals = false;
+	bool   mEnableTexCoords = false;
+	bool   mEnableTangents = false;
+	bool   mEnableObjectColor = false;
+	bool   mInvertTexCoordsV = false;
+	bool   mInvertWinding = false;
+	float3 mObjectColor = float3(0.7f);
+	float3 mTranslate = float3(0, 0, 0);
+	float3 mScale = float3(1, 1, 1);
+	float2 mTexCoordScale = float2(1, 1);
+	friend class TriMesh;
+};
+
+class TriMesh
+{
+public:
+	TriMesh();
+	TriMesh(IndexType indexType);
+	TriMesh(TriMeshAttributeDim texCoordDim);
+	TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim);
+	~TriMesh();
+
+	IndexType     GetIndexType() const { return mIndexType; }
+	TriMeshAttributeDim GetTexCoordDim() const { return mTexCoordDim; }
+
+	bool HasColors() const { return GetCountColors() > 0; }
+	bool HasNormals() const { return GetCountNormals() > 0; }
+	bool HasTexCoords() const { return GetCountTexCoords() > 0; }
+	bool HasTangents() const { return GetCountTangents() > 0; }
+	bool HasBitangents() const { return GetCountBitangents() > 0; }
+
+	uint32_t GetCountTriangles() const;
+	uint32_t GetCountIndices() const;
+	uint32_t GetCountPositions() const;
+	uint32_t GetCountColors() const;
+	uint32_t GetCountNormals() const;
+	uint32_t GetCountTexCoords() const;
+	uint32_t GetCountTangents() const;
+	uint32_t GetCountBitangents() const;
+
+	uint64_t GetDataSizeIndices() const;
+	uint64_t GetDataSizePositions() const;
+	uint64_t GetDataSizeColors() const;
+	uint64_t GetDataSizeNormalls() const;
+	uint64_t GetDataSizeTexCoords() const;
+	uint64_t GetDataSizeTangents() const;
+	uint64_t GetDataSizeBitangents() const;
+
+	const uint16_t* GetDataIndicesU16(uint32_t index = 0) const;
+	const uint32_t* GetDataIndicesU32(uint32_t index = 0) const;
+	const float3* GetDataPositions(uint32_t index = 0) const;
+	const float3* GetDataColors(uint32_t index = 0) const;
+	const float3* GetDataNormalls(uint32_t index = 0) const;
+	const float2* GetDataTexCoords2(uint32_t index = 0) const;
+	const float3* GetDataTexCoords3(uint32_t index = 0) const;
+	const float4* GetDataTexCoords4(uint32_t index = 0) const;
+	const float4* GetDataTangents(uint32_t index = 0) const;
+	const float3* GetDataBitangents(uint32_t index = 0) const;
+
+	const float3& GetBoundingBoxMin() const { return mBoundingBoxMin; }
+	const float3& GetBoundingBoxMax() const { return mBoundingBoxMax; }
+
+	// Preallocates triangle, position, color, normal, texture and tangent data (as desired) based on the provided triangle count.
+	// Using this avoids doing those allocations (potentially multiple times) during the data load.
+	void     PreallocateForTriangleCount(size_t triangleCount, bool enableColors, bool enableNormals, bool enableTexCoords, bool enableTangents);
+	uint32_t AppendTriangle(uint32_t v0, uint32_t v1, uint32_t v2);
+	uint32_t AppendPosition(const float3& value);
+	uint32_t AppendColor(const float3& value);
+	uint32_t AppendTexCoord(const float2& value);
+	uint32_t AppendTexCoord(const float3& value);
+	uint32_t AppendTexCoord(const float4& value);
+	uint32_t AppendNormal(const float3& value);
+	uint32_t AppendTangent(const float4& value);
+	uint32_t AppendBitangent(const float3& value);
+
+	Result GetTriangle(uint32_t triIndex, uint32_t& v0, uint32_t& v1, uint32_t& v2) const;
+	Result GetVertexData(uint32_t vtxIndex, TriMeshVertexData* pVertexData) const;
+
+	static TriMesh CreatePlane(TriMeshPlane plane, const float2& size, uint32_t usegs, uint32_t vsegs, const TriMeshOptions& options = TriMeshOptions());
+	static TriMesh CreateCube(const float3& size, const TriMeshOptions& options = TriMeshOptions());
+	static TriMesh CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, const TriMeshOptions& options = TriMeshOptions());
+
+	static Result  CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options, TriMesh* pTriMesh);
+	static TriMesh CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options = TriMeshOptions());
+
+private:
+	void AppendIndexU16(uint16_t value);
+	void AppendIndexU32(uint32_t value);
+
+	static void AppendIndexAndVertexData(
+		std::vector<uint32_t>& indexData,
+		const std::vector<float>& vertexData,
+		const uint32_t            expectedVertexCount,
+		const TriMeshOptions& options,
+		TriMesh& mesh);
+
+private:
+	IndexType      mIndexType = INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim  mTexCoordDim = TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+	std::vector<uint8_t> mIndices;        // Stores both 16 and 32 bit indices
+	std::vector<float3>  mPositions;      // Vertex positions
+	std::vector<float3>  mColors;         // Vertex colors
+	std::vector<float3>  mNormals;        // Vertex normals
+	std::vector<float>   mTexCoords;      // Vertex texcoords, dimension can be 2, 3, or 4
+	std::vector<float4>  mTangents;       // Vertex tangents
+	std::vector<float3>  mBitangents;     // Vertex bitangents
+	float3               mBoundingBoxMin; // Bounding box min
+	float3               mBoundingBoxMax; // Bounding box max
+};
+
+#pragma endregion
+
+#pragma region WireMesh
+
+enum WireMeshPlane
+{
+	WIRE_MESH_PLANE_POSITIVE_X = 0,
+	WIRE_MESH_PLANE_NEGATIVE_X = 1,
+	WIRE_MESH_PLANE_POSITIVE_Y = 2,
+	WIRE_MESH_PLANE_NEGATIVE_Y = 3,
+	WIRE_MESH_PLANE_POSITIVE_Z = 4,
+	WIRE_MESH_PLANE_NEGATIVE_Z = 5,
+};
+
+struct WireMeshVertexData
+{
+	float3 position;
+	float3 color;
+};
+
+class WireMeshOptions
+{
+public:
+	WireMeshOptions() {}
+	~WireMeshOptions() {}
+	//! Enable/disable indices
+	WireMeshOptions& Indices(bool value = true) { mEnableIndices = value; return *this; }
+	//! Enable/disable vertex colors
+	WireMeshOptions& VertexColors(bool value = true) { mEnableVertexColors = value; return *this; }
+	//! Set and/or enable/disable object color, object color will override vertex colors
+	WireMeshOptions& ObjectColor(const float3& color, bool enable = true) { mObjectColor = color; mEnableObjectColor = enable; return *this; }
+	//! Set the scale of geometry position, default is (1, 1, 1)
+	WireMeshOptions& Scale(const float3& scale) { mScale = scale; return *this; }
+
+private:
+	bool   mEnableIndices = false;
+	bool   mEnableVertexColors = false;
+	bool   mEnableObjectColor = false;
+	float3 mObjectColor = float3(0.7f);
+	float3 mScale = float3(1, 1, 1);
+	friend class WireMesh;
+};
+
+class WireMesh
+{
+public:
+	WireMesh();
+	WireMesh(IndexType indexType);
+	~WireMesh();
+
+	IndexType GetIndexType() const { return mIndexType; }
+
+	bool HasColors() const { return GetCountColors() > 0; }
+
+	uint32_t GetCountEdges() const;
+	uint32_t GetCountIndices() const;
+	uint32_t GetCountPositions() const;
+	uint32_t GetCountColors() const;
+
+	uint64_t GetDataSizeIndices() const;
+	uint64_t GetDataSizePositions() const;
+	uint64_t GetDataSizeColors() const;
+
+	const uint16_t* GetDataIndicesU16(uint32_t index = 0) const;
+	const uint32_t* GetDataIndicesU32(uint32_t index = 0) const;
+	const float3* GetDataPositions(uint32_t index = 0) const;
+	const float3* GetDataColors(uint32_t index = 0) const;
+
+	const float3& GetBoundingBoxMin() const { return mBoundingBoxMin; }
+	const float3& GetBoundingBoxMax() const { return mBoundingBoxMax; }
+
+	uint32_t AppendEdge(uint32_t v0, uint32_t v1);
+	uint32_t AppendPosition(const float3& value);
+	uint32_t AppendColor(const float3& value);
+
+	Result GetEdge(uint32_t lineIndex, uint32_t& v0, uint32_t& v1) const;
+	Result GetVertexData(uint32_t vtxIndex, WireMeshVertexData* pVertexData) const;
+
+	static WireMesh CreatePlane(WireMeshPlane plane, const float2& size, uint32_t usegs, uint32_t vsegs, const WireMeshOptions& options = WireMeshOptions());
+	static WireMesh CreateCube(const float3& size, const WireMeshOptions& options = WireMeshOptions());
+	static WireMesh CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, const WireMeshOptions& options = WireMeshOptions());
+
+private:
+	void AppendIndexU16(uint16_t value);
+	void AppendIndexU32(uint32_t value);
+
+	static void AppendIndexAndVertexData(
+		std::vector<uint32_t>& indexData,
+		const std::vector<float>& vertexData,
+		const uint32_t            expectedVertexCount,
+		const WireMeshOptions& options,
+		WireMesh& mesh);
+
+private:
+	IndexType      mIndexType = INDEX_TYPE_UNDEFINED;
+	std::vector<uint8_t> mIndices;        // Stores both 16 and 32 bit indices
+	std::vector<float3>  mPositions;      // Vertex positions
+	std::vector<float3>  mColors;         // Vertex colors
+	float3               mBoundingBoxMin; // Bounding box min
+	float3               mBoundingBoxMax; // Bounding box max
+};
+
+#pragma endregion
+
+#pragma region Geometry
+
+template <typename T>
+class VertexDataProcessorBase;
+
+enum GeometryVertexAttributeLayout
+{
+	GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED = 1,
+	GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR = 2,
+	GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR = 3,
+};
+
+//! @struct GeometryCreateInfo
+//!
+//! primitiveTopology
+//!   - only TRIANGLE_LIST is currently supported
+//!
+//! indexType
+//!   - use UNDEFINED to indicate there's not index data
+//!
+//! attributeLayout
+//!   - if INTERLEAVED only bindings[0] is used
+//!   - if PLANAR bindings[0..bindingCount] are used
+//!   - if PLANAR bindings can only have 1 attribute
+//!
+//! Supported vertex semantics:
+//!    VERTEX_SEMANTIC_POSITION
+//!    VERTEX_SEMANTIC_NORMAL
+//!    VERTEX_SEMANTIC_COLOR
+//!    VERTEX_SEMANTIC_TANGENT
+//!    VERTEX_SEMANTIC_BITANGEN
+//!    VERTEX_SEMANTIC_TEXCOORD
+//!
+struct GeometryCreateInfo
+{
+	IndexType               indexType = INDEX_TYPE_UNDEFINED;
+	GeometryVertexAttributeLayout vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
+	uint32_t                      vertexBindingCount = 0;
+	VertexBinding           vertexBindings[MAX_VERTEX_BINDINGS] = {};
+	PrimitiveTopology       primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	// Creates a create info objects with a UINT16 or UINT32 index
+	// type and position vertex attribute.
+	//
+	static GeometryCreateInfo InterleavedU16(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo InterleavedU32(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo PlanarU16(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo PlanarU32(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo PositionPlanarU16(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo PositionPlanarU32(Format format = FORMAT_R32G32B32_FLOAT);
+
+	// Create a create info with a position vertex attribute.
+	//
+	static GeometryCreateInfo Interleaved();
+	static GeometryCreateInfo Planar();
+	static GeometryCreateInfo PositionPlanar();
+
+	GeometryCreateInfo& IndexType(::IndexType indexType_);
+	GeometryCreateInfo& IndexTypeU16();
+	GeometryCreateInfo& IndexTypeU32();
+
+	// NOTE: Vertex input locations (Vulkan) are based on the order of
+	//       when the attribute is added.
+	//
+	//       Example (assumes no attributes exist):
+	//         AddPosition(); // location = 0
+	//         AddColor();    // location = 1
+	//
+	//       Example (2 attributes exist):
+	//         AddTexCoord(); // location = 2
+	//         AddTangent();  // location = 3
+	//
+	// WARNING: Changing the attribute layout, index type, or messing
+	//          with the vertex bindings after or in between calling
+	//          these functions can result in undefined behavior.
+	//
+	GeometryCreateInfo& AddPosition(Format format = FORMAT_R32G32B32_FLOAT);
+	GeometryCreateInfo& AddNormal(Format format = FORMAT_R32G32B32_FLOAT);
+	GeometryCreateInfo& AddColor(Format format = FORMAT_R32G32B32_FLOAT);
+	GeometryCreateInfo& AddTexCoord(Format format = FORMAT_R32G32_FLOAT);
+	GeometryCreateInfo& AddTangent(Format format = FORMAT_R32G32B32A32_FLOAT);
+	GeometryCreateInfo& AddBitangent(Format format = FORMAT_R32G32B32_FLOAT);
+
+private:
+	GeometryCreateInfo& AddAttribute(VertexSemantic semantic, Format format);
+};
+
+//! @class Geometry
+//!
+//! Implementation Notes:
+//!   - Recommended to avoid modifying the index/vertex buffers directly and to use
+//!     the Append* functions instead (for smaller geometries especially)
+//!
+class Geometry
+{
+	template <typename T>
+	friend class VertexDataProcessorBase;
+	enum BufferType
+	{
+		BUFFER_TYPE_VERTEX = 1,
+		BUFFER_TYPE_INDEX = 2,
+	};
+
+public:
+	//! @class Buffer
+	//!
+	//! Element count is data size divided by element size.
+	//! Example:
+	//!   - If  buffer is storing 16 bit indices then element size
+	//!     is 2 bytes. Dividing the value of GetSize() by 2 will
+	//!     return the element count, i.e. the number of indices.
+	//!
+	//! There's two different ways to use Buffer. Mixing them will most
+	//! likely lead to undefined behavior.
+	//!
+	//! Use #1:
+	//!   - Create a buffer object with type and element size
+	//!   - Call SetSize() to allocate storage
+	//!   - Grab the pointer with GetData() and memcpy to buffer object
+	//!
+	//! Use #2:
+	//!   - Create a buffer object with type and element size
+	//!   - Call Append<T>() to append data to it
+	//!
+	class Buffer
+	{
+	public:
+		Buffer() {}
+		Buffer(BufferType type, uint32_t elementSize)
+			: mType(type), mElementSize(elementSize) {}
+		~Buffer() {}
+
+		BufferType  GetType() const { return mType; }
+		uint32_t    GetElementSize() const { return mElementSize; }
+		uint32_t    GetSize() const { return static_cast<uint32_t>(mUsedSize); }
+		char* GetData() { return DataPtr(mData); }
+		const char* GetData() const { return DataPtr(mData); }
+		uint32_t    GetElementCount() const;
+
+		// Changes the buffer size to `size`.
+		// If this operations grows the vector, this class considers all the elements
+		// to be initialized. It is the caller responsibility to initialize those elements.
+		void SetSize(uint32_t size)
+		{
+			mUsedSize = size;
+			mData.resize(size);
+		}
+
+		// Trusts that calling code is well behaved :)
+		template <typename T>
+		void Append(const T& value)
+		{
+			Append(1, &value);
+		}
+
+		template <typename T>
+		void Append(uint32_t count, const T* pValues)
+		{
+			uint32_t sizeOfValues = count * static_cast<uint32_t>(sizeof(T));
+			if ((mUsedSize + sizeOfValues) > mData.size()) {
+				mData.resize(std::max<size_t>(mUsedSize + sizeOfValues, mData.size() * 2));
+			}
+
+			//  Copy data
+			const void* pSrc = pValues;
+			void* pDst = mData.data() + mUsedSize;
+			memcpy(pDst, pSrc, sizeOfValues);
+			mUsedSize += sizeOfValues;
+		}
+
+	private:
+		BufferType        mType = BUFFER_TYPE_VERTEX;
+		uint32_t          mElementSize = 0;
+		size_t            mUsedSize = 0;
+		std::vector<char> mData;
+	};
+
+public:
+	Geometry() {}
+	virtual ~Geometry() {}
+
+private:
+	Result InternalCtor();
+
+public:
+	// Create object using parameters from createInfo
+	static Result Create(const GeometryCreateInfo& createInfo, Geometry* pGeometry);
+
+	// Create object using parameters from createInfo using data from mesh
+	static Result Create(
+		const GeometryCreateInfo& createInfo,
+		const TriMesh& mesh,
+		Geometry* pGeometry);
+
+	// Create object using parameters from createInfo using data from tri mesh
+	static Result Create(
+		const GeometryCreateInfo& createInfo,
+		const WireMesh& mesh,
+		Geometry* pGeometry);
+
+	// Create object with a create info derived from mesh
+	static Result Create(const TriMesh& mesh, Geometry* pGeometry);
+	static Result Create(const WireMesh& mesh, Geometry* pGeometry);
+
+	IndexType         GetIndexType() const { return mCreateInfo.indexType; }
+	const Geometry::Buffer* GetIndexBuffer() const { return &mIndexBuffer; }
+	void                    SetIndexBuffer(const Geometry::Buffer& newIndexBuffer);
+	uint32_t                GetIndexCount() const;
+
+	GeometryVertexAttributeLayout GetVertexAttributeLayout() const { return mCreateInfo.vertexAttributeLayout; }
+	uint32_t                      GetVertexBindingCount() const { return mCreateInfo.vertexBindingCount; }
+	const VertexBinding* GetVertexBinding(uint32_t index) const;
+
+	uint32_t                GetVertexCount() const;
+	uint32_t                GetVertexBufferCount() const { return CountU32(mVertexBuffers); }
+	const Geometry::Buffer* GetVertexBuffer(uint32_t index) const;
+	Geometry::Buffer* GetVertexBuffer(uint32_t index);
+	uint32_t                GetLargestBufferSize() const;
+
+	// Appends single index, triangle, or edge vertex indices to index buffer
+	//
+	// Will cast to uint16_t if geometry index type is UINT16.
+	// NOOP if index type is UNDEFINED (geometry does not have index data).
+	void AppendIndex(uint32_t idx);
+	void AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2);
+	void AppendIndicesEdge(uint32_t idx0, uint32_t idx1);
+
+	// Append a chunk of UINT32 indices
+	void AppendIndicesU32(uint32_t count, const uint32_t* pIndices);
+
+	// Append multiple attributes at once
+	uint32_t AppendVertexData(const TriMeshVertexData& vtx);
+	uint32_t AppendVertexData(const TriMeshVertexDataCompressed& vtx);
+	uint32_t AppendVertexData(const WireMeshVertexData& vtx);
+
+	// Appends triangle or edge vertex data and indices (if present)
+	void AppendTriangle(const TriMeshVertexData& vtx0, const TriMeshVertexData& vtx1, const TriMeshVertexData& vtx2);
+	void AppendEdge(const WireMeshVertexData& vtx0, const WireMeshVertexData& vtx1);
+
+private:
+	// This is intialized to point to a static var of derived class of VertexDataProcessorBase
+	// which is shared by geometry objects, it is not supposed to be deleted
+	VertexDataProcessorBase<TriMeshVertexData>* mVDProcessor = nullptr;
+	VertexDataProcessorBase<TriMeshVertexDataCompressed>* mVDProcessorCompressed = nullptr;
+	GeometryCreateInfo                                    mCreateInfo = {};
+	Geometry::Buffer                                      mIndexBuffer;
+	std::vector<Geometry::Buffer>                         mVertexBuffers;
+	uint32_t                                              mPositionBufferIndex = VALUE_IGNORED;
+	uint32_t                                              mNormaBufferIndex = VALUE_IGNORED;
+	uint32_t                                              mColorBufferIndex = VALUE_IGNORED;
+	uint32_t                                              mTexCoordBufferIndex = VALUE_IGNORED;
+	uint32_t                                              mTangentBufferIndex = VALUE_IGNORED;
+	uint32_t                                              mBitangentBufferIndex = VALUE_IGNORED;
+};
+
+#pragma endregion
+
+#pragma region Mipmap
+
+// Stores a mipmap as a linear chunk of memory with each mip level accessible as a Bitmap.
+//! The expected disk format used by Mipmap::LoadFile is an vertically tailed mip map:
+//!   +---------------------+
+//!   | MIP 0               |
+//!   |                     |
+//!   +---------------------+
+//!   | MIP 1    |          |
+//!   +----------+----------+
+//!   | ... |               |
+//!   +-----+---------------+
+class Mipmap
+{
+public:
+	Mipmap() {}
+	// Using the static, shared-memory pool is currently only safe in single-threaded applications!
+	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
+	Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount, bool useStaticPool);
+	Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount);
+	// Using the static, shared-memory pool is currently only safe in single-threaded applications!
+	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
+	Mipmap(const Bitmap& bitmap, uint32_t levelCount, bool useStaticPool);
+	Mipmap(const Bitmap& bitmap, uint32_t levelCount);
+	~Mipmap() {}
+
+	// Returns true if there's at least one mip level, format is valid, and storage is valid
+	bool IsOk() const;
+
+	Bitmap::Format GetFormat() const;
+	uint32_t       GetLevelCount() const { return CountU32(mMips); }
+	Bitmap* GetMip(uint32_t level);
+	const Bitmap* GetMip(uint32_t level) const;
+
+	uint32_t GetWidth(uint32_t level) const;
+	uint32_t GetHeight(uint32_t level) const;
+
+	static uint32_t CalculateLevelCount(uint32_t width, uint32_t height);
+	static Result   LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount = REMAINING_MIP_LEVELS);
+	static Result   SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount = REMAINING_MIP_LEVELS);
+
+private:
+	std::vector<char>   mData;
+	std::vector<Bitmap> mMips;
+
+	// Static, shared-memory pool for temporary mipmap generation.
+	// NOTE: This is designed for single-threaded use ONLY as it's an unprotected memory block!
+	// This will need locks if the consuming paths ever become multi-threaded.
+	static std::vector<char> mStaticData;
+	bool                     mUseStaticPool = false;
+};
+
+#pragma endregion
+
+#pragma region grfx util
+
+class ImageOptions
+{
+public:
+	ImageOptions() {}
+	~ImageOptions() {}
+
+	ImageOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
+	ImageOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
+
+private:
+	ImageUsageFlags mAdditionalUsage = ImageUsageFlags();
+	uint32_t              mMipLevelCount = REMAINING_MIP_LEVELS;
+
+	friend Result CreateImageFromBitmap(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image** ppImage,
+		const ImageOptions& options);
+
+	friend Result CreateImageFromCompressedImage(
+		Queue* pQueue,
+		const gli::texture& image,
+		Image** ppImage,
+		const ImageOptions& options);
+
+	friend Result CreateImageFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Image** ppImage,
+		const ImageOptions& options,
+		bool                         useGpu);
+
+	friend Result CreateImageFromBitmapGpu(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image** ppImage,
+		const ImageOptions& options);
+};
+
+Result CopyBitmapToImage(
+	Queue* pQueue,
+	const Bitmap* pBitmap,
+	Image* pImage,
+	uint32_t            mipLevel,
+	uint32_t            arrayLayer,
+	ResourceState stateBefore,
+	ResourceState stateAfter);
+
+Result CreateImageFromBitmap(
+	Queue* pQueue,
+	const Bitmap* pBitmap,
+	Image** ppImage,
+	const ImageOptions& options = ImageOptions());
+
+Result CreateImageFromFile(
+	Queue* pQueue,
+	const std::filesystem::path& path,
+	Image** ppImage,
+	const ImageOptions& options = ImageOptions(),
+	bool                         useGpu = false);
+
+Result CreateImageFromBitmapGpu(
+	Queue* pQueue,
+	const Bitmap* pBitmap,
+	Image** ppImage,
+	const ImageOptions& options = ImageOptions());
+
+class TextureOptions
+{
+public:
+	TextureOptions() {}
+	~TextureOptions() {}
+
+	TextureOptions& AdditionalUsage(ImageUsageFlags flags) { mAdditionalUsage = flags; return *this; }
+	TextureOptions& InitialState(ResourceState state) { mInitialState = state; return *this; }
+	TextureOptions& MipLevelCount(uint32_t levelCount) { mMipLevelCount = levelCount; return *this; }
+	TextureOptions& SamplerYcbcrConversion(SamplerYcbcrConversion* pYcbcrConversion) { mYcbcrConversion = pYcbcrConversion; return *this; }
+
+private:
+	ImageUsageFlags         mAdditionalUsage = ImageUsageFlags();
+	ResourceState           mInitialState = ResourceState::RESOURCE_STATE_SHADER_RESOURCE;
+	uint32_t                      mMipLevelCount = 1;
+	::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
+
+	friend Result CreateTextureFromBitmap(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Texture** ppTexture,
+		const TextureOptions& options);
+
+	friend Result CreateTextureFromMipmap(
+		Queue* pQueue,
+		const Mipmap* pMipmap,
+		Texture** ppTexture,
+		const TextureOptions& options);
+
+	friend Result CreateTextureFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Texture** ppTexture,
+		const TextureOptions& options);
+};
+
+Result CopyBitmapToTexture(
+	Queue* pQueue,
+	const Bitmap* pBitmap,
+	Texture* pTexture,
+	uint32_t            mipLevel,
+	uint32_t            arrayLayer,
+	ResourceState stateBefore,
+	ResourceState stateAfter);
+
+Result CreateTextureFromBitmap(
+	Queue* pQueue,
+	const Bitmap* pBitmap,
+	Texture** ppTexture,
+	const TextureOptions& options = TextureOptions());
+
+// Mip level count from pMipmap is used. Mip level count from options is ignored.
+Result CreateTextureFromMipmap(
+	Queue* pQueue,
+	const Mipmap* pMipmap,
+	Texture** ppTexture,
+	const TextureOptions& options = TextureOptions());
+
+Result CreateTextureFromFile(
+	Queue* pQueue,
+	const std::filesystem::path& path,
+	Texture** ppTexture,
+	const TextureOptions& options = TextureOptions());
+
+// Create a 1x1 texture with the specified pixel data. The format for the texture is derived from the pixel data type, which can be one of uint8, uint16, uint32 or float.
+template <typename PixelDataType>
+Result CreateTexture1x1(
+	Queue* pQueue,
+	const std::array<PixelDataType, 4> color,
+	Texture** ppTexture,
+	const TextureOptions& options = TextureOptions())
+{
+	ASSERT_NULL_ARG(pQueue);
+	ASSERT_NULL_ARG(ppTexture);
+
+	Bitmap::Format format = Bitmap::FORMAT_UNDEFINED;
+	if constexpr (std::is_same_v<PixelDataType, float>) {
+		format = Bitmap::FORMAT_RGBA_FLOAT;
+	}
+	else if constexpr (std::is_same_v<PixelDataType, uint32_t>) {
+		format = Bitmap::FORMAT_RGBA_UINT32;
+	}
+	else if constexpr (std::is_same_v<PixelDataType, uint16_t>) {
+		format = Bitmap::FORMAT_RGBA_UINT16;
+	}
+	else if constexpr (std::is_same_v<PixelDataType, uint8_t>) {
+		format = Bitmap::FORMAT_RGBA_UINT8;
+	}
+	else {
+		ASSERT_MSG(false, "Invalid pixel data type: must be one of uint8, uint16, uint32 or float.")
+		return ERROR_INVALID_CREATE_ARGUMENT;
+	}
+
+	// Create bitmap
+	Result ppxres = SUCCESS;
+	Bitmap bitmap = Bitmap::Create(1, 1, format, &ppxres);
+	if (Failed(ppxres)) {
+		return ERROR_BITMAP_CREATE_FAILED;
+	}
+
+	// Fill color
+	bitmap.Fill(color[0], color[1], color[2], color[3]);
+
+	return CreateTextureFromBitmap(pQueue, &bitmap, ppTexture, options);
+}
+
+// Creates an irradiance and an environment texture from an *.ibl file
+Result CreateIBLTexturesFromFile(
+	Queue* pQueue,
+	const std::filesystem::path& path,
+	Texture** ppIrradianceTexture,
+	Texture** ppEnvironmentTexture);
+/*
+
+Cross Horizontal Left:
+		   _____
+		  |  0  |
+	 _____|_____|_____ _____
+	|  1  |  2  |  3  |  4  |
+	|_____|_____|_____|_____|
+		  |  5  |
+		  |_____|
+
+Cross Horizontal Right:
+				 _____
+				|  0  |
+	 ___________|_____|_____
+	|  1  |  2  |  3  |  4  |
+	|_____|_____|_____|_____|
+				|  5  |
+				|_____|
+
+Cross Vertical Top:
+		   _____
+		  |  0  |
+	 _____|_____|_____
+	|  1  |  2  |  3  |
+	|_____|_____|_____|
+		  |  4  |
+		  |_____|
+		  |  5  |
+		  |_____|
+
+Cross Vertical Bottom:
+		   _____
+		  |  0  |
+		  |_____|
+		  |  1  |
+	 _____|_____|_____
+	|  2  |  3  |  4  |
+	|_____|_____|_____|
+		  |  5  |
+		  |_____|
+
+Lat Long Horizontal:
+	 _____ _____ _____
+	|  0  |  1  |  2  |
+	|_____|_____|_____|
+	|  3  |  4  |  5  |
+	|_____|_____|_____|
+
+Lat Long Vertical:
+	 _____ _____
+	|  0  |  1  |
+	|_____|_____|
+	|  2  |  3  |
+	|_____|_____|
+	|  4  |  5  |
+	|_____|_____|
+
+Strip Horizontal:
+	 _____ _____ _____ _____ _____ _____
+	|  0  |  1  |  2  |  3  |  4  |  5  |
+	|_____|_____|_____|_____|_____|_____|
+
+
+Strip Vertical:
+	 _____
+	|  0  |
+	|_____|
+	|  1  |
+	|_____|
+	|  2  |
+	|_____|
+	|  3  |
+	|_____|
+	|  4  |
+	|_____|
+	|  5  |
+	|_____|
+
+*/
+enum CubeImageLayout
+{
+	CUBE_IMAGE_LAYOUT_UNDEFINED = 0,
+	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT = 1,
+	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_RIGHT = 2,
+	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP = 3,
+	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_BOTTOM = 4,
+	CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL = 5,
+	CUBE_IMAGE_LAYOUT_LAT_LONG_VERTICAL = 6,
+	CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL = 7,
+	CUBE_IMAGE_LAYOUT_STRIP_VERTICAL = 8,
+	CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL_LEFT,
+	CUBE_IMAGE_LAYOUT_CROSS_VERTICAL = CUBE_IMAGE_LAYOUT_CROSS_VERTICAL_TOP,
+	CUBE_IMAGE_LAYOUT_LAT_LONG = CUBE_IMAGE_LAYOUT_LAT_LONG_HORIZONTAL,
+	CUBE_IMAGE_LAYOUT_STRIP = CUBE_IMAGE_LAYOUT_STRIP_HORIZONTAL,
+};
+
+// Rotation is always clockwise.
+enum CubeFaceOp
+{
+	CUBE_FACE_OP_NONE = 0,
+	CUBE_FACE_OP_ROTATE_90 = 1,
+	CUBE_FACE_OP_ROTATE_180 = 2,
+	CUBE_FACE_OP_ROTATE_270 = 3,
+	CUBE_FACE_OP_INVERT_HORIZONTAL = 4,
+	CUBE_FACE_OP_INVERT_VERTICAL = 5,
+};
+
+// See enum CubeImageLayout for explanation of layouts
+// Example - Use subimage 0 with 90 degrees CW rotation for posX face:
+//   layout = CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
+//   posX   = PPX_ENCODE_CUBE_FACE(0, CUBE_FACE_OP_ROTATE_90, :CUBE_FACE_OP_NONE);
+#define CUBE_OP_MASK           0xFF
+#define CUBE_OP_SUBIMAGE_SHIFT 0
+#define CUBE_OP_OP1_SHIFT      8
+#define CUBE_OP_OP2_SHIFT      16
+
+#define ENCODE_CUBE_FACE(SUBIMAGE, OP1, OP2)              \
+    (SUBIMAGE & CUBE_OP_MASK) |                           \
+        ((OP1 & CUBE_OP_MASK) << CUBE_OP_OP1_SHIFT) | \
+        ((OP1 & CUBE_OP_MASK) << CUBE_OP_OP2_SHIFT)
+
+#define DECODE_CUBE_FACE_SUBIMAGE(FACE) (FACE >> CUBE_OP_SUBIMAGE_SHIFT) & CUBE_OP_MASK
+#define DECODE_CUBE_FACE_OP1(FACE)      (FACE >> CUBE_OP_OP1_SHIFT) & CUBE_OP_MASK
+#define DECODE_CUBE_FACE_OP2(FACE)      (FACE >> CUBE_OP_OP2_SHIFT) & CUBE_OP_MASK
+
+struct CubeMapCreateInfo
+{
+	CubeImageLayout layout = CUBE_IMAGE_LAYOUT_UNDEFINED;
+	uint32_t        posX = VALUE_IGNORED;
+	uint32_t        negX = VALUE_IGNORED;
+	uint32_t        posY = VALUE_IGNORED;
+	uint32_t        negY = VALUE_IGNORED;
+	uint32_t        posZ = VALUE_IGNORED;
+	uint32_t        negZ = VALUE_IGNORED;
+};
+
+Result CreateCubeMapFromFile(
+	Queue* pQueue,
+	const std::filesystem::path& path,
+	const CubeMapCreateInfo* pCreateInfo,
+	Image** ppImage,
+	const ImageUsageFlags& additionalImageUsage = ImageUsageFlags());
+
+Result CreateMeshFromGeometry(
+	Queue* pQueue,
+	const Geometry* pGeometry,
+	Mesh** ppMesh);
+
+Result CreateMeshFromTriMesh(
+	Queue* pQueue,
+	const TriMesh* pTriMesh,
+	Mesh** ppMesh);
+
+Result CreateMeshFromWireMesh(
+	Queue* pQueue,
+	const WireMesh* pWireMesh,
+	Mesh** ppMesh);
+
+Result CreateMeshFromFile(
+	Queue* pQueue,
+	const std::filesystem::path& path,
+	Mesh** ppMesh,
+	const TriMeshOptions& options = TriMeshOptions());
+
+Format ToGrfxFormat(Bitmap::Format value);
 
 #pragma endregion

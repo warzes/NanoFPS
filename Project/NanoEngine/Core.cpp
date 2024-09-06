@@ -1,6 +1,34 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
 
+#pragma region Base Types
+
+std::ostream& operator<<(std::ostream& os, const float2& i)
+{
+	os << "(" << i.x << ", " << i.y << ")";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const float3& i)
+{
+	os << "(" << i.x << ", " << i.y << ", " << i.z << ")";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const float4& i)
+{
+	os << "(" << i.r << ", " << i.g << ", " << i.b << ", " << i.a << ")";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const uint3& i)
+{
+	os << "(" << i.x << ", " << i.y << ", " << i.z << ")";
+	return os;
+}
+
+#pragma endregion
+
 #pragma region Clock
 
 Time Clock::GetElapsedTime() const

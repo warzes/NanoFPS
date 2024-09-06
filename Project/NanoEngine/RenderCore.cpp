@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
 #include "RenderCore.h"
+#include "RenderResources.h" // TODO: убрать
 
 #pragma region Format
 
@@ -1668,5 +1669,5393 @@ bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
 
 	return true;
 }
+
+#pragma endregion
+
+#pragma region Bitmap
+
+static const char* kRadianceSig = "#?RADIANCE";
+static const size_t kRadianceSigSize = 10;
+
+Bitmap::Bitmap()
+{
+	InternalCtor();
+}
+
+Bitmap::Bitmap(const Bitmap& obj)
+{
+	Result ppxres = InternalCopy(obj);
+	if (Failed(ppxres)) {
+		InternalCtor();
+		ASSERT_MSG(false, "copy failed");
+	}
+}
+
+Bitmap::~Bitmap()
+{
+	FreeStbiDataIfNeeded();
+}
+
+Bitmap& Bitmap::operator=(const Bitmap& rhs)
+{
+	if (&rhs != this) {
+		Result ppxres = InternalCopy(rhs);
+		if (Failed(ppxres)) {
+			InternalCtor();
+			ASSERT_MSG(false, "copy failed");
+		}
+	}
+	return *this;
+}
+
+void Bitmap::FreeStbiDataIfNeeded()
+{
+	if (mDataIsFromStbi && !IsNull(mData)) {
+		stbi_image_free(mData);
+		mData = nullptr;
+		mDataIsFromStbi = false;
+	}
+}
+
+void Bitmap::InternalCtor()
+{
+	mWidth = 0;
+	mHeight = 0;
+	mFormat = Bitmap::FORMAT_UNDEFINED;
+	mChannelCount = 0;
+	mPixelStride = 0;
+	mRowStride = 0;
+	mData = nullptr;
+	mInternalStorage.clear();
+}
+
+Result Bitmap::InternalInitialize(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage)
+{
+	if (format == Bitmap::FORMAT_UNDEFINED) {
+		return ERROR_IMAGE_INVALID_FORMAT;
+	}
+
+	// In case of initialization to a preexisting object.
+	FreeStbiDataIfNeeded();
+
+	uint32_t minimumRowStride = (width * Bitmap::FormatSize(format));
+	if ((rowStride > 0) && (rowStride < minimumRowStride)) {
+		return ERROR_BITMAP_FOOTPRINT_MISMATCH;
+	}
+	if (rowStride == 0) {
+		rowStride = minimumRowStride;
+	}
+
+	mWidth = width;
+	mHeight = height;
+	mFormat = format;
+	mChannelCount = Bitmap::ChannelCount(format);
+	mPixelStride = Bitmap::FormatSize(format);
+	mRowStride = rowStride;
+	mData = pExternalStorage;
+
+	if (IsNull(mData)) {
+		size_t n = Bitmap::StorageFootprint(width, height, format);
+		if (n > 0) {
+			mInternalStorage.resize(n);
+			if (mInternalStorage.size() != n) {
+				return ERROR_ALLOCATION_FAILED;
+			}
+
+			mData = mInternalStorage.data();
+		}
+	}
+
+	return SUCCESS;
+}
+
+Result Bitmap::InternalCopy(const Bitmap& obj)
+{
+	// In case of copies into a preexisting object.
+	FreeStbiDataIfNeeded();
+
+	// Copy properties
+	mWidth = obj.mWidth;
+	mHeight = obj.mHeight;
+	mFormat = obj.mFormat;
+	mChannelCount = obj.mChannelCount;
+	mPixelStride = obj.mPixelStride;
+	mRowStride = obj.mRowStride;
+
+	// Allocate storage
+	size_t footprint = Bitmap::StorageFootprint(mWidth, mHeight, mFormat);
+	mInternalStorage.resize(footprint);
+	if (mInternalStorage.size() != footprint) {
+		return ERROR_ALLOCATION_FAILED;
+	}
+	mData = mInternalStorage.data();
+
+	uint64_t srcFootprint = obj.GetFootprintSize();
+	if (srcFootprint != static_cast<uint64_t>(footprint)) {
+		return ERROR_BITMAP_FOOTPRINT_MISMATCH;
+	}
+
+	memcpy(mData, obj.mData, footprint);
+
+	return SUCCESS;
+}
+
+Result Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, Bitmap* pBitmap)
+{
+	ASSERT_NULL_ARG(pBitmap);
+	if (IsNull(pBitmap)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	Result ppxres = pBitmap->InternalInitialize(width, height, format, 0, nullptr);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
+Result Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage, Bitmap* pBitmap)
+{
+	ASSERT_NULL_ARG(pBitmap);
+	if (IsNull(pBitmap)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	Result ppxres = pBitmap->InternalInitialize(width, height, format, rowStride, pExternalStorage);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
+Result Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, char* pExternalStorage, Bitmap* pBitmap)
+{
+	return Bitmap::Create(width, height, format, 0, pExternalStorage, pBitmap);
+}
+
+Bitmap Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, Result* pResult)
+{
+	Bitmap bitmap;
+	Result ppxres = Bitmap::Create(width, height, format, &bitmap);
+	if (Failed(ppxres)) {
+		bitmap.InternalCtor();
+	}
+	if (!IsNull(pResult)) {
+		*pResult = ppxres;
+	}
+	return bitmap;
+}
+
+Bitmap Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t rowStride, char* pExternalStorage, Result* pResult)
+{
+	Bitmap bitmap;
+	Result ppxres = Bitmap::Create(width, height, format, rowStride, pExternalStorage, &bitmap);
+	if (Failed(ppxres)) {
+		bitmap.InternalCtor();
+	}
+	if (!IsNull(pResult)) {
+		*pResult = ppxres;
+	}
+	return bitmap;
+}
+
+Bitmap Bitmap::Create(uint32_t width, uint32_t height, Bitmap::Format format, char* pExternalStorage, Result* pResult)
+{
+	return Bitmap::Create(width, height, format, 0, pExternalStorage, pResult);
+}
+
+bool Bitmap::IsOk() const
+{
+	bool isSizeValid = (mWidth > 0) && (mHeight > 0);
+	bool isFormatValid = (mFormat != Bitmap::FORMAT_UNDEFINED);
+	bool isStorageValid = (mData != nullptr);
+	return isSizeValid && isFormatValid && isStorageValid;
+}
+
+uint64_t Bitmap::GetFootprintSize(uint32_t rowStrideAlignment) const
+{
+	uint32_t alignedRowStride = RoundUp<uint32_t>(mRowStride, rowStrideAlignment);
+	uint64_t size = alignedRowStride * mHeight;
+	return size;
+}
+
+Result Bitmap::Resize(uint32_t width, uint32_t height)
+{
+	// If internal storage is empty then this bitmap is using external storage...so don't resize!
+	if (mInternalStorage.empty()) {
+		return ERROR_IMAGE_CANNOT_RESIZE_EXTERNAL_STORAGE;
+	}
+
+	mWidth = width;
+	mHeight = height;
+	mRowStride = width * mPixelStride;
+
+	size_t n = Bitmap::StorageFootprint(mWidth, mHeight, mFormat);
+	mInternalStorage.resize(n);
+	mData = (mInternalStorage.size() > 0) ? mInternalStorage.data() : nullptr;
+
+	return SUCCESS;
+}
+
+Result Bitmap::ScaleTo(Bitmap* pTargetBitmap) const
+{
+	return ScaleTo(pTargetBitmap, STBIR_FILTER_DEFAULT);
+}
+
+Result Bitmap::ScaleTo(Bitmap* pTargetBitmap, stbir_filter filterType) const
+{
+	if (IsNull(pTargetBitmap)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	// Format must match
+	if (pTargetBitmap->GetFormat() != mFormat) {
+		return ERROR_IMAGE_INVALID_FORMAT;
+	}
+		
+	stbir_datatype datatype = InvalidValue<stbir_datatype>();
+	switch (ChannelDataType(GetFormat())) {
+	default: break;
+	case Bitmap::DATA_TYPE_UINT8: datatype = STBIR_TYPE_UINT8; break;
+	case Bitmap::DATA_TYPE_UINT16: datatype = STBIR_TYPE_UINT16; break;
+	case Bitmap::DATA_TYPE_UINT32: datatype = STBIR_TYPE_UINT32; break;
+	case Bitmap::DATA_TYPE_FLOAT: datatype = STBIR_TYPE_FLOAT; break;
+	}	
+
+	int res = stbir_resize(
+		static_cast<const void*>(GetData()),
+		static_cast<int>(GetWidth()),
+		static_cast<int>(GetHeight()),
+		static_cast<int>(GetRowStride()),
+		static_cast<void*>(pTargetBitmap->GetData()),
+		static_cast<int>(pTargetBitmap->GetWidth()),
+		static_cast<int>(pTargetBitmap->GetHeight()),
+		static_cast<int>(pTargetBitmap->GetRowStride()),
+		datatype,
+		static_cast<int>(Bitmap::ChannelCount(GetFormat())),
+		-1,
+		0,
+		STBIR_EDGE_CLAMP,
+		STBIR_EDGE_CLAMP,
+		filterType,
+		filterType,
+		STBIR_COLORSPACE_LINEAR,
+		nullptr);
+
+	if (res == 0) {
+		return ERROR_IMAGE_RESIZE_FAILED;
+	}
+
+	return SUCCESS;
+}
+
+char* Bitmap::GetPixelAddress(uint32_t x, uint32_t y)
+{
+	char* pPixel = nullptr;
+	if (!IsNull(mData) && (x >= 0) && (x < mWidth) && (y >= 0) && (y < mHeight)) {
+		size_t offset = (y * mRowStride) + (x * mPixelStride);
+		pPixel = mData + offset;
+	}
+	return pPixel;
+}
+
+const char* Bitmap::GetPixelAddress(uint32_t x, uint32_t y) const
+{
+	const char* pPixel = nullptr;
+	if (!IsNull(mData) && (x >= 0) && (x < mWidth) && (y >= 0) && (y < mHeight)) {
+		size_t offset = (y * mRowStride) + (x * mPixelStride);
+		pPixel = mData + offset;
+	}
+	return pPixel;
+}
+
+uint8_t* Bitmap::GetPixel8u(uint32_t x, uint32_t y)
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT8) {
+		return nullptr;
+	}
+	return reinterpret_cast<uint8_t*>(GetPixelAddress(x, y));
+}
+
+const uint8_t* Bitmap::GetPixel8u(uint32_t x, uint32_t y) const
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT8) {
+		return nullptr;
+	}
+	return reinterpret_cast<const uint8_t*>(GetPixelAddress(x, y));
+}
+
+uint16_t* Bitmap::GetPixel16u(uint32_t x, uint32_t y)
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT16) {
+		return nullptr;
+	}
+	return reinterpret_cast<uint16_t*>(GetPixelAddress(x, y));
+}
+
+const uint16_t* Bitmap::GetPixel16u(uint32_t x, uint32_t y) const
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT16) {
+		return nullptr;
+	}
+	return reinterpret_cast<const uint16_t*>(GetPixelAddress(x, y));
+}
+
+uint32_t* Bitmap::GetPixel32u(uint32_t x, uint32_t y)
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT32) {
+		return nullptr;
+	}
+	return reinterpret_cast<uint32_t*>(GetPixelAddress(x, y));
+}
+
+const uint32_t* Bitmap::GetPixel32u(uint32_t x, uint32_t y) const
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_UINT32) {
+		return nullptr;
+	}
+	return reinterpret_cast<const uint32_t*>(GetPixelAddress(x, y));
+}
+
+float* Bitmap::GetPixel32f(uint32_t x, uint32_t y)
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_FLOAT) {
+		return nullptr;
+	}
+	return reinterpret_cast<float*>(GetPixelAddress(x, y));
+}
+
+const float* Bitmap::GetPixel32f(uint32_t x, uint32_t y) const
+{
+	if (Bitmap::ChannelDataType(mFormat) != Bitmap::DATA_TYPE_FLOAT) {
+		return nullptr;
+	}
+	return reinterpret_cast<const float*>(GetPixelAddress(x, y));
+}
+
+uint32_t Bitmap::ChannelSize(Bitmap::Format value)
+{
+	
+	switch (value) {
+	default: break;
+	case Bitmap::FORMAT_R_UINT8: return 1; break;
+	case Bitmap::FORMAT_RG_UINT8: return 1; break;
+	case Bitmap::FORMAT_RGB_UINT8: return 1; break;
+	case Bitmap::FORMAT_RGBA_UINT8: return 1; break;
+
+	case Bitmap::FORMAT_R_UINT16: return 2; break;
+	case Bitmap::FORMAT_RG_UINT16: return 2; break;
+	case Bitmap::FORMAT_RGB_UINT16: return 2; break;
+	case Bitmap::FORMAT_RGBA_UINT16: return 2; break;
+
+	case Bitmap::FORMAT_R_UINT32: return 4; break;
+	case Bitmap::FORMAT_RG_UINT32: return 4; break;
+	case Bitmap::FORMAT_RGB_UINT32: return 4; break;
+	case Bitmap::FORMAT_RGBA_UINT32: return 4; break;
+
+	case Bitmap::FORMAT_R_FLOAT: return 4; break;
+	case Bitmap::FORMAT_RG_FLOAT: return 4; break;
+	case Bitmap::FORMAT_RGB_FLOAT: return 4; break;
+	case Bitmap::FORMAT_RGBA_FLOAT: return 4; break;
+	}
+	
+	return 0;
+}
+
+uint32_t Bitmap::ChannelCount(Bitmap::Format value)
+{
+	
+	switch (value) {
+	default: break;
+	case Bitmap::FORMAT_R_UINT8: return 1; break;
+	case Bitmap::FORMAT_RG_UINT8: return 2; break;
+	case Bitmap::FORMAT_RGB_UINT8: return 3; break;
+	case Bitmap::FORMAT_RGBA_UINT8: return 4; break;
+
+	case Bitmap::FORMAT_R_UINT16: return 1; break;
+	case Bitmap::FORMAT_RG_UINT16: return 2; break;
+	case Bitmap::FORMAT_RGB_UINT16: return 3; break;
+	case Bitmap::FORMAT_RGBA_UINT16: return 4; break;
+
+	case Bitmap::FORMAT_R_UINT32: return 1; break;
+	case Bitmap::FORMAT_RG_UINT32: return 2; break;
+	case Bitmap::FORMAT_RGB_UINT32: return 3; break;
+	case Bitmap::FORMAT_RGBA_UINT32: return 4; break;
+
+	case Bitmap::FORMAT_R_FLOAT: return 1; break;
+	case Bitmap::FORMAT_RG_FLOAT: return 2; break;
+	case Bitmap::FORMAT_RGB_FLOAT: return 3; break;
+	case Bitmap::FORMAT_RGBA_FLOAT: return 4; break;
+	}
+	
+	return 0;
+}
+
+Bitmap::DataType Bitmap::ChannelDataType(Bitmap::Format value)
+{
+	
+	switch (value) {
+	default: break;
+	case Bitmap::FORMAT_R_UINT8:
+	case Bitmap::FORMAT_RG_UINT8:
+	case Bitmap::FORMAT_RGB_UINT8:
+	case Bitmap::FORMAT_RGBA_UINT8: {
+		return Bitmap::DATA_TYPE_UINT8;
+	} break;
+
+	case Bitmap::FORMAT_R_UINT16:
+	case Bitmap::FORMAT_RG_UINT16:
+	case Bitmap::FORMAT_RGB_UINT16:
+	case Bitmap::FORMAT_RGBA_UINT16: {
+		return Bitmap::DATA_TYPE_UINT16;
+	} break;
+
+	case Bitmap::FORMAT_R_UINT32:
+	case Bitmap::FORMAT_RG_UINT32:
+	case Bitmap::FORMAT_RGB_UINT32:
+	case Bitmap::FORMAT_RGBA_UINT32: {
+		return Bitmap::DATA_TYPE_UINT32;
+	} break;
+
+	case Bitmap::FORMAT_R_FLOAT:
+	case Bitmap::FORMAT_RG_FLOAT:
+	case Bitmap::FORMAT_RGB_FLOAT:
+	case Bitmap::FORMAT_RGBA_FLOAT: {
+		return Bitmap::DATA_TYPE_FLOAT;
+	} break;
+	}
+	
+	return Bitmap::DATA_TYPE_UNDEFINED;
+}
+
+uint32_t Bitmap::FormatSize(Bitmap::Format value)
+{
+	uint32_t channelSize = Bitmap::ChannelSize(value);
+	uint32_t channelCount = Bitmap::ChannelCount(value);
+	uint32_t size = channelSize * channelCount;
+	return size;
+}
+
+uint64_t Bitmap::StorageFootprint(uint32_t width, uint32_t height, Bitmap::Format format)
+{
+	uint64_t size = width * height * Bitmap::FormatSize(format);
+	return size;
+}
+
+static Result IsRadianceFile(const std::filesystem::path& path, bool& isRadiance)
+{
+	// Open file
+	File file;
+	if (!file.Open(path.string().c_str())) {
+		return ERROR_IMAGE_FILE_LOAD_FAILED;
+	}
+	// Signature buffer
+	char buf[kRadianceSigSize] = { 0 };
+
+	// Read signature
+	size_t n = file.Read(buf, kRadianceSigSize);
+
+	// Only check if kBufferSize bytes were read
+	if (n == kRadianceSigSize) {
+		int res = strncmp(buf, kRadianceSig, kRadianceSigSize);
+		isRadiance = (res == 0);
+	}
+
+	return SUCCESS;
+}
+
+static Result IsRadianceImage(const size_t dataSize, const void* pData, bool& isRadiance)
+{
+	if ((dataSize < kRadianceSigSize) || IsNull(pData)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	int res = strncmp(static_cast<const char*>(pData), kRadianceSig, kRadianceSigSize);
+	isRadiance = (res == 0);
+
+	return SUCCESS;
+}
+
+Result Bitmap::StbiInfo(const std::filesystem::path& path, int* pX, int* pY, int* pComp)
+{
+	File file;
+	if (!file.Open(path)) {
+		return ERROR_IMAGE_FILE_LOAD_FAILED;
+	}
+
+	int stbiResult = 0;
+	//if (file.IsMapped())
+	//{
+	//	stbiResult = stbi_info_from_memory(
+	//		reinterpret_cast<const stbi_uc*>(file.GetMappedData()),
+	//		static_cast<int>(file.GetLength()),
+	//		pX,
+	//		pY,
+	//		pComp);
+	//}
+	//else 
+	//{
+		std::vector<uint8_t> buffer(file.GetLength());
+		file.Read(buffer.data(), buffer.size());
+		stbiResult = stbi_info_from_memory(
+			buffer.data(),
+			static_cast<int>(buffer.size()),
+			pX,
+			pY,
+			pComp);
+	//}
+
+	return stbiResult ? SUCCESS : ERROR_IMAGE_FILE_LOAD_FAILED;
+}
+
+bool Bitmap::IsBitmapFile(const std::filesystem::path& path)
+{
+	int x, y, comp;
+	return (StbiInfo(path, &x, &y, &comp) == SUCCESS);
+}
+
+Result Bitmap::GetFileProperties(const std::filesystem::path& path, uint32_t* pWidth, uint32_t* pHeight, Bitmap::Format* pFormat)
+{
+	if (!std::filesystem::exists(path)) return ERROR_PATH_DOES_NOT_EXIST;
+
+	int x = 0;
+	int y = 0;
+	int comp = 0;
+	StbiInfo(path, &x, &y, &comp);
+
+	bool   isRadiance = false;
+	Result ppxres = IsRadianceFile(path, isRadiance);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	if (!IsNull(pWidth)) {
+		*pWidth = static_cast<uint32_t>(x);
+	}
+
+	if (!IsNull(pHeight)) {
+		*pHeight = static_cast<uint32_t>(y);
+	}
+
+	// Force to 4 channels to make things easier for the graphics APIs.
+	if (!IsNull(pFormat)) {
+		*pFormat = isRadiance ? Bitmap::FORMAT_RGBA_FLOAT : Bitmap::FORMAT_RGBA_UINT8;
+	}
+
+	return SUCCESS;
+}
+
+char* Bitmap::StbiLoad(const std::filesystem::path& path, Bitmap::Format format, int* pWidth, int* pHeight, int* pChannels, int desiredChannels)
+{
+	File file;
+	if (!file.Open(path)) {
+		return nullptr;
+	}
+
+	std::vector<stbi_uc> buffer(0);
+	//if (!file.IsMapped()) {
+		buffer.resize(file.GetLength());
+		file.Read(buffer.data(), buffer.size());
+	//}
+
+	const stbi_uc* readPtr = /*file.IsMapped() ? reinterpret_cast<const stbi_uc*>(file.GetMappedData()) :*/ buffer.data();
+	if (format == Bitmap::FORMAT_RGBA_FLOAT) {
+		return reinterpret_cast<char*>(stbi_loadf_from_memory(
+			readPtr,
+			static_cast<int>(file.GetLength()),
+			pWidth,
+			pHeight,
+			pChannels,
+			desiredChannels));
+	}
+	return reinterpret_cast<char*>(stbi_load_from_memory(
+		readPtr,
+		static_cast<int>(file.GetLength()),
+		pWidth,
+		pHeight,
+		pChannels,
+		desiredChannels));
+}
+
+Result Bitmap::LoadFile(const std::filesystem::path& path, Bitmap* pBitmap)
+{
+	if (!std::filesystem::exists(path)) return ERROR_PATH_DOES_NOT_EXIST;
+
+	bool   isRadiance = false;
+	Result ppxres = IsRadianceFile(path, isRadiance);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	int            width = 0;
+	int            height = 0;
+	int            channels = 0;
+	int            requiredChannels = 4; // Force to 4 channels to make things easier for the graphics APIs.
+	Bitmap::Format format = (isRadiance) ? Bitmap::FORMAT_RGBA_FLOAT : Bitmap::FORMAT_RGBA_UINT8;
+	char* dataPtr = StbiLoad(path, format, &width, &height, &channels, requiredChannels);
+
+	if (IsNull(dataPtr)) {
+		Fatal("Failed to open file '" + path.string() + "'");
+		return ERROR_IMAGE_FILE_LOAD_FAILED;
+	}
+	ppxres = Bitmap::Create(width, height, format, dataPtr, pBitmap);
+	if (!pBitmap->IsOk()) {
+		// Something has gone really wrong if this happens
+		stbi_image_free(dataPtr);
+		return ERROR_FAILED;
+	}
+	// Critical! This marks the memory as needing to be freed later!
+	pBitmap->mDataIsFromStbi = true;
+
+	return SUCCESS;
+}
+
+//Result Bitmap::SaveFilePNG(const std::filesystem::path& path, const Bitmap* pBitmap)
+//{
+//#if defined(_ANDROID)
+//	ASSERT_MSG(false, "SaveFilePNG not supported on Android");
+//	return ERROR_IMAGE_FILE_SAVE_FAILED;
+//#else
+//	int res = stbi_write_png(path.string().c_str(), pBitmap->GetWidth(), pBitmap->GetHeight(), pBitmap->GetChannelCount(), pBitmap->GetData(), pBitmap->GetRowStride());
+//	if (res == 0) {
+//		return ERROR_IMAGE_FILE_SAVE_FAILED;
+//	}
+//	return SUCCESS;
+//#endif
+//}
+
+Result Bitmap::LoadFromMemory(const size_t dataSize, const void* pData, Bitmap* pBitmap)
+{
+	if ((dataSize == 0) || IsNull(pData) || IsNull(pBitmap)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	bool   isRadiance = false;
+	Result ppxres = IsRadianceImage(dataSize, pData, isRadiance);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	int            width = 0;
+	int            height = 0;
+	int            channels = 0;
+	int            requiredChannels = 4; // Force to 4 channels to make things easier for the graphics APIs.
+	Bitmap::Format format = (isRadiance) ? Bitmap::FORMAT_RGBA_FLOAT : Bitmap::FORMAT_RGBA_UINT8;
+
+	void* pStbData = nullptr;
+	if (isRadiance) {
+		pStbData = stbi_loadf_from_memory(
+			static_cast<const stbi_uc*>(pData),
+			static_cast<int>(dataSize),
+			&width,
+			&height,
+			&channels,
+			requiredChannels);
+	}
+	else {
+		pStbData = stbi_load_from_memory(
+			static_cast<const stbi_uc*>(pData),
+			static_cast<int>(dataSize),
+			&width,
+			&height,
+			&channels,
+			requiredChannels);
+	}
+
+	if (IsNull(pStbData)) {
+		return ERROR_IMAGE_FILE_LOAD_FAILED;
+	}
+
+	ppxres = Bitmap::Create(width, height, format, static_cast<char*>(pStbData), pBitmap);
+	if (!pBitmap->IsOk()) {
+		// Something has gone really wrong if this happens
+		stbi_image_free(pStbData);
+		return ERROR_FAILED;
+	}
+	// Critical! This marks the memory as needing to be freed later!
+	pBitmap->mDataIsFromStbi = true;
+
+	return SUCCESS;
+}
+
+#pragma endregion
+
+#pragma region TriMesh
+
+TriMesh::TriMesh()
+{
+}
+
+TriMesh::TriMesh(IndexType indexType)
+	: mIndexType(indexType)
+{
+}
+
+TriMesh::TriMesh(TriMeshAttributeDim texCoordDim)
+	: mTexCoordDim(texCoordDim)
+{
+}
+
+TriMesh::TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim)
+	: mIndexType(indexType), mTexCoordDim(texCoordDim)
+{
+}
+
+TriMesh::~TriMesh()
+{
+}
+
+uint32_t TriMesh::GetCountTriangles() const
+{
+	uint32_t count = 0;
+	if (mIndexType != INDEX_TYPE_UNDEFINED) {
+		uint32_t elementSize = IndexTypeSize(mIndexType);
+		uint32_t elementCount = CountU32(mIndices) / elementSize;
+		count = elementCount / 3;
+	}
+	else {
+		count = CountU32(mPositions) / 3;
+	}
+	return count;
+}
+
+uint32_t TriMesh::GetCountIndices() const
+{
+	uint32_t indexSize = IndexTypeSize(mIndexType);
+	if (indexSize == 0) {
+		return 0;
+	}
+
+	uint32_t count = CountU32(mIndices) / indexSize;
+	return count;
+}
+
+uint32_t TriMesh::GetCountPositions() const
+{
+	uint32_t count = CountU32(mPositions);
+	return count;
+}
+
+uint32_t TriMesh::GetCountColors() const
+{
+	uint32_t count = CountU32(mColors);
+	return count;
+}
+
+uint32_t TriMesh::GetCountNormals() const
+{
+	uint32_t count = CountU32(mNormals);
+	return count;
+}
+
+uint32_t TriMesh::GetCountTexCoords() const
+{
+	if (mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_2) {
+		uint32_t count = CountU32(mTexCoords) / 2;
+		return count;
+	}
+	else if (mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_3) {
+		uint32_t count = CountU32(mTexCoords) / 3;
+		return count;
+	}
+	else if (mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_4) {
+		uint32_t count = CountU32(mTexCoords) / 4;
+		return count;
+	}
+	return 0;
+}
+
+uint32_t TriMesh::GetCountTangents() const
+{
+	uint32_t count = CountU32(mTangents);
+	return count;
+}
+
+uint32_t TriMesh::GetCountBitangents() const
+{
+	uint32_t count = CountU32(mBitangents);
+	return count;
+}
+
+uint64_t TriMesh::GetDataSizeIndices() const
+{
+	uint64_t size = static_cast<uint64_t>(mIndices.size());
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizePositions() const
+{
+	uint64_t size = static_cast<uint64_t>(mPositions.size() * sizeof(float3));
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizeColors() const
+{
+	uint64_t size = static_cast<uint64_t>(mColors.size() * sizeof(float3));
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizeNormalls() const
+{
+	uint64_t size = static_cast<uint64_t>(mNormals.size() * sizeof(float3));
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizeTexCoords() const
+{
+	uint64_t size = static_cast<uint64_t>(mTexCoords.size() * sizeof(float));
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizeTangents() const
+{
+	uint64_t size = static_cast<uint64_t>(mTangents.size() * sizeof(float3));
+	return size;
+}
+
+uint64_t TriMesh::GetDataSizeBitangents() const
+{
+	uint64_t size = static_cast<uint64_t>(mBitangents.size() * sizeof(float3));
+	return size;
+}
+
+const uint16_t* TriMesh::GetDataIndicesU16(uint32_t index) const
+{
+	if (mIndexType != INDEX_TYPE_UINT16) {
+		return nullptr;
+	}
+	uint32_t count = GetCountIndices();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(uint16_t) * index;
+	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
+	return reinterpret_cast<const uint16_t*>(ptr);
+}
+
+const uint32_t* TriMesh::GetDataIndicesU32(uint32_t index) const
+{
+	if (mIndexType != INDEX_TYPE_UINT32) {
+		return nullptr;
+	}
+	uint32_t count = GetCountIndices();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(uint32_t) * index;
+	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
+	return reinterpret_cast<const uint32_t*>(ptr);
+}
+
+const float3* TriMesh::GetDataPositions(uint32_t index) const
+{
+	if (index >= mPositions.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mPositions.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+const float3* TriMesh::GetDataColors(uint32_t index) const
+{
+	if (index >= mColors.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mColors.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+const float3* TriMesh::GetDataNormalls(uint32_t index) const
+{
+	if (index >= mNormals.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mNormals.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+const float2* TriMesh::GetDataTexCoords2(uint32_t index) const
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_2) {
+		return nullptr;
+	}
+	uint32_t count = GetCountTexCoords();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float2) * index;
+	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
+	return reinterpret_cast<const float2*>(ptr);
+}
+
+const float3* TriMesh::GetDataTexCoords3(uint32_t index) const
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_3) {
+		return nullptr;
+	}
+	uint32_t count = GetCountTexCoords();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+const float4* TriMesh::GetDataTexCoords4(uint32_t index) const
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_4) {
+		return nullptr;
+	}
+	uint32_t count = GetCountTexCoords();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float4) * index;
+	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
+	return reinterpret_cast<const float4*>(ptr);
+}
+
+const float4* TriMesh::GetDataTangents(uint32_t index) const
+{
+	if (index >= mTangents.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float4) * index;
+	const char* ptr = reinterpret_cast<const char*>(mTangents.data()) + offset;
+	return reinterpret_cast<const float4*>(ptr);
+}
+
+const float3* TriMesh::GetDataBitangents(uint32_t index) const
+{
+	if (index >= mBitangents.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mBitangents.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+void TriMesh::AppendIndexU16(uint16_t value)
+{
+	const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(&value);
+	mIndices.push_back(pBytes[0]);
+	mIndices.push_back(pBytes[1]);
+}
+
+void TriMesh::AppendIndexU32(uint32_t value)
+{
+	const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(&value);
+	mIndices.push_back(pBytes[0]);
+	mIndices.push_back(pBytes[1]);
+	mIndices.push_back(pBytes[2]);
+	mIndices.push_back(pBytes[3]);
+}
+
+void TriMesh::PreallocateForTriangleCount(size_t triangleCount, bool enableColors, bool enableNormals, bool enableTexCoords, bool enableTangents)
+{
+	size_t vertexCount = triangleCount * 3;
+
+	// Reserve for triangles
+	switch (mIndexType) {
+	case INDEX_TYPE_UINT16:
+		mIndices.reserve(vertexCount * sizeof(uint16_t));
+		break;
+	case INDEX_TYPE_UINT32:
+		mIndices.reserve(vertexCount * sizeof(uint32_t));
+		break;
+	default:
+		// Nothing to do; not indexing.
+		return;
+	}
+
+	// Position per vertex
+	mPositions.reserve(vertexCount);
+	// Color per vertex
+	if (enableColors) {
+		mColors.reserve(vertexCount);
+	}
+	// Normal per vertex
+	if (enableNormals) {
+		mNormals.reserve(vertexCount);
+	}
+	// TexCoord per vertex
+	if (enableTexCoords) {
+		int32_t dimCount = (mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_4) ? 4 : ((mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_3) ? 3 : ((mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_2) ? 2 : 0));
+		mTexCoords.reserve(vertexCount * dimCount);
+	}
+	// Tangents = 3 per triangle (NOT necessarily related to vertices!)
+	if (enableTangents) {
+		mTangents.reserve(triangleCount * 3);
+		mBitangents.reserve(triangleCount * 3);
+	}
+}
+
+uint32_t TriMesh::AppendTriangle(uint32_t v0, uint32_t v1, uint32_t v2)
+{
+	if (mIndexType == INDEX_TYPE_UINT16) {
+		mIndices.reserve(mIndices.size() + 3 * sizeof(uint16_t));
+		AppendIndexU16(static_cast<uint16_t>(v0));
+		AppendIndexU16(static_cast<uint16_t>(v1));
+		AppendIndexU16(static_cast<uint16_t>(v2));
+	}
+	else if (mIndexType == INDEX_TYPE_UINT32) {
+		mIndices.reserve(mIndices.size() + 3 * sizeof(uint32_t));
+		AppendIndexU32(v0);
+		AppendIndexU32(v1);
+		AppendIndexU32(v2);
+	}
+	else {
+		ASSERT_MSG(false, "unknown index type");
+		return 0;
+	}
+	uint32_t count = GetCountTriangles();
+	return count;
+}
+
+uint32_t TriMesh::AppendPosition(const float3& value)
+{
+	mPositions.push_back(value);
+	// Update bounding box
+	uint32_t count = GetCountPositions();
+	if (count > 1) {
+		mBoundingBoxMin.x = std::min<float>(mBoundingBoxMin.x, value.x);
+		mBoundingBoxMin.y = std::min<float>(mBoundingBoxMin.y, value.y);
+		mBoundingBoxMin.z = std::min<float>(mBoundingBoxMin.z, value.z);
+		mBoundingBoxMax.x = std::max<float>(mBoundingBoxMax.x, value.x);
+		mBoundingBoxMax.y = std::max<float>(mBoundingBoxMax.y, value.y);
+		mBoundingBoxMax.z = std::max<float>(mBoundingBoxMax.z, value.z);
+	}
+	else {
+		mBoundingBoxMin = mBoundingBoxMax = value;
+	}
+	return count;
+}
+
+uint32_t TriMesh::AppendColor(const float3& value)
+{
+	mColors.push_back(value);
+	uint32_t count = GetCountColors();
+	return count;
+}
+
+uint32_t TriMesh::AppendTexCoord(const float2& value)
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_2) {
+		ASSERT_MSG(false, "unknown tex coord dim");
+		return 0;
+	}
+	mTexCoords.reserve(mTexCoords.size() + 2);
+	mTexCoords.push_back(value.x);
+	mTexCoords.push_back(value.y);
+	uint32_t count = GetCountTexCoords();
+	return count;
+}
+
+uint32_t TriMesh::AppendTexCoord(const float3& value)
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_3) {
+		ASSERT_MSG(false, "unknown tex coord dim");
+		return 0;
+	}
+	mTexCoords.reserve(mTexCoords.size() + 3);
+	mTexCoords.push_back(value.x);
+	mTexCoords.push_back(value.y);
+	mTexCoords.push_back(value.z);
+	uint32_t count = GetCountTexCoords();
+	return count;
+}
+
+uint32_t TriMesh::AppendTexCoord(const float4& value)
+{
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_4) {
+		ASSERT_MSG(false, "unknown tex coord dim");
+		return 0;
+	}
+	mTexCoords.reserve(mTexCoords.size() + 3);
+	mTexCoords.push_back(value.x);
+	mTexCoords.push_back(value.y);
+	mTexCoords.push_back(value.z);
+	mTexCoords.push_back(value.w);
+	uint32_t count = GetCountTexCoords();
+	return count;
+}
+
+uint32_t TriMesh::AppendNormal(const float3& value)
+{
+	mNormals.push_back(value);
+	uint32_t count = GetCountNormals();
+	return count;
+}
+
+uint32_t TriMesh::AppendTangent(const float4& value)
+{
+	mTangents.push_back(value);
+	uint32_t count = GetCountTangents();
+	return count;
+}
+
+uint32_t TriMesh::AppendBitangent(const float3& value)
+{
+	mBitangents.push_back(value);
+	uint32_t count = GetCountBitangents();
+	return count;
+}
+
+Result TriMesh::GetTriangle(uint32_t triIndex, uint32_t& v0, uint32_t& v1, uint32_t& v2) const
+{
+	if (mIndexType == INDEX_TYPE_UNDEFINED) {
+		return ERROR_GEOMETRY_NO_INDEX_DATA;
+	}
+
+	uint32_t triCount = GetCountTriangles();
+	if (triIndex >= triCount) {
+		return ERROR_OUT_OF_RANGE;
+	}
+
+	const uint8_t* pData = mIndices.data();
+	uint32_t       elementSize = IndexTypeSize(mIndexType);
+
+	if (mIndexType == INDEX_TYPE_UINT16) {
+		size_t          offset = 3 * triIndex * elementSize;
+		const uint16_t* pIndexData = reinterpret_cast<const uint16_t*>(pData + offset);
+		v0 = static_cast<uint32_t>(pIndexData[0]);
+		v1 = static_cast<uint32_t>(pIndexData[1]);
+		v2 = static_cast<uint32_t>(pIndexData[2]);
+	}
+	else if (mIndexType == INDEX_TYPE_UINT32) {
+		size_t          offset = 3 * triIndex * elementSize;
+		const uint32_t* pIndexData = reinterpret_cast<const uint32_t*>(pData + offset);
+		v0 = static_cast<uint32_t>(pIndexData[0]);
+		v1 = static_cast<uint32_t>(pIndexData[1]);
+		v2 = static_cast<uint32_t>(pIndexData[2]);
+	}
+
+	return SUCCESS;
+}
+
+Result TriMesh::GetVertexData(uint32_t vtxIndex, TriMeshVertexData* pVertexData) const
+{
+	uint32_t vertexCount = GetCountPositions();
+	if (vtxIndex >= vertexCount) {
+		return ERROR_OUT_OF_RANGE;
+	}
+
+	const float3* pPosition = GetDataPositions(vtxIndex);
+	const float3* pColor = GetDataColors(vtxIndex);
+	const float3* pNormal = GetDataNormalls(vtxIndex);
+	const float2* pTexCoord2 = GetDataTexCoords2(vtxIndex);
+	const float4* pTangent = GetDataTangents(vtxIndex);
+	const float3* pBitangent = GetDataBitangents(vtxIndex);
+
+	pVertexData->position = *pPosition;
+
+	if (!IsNull(pColor)) {
+		pVertexData->color = *pColor;
+	}
+
+	if (!IsNull(pNormal)) {
+		pVertexData->normal = *pNormal;
+	}
+
+	if (!IsNull(pTexCoord2)) {
+		pVertexData->texCoord = *pTexCoord2;
+	}
+
+	if (!IsNull(pTangent)) {
+		pVertexData->tangent = *pTangent;
+	}
+	if (!IsNull(pBitangent)) {
+		pVertexData->bitangent = *pBitangent;
+	}
+
+	return SUCCESS;
+}
+
+void TriMesh::AppendIndexAndVertexData(
+	std::vector<uint32_t>& indexData,
+	const std::vector<float>& vertexData,
+	const uint32_t            expectedVertexCount,
+	const TriMeshOptions& options,
+	TriMesh& mesh)
+{
+	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+
+	// Verify expected vertex count
+	size_t vertexCount = (vertexData.size() * sizeof(float)) / sizeof(TriMeshVertexData);
+	ASSERT_MSG(vertexCount == expectedVertexCount, "unexpected vertex count");
+
+	// Get base pointer to vertex data
+	const char* pData = reinterpret_cast<const char*>(vertexData.data());
+
+	if (indexType != INDEX_TYPE_UNDEFINED) {
+		for (size_t i = 0; i < vertexCount; ++i) {
+			const TriMeshVertexData* pVertexData = reinterpret_cast<const TriMeshVertexData*>(pData + (i * sizeof(TriMeshVertexData)));
+
+			mesh.AppendPosition(pVertexData->position * options.mScale);
+
+			if (options.mEnableVertexColors || options.mEnableObjectColor) {
+				float3 color = options.mEnableObjectColor ? options.mObjectColor : pVertexData->color;
+				mesh.AppendColor(color);
+			}
+
+			if (options.mEnableNormals) {
+				mesh.AppendNormal(pVertexData->normal);
+			}
+
+			if (options.mEnableTexCoords) {
+				mesh.AppendTexCoord(pVertexData->texCoord * options.mTexCoordScale);
+			}
+
+			if (options.mEnableTangents) {
+				mesh.AppendTangent(pVertexData->tangent);
+				mesh.AppendBitangent(pVertexData->bitangent);
+			}
+		}
+
+		size_t triCount = indexData.size() / 3;
+		for (size_t triIndex = 0; triIndex < triCount; ++triIndex) {
+			uint32_t v0 = indexData[3 * triIndex + 0];
+			uint32_t v1 = indexData[3 * triIndex + 1];
+			uint32_t v2 = indexData[3 * triIndex + 2];
+			mesh.AppendTriangle(v0, v1, v2);
+		}
+	}
+	else {
+		for (size_t i = 0; i < indexData.size(); ++i) {
+			uint32_t                 vi = indexData[i];
+			const TriMeshVertexData* pVertexData = reinterpret_cast<const TriMeshVertexData*>(pData + (vi * sizeof(TriMeshVertexData)));
+
+			mesh.AppendPosition(pVertexData->position * options.mScale);
+
+			if (options.mEnableVertexColors) {
+				mesh.AppendColor(pVertexData->color);
+			}
+
+			if (options.mEnableNormals) {
+				mesh.AppendNormal(pVertexData->normal);
+			}
+
+			if (options.mEnableTexCoords) {
+				mesh.AppendTexCoord(pVertexData->texCoord);
+			}
+
+			if (options.mEnableTangents) {
+				mesh.AppendTangent(pVertexData->tangent);
+				mesh.AppendBitangent(pVertexData->bitangent);
+			}
+		}
+	}
+}
+
+TriMesh TriMesh::CreatePlane(TriMeshPlane plane, const float2& size, uint32_t usegs, uint32_t vsegs, const TriMeshOptions& options)
+{
+	const float    hs = size.x / 2.0f;
+	const float    ht = size.y / 2.0f;
+	const float    ds = size.x / static_cast<float>(usegs);
+	const float    dt = size.y / static_cast<float>(vsegs);
+	const uint32_t uverts = usegs + 1;
+	const uint32_t vverts = vsegs + 1;
+
+	std::vector<float> vertexData;
+	for (uint32_t j = 0; j < vverts; ++j) {
+		for (uint32_t i = 0; i < uverts; ++i) {
+			float s = i * ds / size.x;
+			float t = j * dt / size.y;
+			float u = options.mTexCoordScale.x * s;
+			float v = options.mTexCoordScale.y * t;
+
+			// float3 position  = float3(s - hx, 0, t - hz);
+			float3 position = float3(0);
+			switch (plane) {
+			default: {
+				ASSERT_MSG(false, "unknown plane orientation");
+			} break;
+
+				   // case TRI_MESH_PLANE_POSITIVE_X: {
+				   // } break;
+				   //
+				   // case TRI_MESH_PLANE_NEGATIVE_X: {
+				   // } break;
+				   //
+			case TRI_MESH_PLANE_POSITIVE_Y: {
+				position = float3(s * size.x - hs, 0, t * size.y - ht);
+			} break;
+
+			case TRI_MESH_PLANE_NEGATIVE_Y: {
+				position = float3((1.0f - s) * size.x - hs, 0, (1.0f - t) * size.y - ht);
+			} break;
+
+										  // case TRI_MESH_PLANE_POSITIVE_Z: {
+										  // } break;
+										  //
+										  // case TRI_MESH_PLANE_NEGATIVE_Z: {
+										  // } break;
+			}
+
+			float3 color = float3(u, v, 0);
+			float3 normal = float3(0, 1, 0);
+			float2 texcoord = float2(u, v);
+			float4 tangent = float4(0.0f, 0.0f, 0.0f, 1.0f);
+			float3 bitangent = glm::cross(normal, float3(tangent));
+
+			vertexData.push_back(position.x);
+			vertexData.push_back(position.y);
+			vertexData.push_back(position.z);
+			vertexData.push_back(color.r);
+			vertexData.push_back(color.g);
+			vertexData.push_back(color.b);
+			vertexData.push_back(normal.x);
+			vertexData.push_back(normal.y);
+			vertexData.push_back(normal.z);
+			vertexData.push_back(texcoord.x);
+			vertexData.push_back(texcoord.y);
+			vertexData.push_back(tangent.x);
+			vertexData.push_back(tangent.y);
+			vertexData.push_back(tangent.z);
+			vertexData.push_back(tangent.w);
+			vertexData.push_back(bitangent.x);
+			vertexData.push_back(bitangent.y);
+			vertexData.push_back(bitangent.z);
+		}
+	}
+
+	std::vector<uint32_t> indexData;
+	for (uint32_t i = 1; i < uverts; ++i) {
+		for (uint32_t j = 1; j < vverts; ++j) {
+			uint32_t i0 = i - 1;
+			uint32_t i1 = i;
+			uint32_t j0 = j - 1;
+			uint32_t j1 = j;
+			uint32_t v0 = i1 * vverts + j0;
+			uint32_t v1 = i1 * vverts + j1;
+			uint32_t v2 = i0 * vverts + j1;
+			uint32_t v3 = i0 * vverts + j0;
+
+			switch (plane) {
+			default: {
+				ASSERT_MSG(false, "unknown plane orientation");
+			} break;
+
+				   // case TRI_MESH_PLANE_POSITIVE_X: {
+				   // } break;
+				   //
+				   // case TRI_MESH_PLANE_NEGATIVE_X: {
+				   // } break;
+
+			case TRI_MESH_PLANE_POSITIVE_Y: {
+				indexData.push_back(v0);
+				indexData.push_back(v1);
+				indexData.push_back(v2);
+
+				indexData.push_back(v0);
+				indexData.push_back(v2);
+				indexData.push_back(v3);
+			} break;
+
+			case TRI_MESH_PLANE_NEGATIVE_Y: {
+				indexData.push_back(v0);
+				indexData.push_back(v2);
+				indexData.push_back(v1);
+
+				indexData.push_back(v0);
+				indexData.push_back(v3);
+				indexData.push_back(v2);
+			} break;
+
+										  // case TRI_MESH_PLANE_POSITIVE_Z: {
+										  // } break;
+										  //
+										  // case TRI_MESH_PLANE_NEGATIVE_Z: {
+										  // } break;
+			}
+		}
+	}
+
+	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+	TriMesh             mesh = TriMesh(indexType, texCoordDim);
+
+	uint32_t expectedVertexCount = uverts * vverts;
+	AppendIndexAndVertexData(indexData, vertexData, expectedVertexCount, options, mesh);
+
+	return mesh;
+
+	/*
+	const float hx = size.x / 2.0f;
+	const float hz = size.y / 2.0f;
+	// clang-format off
+	std::vector<float> vertexData = {
+		// position       // vertex color     // normal           // texcoord   // tangent                // bitangent
+		-hx, 0.0f, -hz,   0.7f, 0.7f, 0.7f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 0.0f,
+		-hx, 0.0f,  hz,   0.7f, 0.7f, 0.7f,   0.0f, 1.0f, 0.0f,   0.0f, 1.0f,   0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 0.0f,
+		 hx, 0.0f,  hz,   0.7f, 0.7f, 0.7f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f,   0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 0.0f,
+		 hx, 0.0f, -hz,   0.7f, 0.7f, 0.7f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 0.0f,
+	};
+
+	std::vector<uint32_t> indexData = {
+		0, 1, 2,
+		0, 2, 3
+	};
+	// clang-format on
+
+	IndexType     indexType   = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+	TriMesh             mesh        = TriMesh(indexType, texCoordDim);
+
+	AppendIndexAndVertexData(indexData, vertexData, 4, options, mesh);
+
+	return mesh;
+	*/
+}
+
+TriMesh TriMesh::CreateCube(const float3& size, const TriMeshOptions& options)
+{
+	const float hx = size.x / 2.0f;
+	const float hy = size.y / 2.0f;
+	const float hz = size.z / 2.0f;
+
+	// clang-format off
+	std::vector<float> vertexData = {
+		// position      // vertex colors    // normal           // texcoords   // tangents               // bitangents
+		 hx,  hy, -hz,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,-1.0f,   0.0f, 0.0f,  -1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  0  -Z side
+		 hx, -hy, -hz,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,-1.0f,   0.0f, 1.0f,  -1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  1
+		-hx, -hy, -hz,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,-1.0f,   1.0f, 1.0f,  -1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  2
+		-hx,  hy, -hz,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,-1.0f,   1.0f, 0.0f,  -1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  3
+
+		-hx,  hy,  hz,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  4  +Z side
+		-hx, -hy,  hz,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  5
+		 hx, -hy,  hz,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  6
+		 hx,  hy,  hz,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  7
+
+		-hx,  hy, -hz,   -0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  8  -X side
+		-hx, -hy, -hz,   -0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  //  9
+		-hx, -hy,  hz,   -0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   0.0f, 0.0f, 1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 10
+		-hx,  hy,  hz,   -0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,   0.0f, 0.0f, 1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 11
+
+		 hx,  hy,  hz,    1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f,   0.0f, 0.0f,-1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 12  +X side
+		 hx, -hy,  hz,    1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f,   0.0f, 0.0f,-1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 13
+		 hx, -hy, -hz,    1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   0.0f, 0.0f,-1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 14
+		 hx,  hy, -hz,    1.0f, 1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 0.0f,   0.0f, 0.0f,-1.0f, 1.0f,   0.0f,-1.0f, 0.0f,  // 15
+
+		-hx, -hy,  hz,    1.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,   0.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,-1.0f,  // 16  -Y side
+		-hx, -hy, -hz,    1.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,   0.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,-1.0f,  // 17
+		 hx, -hy, -hz,    1.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,   1.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,-1.0f,  // 18
+		 hx, -hy,  hz,    1.0f, 0.0f, 1.0f,   0.0f,-1.0f, 0.0f,   1.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,-1.0f,  // 19
+
+		-hx,  hy, -hz,    0.0f, 1.0f, 1.0f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 1.0f,  // 20  +Y side
+		-hx,  hy,  hz,    0.0f, 1.0f, 1.0f,   0.0f, 1.0f, 0.0f,   0.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 1.0f,  // 21
+		 hx,  hy,  hz,    0.0f, 1.0f, 1.0f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 1.0f,  // 22
+		 hx,  hy, -hz,    0.0f, 1.0f, 1.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 1.0f,  // 23
+	};
+
+	std::vector<uint32_t> indexData = {
+		0,  1,  2, // -Z side
+		0,  2,  3,
+
+		4,  5,  6, // +Z side
+		4,  6,  7,
+
+		8,  9, 10, // -X side
+		8, 10, 11,
+
+		12, 13, 14, // +X side
+		12, 14, 15,
+
+		16, 17, 18, // -X side
+		16, 18, 19,
+
+		20, 21, 22, // +X side
+		20, 22, 23,
+	};
+	// clang-format on
+
+	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+	TriMesh             mesh = TriMesh(indexType, texCoordDim);
+
+	AppendIndexAndVertexData(indexData, vertexData, 24, options, mesh);
+
+	return mesh;
+}
+
+TriMesh TriMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, const TriMeshOptions& options)
+{
+	constexpr float kPi = glm::pi<float>();
+	constexpr float kTwoPi = 2.0f * kPi;
+
+	const uint32_t uverts = usegs + 1;
+	const uint32_t vverts = vsegs + 1;
+
+	float dt = kTwoPi / static_cast<float>(usegs);
+	float dp = kPi / static_cast<float>(vsegs);
+
+	std::vector<float> vertexData;
+	for (uint32_t i = 0; i < uverts; ++i) {
+		for (uint32_t j = 0; j < vverts; ++j) {
+			float  theta = i * dt;
+			float  phi = j * dp;
+			float  u = options.mTexCoordScale.x * theta / kTwoPi;
+			float  v = options.mTexCoordScale.y * phi / kPi;
+			float3 P = SphericalToCartesian(theta, phi);
+			float3 position = radius * P;
+			float3 color = float3(u, v, 0);
+			float3 normal = normalize(position);
+			float2 texcoord = float2(u, v);
+			float4 tangent = float4(-SphericalTangent(theta, phi), 1.0);
+			float3 bitangent = glm::cross(normal, float3(tangent));
+
+			vertexData.push_back(position.x);
+			vertexData.push_back(position.y);
+			vertexData.push_back(position.z);
+			vertexData.push_back(color.r);
+			vertexData.push_back(color.g);
+			vertexData.push_back(color.b);
+			vertexData.push_back(normal.x);
+			vertexData.push_back(normal.y);
+			vertexData.push_back(normal.z);
+			vertexData.push_back(texcoord.x);
+			vertexData.push_back(texcoord.y);
+			vertexData.push_back(tangent.x);
+			vertexData.push_back(tangent.y);
+			vertexData.push_back(tangent.z);
+			vertexData.push_back(tangent.w);
+			vertexData.push_back(bitangent.x);
+			vertexData.push_back(bitangent.y);
+			vertexData.push_back(bitangent.z);
+		}
+	}
+
+	std::vector<uint32_t> indexData;
+	for (uint32_t i = 1; i < uverts; ++i) {
+		for (uint32_t j = 1; j < vverts; ++j) {
+			uint32_t i0 = i - 1;
+			uint32_t i1 = i;
+			uint32_t j0 = j - 1;
+			uint32_t j1 = j;
+			uint32_t v0 = i1 * vverts + j0;
+			uint32_t v1 = i1 * vverts + j1;
+			uint32_t v2 = i0 * vverts + j1;
+			uint32_t v3 = i0 * vverts + j0;
+
+			indexData.push_back(v0);
+			indexData.push_back(v1);
+			indexData.push_back(v2);
+
+			indexData.push_back(v0);
+			indexData.push_back(v2);
+			indexData.push_back(v3);
+		}
+	}
+
+	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+	TriMesh             mesh = TriMesh(indexType, texCoordDim);
+
+	uint32_t expectedVertexCount = uverts * vverts;
+	AppendIndexAndVertexData(indexData, vertexData, expectedVertexCount, options, mesh);
+
+	return mesh;
+}
+
+Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options, TriMesh* pTriMesh)
+{
+	if (IsNull(pTriMesh)) {
+		return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	}
+
+	/*Timer timer; // TODO: замер времени
+	ASSERT_MSG(timer.Start() == TIMER_RESULT_SUCCESS, "timer start failed");
+	double fnStartTime = timer.SecondsSinceStart();*/
+
+	// Determine index type and tex coord dim
+	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
+
+	// Create new mesh
+	*pTriMesh = TriMesh(indexType, texCoordDim);
+
+	const std::vector<float3> colors = {
+		{1.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f},
+		{1.0f, 1.0f, 0.0f},
+		{1.0f, 0.0f, 1.0f},
+		{0.0f, 1.0f, 1.0f},
+		{1.0f, 1.0f, 1.0f},
+	};
+
+	tinyobj::attrib_t                attrib;
+	std::vector<tinyobj::shape_t>    shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	FileStream objStream;
+	if (!objStream.Open(path.string().c_str())) {
+		return ERROR_GEOMETRY_FILE_LOAD_FAILED;
+	}
+
+	std::string  warn;
+	std::string  err;
+	std::istream istr(&objStream);
+	bool         loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &istr, nullptr, true);
+	if (!loaded || !err.empty()) {
+		return ERROR_GEOMETRY_FILE_LOAD_FAILED;
+	}
+
+	size_t numShapes = shapes.size();
+	if (numShapes == 0) {
+		return ERROR_GEOMETRY_FILE_NO_DATA;
+	}
+
+	//// Check to see if data can be indexed
+	// bool indexable = true;
+	// for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
+	//     const tinyobj::shape_t& shape     = shapes[shapeIdx];
+	//     const tinyobj::mesh_t&  shapeMesh = shape.mesh;
+	//
+	//     size_t numTriangles = shapeMesh.indices.size() / 3;
+	//     for (size_t triIdx = 0; triIdx < numTriangles; ++triIdx) {
+	//         size_t triVtxIdx0 = triIdx * 3 + 0;
+	//         size_t triVtxIdx1 = triIdx * 3 + 1;
+	//         size_t triVtxIdx2 = triIdx * 3 + 2;
+	//
+	//         // Index data
+	//         const tinyobj::index_t& dataIdx0 = shapeMesh.indices[triVtxIdx0];
+	//         const tinyobj::index_t& dataIdx1 = shapeMesh.indices[triVtxIdx1];
+	//         const tinyobj::index_t& dataIdx2 = shapeMesh.indices[triVtxIdx2];
+	//
+	//         bool sameIdx0 = (dataIdx0.vertex_index == dataIdx0.normal_index) && (dataIdx0.normal_index == dataIdx0.texcoord_index);
+	//         bool sameIdx1 = (dataIdx1.vertex_index == dataIdx1.normal_index) && (dataIdx1.normal_index == dataIdx1.texcoord_index);
+	//         bool sameIdx2 = (dataIdx2.vertex_index == dataIdx2.normal_index) && (dataIdx2.normal_index == dataIdx2.texcoord_index);
+	//         bool same     = sameIdx0 && sameIdx1 && sameIdx2;
+	//         if (!same) {
+	//            indexable = false;
+	//            break;
+	//         }
+	//     }
+	// }
+
+	// Preallocate based on the total number of triangles.
+	size_t totalTriangles = 0;
+	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
+		totalTriangles += shapes[shapeIdx].mesh.indices.size() / 3;
+	}
+	pTriMesh->PreallocateForTriangleCount(totalTriangles,
+		/* enableColors= */ (options.mEnableVertexColors || options.mEnableObjectColor),
+		options.mEnableNormals,
+		options.mEnableTexCoords,
+		options.mEnableTangents);
+
+	// Build geometry
+	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
+		const tinyobj::shape_t& shape = shapes[shapeIdx];
+		const tinyobj::mesh_t& shapeMesh = shape.mesh;
+
+		size_t numTriangles = shapeMesh.indices.size() / 3;
+		for (size_t triIdx = 0; triIdx < numTriangles; ++triIdx) {
+			size_t triVtxIdx0 = triIdx * 3 + 0;
+			size_t triVtxIdx1 = triIdx * 3 + 1;
+			size_t triVtxIdx2 = triIdx * 3 + 2;
+
+			// Index data
+			const tinyobj::index_t& dataIdx0 = shapeMesh.indices[triVtxIdx0];
+			const tinyobj::index_t& dataIdx1 = shapeMesh.indices[triVtxIdx1];
+			const tinyobj::index_t& dataIdx2 = shapeMesh.indices[triVtxIdx2];
+
+			// Vertex data
+			TriMeshVertexData vtx0 = {};
+			TriMeshVertexData vtx1 = {};
+			TriMeshVertexData vtx2 = {};
+
+			// Pick a face color
+			float3 faceColor = colors[triIdx % colors.size()];
+			vtx0.color = faceColor;
+			vtx1.color = faceColor;
+			vtx2.color = faceColor;
+
+			// Vertex positions
+			{
+				int i0 = 3 * dataIdx0.vertex_index + 0;
+				int i1 = 3 * dataIdx0.vertex_index + 1;
+				int i2 = 3 * dataIdx0.vertex_index + 2;
+				vtx0.position = float3(attrib.vertices[i0], attrib.vertices[i1], attrib.vertices[i2]);
+
+				i0 = 3 * dataIdx1.vertex_index + 0;
+				i1 = 3 * dataIdx1.vertex_index + 1;
+				i2 = 3 * dataIdx1.vertex_index + 2;
+				vtx1.position = float3(attrib.vertices[i0], attrib.vertices[i1], attrib.vertices[i2]);
+
+				i0 = 3 * dataIdx2.vertex_index + 0;
+				i1 = 3 * dataIdx2.vertex_index + 1;
+				i2 = 3 * dataIdx2.vertex_index + 2;
+				vtx2.position = float3(attrib.vertices[i0], attrib.vertices[i1], attrib.vertices[i2]);
+			}
+
+			// Normals
+			if ((dataIdx0.normal_index != -1) && (dataIdx1.normal_index != -1) && (dataIdx2.normal_index != -1)) {
+				int i0 = 3 * dataIdx0.normal_index + 0;
+				int i1 = 3 * dataIdx0.normal_index + 1;
+				int i2 = 3 * dataIdx0.normal_index + 2;
+				vtx0.normal = float3(attrib.normals[i0], attrib.normals[i1], attrib.normals[i2]);
+
+				i0 = 3 * dataIdx1.normal_index + 0;
+				i1 = 3 * dataIdx1.normal_index + 1;
+				i2 = 3 * dataIdx1.normal_index + 2;
+				vtx1.normal = float3(attrib.normals[i0], attrib.normals[i1], attrib.normals[i2]);
+
+				i0 = 3 * dataIdx2.normal_index + 0;
+				i1 = 3 * dataIdx2.normal_index + 1;
+				i2 = 3 * dataIdx2.normal_index + 2;
+				vtx2.normal = float3(attrib.normals[i0], attrib.normals[i1], attrib.normals[i2]);
+			}
+
+			// Texture coordinates
+			if ((dataIdx0.texcoord_index != -1) && (dataIdx1.texcoord_index != -1) && (dataIdx2.texcoord_index != -1)) {
+				int i0 = 2 * dataIdx0.texcoord_index + 0;
+				int i1 = 2 * dataIdx0.texcoord_index + 1;
+				vtx0.texCoord = float2(attrib.texcoords[i0], attrib.texcoords[i1]);
+
+				i0 = 2 * dataIdx1.texcoord_index + 0;
+				i1 = 2 * dataIdx1.texcoord_index + 1;
+				vtx1.texCoord = float2(attrib.texcoords[i0], attrib.texcoords[i1]);
+
+				i0 = 2 * dataIdx2.texcoord_index + 0;
+				i1 = 2 * dataIdx2.texcoord_index + 1;
+				vtx2.texCoord = float2(attrib.texcoords[i0], attrib.texcoords[i1]);
+
+				// Scale tex coords
+				vtx0.texCoord *= options.mTexCoordScale;
+				vtx1.texCoord *= options.mTexCoordScale;
+				vtx2.texCoord *= options.mTexCoordScale;
+
+				if (options.mInvertTexCoordsV) {
+					vtx0.texCoord.y = 1.0f - vtx0.texCoord.y;
+					vtx1.texCoord.y = 1.0f - vtx1.texCoord.y;
+					vtx2.texCoord.y = 1.0f - vtx2.texCoord.y;
+				}
+			}
+
+			float3 pos0 = (vtx0.position * options.mScale) + options.mTranslate;
+			float3 pos1 = (vtx1.position * options.mScale) + options.mTranslate;
+			float3 pos2 = (vtx2.position * options.mScale) + options.mTranslate;
+
+			uint32_t triVtx0 = pTriMesh->AppendPosition(pos0) - 1;
+			uint32_t triVtx1 = pTriMesh->AppendPosition(pos1) - 1;
+			uint32_t triVtx2 = pTriMesh->AppendPosition(pos2) - 1;
+
+			if (options.mEnableVertexColors || options.mEnableObjectColor) {
+				if (options.mEnableObjectColor) {
+					vtx0.color = options.mObjectColor;
+					vtx1.color = options.mObjectColor;
+					vtx2.color = options.mObjectColor;
+				}
+				pTriMesh->AppendColor(vtx0.color);
+				pTriMesh->AppendColor(vtx1.color);
+				pTriMesh->AppendColor(vtx2.color);
+			}
+
+			if (options.mEnableNormals) {
+				pTriMesh->AppendNormal(vtx0.normal);
+				pTriMesh->AppendNormal(vtx1.normal);
+				pTriMesh->AppendNormal(vtx2.normal);
+			}
+
+			if (options.mEnableTexCoords) {
+				pTriMesh->AppendTexCoord(vtx0.texCoord);
+				pTriMesh->AppendTexCoord(vtx1.texCoord);
+				pTriMesh->AppendTexCoord(vtx2.texCoord);
+			}
+
+			if (options.mEnableTangents) {
+				float3 edge1 = vtx1.position - vtx0.position;
+				float3 edge2 = vtx2.position - vtx0.position;
+				float2 duv1 = vtx1.texCoord - vtx0.texCoord;
+				float2 duv2 = vtx2.texCoord - vtx0.texCoord;
+				float  r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+
+				float3 tangent = float3(
+					((edge1.x * duv2.y) - (edge2.x * duv1.y)) * r,
+					((edge1.y * duv2.y) - (edge2.y * duv1.y)) * r,
+					((edge1.z * duv2.y) - (edge2.z * duv1.y)) * r);
+
+				float3 bitangent = float3(
+					((edge1.x * duv2.x) - (edge2.x * duv1.x)) * r,
+					((edge1.y * duv2.x) - (edge2.y * duv1.x)) * r,
+					((edge1.z * duv2.x) - (edge2.z * duv1.x)) * r);
+
+				tangent = glm::normalize(tangent - vtx0.normal * glm::dot(vtx0.normal, tangent));
+				float w = 1.0f;
+
+				pTriMesh->AppendTangent(float4(-tangent, w));
+				pTriMesh->AppendTangent(float4(-tangent, w));
+				pTriMesh->AppendTangent(float4(-tangent, w));
+				pTriMesh->AppendBitangent(-bitangent);
+				pTriMesh->AppendBitangent(-bitangent);
+				pTriMesh->AppendBitangent(-bitangent);
+			}
+
+			if (indexType != INDEX_TYPE_UNDEFINED) {
+				if (options.mInvertWinding) {
+					pTriMesh->AppendTriangle(triVtx0, triVtx2, triVtx1);
+				}
+				else {
+					pTriMesh->AppendTriangle(triVtx0, triVtx1, triVtx2);
+				}
+			}
+		}
+	}
+
+	// if (options.mEnableTangents) {
+	//     size_t numPositions  = mesh.mPositions.size();
+	//     size_t numNormals    = mesh.mNormals.size();
+	//     size_t numTangents   = mesh.mTangents.size();
+	//     size_t numBitangents = mesh.mBitangents.size();
+	//     ASSERT_MSG(numPositions == numNormals == numTangents == numBitangents, "misaligned data for tangent calculation");
+	//
+	//     for (size_t i = 0; i < numPositions; ++i) {
+	//         const float3& T = mesh.mTangents[i];
+	//         const float3& B = mesh.mBitangents[i];
+	//     }
+	// }
+
+	//double fnEndTime = timer.SecondsSinceStart();
+	//float  fnElapsed = static_cast<float>(fnEndTime - fnStartTime);
+	//LOG_INFO("Created mesh from OBJ file: " + path + " (" + FloatString(fnElapsed) + " seconds, " + numShapes + " shapes, " + totalTriangles + " triangles)");
+
+	return SUCCESS;
+}
+
+TriMesh TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options)
+{
+	TriMesh mesh;
+	CHECKED_CALL(CreateFromOBJ(path, options, &mesh));
+	return mesh;
+}
+
+#pragma endregion
+
+#pragma region WireMesh
+
+WireMesh::WireMesh()
+{
+}
+
+WireMesh::WireMesh(IndexType indexType)
+	: mIndexType(indexType)
+{
+}
+
+WireMesh::~WireMesh()
+{
+}
+
+uint32_t WireMesh::GetCountEdges() const
+{
+	uint32_t count = 0;
+	if (mIndexType != INDEX_TYPE_UNDEFINED) {
+		uint32_t elementSize = IndexTypeSize(mIndexType);
+		uint32_t elementCount = CountU32(mIndices) / elementSize;
+		count = elementCount / 2;
+	}
+	else {
+		count = CountU32(mPositions) / 2;
+	}
+	return count;
+}
+
+uint32_t WireMesh::GetCountIndices() const
+{
+	uint32_t indexSize = IndexTypeSize(mIndexType);
+	if (indexSize == 0) {
+		return 0;
+	}
+
+	uint32_t count = CountU32(mIndices) / indexSize;
+	return count;
+}
+
+uint32_t WireMesh::GetCountPositions() const
+{
+	uint32_t count = CountU32(mPositions);
+	return count;
+}
+
+uint32_t WireMesh::GetCountColors() const
+{
+	uint32_t count = CountU32(mColors);
+	return count;
+}
+
+uint64_t WireMesh::GetDataSizeIndices() const
+{
+	uint64_t size = static_cast<uint64_t>(mIndices.size());
+	return size;
+}
+
+uint64_t WireMesh::GetDataSizePositions() const
+{
+	uint64_t size = static_cast<uint64_t>(mPositions.size() * sizeof(float3));
+	return size;
+}
+
+uint64_t WireMesh::GetDataSizeColors() const
+{
+	uint64_t size = static_cast<uint64_t>(mColors.size() * sizeof(float3));
+	return size;
+}
+
+const uint16_t* WireMesh::GetDataIndicesU16(uint32_t index) const
+{
+	if (mIndexType != INDEX_TYPE_UINT16) {
+		return nullptr;
+	}
+	uint32_t count = GetCountIndices();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(uint16_t) * index;
+	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
+	return reinterpret_cast<const uint16_t*>(ptr);
+}
+
+const uint32_t* WireMesh::GetDataIndicesU32(uint32_t index) const
+{
+	if (mIndexType != INDEX_TYPE_UINT32) {
+		return nullptr;
+	}
+	uint32_t count = GetCountIndices();
+	if (index >= count) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(uint32_t) * index;
+	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
+	return reinterpret_cast<const uint32_t*>(ptr);
+}
+
+const float3* WireMesh::GetDataPositions(uint32_t index) const
+{
+	if (index >= mPositions.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mPositions.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+const float3* WireMesh::GetDataColors(uint32_t index) const
+{
+	if (index >= mColors.size()) {
+		return nullptr;
+	}
+	size_t      offset = sizeof(float3) * index;
+	const char* ptr = reinterpret_cast<const char*>(mColors.data()) + offset;
+	return reinterpret_cast<const float3*>(ptr);
+}
+
+void WireMesh::AppendIndexU16(uint16_t value)
+{
+	const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(&value);
+	mIndices.push_back(pBytes[0]);
+	mIndices.push_back(pBytes[1]);
+}
+
+void WireMesh::AppendIndexU32(uint32_t value)
+{
+	const uint8_t* pBytes = reinterpret_cast<const uint8_t*>(&value);
+	mIndices.push_back(pBytes[0]);
+	mIndices.push_back(pBytes[1]);
+	mIndices.push_back(pBytes[2]);
+	mIndices.push_back(pBytes[3]);
+}
+
+uint32_t WireMesh::AppendEdge(uint32_t v0, uint32_t v1)
+{
+	if (mIndexType == INDEX_TYPE_UINT16) {
+		ASSERT_MSG(v0 <= UINT16_MAX, "v0 is out of range for index type UINT16");
+		ASSERT_MSG(v1 <= UINT16_MAX, "v1 is out of range for index type UINT16");
+		mIndices.reserve(mIndices.size() + 2 * sizeof(uint16_t));
+		AppendIndexU16(static_cast<uint16_t>(v0));
+		AppendIndexU16(static_cast<uint16_t>(v1));
+	}
+	else if (mIndexType == INDEX_TYPE_UINT32) {
+		mIndices.reserve(mIndices.size() + 2 * sizeof(uint32_t));
+		AppendIndexU32(v0);
+		AppendIndexU32(v1);
+	}
+	else {
+		ASSERT_MSG(false, "unknown index type");
+		return 0;
+	}
+	uint32_t count = GetCountEdges();
+	return count;
+}
+
+uint32_t WireMesh::AppendPosition(const float3& value)
+{
+	mPositions.push_back(value);
+	uint32_t count = GetCountPositions();
+	if (count > 0) {
+		mBoundingBoxMin.x = std::min<float>(mBoundingBoxMin.x, value.x);
+		mBoundingBoxMin.y = std::min<float>(mBoundingBoxMin.y, value.y);
+		mBoundingBoxMin.z = std::min<float>(mBoundingBoxMin.z, value.z);
+		mBoundingBoxMax.x = std::min<float>(mBoundingBoxMax.x, value.x);
+		mBoundingBoxMax.y = std::min<float>(mBoundingBoxMax.y, value.y);
+		mBoundingBoxMax.z = std::min<float>(mBoundingBoxMax.z, value.z);
+	}
+	else {
+		mBoundingBoxMin = mBoundingBoxMax = value;
+	}
+	return count;
+}
+
+uint32_t WireMesh::AppendColor(const float3& value)
+{
+	mColors.push_back(value);
+	uint32_t count = GetCountColors();
+	return count;
+}
+
+Result WireMesh::GetEdge(uint32_t triIndex, uint32_t& v0, uint32_t& v1) const
+{
+	if (mIndexType == INDEX_TYPE_UNDEFINED) {
+		return ERROR_GEOMETRY_NO_INDEX_DATA;
+	}
+
+	uint32_t triCount = GetCountEdges();
+	if (triIndex >= triCount) {
+		return ERROR_OUT_OF_RANGE;
+	}
+
+	const uint8_t* pData = mIndices.data();
+	uint32_t       elementSize = IndexTypeSize(mIndexType);
+
+	if (mIndexType == INDEX_TYPE_UINT16) {
+		size_t          offset = 2 * triIndex * elementSize;
+		const uint16_t* pIndexData = reinterpret_cast<const uint16_t*>(pData + offset);
+		v0 = static_cast<uint32_t>(pIndexData[0]);
+		v1 = static_cast<uint32_t>(pIndexData[1]);
+	}
+	else if (mIndexType == INDEX_TYPE_UINT32) {
+		size_t          offset = 2 * triIndex * elementSize;
+		const uint32_t* pIndexData = reinterpret_cast<const uint32_t*>(pData + offset);
+		v0 = static_cast<uint32_t>(pIndexData[0]);
+		v1 = static_cast<uint32_t>(pIndexData[1]);
+	}
+
+	return SUCCESS;
+}
+
+Result WireMesh::GetVertexData(uint32_t vtxIndex, WireMeshVertexData* pVertexData) const
+{
+	uint32_t vertexCount = GetCountPositions();
+	if (vtxIndex >= vertexCount) {
+		return ERROR_OUT_OF_RANGE;
+	}
+
+	const float3* pPosition = GetDataPositions(vtxIndex);
+	const float3* pColor = GetDataColors(vtxIndex);
+
+	pVertexData->position = *pPosition;
+
+	if (!IsNull(pColor)) {
+		pVertexData->color = *pColor;
+	}
+
+	return SUCCESS;
+}
+
+void WireMesh::AppendIndexAndVertexData(
+	std::vector<uint32_t>& indexData,
+	const std::vector<float>& vertexData,
+	const uint32_t            expectedVertexCount,
+	const WireMeshOptions& options,
+	WireMesh& mesh)
+{
+	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+
+	// Verify expected vertex count
+	size_t vertexCount = (vertexData.size() * sizeof(float)) / sizeof(WireMeshVertexData);
+	ASSERT_MSG(vertexCount == expectedVertexCount, "unexpected vertex count");
+
+	// Get base pointer to vertex data
+	const char* pData = reinterpret_cast<const char*>(vertexData.data());
+
+	if (indexType != INDEX_TYPE_UNDEFINED) {
+		for (size_t i = 0; i < vertexCount; ++i) {
+			const WireMeshVertexData* pVertexData = reinterpret_cast<const WireMeshVertexData*>(pData + (i * sizeof(WireMeshVertexData)));
+
+			mesh.AppendPosition(pVertexData->position * options.mScale);
+
+			if (options.mEnableVertexColors || options.mEnableObjectColor) {
+				float3 color = options.mEnableObjectColor ? options.mObjectColor : pVertexData->color;
+				mesh.AppendColor(color);
+			}
+		}
+
+		size_t edgeCount = indexData.size() / 2;
+		for (size_t triIndex = 0; triIndex < edgeCount; ++triIndex) {
+			uint32_t v0 = indexData[2 * triIndex + 0];
+			uint32_t v1 = indexData[2 * triIndex + 1];
+			mesh.AppendEdge(v0, v1);
+		}
+	}
+	else {
+		for (size_t i = 0; i < indexData.size(); ++i) {
+			uint32_t                  vi = indexData[i];
+			const WireMeshVertexData* pVertexData = reinterpret_cast<const WireMeshVertexData*>(pData + (vi * sizeof(WireMeshVertexData)));
+
+			mesh.AppendPosition(pVertexData->position * options.mScale);
+
+			if (options.mEnableVertexColors) {
+				mesh.AppendColor(pVertexData->color);
+			}
+		}
+	}
+}
+
+WireMesh WireMesh::CreatePlane(WireMeshPlane plane, const float2& size, uint32_t usegs, uint32_t vsegs, const WireMeshOptions& options)
+{
+	const float    hs = size.x / 2.0f;
+	const float    ht = size.y / 2.0f;
+	const float    ds = size.x / static_cast<float>(usegs);
+	const float    dt = size.y / static_cast<float>(vsegs);
+	const uint32_t uverts = usegs + 1;
+	const uint32_t vverts = vsegs + 1;
+
+	std::vector<float>    vertexData;
+	std::vector<uint32_t> indexData;
+	uint32_t              indexCount = 0;
+	// U segemnts
+	for (uint32_t i = 0; i < uverts; ++i) {
+		float s = i * ds / size.x;
+		float t0 = 0;
+		float t1 = 1;
+
+		float3 position0 = float3(0);
+		float3 position1 = float3(0);
+		switch (plane) {
+		default: {
+			ASSERT_MSG(false, "unknown plane orientation");
+		} break;
+
+			   // case WIRE_MESH_PLANE_POSITIVE_X: {
+			   // } break;
+			   //
+			   // case WIRE_MESH_PLANE_NEGATIVE_X: {
+			   // } break;
+			   //
+		case WIRE_MESH_PLANE_POSITIVE_Y: {
+			position0 = float3(s * size.x - hs, 0, t0 * size.y - ht);
+			position1 = float3(s * size.x - hs, 0, t1 * size.y - ht);
+		} break;
+
+		case WIRE_MESH_PLANE_NEGATIVE_Y: {
+			position0 = float3((1.0f - s) * size.x - hs, 0, (1.0f - t0) * size.y - ht);
+			position1 = float3((1.0f - s) * size.x - hs, 0, (1.0f - t1) * size.y - ht);
+		} break;
+
+									   // case WIRE_MESH_PLANE_POSITIVE_Z: {
+									   // } break;
+									   //
+									   // case WIRE_MESH_PLANE_NEGATIVE_Z: {
+									   // } break;
+		}
+
+		float3 color0 = float3(s, 0, 0);
+		float3 color1 = float3(s, 1, 0);
+
+		vertexData.push_back(position0.x);
+		vertexData.push_back(position0.y);
+		vertexData.push_back(position0.z);
+		vertexData.push_back(color0.r);
+		vertexData.push_back(color0.g);
+		vertexData.push_back(color0.b);
+
+		vertexData.push_back(position1.x);
+		vertexData.push_back(position1.y);
+		vertexData.push_back(position1.z);
+		vertexData.push_back(color1.r);
+		vertexData.push_back(color1.g);
+		vertexData.push_back(color1.b);
+
+		indexData.push_back(indexCount);
+		indexCount += 1;
+		indexData.push_back(indexCount);
+		indexCount += 1;
+	}
+	// V segemnts
+	for (uint32_t j = 0; j < vverts; ++j) {
+		float s0 = 0;
+		float s1 = 1;
+		float t = j * dt / size.y;
+
+		float3 position0 = float3(0);
+		float3 position1 = float3(0);
+		switch (plane) {
+		default: {
+			ASSERT_MSG(false, "unknown plane orientation");
+		} break;
+
+			   // case WIRE_MESH_PLANE_POSITIVE_X: {
+			   // } break;
+			   //
+			   // case WIRE_MESH_PLANE_NEGATIVE_X: {
+			   // } break;
+			   //
+		case WIRE_MESH_PLANE_POSITIVE_Y: {
+			position0 = float3(s0 * size.x - hs, 0, t * size.y - ht);
+			position1 = float3(s1 * size.x - hs, 0, t * size.y - ht);
+		} break;
+
+		case WIRE_MESH_PLANE_NEGATIVE_Y: {
+			position0 = float3((1.0f - s0) * size.x - hs, 0, (1.0f - t) * size.y - ht);
+			position1 = float3((1.0f - s1) * size.x - hs, 0, (1.0f - t) * size.y - ht);
+		} break;
+
+									   // case WIRE_MESH_PLANE_POSITIVE_Z: {
+									   // } break;
+									   //
+									   // case WIRE_MESH_PLANE_NEGATIVE_Z: {
+									   // } break;
+		}
+
+		float3 color0 = float3(0, t, 0);
+		float3 color1 = float3(1, t, 0);
+
+		vertexData.push_back(position0.x);
+		vertexData.push_back(position0.y);
+		vertexData.push_back(position0.z);
+		vertexData.push_back(color0.r);
+		vertexData.push_back(color0.g);
+		vertexData.push_back(color0.b);
+
+		vertexData.push_back(position1.x);
+		vertexData.push_back(position1.y);
+		vertexData.push_back(position1.z);
+		vertexData.push_back(color1.r);
+		vertexData.push_back(color1.g);
+		vertexData.push_back(color1.b);
+
+		indexData.push_back(indexCount);
+		indexCount += 1;
+		indexData.push_back(indexCount);
+		indexCount += 1;
+	}
+
+	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	WireMesh        mesh = WireMesh(indexType);
+
+	uint32_t expectedVertexCount = 2 * (uverts + vverts);
+	AppendIndexAndVertexData(indexData, vertexData, expectedVertexCount, options, mesh);
+
+	return mesh;
+}
+
+WireMesh WireMesh::CreateCube(const float3& size, const WireMeshOptions& options)
+{
+	const float hx = size.x / 2.0f;
+	const float hy = size.y / 2.0f;
+	const float hz = size.z / 2.0f;
+
+	// clang-format off
+	std::vector<float> vertexData = {
+		// position      // vertex colors    
+		 hx,  hy, -hz,    1.0f, 0.0f, 0.0f,  //  0  -Z side
+		 hx, -hy, -hz,    1.0f, 0.0f, 0.0f,  //  1
+		-hx, -hy, -hz,    1.0f, 0.0f, 0.0f,  //  2
+		-hx,  hy, -hz,    1.0f, 0.0f, 0.0f,  //  3
+
+		-hx,  hy,  hz,    0.0f, 1.0f, 0.0f,  //  4  +Z side
+		-hx, -hy,  hz,    0.0f, 1.0f, 0.0f,  //  5
+		 hx, -hy,  hz,    0.0f, 1.0f, 0.0f,  //  6
+		 hx,  hy,  hz,    0.0f, 1.0f, 0.0f,  //  7
+
+		-hx,  hy, -hz,   -0.0f, 0.0f, 1.0f,  //  8  -X side
+		-hx, -hy, -hz,   -0.0f, 0.0f, 1.0f,  //  9
+		-hx, -hy,  hz,   -0.0f, 0.0f, 1.0f,  // 10
+		-hx,  hy,  hz,   -0.0f, 0.0f, 1.0f,  // 11
+
+		 hx,  hy,  hz,    1.0f, 1.0f, 0.0f,  // 12  +X side
+		 hx, -hy,  hz,    1.0f, 1.0f, 0.0f,  // 13
+		 hx, -hy, -hz,    1.0f, 1.0f, 0.0f,  // 14
+		 hx,  hy, -hz,    1.0f, 1.0f, 0.0f,  // 15
+
+		-hx, -hy,  hz,    1.0f, 0.0f, 1.0f,  // 16  -Y side
+		-hx, -hy, -hz,    1.0f, 0.0f, 1.0f,  // 17
+		 hx, -hy, -hz,    1.0f, 0.0f, 1.0f,  // 18
+		 hx, -hy,  hz,    1.0f, 0.0f, 1.0f,  // 19
+
+		-hx,  hy, -hz,    0.0f, 1.0f, 1.0f,  // 20  +Y side
+		-hx,  hy,  hz,    0.0f, 1.0f, 1.0f,  // 21
+		 hx,  hy,  hz,    0.0f, 1.0f, 1.0f,  // 22
+		 hx,  hy, -hz,    0.0f, 1.0f, 1.0f,  // 23
+	};
+
+	std::vector<uint32_t> indexData = {
+		0,  1, // -Z side
+		1,  2,
+		2,  3,
+		3,  0,
+
+		4,  5, // +Z side
+		5,  6,
+		6,  7,
+		7,  4,
+
+		8,  9, // -X side
+		9, 10,
+	   10, 11,
+	   11,  8,
+
+		12, 13, // +X side
+		13, 14,
+		14, 15,
+		15, 12,
+
+		16, 17, // -X side
+		17, 18,
+		18, 19,
+		19, 16,
+
+		20, 21, // +X side
+		21, 22,
+		22, 23,
+		23, 20,
+	};
+	// clang-format on
+
+	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	WireMesh        mesh = WireMesh(indexType);
+
+	AppendIndexAndVertexData(indexData, vertexData, 24, options, mesh);
+
+	return mesh;
+}
+
+WireMesh WireMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, const WireMeshOptions& options)
+{
+	constexpr float kPi = glm::pi<float>();
+	constexpr float kTwoPi = 2.0f * kPi;
+
+	const uint32_t uverts = usegs + 1;
+	const uint32_t vverts = vsegs + 1;
+
+	float dt = kTwoPi / static_cast<float>(usegs);
+	float dp = kPi / static_cast<float>(vsegs);
+
+	std::vector<float>    vertexData;
+	std::vector<uint32_t> indexData;
+	uint32_t              indexCount = 0;
+	// U segemnts
+	for (uint32_t j = 1; j < (vverts - 1); ++j) {
+		for (uint32_t i = 1; i < uverts; ++i) {
+			float  theta0 = (i - 1) * dt;
+			float  theta1 = (i - 0) * dt;
+			float  phi = j * dp;
+			float  u0 = theta0 / kTwoPi;
+			float  u1 = theta1 / kTwoPi;
+			float  v = phi / kPi;
+			float3 P0 = SphericalToCartesian(theta0, phi);
+			float3 P1 = SphericalToCartesian(theta1, phi);
+			float3 position0 = radius * P0;
+			float3 position1 = radius * P1;
+			float3 color0 = float3(u0, v, 0);
+			float3 color1 = float3(u1, v, 0);
+
+			vertexData.push_back(position0.x);
+			vertexData.push_back(position0.y);
+			vertexData.push_back(position0.z);
+			vertexData.push_back(color0.r);
+			vertexData.push_back(color0.g);
+			vertexData.push_back(color0.b);
+
+			vertexData.push_back(position1.x);
+			vertexData.push_back(position1.y);
+			vertexData.push_back(position1.z);
+			vertexData.push_back(color1.r);
+			vertexData.push_back(color1.g);
+			vertexData.push_back(color1.b);
+
+			indexData.push_back(indexCount);
+			indexCount += 1;
+			indexData.push_back(indexCount);
+			indexCount += 1;
+		}
+	}
+	// V segemnts
+	for (uint32_t i = 0; i < (uverts - 1); ++i) {
+		for (uint32_t j = 1; j < vverts; ++j) {
+			float  theta = i * dt;
+			float  phi0 = (j - 0) * dp;
+			float  phi1 = (j - 1) * dp;
+			float  u = theta / kTwoPi;
+			float  v0 = phi0 / kPi;
+			float  v1 = phi1 / kPi;
+			float3 P0 = SphericalToCartesian(theta, phi0);
+			float3 P1 = SphericalToCartesian(theta, phi1);
+			float3 position0 = radius * P0;
+			float3 position1 = radius * P1;
+			float3 color0 = float3(u, v0, 0);
+			float3 color1 = float3(u, v1, 0);
+
+			vertexData.push_back(position0.x);
+			vertexData.push_back(position0.y);
+			vertexData.push_back(position0.z);
+			vertexData.push_back(color0.r);
+			vertexData.push_back(color0.g);
+			vertexData.push_back(color0.b);
+
+			vertexData.push_back(position1.x);
+			vertexData.push_back(position1.y);
+			vertexData.push_back(position1.z);
+			vertexData.push_back(color1.r);
+			vertexData.push_back(color1.g);
+			vertexData.push_back(color1.b);
+
+			indexData.push_back(indexCount);
+			indexCount += 1;
+			indexData.push_back(indexCount);
+			indexCount += 1;
+		}
+	}
+
+	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	WireMesh        mesh = WireMesh(indexType);
+
+	uint32_t expectedVertexCountU = (uverts - 1) * (vverts - 2);
+	uint32_t expectedVertexCountV = (uverts - 1) * (vverts - 1);
+	uint32_t expectedVertexCount = 2 * (expectedVertexCountU + expectedVertexCountV);
+	AppendIndexAndVertexData(indexData, vertexData, expectedVertexCount, options, mesh);
+
+	return mesh;
+}
+
+#pragma endregion
+
+#pragma region Geometry
+
+#define NOT_INTERLEAVED_MSG "cannot append interleaved data if attribute layout is not interleaved"
+#define NOT_PLANAR_MSG      "cannot append planar data if attribute layout is not planar"
+
+// -------------------------------------------------------------------------------------------------
+// VertexDataProcessorBase
+//     interface for all VertexDataProcessors
+//     with helper functions to allow derived classes to access Geometry
+// Note that the base and derived VertexDataProcessor classes do not have any data member
+//     be careful when adding data members to any of these classes
+//     it could create problems for multithreaded cases for multiple geometry objects
+// -------------------------------------------------------------------------------------------------
+template <typename T>
+class VertexDataProcessorBase
+{
+public:
+	// Validates the layout
+	// returns false if the validation fails
+	virtual bool Validate(Geometry* pGeom) = 0;
+	// Updates the vertex buffer and the vertex buffer index
+	// returns Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC if the sematic is invalid
+	virtual Result UpdateVertexBuffer(Geometry* pGeom) = 0;
+	// Fetches vertex data from vtx and append it to the geometry
+	// Returns 0 if the appending fails
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const T& vtx) = 0;
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const WireMeshVertexData& vtx) = 0;
+	// Gets the vertex count of the geometry
+	virtual uint32_t GetVertexCount(const Geometry* pGeom) = 0;
+
+protected:
+	// Prevent from being deleted explicitly
+	virtual ~VertexDataProcessorBase() {}
+
+	// ----------------------------------------
+	// Helper functions to access Geometry data
+	// ----------------------------------------
+
+	// Missing attributes will also result in NOOP.
+	// returns the element count of the vertex buffer with the bufferIndex
+	// 0 is returned if the bufferIndex is ignored
+	template <typename U>
+	uint32_t AppendDataToVertexBuffer(Geometry* pGeom, uint32_t bufferIndex, const U& data)
+	{
+		if (bufferIndex != VALUE_IGNORED) {
+			ASSERT_MSG((bufferIndex >= 0) && (bufferIndex < pGeom->mVertexBuffers.size()), "buffer index is not valid");
+			pGeom->mVertexBuffers[bufferIndex].Append(data);
+			return pGeom->mVertexBuffers[bufferIndex].GetElementCount();
+		}
+		return 0;
+	}
+
+	void AddVertexBuffer(Geometry* pGeom, uint32_t bindingIndex)
+	{
+		pGeom->mVertexBuffers.push_back(Geometry::Buffer(Geometry::BUFFER_TYPE_VERTEX, GetVertexBindingStride(pGeom, bindingIndex)));
+	}
+
+	uint32_t GetVertexBufferSize(const Geometry* pGeom, uint32_t bufferIndex) const
+	{
+		return pGeom->mVertexBuffers[bufferIndex].GetSize();
+	}
+
+	uint32_t GetVertexBufferElementCount(const Geometry* pGeom, uint32_t bufferIndex) const
+	{
+		return pGeom->mVertexBuffers[bufferIndex].GetElementCount();
+	}
+
+	uint32_t GetVertexBufferElementSize(const Geometry* pGeom, uint32_t bufferIndex) const
+	{
+		return pGeom->mVertexBuffers[bufferIndex].GetElementSize();
+	}
+
+	uint32_t GetVertexBindingAttributeCount(const Geometry* pGeom, uint32_t bindingIndex) const
+	{
+		return pGeom->mCreateInfo.vertexBindings[bindingIndex].GetAttributeCount();
+	}
+
+	uint32_t GetVertexBindingStride(const Geometry* pGeom, uint32_t bindingIndex) const
+	{
+		return pGeom->mCreateInfo.vertexBindings[bindingIndex].GetStride();
+	}
+
+	uint32_t GetVertexBindingCount(const Geometry* pGeom) const
+	{
+		return pGeom->mCreateInfo.vertexBindingCount;
+	}
+
+	VertexSemantic GetVertexBindingAttributeSematic(const Geometry* pGeom, uint32_t bindingIndex, uint32_t attrIndex) const
+	{
+		const VertexAttribute* pAttribute = nullptr;
+		Result                       ppxres = pGeom->mCreateInfo.vertexBindings[bindingIndex].GetAttribute(attrIndex, &pAttribute);
+		ASSERT_MSG(ppxres == SUCCESS, "attribute not found at index=" << attrIndex);
+		return pAttribute->semantic;
+	}
+
+	uint32_t GetPositionBufferIndex(const Geometry* pGeom) const { return pGeom->mPositionBufferIndex; }
+	uint32_t GetNormalBufferIndex(const Geometry* pGeom) const { return pGeom->mNormaBufferIndex; }
+	uint32_t GetColorBufferIndex(const Geometry* pGeom) const { return pGeom->mColorBufferIndex; }
+	uint32_t GetTexCoordBufferIndex(const Geometry* pGeom) const { return pGeom->mTexCoordBufferIndex; }
+	uint32_t GetTangentBufferIndex(const Geometry* pGeom) const { return pGeom->mTangentBufferIndex; }
+	uint32_t GetBitangentBufferIndex(const Geometry* pGeom) const { return pGeom->mBitangentBufferIndex; }
+
+	void SetPositionBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mPositionBufferIndex = index; }
+	void SetNormalBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mNormaBufferIndex = index; }
+	void SetColorBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mColorBufferIndex = index; }
+	void SetTexCoordBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mTexCoordBufferIndex = index; }
+	void SetTangentBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mTangentBufferIndex = index; }
+	void SetBitangentBufferIndex(Geometry* pGeom, uint32_t index) { pGeom->mBitangentBufferIndex = index; }
+};
+
+// -------------------------------------------------------------------------------------------------
+// VertexDataProcessor for Planar vertex attribute layout
+//     Planar: each attribute has its own vertex input binding
+// -------------------------------------------------------------------------------------------------
+template <typename T>
+class VertexDataProcessorPlanar : public VertexDataProcessorBase<T>
+{
+public:
+	virtual bool Validate(Geometry* pGeom) override
+	{
+		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
+		for (uint32_t i = 0; i < vertexBindingCount; ++i) {
+			if (this->GetVertexBindingAttributeCount(pGeom, i) != 1) {
+				ASSERT_MSG(false, "planar layout must have 1 attribute");
+				return false;
+			}
+		}
+		return true;
+	}
+
+	virtual Result UpdateVertexBuffer(Geometry* pGeom) override
+	{
+		// Create buffers
+		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
+		for (uint32_t i = 0; i < vertexBindingCount; ++i) {
+			this->AddVertexBuffer(pGeom, i);
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, i, 0);
+			// clang-format off
+			switch (semantic) {
+			default: return Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC;
+			case VERTEX_SEMANTIC_POSITION: this->SetPositionBufferIndex(pGeom, i); break;
+			case VERTEX_SEMANTIC_NORMAL: this->SetNormalBufferIndex(pGeom, i); break;
+			case VERTEX_SEMANTIC_COLOR: this->SetColorBufferIndex(pGeom, i); break;
+			case VERTEX_SEMANTIC_TANGENT: this->SetTangentBufferIndex(pGeom, i); break;
+			case VERTEX_SEMANTIC_BITANGENT: this->SetBitangentBufferIndex(pGeom, i); break;
+			case VERTEX_SEMANTIC_TEXCOORD: this->SetTexCoordBufferIndex(pGeom, i); break;
+			}
+			// clang-format on
+		}
+		return SUCCESS;
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const T& vtx) override
+	{
+		const uint32_t n = this->AppendDataToVertexBuffer(pGeom, this->GetPositionBufferIndex(pGeom), vtx.position);
+		ASSERT_MSG(n > 0, "position should always available");
+		this->AppendDataToVertexBuffer(pGeom, this->GetNormalBufferIndex(pGeom), vtx.normal);
+		this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color);
+		this->AppendDataToVertexBuffer(pGeom, this->GetTexCoordBufferIndex(pGeom), vtx.texCoord);
+		this->AppendDataToVertexBuffer(pGeom, this->GetTangentBufferIndex(pGeom), vtx.tangent);
+		this->AppendDataToVertexBuffer(pGeom, this->GetBitangentBufferIndex(pGeom), vtx.bitangent);
+		return n;
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const WireMeshVertexData& vtx) override
+	{
+		const uint32_t n = this->AppendDataToVertexBuffer(pGeom, this->GetPositionBufferIndex(pGeom), vtx.position);
+		ASSERT_MSG(n > 0, "position should always available");
+		this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color);
+		return n;
+	}
+
+	virtual uint32_t GetVertexCount(const Geometry* pGeom) override
+	{
+		return this->GetVertexBufferElementCount(pGeom, this->GetPositionBufferIndex(pGeom));
+	}
+};
+
+// -------------------------------------------------------------------------------------------------
+// VertexDataProcessor for Interleaved vertex attribute layout
+//     Interleaved: only has 1 vertex input binding, data is interleaved
+// -------------------------------------------------------------------------------------------------
+template <typename T>
+class VertexDataProcessorInterleaved : public VertexDataProcessorBase<T>
+{
+public:
+	virtual bool Validate(Geometry* pGeom) override
+	{
+		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
+		if (vertexBindingCount != 1) {
+			ASSERT_MSG(false, "interleaved layout must have 1 binding");
+		}
+		return true;
+	}
+
+	virtual Result UpdateVertexBuffer(Geometry* pGeom) override
+	{
+		ASSERT_MSG(1 == this->GetVertexBindingCount(pGeom), "there should be only 1 binding for planar");
+		this->AddVertexBuffer(pGeom, kBufferIndex);
+		return SUCCESS;
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const T& vtx) override
+	{
+		uint32_t       startSize = this->GetVertexBufferSize(pGeom, kBufferIndex);
+		const uint32_t attrCount = this->GetVertexBindingAttributeCount(pGeom, kBufferIndex);
+		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kBufferIndex, attrIndex);
+
+			// clang-format off
+			switch (semantic) {
+			default: break;
+			case VERTEX_SEMANTIC_POSITION:
+			{
+				const uint32_t n = this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.position);
+				ASSERT_MSG(n > 0, "position should always available");
+			}
+			break;
+			case VERTEX_SEMANTIC_NORMAL: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.normal); break;
+			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
+			case VERTEX_SEMANTIC_TANGENT: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.tangent); break;
+			case VERTEX_SEMANTIC_BITANGENT: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.bitangent); break;
+			case VERTEX_SEMANTIC_TEXCOORD: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.texCoord); break;
+			}
+			// clang-format on
+		}
+		uint32_t endSize = this->GetVertexBufferSize(pGeom, kBufferIndex);
+
+		uint32_t       bytesWritten = (endSize - startSize);
+		const uint32_t vertexBufferElementSize = this->GetVertexBufferElementSize(pGeom, kBufferIndex);
+		ASSERT_MSG(bytesWritten == vertexBufferElementSize, "size of vertex data written does not match buffer's element size");
+
+		return this->GetVertexBufferElementCount(pGeom, kBufferIndex);
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const WireMeshVertexData& vtx) override
+	{
+		uint32_t       startSize = this->GetVertexBufferSize(pGeom, kBufferIndex);
+		const uint32_t attrCount = this->GetVertexBindingAttributeCount(pGeom, kBufferIndex);
+		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kBufferIndex, attrIndex);
+
+			// clang-format off
+			switch (semantic) {
+			default: break;
+			case VERTEX_SEMANTIC_POSITION:
+			{
+				const uint32_t n = this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.position);
+				ASSERT_MSG(n > 0, "position should always available");
+			}
+			break;
+			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
+			}
+			// clang-format on
+		}
+		uint32_t endSize = this->GetVertexBufferSize(pGeom, kBufferIndex);
+
+		uint32_t       bytesWritten = (endSize - startSize);
+		const uint32_t vertexBufferElementSize = this->GetVertexBufferElementSize(pGeom, kBufferIndex);
+		ASSERT_MSG(bytesWritten == vertexBufferElementSize, "size of vertex data written does not match buffer's element size");
+
+		return this->GetVertexBufferElementCount(pGeom, kBufferIndex);
+	}
+
+	virtual uint32_t GetVertexCount(const Geometry* pGeom) override
+	{
+		return this->GetVertexBufferElementCount(pGeom, kBufferIndex);
+	}
+
+private:
+	// for VertexDataProcessorInterleaved, there is only 1 binding, so the index is always 0
+	const uint32_t kBufferIndex = 0;
+};
+
+// -------------------------------------------------------------------------------------------------
+// VertexDataProcessor for Position Planar vertex attribute layout
+//     Position Planar: only has 2 vertex input bindings
+//        - Binding 0 only has Position data
+//        - Binding 1 contains all non-position data, interleaved
+// -------------------------------------------------------------------------------------------------
+template <typename T>
+class VertexDataProcessorPositionPlanar : public VertexDataProcessorBase<T>
+{
+public:
+	virtual bool Validate(Geometry* pGeom) override
+	{
+		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
+		if (vertexBindingCount != 2) {
+			ASSERT_MSG(false, "position planar layout must have 2 bindings");
+		}
+		return true;
+	}
+
+	virtual Result UpdateVertexBuffer(Geometry* pGeom) override
+	{
+		ASSERT_MSG(2 == this->GetVertexBindingCount(pGeom), "there should be 2 binding for position planar");
+		// Position
+		this->AddVertexBuffer(pGeom, kPositionBufferIndex);
+		// Non-Position data
+		this->AddVertexBuffer(pGeom, kNonPositionBufferIndex);
+
+		this->SetPositionBufferIndex(pGeom, kPositionBufferIndex);
+
+		const uint32_t attributeCount = this->GetVertexBindingAttributeCount(pGeom, kNonPositionBufferIndex);
+		for (uint32_t i = 0; i < attributeCount; ++i) {
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, i);
+			// clang-format off
+			switch (semantic) {
+			default: return Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC;
+			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VERTEX_SEMANTIC_NORMAL: this->SetNormalBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VERTEX_SEMANTIC_COLOR: this->SetColorBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VERTEX_SEMANTIC_TANGENT: this->SetTangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VERTEX_SEMANTIC_BITANGENT: this->SetBitangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VERTEX_SEMANTIC_TEXCOORD: this->SetTexCoordBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			}
+			// clang-format on
+		}
+
+		return SUCCESS;
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const T& vtx) override
+	{
+		const uint32_t n = this->AppendDataToVertexBuffer(pGeom, this->GetPositionBufferIndex(pGeom), vtx.position);
+		ASSERT_MSG(n > 0, "position should always available");
+
+		uint32_t       startSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
+		const uint32_t attrCount = this->GetVertexBindingAttributeCount(pGeom, kNonPositionBufferIndex);
+		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, attrIndex);
+
+			// clang-format off
+			switch (semantic) {
+			default: ASSERT_MSG(false, "should not have other sematic"); break;
+			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VERTEX_SEMANTIC_NORMAL: this->AppendDataToVertexBuffer(pGeom, this->GetNormalBufferIndex(pGeom), vtx.normal); break;
+			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
+			case VERTEX_SEMANTIC_TANGENT: this->AppendDataToVertexBuffer(pGeom, this->GetTangentBufferIndex(pGeom), vtx.tangent); break;
+			case VERTEX_SEMANTIC_BITANGENT: this->AppendDataToVertexBuffer(pGeom, this->GetBitangentBufferIndex(pGeom), vtx.bitangent); break;
+			case VERTEX_SEMANTIC_TEXCOORD: this->AppendDataToVertexBuffer(pGeom, this->GetTexCoordBufferIndex(pGeom), vtx.texCoord); break;
+			}
+			// clang-format on
+		}
+		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
+
+		uint32_t       bytesWritten = (endSize - startSize);
+		const uint32_t vertexBufferElementSize = this->GetVertexBufferElementSize(pGeom, kNonPositionBufferIndex);
+		ASSERT_MSG(bytesWritten == vertexBufferElementSize, "size of vertex data written does not match buffer's element size");
+		return n;
+	}
+
+	virtual uint32_t AppendVertexData(Geometry* pGeom, const WireMeshVertexData& vtx) override
+	{
+		const uint32_t n = this->AppendDataToVertexBuffer(pGeom, kPositionBufferIndex, vtx.position);
+		ASSERT_MSG(n > 0, "position should always available");
+		uint32_t       startSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
+		const uint32_t attrCount = this->GetVertexBindingAttributeCount(pGeom, kNonPositionBufferIndex);
+		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
+			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, attrIndex);
+
+			// clang-format off
+			switch (semantic) {
+			default: ASSERT_MSG(false, "should not have other sematic"); break;
+			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
+			}
+			// clang-format on
+		}
+		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
+
+		uint32_t bytesWritten = (endSize - startSize);
+
+		const uint32_t vertexBufferElementSize = this->GetVertexBufferElementSize(pGeom, kNonPositionBufferIndex);
+		ASSERT_MSG(bytesWritten == vertexBufferElementSize, "size of vertex data written does not match buffer's element size");
+		return n;
+	}
+
+	virtual uint32_t GetVertexCount(const Geometry* pGeom) override
+	{
+		return this->GetVertexBufferElementCount(pGeom, this->GetPositionBufferIndex(pGeom));
+	}
+
+private:
+	const uint32_t kPositionBufferIndex = 0;
+	const uint32_t kNonPositionBufferIndex = 1;
+};
+
+static VertexDataProcessorPlanar<TriMeshVertexData>                   sVDProcessorPlanar;
+static VertexDataProcessorPlanar<TriMeshVertexDataCompressed>         sVDProcessorPlanarCompressed;
+static VertexDataProcessorInterleaved<TriMeshVertexData>              sVDProcessorInterleaved;
+static VertexDataProcessorInterleaved<TriMeshVertexDataCompressed>    sVDProcessorInterleavedCompressed;
+static VertexDataProcessorPositionPlanar<TriMeshVertexData>           sVDProcessorPositionPlanar;
+static VertexDataProcessorPositionPlanar<TriMeshVertexDataCompressed> sVDProcessorPositionPlanarCompressed;
+
+// -------------------------------------------------------------------------------------------------
+// GeometryCreateInfo
+// -------------------------------------------------------------------------------------------------
+GeometryCreateInfo GeometryCreateInfo::InterleavedU16(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
+	ci.indexType = INDEX_TYPE_UINT16;
+	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::InterleavedU32(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
+	ci.indexType = INDEX_TYPE_UINT32;
+	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PlanarU16(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT16;
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PlanarU32(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT32;
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PositionPlanarU16(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT16;
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PositionPlanarU32(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT32;
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::Interleaved()
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
+	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
+	ci.AddPosition();
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::Planar()
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.AddPosition();
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PositionPlanar()
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
+	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.AddPosition();
+	return ci;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::IndexType(::IndexType indexType_)
+{
+	indexType = indexType_;
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::IndexTypeU16()
+{
+	return IndexType(INDEX_TYPE_UINT16);
+}
+
+GeometryCreateInfo& GeometryCreateInfo::IndexTypeU32()
+{
+	return IndexType(INDEX_TYPE_UINT32);
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Format format)
+{
+	bool exists = false;
+	for (uint32_t bindingIndex = 0; bindingIndex < vertexBindingCount; ++bindingIndex) {
+		const VertexBinding& binding = vertexBindings[bindingIndex];
+		for (uint32_t attrIndex = 0; attrIndex < binding.GetAttributeCount(); ++attrIndex) {
+			const VertexAttribute* pAttribute = nullptr;
+			binding.GetAttribute(attrIndex, &pAttribute);
+			exists = (pAttribute->semantic == semantic);
+			if (exists) {
+				break;
+			}
+		}
+		if (exists) {
+			break;
+		}
+	}
+
+	if (!exists) {
+		uint32_t location = 0;
+		for (uint32_t bindingIndex = 0; bindingIndex < vertexBindingCount; ++bindingIndex) {
+			const VertexBinding& binding = vertexBindings[bindingIndex];
+			location += binding.GetAttributeCount();
+		}
+
+		VertexAttribute attribute = {};
+		attribute.semanticName = ToString(semantic);
+		attribute.location = location;
+		attribute.format = format;
+		attribute.binding = VALUE_IGNORED; // Determined below
+		attribute.offset = APPEND_OFFSET_ALIGNED;
+		attribute.inputRate = VERTEX_INPUT_RATE_VERTEX;
+		attribute.semantic = semantic;
+
+		switch (vertexAttributeLayout) {
+		case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED:
+			attribute.binding = 0;
+			vertexBindings[0].AppendAttribute(attribute);
+			vertexBindingCount = 1;
+			break;
+		case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR:
+			ASSERT_MSG(vertexBindingCount < MAX_VERTEX_BINDINGS, "max vertex bindings exceeded");
+			vertexBindings[vertexBindingCount].AppendAttribute(attribute);
+			vertexBindings[vertexBindingCount].SetBinding(vertexBindingCount);
+			vertexBindingCount += 1;
+			break;
+		case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR:
+			if (semantic == VERTEX_SEMANTIC_POSITION) {
+				attribute.binding = 0;
+				vertexBindings[0].AppendAttribute(attribute);
+			}
+			else {
+				vertexBindings[1].AppendAttribute(attribute);
+				vertexBindings[1].SetBinding(1);
+			}
+			vertexBindingCount = 2;
+			break;
+		default:
+			ASSERT_MSG(false, "unsupported vertex attribute layout type");
+			break;
+		}
+	}
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddPosition(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_POSITION, format);
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddNormal(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_NORMAL, format);
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddColor(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_COLOR, format);
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddTexCoord(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_TEXCOORD, format);
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddTangent(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_TANGENT, format);
+	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::AddBitangent(Format format)
+{
+	AddAttribute(VERTEX_SEMANTIC_BITANGENT, format);
+	return *this;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Geometry::Buffer
+// -------------------------------------------------------------------------------------------------
+uint32_t Geometry::Buffer::GetElementCount() const
+{
+	size_t sizeOfData = mUsedSize;
+	// round up for the case of interleaved buffers
+	uint32_t count = static_cast<uint32_t>(std::ceil(static_cast<double>(sizeOfData) / static_cast<double>(mElementSize)));
+	return count;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Geometry
+// -------------------------------------------------------------------------------------------------
+Result Geometry::InternalCtor()
+{
+	switch (mCreateInfo.vertexAttributeLayout) {
+	case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED:
+		mVDProcessor = &sVDProcessorInterleaved;
+		mVDProcessorCompressed = &sVDProcessorInterleavedCompressed;
+		break;
+	case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR:
+		mVDProcessor = &sVDProcessorPlanar;
+		mVDProcessorCompressed = &sVDProcessorPlanarCompressed;
+		break;
+	case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR:
+		mVDProcessor = &sVDProcessorPositionPlanar;
+		mVDProcessorCompressed = &sVDProcessorPositionPlanarCompressed;
+		break;
+	default:
+		ASSERT_MSG(false, "unsupported vertex attribute layout type");
+		return ERROR_FAILED;
+	}
+
+	if (!mVDProcessor->Validate(this)) {
+		return ERROR_FAILED;
+	}
+
+	if (mCreateInfo.indexType != INDEX_TYPE_UNDEFINED) {
+		uint32_t elementSize = IndexTypeSize(mCreateInfo.indexType);
+
+		if (elementSize == 0) {
+			// Shouldn't occur unless there's corruption
+			ASSERT_MSG(false, "could not determine index type size");
+			return ERROR_FAILED;
+		}
+
+		mIndexBuffer = Buffer(BUFFER_TYPE_INDEX, elementSize);
+	}
+
+	return mVDProcessor->UpdateVertexBuffer(this);
+}
+
+Result Geometry::Create(const GeometryCreateInfo& createInfo, Geometry* pGeometry)
+{
+	ASSERT_NULL_ARG(pGeometry);
+
+	*pGeometry = Geometry();
+
+	if (createInfo.primitiveTopology != PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
+		ASSERT_MSG(false, "only triangle list is supported");
+		return ERROR_INVALID_CREATE_ARGUMENT;
+	}
+
+	if (createInfo.indexType != INDEX_TYPE_UNDEFINED) {
+		uint32_t elementSize = 0;
+		if (createInfo.indexType == INDEX_TYPE_UINT16) {
+			elementSize = sizeof(uint16_t);
+		}
+		else if (createInfo.indexType == INDEX_TYPE_UINT32) {
+			elementSize = sizeof(uint32_t);
+		}
+		else {
+			ASSERT_MSG(false, "invalid index type");
+			return ERROR_INVALID_CREATE_ARGUMENT;
+		}
+	}
+
+	if (createInfo.vertexBindingCount == 0) {
+		ASSERT_MSG(false, "must have at least one vertex binding");
+		return ERROR_INVALID_CREATE_ARGUMENT;
+	}
+
+	pGeometry->mCreateInfo = createInfo;
+
+	Result ppxres = pGeometry->InternalCtor();
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
+Result Geometry::Create(
+	const GeometryCreateInfo& createInfo,
+	const TriMesh& mesh,
+	Geometry* pGeometry)
+{
+	// Create geometry
+	Result ppxres = Geometry::Create(createInfo, pGeometry);
+	if (Failed(ppxres)) {
+		ASSERT_MSG(false, "failed creating geometry");
+		return ppxres;
+	}
+
+	//
+	// Target geometry WITHOUT index data
+	//
+	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
+		// Mesh has index data
+		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+			// Iterate through the meshes triangles and add vertex data for each triangle vertex
+			uint32_t triCount = mesh.GetCountTriangles();
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+				uint32_t vtxIndex0 = VALUE_IGNORED;
+				uint32_t vtxIndex1 = VALUE_IGNORED;
+				uint32_t vtxIndex2 = VALUE_IGNORED;
+				ppxres = mesh.GetTriangle(triIndex, vtxIndex0, vtxIndex1, vtxIndex2);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting triangle indices at triIndex=" + std::to_string(triIndex));
+					return ppxres;
+				}
+
+				// First vertex
+				TriMeshVertexData vertexData0 = {};
+				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
+					return ppxres;
+				}
+				// Second vertex
+				TriMeshVertexData vertexData1 = {};
+				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
+					return ppxres;
+				}
+				// Third vertex
+				TriMeshVertexData vertexData2 = {};
+				ppxres = mesh.GetVertexData(vtxIndex2, &vertexData2);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex2=" + std::to_string(vtxIndex2));
+					return ppxres;
+				}
+
+				pGeometry->AppendVertexData(vertexData0);
+				pGeometry->AppendVertexData(vertexData1);
+				pGeometry->AppendVertexData(vertexData2);
+			}
+		}
+		// Mesh does not have index data
+		else {
+			// Iterate through the meshes vertx data and add it to the geometry
+			uint32_t vertexCount = mesh.GetCountPositions();
+			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+				TriMeshVertexData vertexData = {};
+				ppxres = mesh.GetVertexData(vertexIndex, &vertexData);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vertexIndex=" + std::to_string(vertexIndex));
+					return ppxres;
+				}
+				pGeometry->AppendVertexData(vertexData);
+			}
+		}
+	}
+	//
+	// Target geometry WITH index data
+	//
+	else {
+		// Mesh has index data
+		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+			// Iterate the meshes triangles and add the vertex indices
+			uint32_t triCount = mesh.GetCountTriangles();
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+				uint32_t v0 = VALUE_IGNORED;
+				uint32_t v1 = VALUE_IGNORED;
+				uint32_t v2 = VALUE_IGNORED;
+				Result   ppxres = mesh.GetTriangle(triIndex, v0, v1, v2);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "couldn't get triangle at triIndex=" + std::to_string(triIndex));
+					return ppxres;
+				}
+				pGeometry->AppendIndicesTriangle(v0, v1, v2);
+			}
+
+			// Iterate through the meshes vertx data and add it to the geometry
+			uint32_t vertexCount = mesh.GetCountPositions();
+			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+				TriMeshVertexData vertexData = {};
+				ppxres = mesh.GetVertexData(vertexIndex, &vertexData);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vertexIndex=" + std::to_string(vertexIndex));
+					return ppxres;
+				}
+				pGeometry->AppendVertexData(vertexData);
+			}
+		}
+		// Mesh does not have index data
+		else {
+			// Use every 3 vertices as a triangle and add each as an indexed triangle
+			uint32_t triCount = mesh.GetCountPositions() / 3;
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+				uint32_t vtxIndex0 = 3 * triIndex + 0;
+				uint32_t vtxIndex1 = 3 * triIndex + 1;
+				uint32_t vtxIndex2 = 3 * triIndex + 2;
+
+				// First vertex
+				TriMeshVertexData vertexData0 = {};
+				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
+					return ppxres;
+				}
+				// Second vertex
+				TriMeshVertexData vertexData1 = {};
+				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
+					return ppxres;
+				}
+				// Third vertex
+				TriMeshVertexData vertexData2 = {};
+				ppxres = mesh.GetVertexData(vtxIndex2, &vertexData2);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex2=" + std::to_string(vtxIndex2));
+					return ppxres;
+				}
+
+				// Will append indices if geometry has index buffer
+				pGeometry->AppendTriangle(vertexData0, vertexData1, vertexData2);
+			}
+		}
+	}
+
+	return SUCCESS;
+}
+
+Result Geometry::Create(
+	const GeometryCreateInfo& createInfo,
+	const WireMesh& mesh,
+	Geometry* pGeometry)
+{
+	// Create geometry
+	Result ppxres = Geometry::Create(createInfo, pGeometry);
+	if (Failed(ppxres)) {
+		ASSERT_MSG(false, "failed creating geometry");
+		return ppxres;
+	}
+
+	//
+	// Target geometry WITHOUT index data
+	//
+	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
+		// Mesh has index data
+		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+			// Iterate through the meshes edges and add vertex data for each edge vertex
+			uint32_t edgeCount = mesh.GetCountEdges();
+			for (uint32_t edgeIndex = 0; edgeIndex < edgeCount; ++edgeIndex) {
+				uint32_t vtxIndex0 = VALUE_IGNORED;
+				uint32_t vtxIndex1 = VALUE_IGNORED;
+				ppxres = mesh.GetEdge(edgeIndex, vtxIndex0, vtxIndex1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting triangle indices at edgeIndex=" + std::to_string(edgeIndex));
+					return ppxres;
+				}
+
+				// First vertex
+				WireMeshVertexData vertexData0 = {};
+				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
+					return ppxres;
+				}
+				// Second vertex
+				WireMeshVertexData vertexData1 = {};
+				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
+					return ppxres;
+				}
+
+				pGeometry->AppendVertexData(vertexData0);
+				pGeometry->AppendVertexData(vertexData1);
+			}
+		}
+		// Mesh does not have index data
+		else {
+			// Iterate through the meshes vertx data and add it to the geometry
+			uint32_t vertexCount = mesh.GetCountPositions();
+			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+				WireMeshVertexData vertexData = {};
+				ppxres = mesh.GetVertexData(vertexIndex, &vertexData);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vertexIndex=" + std::to_string(vertexIndex));
+					return ppxres;
+				}
+				pGeometry->AppendVertexData(vertexData);
+			}
+		}
+	}
+	//
+	// Target geometry WITH index data
+	//
+	else {
+		// Mesh has index data
+		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+			// Iterate the meshes edges and add the vertex indices
+			uint32_t edgeCount = mesh.GetCountEdges();
+			for (uint32_t edgeIndex = 0; edgeIndex < edgeCount; ++edgeIndex) {
+				uint32_t v0 = VALUE_IGNORED;
+				uint32_t v1 = VALUE_IGNORED;
+				Result   ppxres = mesh.GetEdge(edgeIndex, v0, v1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "couldn't get triangle at edgeIndex=" + std::to_string(edgeIndex));
+					return ppxres;
+				}
+				pGeometry->AppendIndicesEdge(v0, v1);
+			}
+
+			// Iterate through the meshes vertex data and add it to the geometry
+			uint32_t vertexCount = mesh.GetCountPositions();
+			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+				WireMeshVertexData vertexData = {};
+				ppxres = mesh.GetVertexData(vertexIndex, &vertexData);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vertexIndex=" + std::to_string(vertexIndex));
+					return ppxres;
+				}
+				pGeometry->AppendVertexData(vertexData);
+			}
+		}
+		// Mesh does not have index data
+		else {
+			// Use every 2 vertices as an edge and add each as an indexed edge
+			uint32_t edgeCount = mesh.GetCountPositions() / 2;
+			for (uint32_t edgeIndex = 0; edgeIndex < edgeCount; ++edgeIndex) {
+				uint32_t vtxIndex0 = 2 * edgeIndex + 0;
+				uint32_t vtxIndex1 = 2 * edgeIndex + 1;
+
+				// First vertex
+				WireMeshVertexData vertexData0 = {};
+				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
+					return ppxres;
+				}
+				// Second vertex
+				WireMeshVertexData vertexData1 = {};
+				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
+				if (Failed(ppxres)) {
+					ASSERT_MSG(false, "failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
+					return ppxres;
+				}
+
+				// Will append indices if geometry has index buffer
+				pGeometry->AppendEdge(vertexData0, vertexData1);
+			}
+		}
+	}
+
+	return SUCCESS;
+}
+
+Result Geometry::Create(const TriMesh& mesh, Geometry* pGeometry)
+{
+	GeometryCreateInfo createInfo = {};
+	createInfo.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	createInfo.indexType = mesh.GetIndexType();
+	createInfo.primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	createInfo.AddPosition();
+
+	if (mesh.HasColors()) {
+		createInfo.AddColor();
+	}
+	if (mesh.HasNormals()) {
+		createInfo.AddNormal();
+	}
+	if (mesh.HasTexCoords()) {
+		createInfo.AddTexCoord();
+	}
+	if (mesh.HasTangents()) {
+		createInfo.AddTangent();
+	}
+	if (mesh.HasBitangents()) {
+		createInfo.AddBitangent();
+	}
+
+	Result ppxres = Create(createInfo, mesh, pGeometry);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
+Result Geometry::Create(const WireMesh& mesh, Geometry* pGeometry)
+{
+	GeometryCreateInfo createInfo = {};
+	createInfo.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	createInfo.indexType = mesh.GetIndexType();
+	createInfo.primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	createInfo.AddPosition();
+
+	if (mesh.HasColors()) {
+		createInfo.AddColor();
+	}
+
+	Result ppxres = Create(createInfo, mesh, pGeometry);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
+const VertexBinding* Geometry::GetVertexBinding(uint32_t index) const
+{
+	const VertexBinding* pBinding = nullptr;
+	if (index < mCreateInfo.vertexBindingCount) {
+		pBinding = &mCreateInfo.vertexBindings[index];
+	}
+	return pBinding;
+}
+
+void Geometry::SetIndexBuffer(const Geometry::Buffer& newIndexBuffer)
+{
+	ASSERT_MSG(newIndexBuffer.GetType() == mIndexBuffer.GetType(), "New index buffer is not the same type");
+	ASSERT_MSG(newIndexBuffer.GetElementSize() == mIndexBuffer.GetElementSize(), "New index buffer does not have the same element size");
+	mIndexBuffer = newIndexBuffer;
+}
+
+uint32_t Geometry::GetIndexCount() const
+{
+	uint32_t count = 0;
+	if (mCreateInfo.indexType != INDEX_TYPE_UNDEFINED) {
+		count = mIndexBuffer.GetElementCount();
+	}
+	return count;
+}
+
+uint32_t Geometry::GetVertexCount() const
+{
+	ASSERT_MSG(mVDProcessor != nullptr, "Geometry is not initialized");
+	return mVDProcessor->GetVertexCount(this);
+}
+
+const Geometry::Buffer* Geometry::GetVertexBuffer(uint32_t index) const
+{
+	ASSERT_MSG(IsIndexInRange(index, mVertexBuffers), "Vertex buffer does not exist at index: " + std::to_string(index));
+	return &mVertexBuffers[index];
+}
+
+Geometry::Buffer* Geometry::GetVertexBuffer(uint32_t index)
+{
+	ASSERT_MSG(IsIndexInRange(index, mVertexBuffers), "Vertex buffer does not exist at index: " + std::to_string(index));
+	return &mVertexBuffers[index];
+}
+
+uint32_t Geometry::GetLargestBufferSize() const
+{
+	uint32_t size = mIndexBuffer.GetSize();
+	for (size_t i = 0; i < mVertexBuffers.size(); ++i) {
+		size = std::max(size, mVertexBuffers[i].GetSize());
+	}
+	return size;
+}
+
+void Geometry::AppendIndex(uint32_t idx)
+{
+	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+		mIndexBuffer.Append(static_cast<uint16_t>(idx));
+	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+		mIndexBuffer.Append(idx);
+	}
+}
+
+void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2)
+{
+	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+		mIndexBuffer.Append(static_cast<uint16_t>(idx0));
+		mIndexBuffer.Append(static_cast<uint16_t>(idx1));
+		mIndexBuffer.Append(static_cast<uint16_t>(idx2));
+	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+		mIndexBuffer.Append(idx0);
+		mIndexBuffer.Append(idx1);
+		mIndexBuffer.Append(idx2);
+	}
+}
+
+void Geometry::AppendIndicesEdge(uint32_t idx0, uint32_t idx1)
+{
+	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+		mIndexBuffer.Append(static_cast<uint16_t>(idx0));
+		mIndexBuffer.Append(static_cast<uint16_t>(idx1));
+	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+		mIndexBuffer.Append(idx0);
+		mIndexBuffer.Append(idx1);
+	}
+}
+
+void Geometry::AppendIndicesU32(uint32_t count, const uint32_t* pIndices)
+{
+	if (mCreateInfo.indexType != INDEX_TYPE_UINT32) {
+		ASSERT_MSG(false, "Can't append UINT32 indices to buffer of type: " + ToString(mCreateInfo.indexType));
+		return;
+	}
+	mIndexBuffer.Append(count, pIndices);
+}
+
+uint32_t Geometry::AppendVertexData(const TriMeshVertexData& vtx)
+{
+	return mVDProcessor->AppendVertexData(this, vtx);
+}
+
+uint32_t Geometry::AppendVertexData(const TriMeshVertexDataCompressed& vtx)
+{
+	return mVDProcessorCompressed->AppendVertexData(this, vtx);
+}
+
+uint32_t Geometry::AppendVertexData(const WireMeshVertexData& vtx)
+{
+	return mVDProcessor->AppendVertexData(this, vtx);
+}
+
+void Geometry::AppendTriangle(const TriMeshVertexData& vtx0, const TriMeshVertexData& vtx1, const TriMeshVertexData& vtx2)
+{
+	uint32_t n0 = AppendVertexData(vtx0) - 1;
+	uint32_t n1 = AppendVertexData(vtx1) - 1;
+	uint32_t n2 = AppendVertexData(vtx2) - 1;
+
+	// Will only append indices if geometry has an index buffer
+	AppendIndicesTriangle(n0, n1, n2);
+}
+
+void Geometry::AppendEdge(const WireMeshVertexData& vtx0, const WireMeshVertexData& vtx1)
+{
+	uint32_t n0 = AppendVertexData(vtx0) - 1;
+	uint32_t n1 = AppendVertexData(vtx1) - 1;
+
+	// Will only append indices if geometry has an index buffer
+	AppendIndicesEdge(n0, n1);
+}
+
+#pragma endregion
+
+#pragma region Mipmap
+
+static uint32_t CalculatActualLevelCount(uint32_t width, uint32_t height, uint32_t levelCount)
+{
+	uint32_t actualLevelCount = 0;
+	for (uint32_t i = 0; i < levelCount; ++i) {
+		if ((width > 0) && (height > 0)) {
+			actualLevelCount += 1;
+		}
+
+		width = width / 2;
+		height = height / 2;
+
+		if ((width == 0) || (height == 0)) {
+			break;
+		}
+	}
+	return actualLevelCount;
+}
+
+static uint64_t CalculateDataSize(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount)
+{
+	bool isValidWidth = (width > 0);
+	bool isValidHeight = (height > 0);
+	bool isValidFormat = (format != Bitmap::FORMAT_UNDEFINED);
+	bool isValidLevelCount = (levelCount > 0);
+	bool isValid = isValidWidth && isValidHeight && isValidFormat && isValidLevelCount;
+	if (!isValid) {
+		return 0;
+	}
+
+	uint64_t totalSize = 0;
+	for (uint32_t i = 0; i < levelCount; ++i) {
+		uint64_t pixelStride = Bitmap::FormatSize(format);
+		uint64_t rowStride = static_cast<uint64_t>(width) * pixelStride;
+		uint64_t size = rowStride * static_cast<uint64_t>(height);
+		totalSize += size;
+
+		width = width / 2;
+		height = height / 2;
+	}
+
+	return totalSize;
+}
+
+std::vector<char> Mipmap::mStaticData = {};
+
+Mipmap::Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount)
+	: Mipmap(width, height, format, levelCount, /* useStaticPool= */ false)
+{
+}
+
+Mipmap::Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount, bool useStaticPool)
+	: mUseStaticPool(useStaticPool)
+{
+	levelCount = CalculatActualLevelCount(width, height, levelCount);
+
+	size_t dataSize = static_cast<size_t>(CalculateDataSize(width, height, format, levelCount));
+	if (dataSize == 0) {
+		return;
+	}
+
+	// Choose between static pool use and internal data.
+	// NOTE: This is designed for single-threaded use ONLY!
+	// This will need locks if the consuming paths ever become multi-threaded.
+	std::vector<char>& targetData = mUseStaticPool ? mStaticData : mData;
+	if (targetData.size() < dataSize) {
+		targetData.resize(dataSize);
+	}
+
+	mMips.resize(levelCount);
+
+	const size_t pixelWidth = static_cast<size_t>(Bitmap::FormatSize(format));
+	size_t       offset = 0;
+	for (uint32_t i = 0; i < levelCount; ++i) {
+		char* pStorage = targetData.data() + offset;
+
+		Bitmap& mip = mMips[i];
+
+		Result ppxres = Bitmap::Create(width, height, format, pStorage, &mip);
+		if (Failed(ppxres)) {
+			mMips.clear();
+			return;
+		}
+
+		size_t rowStride = width * pixelWidth;
+		size_t size = rowStride * height;
+		offset += size;
+
+		width = width / 2;
+		height = height / 2;
+	}
+}
+
+Mipmap::Mipmap(const Bitmap& bitmap, uint32_t levelCount)
+	: Mipmap(bitmap, levelCount, /* useStaticPool= */ false)
+{
+}
+
+Mipmap::Mipmap(const Bitmap& bitmap, uint32_t levelCount, bool useStaticPool)
+	: Mipmap(bitmap.GetWidth(), bitmap.GetHeight(), bitmap.GetFormat(), levelCount, useStaticPool)
+{
+	Bitmap* pMip0 = GetMip(0);
+	if (!IsNull(pMip0)) {
+		uint64_t    srcSize = bitmap.GetFootprintSize();
+		const char* pSrcData = bitmap.GetData();
+		uint64_t    dstSize = pMip0->GetFootprintSize();
+		char* pDstData = pMip0->GetData();
+		if ((srcSize > 0) && (srcSize == dstSize) && !IsNull(pSrcData) && !IsNull(pDstData)) {
+			memcpy(pDstData, pSrcData, srcSize);
+
+			// Generate mip
+			for (uint32_t level = 1; level < levelCount; ++level) {
+				uint32_t prevLevel = level - 1;
+				Bitmap* pPrevMip = GetMip(prevLevel);
+				Bitmap* pMip = GetMip(level);
+
+				Result ppxres = pPrevMip->ScaleTo(pMip, STBIR_FILTER_BOX);
+				if (Failed(ppxres)) {
+					mData.clear();
+					mMips.clear();
+					return;
+				}
+			}
+		}
+	}
+}
+
+bool Mipmap::IsOk() const
+{
+	uint32_t levelCount = GetLevelCount();
+	if (levelCount == 0) {
+		return false;
+	}
+
+	const Bitmap& bitmap = mMips[0];
+
+	Bitmap::Format format = bitmap.GetFormat();
+	if (format == Bitmap::FORMAT_UNDEFINED) {
+		return false;
+	}
+
+	uint32_t width = bitmap.GetWidth();
+	uint32_t height = bitmap.GetHeight();
+	uint64_t dataSize = CalculateDataSize(width, height, format, levelCount);
+	uint64_t storageSize = mUseStaticPool
+		? static_cast<uint64_t>(mStaticData.size())
+		: static_cast<uint64_t>(mData.size());
+
+	if (storageSize < dataSize) {
+		return false;
+	}
+
+	return true;
+}
+
+Bitmap::Format Mipmap::GetFormat() const
+{
+	const Bitmap* pMip = GetMip(0);
+	return IsNull(pMip) ? Bitmap::FORMAT_UNDEFINED : pMip->GetFormat();
+}
+
+Bitmap* Mipmap::GetMip(uint32_t level)
+{
+	Bitmap* ptr = nullptr;
+	if (level < GetLevelCount()) {
+		ptr = &mMips[level];
+	}
+	return ptr;
+}
+
+const Bitmap* Mipmap::GetMip(uint32_t level) const
+{
+	const Bitmap* ptr = nullptr;
+	if (level < GetLevelCount()) {
+		ptr = &mMips[level];
+	}
+	return ptr;
+}
+
+uint32_t Mipmap::GetWidth(uint32_t level) const
+{
+	const Bitmap* pMip = GetMip(0);
+	return IsNull(pMip) ? 0 : pMip->GetWidth();
+}
+
+uint32_t Mipmap::GetHeight(uint32_t level) const
+{
+	const Bitmap* pMip = GetMip(0);
+	return IsNull(pMip) ? 0 : pMip->GetHeight();
+}
+
+uint32_t Mipmap::CalculateLevelCount(uint32_t width, uint32_t height)
+{
+	uint32_t levelCount = CalculatActualLevelCount(width, height, UINT32_MAX);
+	return levelCount;
+}
+
+Result Mipmap::LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount)
+{
+	ASSERT_NULL_ARG(pMipmap);
+
+	// Figure out level count
+	uint32_t maxLevelCount = CalculateLevelCount(baseWidth, baseHeight);
+	levelCount = std::min<uint32_t>(levelCount, maxLevelCount);
+
+	// Read file properites
+	uint32_t       width = 0;
+	uint32_t       height = 0;
+	Bitmap::Format format = Bitmap::FORMAT_UNDEFINED;
+
+	Result ppxres = Bitmap::GetFileProperties(path, &width, &height, &format);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	// Calculate total height of all mip levels
+	uint32_t totalHeight = 0;
+	for (uint32_t i = 0; i < levelCount; ++i) {
+		totalHeight += (baseHeight >> i);
+	}
+
+	// Verify that dimensions make sense
+	if ((width != baseWidth) || (height < totalHeight)) {
+		return ERROR_BITMAP_FOOTPRINT_MISMATCH;
+	}
+
+	// Load file
+	auto fileBytes = ::LoadFile(path);
+	if (!fileBytes.has_value()) {
+		return ERROR_IMAGE_FILE_LOAD_FAILED;
+	}
+
+	// Load bitmap
+	void* pStbiData = nullptr;
+	int   stbiWidth = 0;
+	int   stbiHeight = 0;
+	int   stbiChannels = 0;
+	int   stbiRequiredChannels = 4; // Force to 4 chanenls to make things easier for the graphics APIs
+	if (Bitmap::ChannelDataType(format) == Bitmap::DATA_TYPE_UINT8) {
+		pStbiData = stbi_load_from_memory(
+			reinterpret_cast<const stbi_uc*>(fileBytes.value().data()),
+			static_cast<int>(fileBytes.value().size()),
+			&stbiWidth,
+			&stbiHeight,
+			&stbiChannels,
+			stbiRequiredChannels);
+	}
+	else if (Bitmap::ChannelDataType(format) == Bitmap::DATA_TYPE_FLOAT) {
+		pStbiData = stbi_loadf_from_memory(
+			reinterpret_cast<const stbi_uc*>(fileBytes.value().data()),
+			static_cast<int>(fileBytes.value().size()),
+			&stbiWidth,
+			&stbiHeight,
+			&stbiChannels,
+			stbiRequiredChannels);
+	}
+
+	if (IsNull(pStbiData)) {
+		return ERROR_BAD_DATA_SOURCE;
+	}
+
+	// Row stride
+	uint32_t rowStride = baseWidth * Bitmap::FormatSize(format);
+	uint32_t totalDataSize = rowStride * totalHeight;
+
+	// Allocate storage
+	pMipmap->mData.resize(totalDataSize);
+
+	// Copy data
+	std::memcpy(pMipmap->mData.data(), pStbiData, totalDataSize);
+
+	// Free stbi data
+	stbi_image_free(pStbiData);
+
+	// Allocate mips up front to prevent bitmap's internal copy
+	pMipmap->mMips.resize(levelCount);
+
+	// Build mips
+	uint32_t y = 0;
+	uint32_t mipWidth = baseWidth;
+	uint32_t mipHeight = baseHeight;
+	for (uint32_t level = 0; level < levelCount; ++level) {
+		uint32_t dataOffset = y * rowStride;
+		char* pExternalStorage = pMipmap->mData.data() + dataOffset;
+
+		Bitmap mip = {};
+		ppxres = Bitmap::Create(mipWidth, mipHeight, format, rowStride, pExternalStorage, &pMipmap->mMips[level]);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		y += mipHeight;
+		mipWidth >>= 1;
+		mipHeight >>= 1;
+	}
+
+	return SUCCESS;
+}
+
+Result Mipmap::SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount)
+{
+	return ERROR_FAILED;
+}
+
+#pragma endregion
+
+#pragma region grfx util
+
+namespace grfx_util {
+
+	Format ToGrfxFormat(Bitmap::Format value)
+	{
+		// clang-format off
+		switch (value) {
+		default: break;
+		case Bitmap::FORMAT_R_UINT8: return FORMAT_R8_UNORM; break;
+		case Bitmap::FORMAT_RG_UINT8: return FORMAT_R8G8_UNORM; break;
+		case Bitmap::FORMAT_RGB_UINT8: return FORMAT_R8G8B8_UNORM; break;
+		case Bitmap::FORMAT_RGBA_UINT8: return FORMAT_R8G8B8A8_UNORM; break;
+		case Bitmap::FORMAT_R_UINT16: return FORMAT_R16_UNORM; break;
+		case Bitmap::FORMAT_RG_UINT16: return FORMAT_R16G16_UNORM; break;
+		case Bitmap::FORMAT_RGB_UINT16: return FORMAT_R16G16B16_UNORM; break;
+		case Bitmap::FORMAT_RGBA_UINT16: return FORMAT_R16G16B16A16_UNORM; break;
+			//case Bitmap::FORMAT_R_UINT32    : return FORMAT_R32_UNORM; break;
+			//case Bitmap::FORMAT_RG_UINT32   : return FORMAT_R32G32_UNORM; break;
+			//case Bitmap::FORMAT_RGB_UINT32  : return FORMAT_R32G32B32_UNORM; break;
+			//case Bitmap::FORMAT_RGBA_UINT32 : return FORMAT_R32G32B32A32_UNORM; break;
+		case Bitmap::FORMAT_R_FLOAT: return FORMAT_R32_FLOAT; break;
+		case Bitmap::FORMAT_RG_FLOAT: return FORMAT_R32G32_FLOAT; break;
+		case Bitmap::FORMAT_RGB_FLOAT: return FORMAT_R32G32B32_FLOAT; break;
+		case Bitmap::FORMAT_RGBA_FLOAT: return FORMAT_R32G32B32A32_FLOAT; break;
+		}
+		// clang-format on
+		return FORMAT_UNDEFINED;
+	}
+
+	Format ToGrfxFormat(gli::format value)
+	{
+		// clang-format off
+		switch (value) {
+		case gli::FORMAT_RGB_DXT1_UNORM_BLOCK8: return FORMAT_BC1_RGB_UNORM;
+		case gli::FORMAT_RGB_DXT1_SRGB_BLOCK8: return FORMAT_BC1_RGB_SRGB;
+		case gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8: return FORMAT_BC1_RGBA_UNORM;
+		case gli::FORMAT_RGBA_DXT1_SRGB_BLOCK8: return FORMAT_BC1_RGBA_SRGB;
+		case gli::FORMAT_RGBA_DXT3_SRGB_BLOCK16: return FORMAT_BC2_SRGB;
+		case gli::FORMAT_RGBA_DXT3_UNORM_BLOCK16: return FORMAT_BC2_UNORM;
+		case gli::FORMAT_RGBA_DXT5_SRGB_BLOCK16: return FORMAT_BC3_SRGB;
+		case gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16: return FORMAT_BC3_UNORM;
+		case gli::FORMAT_R_ATI1N_UNORM_BLOCK8: return FORMAT_BC4_UNORM;
+		case gli::FORMAT_R_ATI1N_SNORM_BLOCK8: return FORMAT_BC4_SNORM;
+		case gli::FORMAT_RG_ATI2N_UNORM_BLOCK16: return FORMAT_BC5_UNORM;
+		case gli::FORMAT_RG_ATI2N_SNORM_BLOCK16: return FORMAT_BC5_SNORM;
+		case gli::FORMAT_RGB_BP_UFLOAT_BLOCK16: return FORMAT_BC6H_UFLOAT;
+		case gli::FORMAT_RGB_BP_SFLOAT_BLOCK16: return FORMAT_BC6H_SFLOAT;
+		case gli::FORMAT_RGBA_BP_UNORM_BLOCK16: return FORMAT_BC7_UNORM;
+		case gli::FORMAT_RGBA_BP_SRGB_BLOCK16: return FORMAT_BC7_SRGB;
+		default:
+			return FORMAT_UNDEFINED;
+		}
+		// clang-format on
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CopyBitmapToImage(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image* pImage,
+		uint32_t            mipLevel,
+		uint32_t            arrayLayer,
+		ResourceState stateBefore,
+		ResourceState stateAfter)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pBitmap);
+		ASSERT_NULL_ARG(pImage);
+
+		Result ppxres = ERROR_FAILED;
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// This is the number of bytes we're going to copy per row.
+		uint32_t rowCopySize = pBitmap->GetWidth() * pBitmap->GetPixelStride();
+
+		// When copying from a buffer to a image/texture, D3D12 requires that the rows
+		// stored in the source buffer (aka staging buffer) are aligned to 256 bytes.
+		// Vulkan does not have this requirement. So for the staging buffer, we want
+		// to enforce the alignment for D3D12 but not for Vulkan.
+		//
+		uint32_t apiRowStrideAligement = /*IsDx12(pQueue->GetDevice()->GetApi()) ? PPX_D3D12_TEXTURE_DATA_PITCH_ALIGNMENT :*/ 1;
+		// The staging buffer's row stride alignemnt needs to be based off the bitmap's
+		// width (i.e. the number of bytes we're going to copy) and not the bitmap's row
+		// stride. The bitmap's may be padded beyond width * pixel stride.
+		//
+		uint32_t stagingBufferRowStride = RoundUp<uint32_t>(rowCopySize, apiRowStrideAligement);
+
+		// Create staging buffer
+		BufferPtr stagingBuffer;
+		{
+			uint64_t bufferSize = stagingBufferRowStride * pBitmap->GetHeight();
+
+			BufferCreateInfo ci = {};
+			ci.size = bufferSize;
+			ci.usageFlags.bits.transferSrc = true;
+			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+
+			ppxres = pQueue->GetDevice()->CreateBuffer(&ci, &stagingBuffer);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(stagingBuffer);
+
+			// Map and copy to staging buffer
+			void* pBufferAddress = nullptr;
+			ppxres = stagingBuffer->MapMemory(0, &pBufferAddress);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+
+			const char* pSrc = pBitmap->GetData();
+			char* pDst = static_cast<char*>(pBufferAddress);
+			const uint32_t srcRowStride = pBitmap->GetRowStride();
+			const uint32_t dstRowStride = stagingBufferRowStride;
+			for (uint32_t y = 0; y < pBitmap->GetHeight(); ++y) {
+				memcpy(pDst, pSrc, rowCopySize);
+				pSrc += srcRowStride;
+				pDst += dstRowStride;
+			}
+
+			stagingBuffer->UnmapMemory();
+		}
+
+		// Copy info
+		BufferToImageCopyInfo copyInfo = {};
+		copyInfo.srcBuffer.imageWidth = pBitmap->GetWidth();
+		copyInfo.srcBuffer.imageHeight = pBitmap->GetHeight();
+		copyInfo.srcBuffer.imageRowStride = stagingBufferRowStride;
+		copyInfo.srcBuffer.footprintOffset = 0;
+		copyInfo.srcBuffer.footprintWidth = pBitmap->GetWidth();
+		copyInfo.srcBuffer.footprintHeight = pBitmap->GetHeight();
+		copyInfo.srcBuffer.footprintDepth = 1;
+		copyInfo.dstImage.mipLevel = mipLevel;
+		copyInfo.dstImage.arrayLayer = arrayLayer;
+		copyInfo.dstImage.arrayLayerCount = 1;
+		copyInfo.dstImage.x = 0;
+		copyInfo.dstImage.y = 0;
+		copyInfo.dstImage.z = 0;
+		copyInfo.dstImage.width = pBitmap->GetWidth();
+		copyInfo.dstImage.height = pBitmap->GetHeight();
+		copyInfo.dstImage.depth = 1;
+
+		// Copy to GPU image
+		ppxres = pQueue->CopyBufferToImage(
+			std::vector<BufferToImageCopyInfo>{copyInfo},
+			stagingBuffer,
+			pImage,
+			mipLevel,
+			1,
+			arrayLayer,
+			1,
+			stateBefore,
+			stateAfter);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		return SUCCESS;
+	}
+
+	Result CreateImageFromBitmap(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image** ppImage,
+		const ImageOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pBitmap);
+		ASSERT_NULL_ARG(ppImage);
+
+		Result ppxres = ERROR_FAILED;
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Cap mip level count
+		uint32_t maxMipLevelCount = Mipmap::CalculateLevelCount(pBitmap->GetWidth(), pBitmap->GetHeight());
+		uint32_t mipLevelCount = std::min<uint32_t>(options.mMipLevelCount, maxMipLevelCount);
+
+		// Create target image
+		ImagePtr targetImage;
+		{
+			ImageCreateInfo ci = {};
+			ci.type = IMAGE_TYPE_2D;
+			ci.width = pBitmap->GetWidth();
+			ci.height = pBitmap->GetHeight();
+			ci.depth = 1;
+			ci.format = ToGrfxFormat(pBitmap->GetFormat());
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = mipLevelCount;
+			ci.arrayLayerCount = 1;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.sampled = true;
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+
+			ci.usageFlags.flags |= options.mAdditionalUsage;
+
+			ppxres = pQueue->GetDevice()->CreateImage(&ci, &targetImage);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetImage);
+		}
+
+		// Since this mipmap is temporary, it's safe to use the static pool.
+		Mipmap mipmap = Mipmap(*pBitmap, mipLevelCount, /* useStaticPool= */ true);
+		if (!mipmap.IsOk()) {
+			return ERROR_FAILED;
+		}
+
+		// Copy mips to image
+		for (uint32_t mipLevel = 0; mipLevel < mipLevelCount; ++mipLevel) {
+			const Bitmap* pMip = mipmap.GetMip(mipLevel);
+
+			ppxres = CopyBitmapToImage(
+				pQueue,
+				pMip,
+				targetImage,
+				mipLevel,
+				0,
+				RESOURCE_STATE_SHADER_RESOURCE,
+				RESOURCE_STATE_SHADER_RESOURCE);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppImage = targetImage;
+
+		return SUCCESS;
+	}
+
+	Result CreateImageFromBitmapGpu(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Image** ppImage,
+		const ImageOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pBitmap);
+		ASSERT_NULL_ARG(ppImage);
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		Result ppxres = ERROR_FAILED;
+
+		// Cap mip level count
+		uint32_t maxMipLevelCount = Mipmap::CalculateLevelCount(pBitmap->GetWidth(), pBitmap->GetHeight());
+		uint32_t mipLevelCount = std::min<uint32_t>(options.mMipLevelCount, maxMipLevelCount);
+
+		// Create target image
+		ImagePtr targetImage;
+		{
+			ImageCreateInfo ci = {};
+			ci.type = IMAGE_TYPE_2D;
+			ci.width = pBitmap->GetWidth();
+			ci.height = pBitmap->GetHeight();
+			ci.depth = 1;
+			ci.format = ToGrfxFormat(pBitmap->GetFormat());
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = mipLevelCount;
+			ci.arrayLayerCount = 1;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.transferSrc = true; // For CS
+			ci.usageFlags.bits.sampled = true;
+			ci.usageFlags.bits.storage = true; // For CS
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+
+			ci.usageFlags.flags |= options.mAdditionalUsage;
+
+			ppxres = pQueue->GetDevice()->CreateImage(&ci, &targetImage);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetImage);
+		}
+
+		// Copy first level mip into image
+		ppxres = CopyBitmapToImage(
+			pQueue,
+			pBitmap,
+			targetImage,
+			0,
+			0,
+			RESOURCE_STATE_SHADER_RESOURCE,
+			RESOURCE_STATE_SHADER_RESOURCE);
+
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		// Transition image mips from 1 to rest to general layout
+		{
+			// Create a command buffer
+			CommandBufferPtr cmdBuffer;
+			CHECKED_CALL(pQueue->CreateCommandBuffer(&cmdBuffer));
+			// Record command buffer
+			CHECKED_CALL(cmdBuffer->Begin());
+			cmdBuffer->TransitionImageLayout(targetImage, 1, mipLevelCount - 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+			CHECKED_CALL(cmdBuffer->End());
+			// Submitt to queue
+			SubmitInfo submitInfo = {};
+			submitInfo.commandBufferCount = 1;
+			submitInfo.ppCommandBuffers = &cmdBuffer;
+			submitInfo.waitSemaphoreCount = 0;
+			submitInfo.ppWaitSemaphores = nullptr;
+			submitInfo.signalSemaphoreCount = 0;
+			submitInfo.ppSignalSemaphores = nullptr;
+			submitInfo.pFence = nullptr;
+			CHECKED_CALL(pQueue->Submit(&submitInfo));
+		}
+
+		// Requiered to setup compute shader
+		ShaderModulePtr        computeShader;
+		PipelineInterfacePtr   computePipelineInterface;
+		ComputePipelinePtr     computePipeline;
+		DescriptorSetLayoutPtr computeDescriptorSetLayout;
+		DescriptorPoolPtr      descriptorPool;
+		DescriptorSetPtr       computeDescriptorSet;
+		BufferPtr              uniformBuffer;
+		SamplerPtr             sampler;
+
+		{ // Uniform buffer
+			BufferCreateInfo bufferCreateInfo = {};
+			bufferCreateInfo.size = PPX_MINIMUM_UNIFORM_BUFFER_SIZE;
+			bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
+			bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			CHECKED_CALL(pQueue->GetDevice()->CreateBuffer(&bufferCreateInfo, &uniformBuffer));
+		}
+
+		{ // Sampler
+			SamplerCreateInfo samplerCreateInfo = {};
+			CHECKED_CALL(pQueue->GetDevice()->CreateSampler(&samplerCreateInfo, &sampler));
+		}
+
+		{ // Descriptors
+			DescriptorPoolCreateInfo poolCreateInfo = {};
+			poolCreateInfo.storageImage = 1;
+			poolCreateInfo.uniformBuffer = 1;
+			poolCreateInfo.sampledImage = 1;
+			poolCreateInfo.sampler = 1;
+
+			CHECKED_CALL(pQueue->GetDevice()->CreateDescriptorPool(&poolCreateInfo, &descriptorPool));
+
+			{ // Shader inputs
+				DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_STORAGE_IMAGE));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(3, DESCRIPTOR_TYPE_SAMPLER));
+
+				CHECKED_CALL(pQueue->GetDevice()->CreateDescriptorSetLayout(&layoutCreateInfo, &computeDescriptorSetLayout));
+
+				CHECKED_CALL(pQueue->GetDevice()->AllocateDescriptorSet(descriptorPool, computeDescriptorSetLayout, &computeDescriptorSet));
+
+				WriteDescriptor write = {};
+				write.binding = 1;
+				write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.bufferOffset = 0;
+				write.bufferRange = PPX_WHOLE_SIZE;
+				write.pBuffer = uniformBuffer;
+				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
+
+				write = {};
+				write.binding = 3;
+				write.type = DESCRIPTOR_TYPE_SAMPLER;
+				write.pSampler = sampler;
+				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
+			}
+		}
+
+		// Compute pipeline
+		{
+			std::vector<char> bytecode;
+			bytecode = { std::begin(GenerateMipShaderVK), std::end(GenerateMipShaderVK) };
+			
+			ASSERT_MSG(!bytecode.empty(), "CS shader bytecode load failed");
+			ShaderModuleCreateInfo shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
+			CHECKED_CALL(pQueue->GetDevice()->CreateShaderModule(&shaderCreateInfo, &computeShader));
+
+			PipelineInterfaceCreateInfo piCreateInfo = {};
+			piCreateInfo.setCount = 1;
+			piCreateInfo.sets[0].set = 0;
+			piCreateInfo.sets[0].pLayout = computeDescriptorSetLayout;
+			CHECKED_CALL(pQueue->GetDevice()->CreatePipelineInterface(&piCreateInfo, &computePipelineInterface));
+
+			ComputePipelineCreateInfo cpCreateInfo = {};
+			cpCreateInfo.CS = { computeShader.Get(), "CSMain" };
+			cpCreateInfo.pPipelineInterface = computePipelineInterface;
+			CHECKED_CALL(pQueue->GetDevice()->CreateComputePipeline(&cpCreateInfo, &computePipeline));
+		}
+
+		// Prepare data for CS
+		int srcCurrentWidth = pBitmap->GetWidth();
+		int srcCurrentHeight = pBitmap->GetHeight();
+
+		// For the uniform (constant) data
+		struct alignas(16) ShaderConstantData
+		{
+			float texel_size[2]; // 1.0 / srcTex.Dimensions
+			int   src_mip_level;
+			// Case to filter according the parity of the dimensions in the src texture.
+			// Must be one of 0, 1, 2 or 3
+			// See CSMain function bellow
+			int dimension_case;
+			// Ignored for now, if we want to use a different filter strategy. Current one is bi-linear filter
+			int filter_option;
+		};
+
+		// Generate the rest of the mips
+		for (uint32_t i = 1; i < mipLevelCount; ++i) {
+			StorageImageViewPtr storageImageView;
+			SampledImageViewPtr sampledImageView;
+
+			{ // Pass uniform data into shader
+				ShaderConstantData constants;
+				// Calculate current texel size
+				constants.texel_size[0] = 1.0f / float(srcCurrentWidth);
+				constants.texel_size[1] = 1.0f / float(srcCurrentHeight);
+				// Calculate current dimension case
+				// If width is even
+				if ((srcCurrentWidth % 2) == 0) {
+					// Test the height
+					constants.dimension_case = (srcCurrentHeight % 2) == 0 ? 0 : 1;
+				}
+				else { // width is odd
+					// Test the height
+					constants.dimension_case = (srcCurrentHeight % 2) == 0 ? 2 : 3;
+				}
+				constants.src_mip_level = i - 1; // We calculate mip level i with level i - 1
+				constants.filter_option = 1;     // Ignored for now, defaults to bilinear
+				void* pData = nullptr;
+				CHECKED_CALL(uniformBuffer->MapMemory(0, &pData));
+				memcpy(pData, &constants, sizeof(constants));
+				uniformBuffer->UnmapMemory();
+			}
+
+			{ // Storage Image view
+				StorageImageViewCreateInfo storageViewCreateInfo = StorageImageViewCreateInfo::GuessFromImage(targetImage);
+				storageViewCreateInfo.mipLevel = i;
+				storageViewCreateInfo.mipLevelCount = 1;
+
+				CHECKED_CALL(pQueue->GetDevice()->CreateStorageImageView(&storageViewCreateInfo, &storageImageView));
+
+				WriteDescriptor write = {};
+				write.binding = 0;
+				write.type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+				write.pImageView = storageImageView;
+				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
+			}
+
+			{ // Sampler Image View
+				SampledImageViewCreateInfo sampledViewCreateInfo = SampledImageViewCreateInfo::GuessFromImage(targetImage);
+				sampledViewCreateInfo.mipLevel = i - 1;
+				sampledViewCreateInfo.mipLevelCount = 1;
+
+				CHECKED_CALL(pQueue->GetDevice()->CreateSampledImageView(&sampledViewCreateInfo, &sampledImageView));
+
+				WriteDescriptor write = {};
+				write.binding = 2;
+				write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.pImageView = sampledImageView;
+				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
+			}
+
+			{ // Create a command buffer
+				CommandBufferPtr cmdBuffer;
+				CHECKED_CALL(pQueue->CreateCommandBuffer(&cmdBuffer));
+				// Record command buffer
+				CHECKED_CALL(cmdBuffer->Begin());
+				cmdBuffer->BindComputeDescriptorSets(computePipelineInterface, 1, &computeDescriptorSet);
+				cmdBuffer->BindComputePipeline(computePipeline);
+				// Update width and height for the next iteration
+				srcCurrentWidth = srcCurrentWidth > 1 ? srcCurrentWidth / 2 : 1;
+				srcCurrentHeight = srcCurrentHeight > 1 ? srcCurrentHeight / 2 : 1;
+				// Launch the CS once per dst size (which is half of src size)
+				cmdBuffer->Dispatch(srcCurrentWidth, srcCurrentHeight, 1);
+				CHECKED_CALL(cmdBuffer->End());
+				// Submitt to queue
+				SubmitInfo submitInfo = {};
+				submitInfo.commandBufferCount = 1;
+				submitInfo.ppCommandBuffers = &cmdBuffer;
+				submitInfo.waitSemaphoreCount = 0;
+				submitInfo.ppWaitSemaphores = nullptr;
+				submitInfo.signalSemaphoreCount = 0;
+				submitInfo.ppSignalSemaphores = nullptr;
+				submitInfo.pFence = nullptr;
+
+				CHECKED_CALL(pQueue->Submit(&submitInfo));
+				CHECKED_CALL(pQueue->WaitIdle());
+			}
+
+			{ // Transition i-th mip back to shader resource
+				// Create a command buffer
+				CommandBufferPtr cmdBuffer;
+				CHECKED_CALL(pQueue->CreateCommandBuffer(&cmdBuffer));
+				// Record into command buffer
+				CHECKED_CALL(cmdBuffer->Begin());
+				cmdBuffer->TransitionImageLayout(targetImage, i, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+				CHECKED_CALL(cmdBuffer->End());
+				// Submitt to queue
+				SubmitInfo submitInfo = {};
+				submitInfo.commandBufferCount = 1;
+				submitInfo.ppCommandBuffers = &cmdBuffer;
+				submitInfo.waitSemaphoreCount = 0;
+				submitInfo.ppWaitSemaphores = nullptr;
+				submitInfo.signalSemaphoreCount = 0;
+				submitInfo.ppSignalSemaphores = nullptr;
+				submitInfo.pFence = nullptr;
+				CHECKED_CALL(pQueue->Submit(&submitInfo));
+				CHECKED_CALL(pQueue->WaitIdle());
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppImage = targetImage;
+
+		return SUCCESS;
+	}
+
+	bool IsDDSFile(const std::filesystem::path& path)
+	{
+		return (std::strstr(path.string().c_str(), ".dds") != nullptr || std::strstr(path.string().c_str(), ".ktx") != nullptr);
+	}
+
+	struct MipLevel
+	{
+		uint32_t width;
+		uint32_t height;
+		uint32_t bufferWidth;
+		uint32_t bufferHeight;
+		uint32_t srcRowStride;
+		uint32_t dstRowStride;
+		size_t   offset;
+	};
+
+	Result CreateImageFromCompressedImage(
+		Queue* pQueue,
+		const gli::texture& image,
+		Image** ppImage,
+		const ImageOptions& options)
+	{
+		Result ppxres;
+
+		LOG_INFO("Target type: " << ToString(image.target()) << "\n");
+		LOG_INFO("Format: " << ToString(image.format()) << "\n");
+		LOG_INFO("Swizzles: " << image.swizzles()[0] << ", " << image.swizzles()[1] << ", " << image.swizzles()[2] << ", " << image.swizzles()[3] << "\n");
+		LOG_INFO("Layer information:\n"
+			<< "\tBase layer: " << image.base_layer() << "\n"
+			<< "\tMax layer: " << image.max_layer() << "\n"
+			<< "\t# of layers: " << image.layers() << "\n");
+		LOG_INFO("Face information:\n"
+			<< "\tBase face: " << image.base_face() << "\n"
+			<< "\tMax face: " << image.max_face() << "\n"
+			<< "\t# of faces: " << image.faces() << "\n");
+		LOG_INFO("Level information:\n"
+			<< "\tBase level: " << image.base_level() << "\n"
+			<< "\tMax level: " << image.max_level() << "\n"
+			<< "\t# of levels: " << image.levels() << "\n");
+		LOG_INFO("Image extents by level:\n");
+		for (gli::texture::size_type level = 0; level < image.levels(); level++) {
+			LOG_INFO("\textent(level == " << level << "): [" << image.extent(level)[0] << ", " << image.extent(level)[1] << ", " << image.extent(level)[2] << "]\n");
+		}
+		LOG_INFO("Total image size (bytes): " << image.size() << "\n");
+		LOG_INFO("Image size by level:\n");
+		for (gli::texture::size_type i = 0; i < image.levels(); i++) {
+			LOG_INFO("\tsize(level == " << i << "): " << image.size(i) << "\n");
+		}
+		LOG_INFO("Image data pointer: " << image.data() << "\n");
+
+		ASSERT_MSG((image.target() == gli::TARGET_2D), "Expecting a 2D DDS image.");
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Cap mip level count
+		const Format format = ToGrfxFormat(image.format());
+		const uint32_t     maxMipLevelCount = std::min<uint32_t>(options.mMipLevelCount, static_cast<uint32_t>(image.levels()));
+		const uint32_t     imageWidth = static_cast<uint32_t>(image.extent(0)[0]);
+		const uint32_t     imageHeight = static_cast<uint32_t>(image.extent(0)[1]);
+
+		// Row stride and texture offset alignment to handle DX's requirements
+		const uint32_t rowStrideAlignment = IsDx12(pQueue->GetDevice()->GetApi()) ? PPX_D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : 1;
+		const uint32_t offsetAlignment = IsDx12(pQueue->GetDevice()->GetApi()) ? PPX_D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT : 1;
+		const uint32_t bytesPerTexel = GetFormatDescription(format)->bytesPerTexel;
+		const uint32_t blockWidth = GetFormatDescription(format)->blockWidth;
+
+		// Create staging buffer
+		BufferPtr stagingBuffer;
+		LOG_INFO("Storage size for image: " << image.size() << " bytes\n");
+		LOG_INFO("Is image compressed: " << (gli::is_compressed(image.format()) ? "YES" : "NO"));
+
+		BufferCreateInfo ci = {};
+		ci.size = 0;
+		ci.usageFlags.bits.transferSrc = true;
+		ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+
+		// Compute each mipmap level size and alignments.
+		// This step filters out levels too small to match minimal alignment.
+		std::vector<MipLevel> levelSizes;
+		for (gli::texture::size_type level = 0; level < maxMipLevelCount; level++) {
+			MipLevel ls;
+			ls.width = static_cast<uint32_t>(image.extent(level)[0]);
+			ls.height = static_cast<uint32_t>(image.extent(level)[1]);
+			// Stop when mipmaps are becoming too small to respect the format alignment.
+			// The DXT* format documentation says texture sizes must be a multiple of 4.
+			// For some reason, tools like imagemagick can generate mipmaps with a size < 4.
+			// We need to ignore those.
+			if (ls.width < blockWidth || ls.height < blockWidth) {
+				break;
+			}
+
+			// If the DDS file contains textures which size is not a multiple of 4, something is wrong.
+			// Since imagemagick can create invalid mipmap levels, I'd assume it can also create invalid
+			// textures with non-multiple-of-4 sizes. Asserting to catch those.
+			if (ls.width % blockWidth != 0 || ls.height % blockWidth != 0) {
+				PPX_LOG_ERROR("Compressed textures width & height must be a multiple of the block size.");
+				return ERROR_IMAGE_INVALID_FORMAT;
+			}
+
+			// Compute pitch for this format.
+			// See https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
+			const uint32_t blockRowByteSize = (bytesPerTexel * blockWidth) / (blockWidth * blockWidth);
+			const uint32_t rowStride = (ls.width * blockRowByteSize);
+
+			ls.bufferWidth = ls.width;
+			ls.bufferHeight = ls.height;
+			ls.srcRowStride = rowStride;
+			ls.dstRowStride = RoundUp<uint32_t>(ls.srcRowStride, rowStrideAlignment);
+
+			ls.offset = ci.size;
+			ci.size += (image.size(level) / ls.srcRowStride) * ls.dstRowStride;
+			ci.size = RoundUp<uint64_t>(ci.size, offsetAlignment);
+			levelSizes.emplace_back(std::move(ls));
+		}
+		const uint32_t mipmapLevelCount = CountU32(levelSizes);
+		ASSERT_MSG(mipmapLevelCount > 0, "Requested texture size too small for the chosen format.");
+
+		ppxres = pQueue->GetDevice()->CreateBuffer(&ci, &stagingBuffer);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+		SCOPED_DESTROYER.AddObject(stagingBuffer);
+
+		// Map and copy to staging buffer
+		void* pBufferAddress = nullptr;
+		ppxres = stagingBuffer->MapMemory(0, &pBufferAddress);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		for (size_t level = 0; level < mipmapLevelCount; level++) {
+			auto& ls = levelSizes[level];
+
+			const char* pSrc = static_cast<const char*>(image.data(0, 0, level));
+			char* pDst = static_cast<char*>(pBufferAddress) + ls.offset;
+			for (uint32_t row = 0; row * ls.srcRowStride < image.size(level); row++) {
+				const char* pSrcRow = pSrc + row * ls.srcRowStride;
+				char* pDstRow = pDst + row * ls.dstRowStride;
+				memcpy(pDstRow, pSrcRow, ls.srcRowStride);
+			}
+		}
+
+		stagingBuffer->UnmapMemory();
+
+		// Create target image
+		ImagePtr targetImage;
+		{
+			ImageCreateInfo ci = {};
+			ci.type = IMAGE_TYPE_2D;
+			ci.width = imageWidth;
+			ci.height = imageHeight;
+			ci.depth = 1;
+			ci.format = format;
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = mipmapLevelCount;
+			ci.arrayLayerCount = 1;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.sampled = true;
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+
+			ci.usageFlags.flags |= options.mAdditionalUsage;
+
+			ppxres = pQueue->GetDevice()->CreateImage(&ci, &targetImage);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetImage);
+		}
+
+		std::vector<BufferToImageCopyInfo> copyInfos(mipmapLevelCount);
+		for (gli::texture::size_type level = 0; level < mipmapLevelCount; level++) {
+			auto& ls = levelSizes[level];
+			auto& copyInfo = copyInfos[level];
+
+			// Copy info
+			copyInfo.srcBuffer.imageWidth = ls.bufferWidth;
+			copyInfo.srcBuffer.imageHeight = ls.bufferHeight;
+			copyInfo.srcBuffer.imageRowStride = ls.dstRowStride;
+			copyInfo.srcBuffer.footprintOffset = ls.offset;
+			copyInfo.srcBuffer.footprintWidth = ls.bufferWidth;
+			copyInfo.srcBuffer.footprintHeight = ls.bufferHeight;
+			copyInfo.srcBuffer.footprintDepth = 1;
+			copyInfo.dstImage.mipLevel = static_cast<uint32_t>(level);
+			copyInfo.dstImage.arrayLayer = 0;
+			copyInfo.dstImage.arrayLayerCount = 1;
+			copyInfo.dstImage.x = 0;
+			copyInfo.dstImage.y = 0;
+			copyInfo.dstImage.z = 0;
+			copyInfo.dstImage.width = ls.width;
+			copyInfo.dstImage.height = ls.height;
+			copyInfo.dstImage.depth = 1;
+		}
+
+		// Copy to GPU image
+		ppxres = pQueue->CopyBufferToImage(
+			copyInfos,
+			stagingBuffer,
+			targetImage,
+			ALL_SUBRESOURCES,
+			RESOURCE_STATE_UNDEFINED,
+			RESOURCE_STATE_SHADER_RESOURCE);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppImage = targetImage;
+
+		return SUCCESS;
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CreateImageFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Image** ppImage,
+		const ImageOptions& options,
+		bool                         useGpu)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppImage);
+
+		ScopedTimer timer("Image creation from file '" + path.string() + "'");
+
+		Result ppxres;
+		if (Bitmap::IsBitmapFile(path)) {
+			// Load bitmap
+			Bitmap bitmap;
+			ppxres = Bitmap::LoadFile(path, &bitmap);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+
+			if (useGpu) {
+				ppxres = CreateImageFromBitmapGpu(pQueue, &bitmap, ppImage, options);
+			}
+			else {
+				ppxres = CreateImageFromBitmap(pQueue, &bitmap, ppImage, options);
+			}
+
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+		}
+		else if (IsDDSFile(path)) {
+			// Generate a bitmap out of a DDS
+			gli::texture image = gli::load(path.string().c_str());
+			if (image.empty()) {
+				return Result::ERROR_IMAGE_FILE_LOAD_FAILED;
+			}
+			LOG_INFO("Successfully loaded compressed image: " + path);
+			ppxres = CreateImageFromCompressedImage(pQueue, image, ppImage, options);
+		}
+		else {
+			ppxres = Result::ERROR_IMAGE_FILE_LOAD_FAILED;
+		}
+
+		if (ppxres != Result::SUCCESS) {
+			LOG_INFO("Failed to create image from image file: " + path);
+		}
+		return SUCCESS;
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CopyBitmapToTexture(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Texture* pTexture,
+		uint32_t            mipLevel,
+		uint32_t            arrayLayer,
+		ResourceState stateBefore,
+		ResourceState stateAfter)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pBitmap);
+		ASSERT_NULL_ARG(pTexture);
+
+		Result ppxres = CopyBitmapToImage(
+			pQueue,
+			pBitmap,
+			pTexture->GetImage(),
+			mipLevel,
+			arrayLayer,
+			stateBefore,
+			stateAfter);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		return SUCCESS;
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CreateTextureFromBitmap(
+		Queue* pQueue,
+		const Bitmap* pBitmap,
+		Texture** ppTexture,
+		const TextureOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pBitmap);
+		ASSERT_NULL_ARG(ppTexture);
+
+		Result ppxres = ERROR_FAILED;
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Cap mip level count
+		uint32_t maxMipLevelCount = Mipmap::CalculateLevelCount(pBitmap->GetWidth(), pBitmap->GetHeight());
+		uint32_t mipLevelCount = std::min<uint32_t>(options.mMipLevelCount, maxMipLevelCount);
+
+		// Create target texture
+		TexturePtr targetTexture;
+		{
+			TextureCreateInfo ci = {};
+			ci.pImage = nullptr;
+			ci.imageType = IMAGE_TYPE_2D;
+			ci.width = pBitmap->GetWidth();
+			ci.height = pBitmap->GetHeight();
+			ci.depth = 1;
+			ci.imageFormat = ToGrfxFormat(pBitmap->GetFormat());
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = mipLevelCount;
+			ci.arrayLayerCount = 1;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.sampled = true;
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.initialState = options.mInitialState;
+			ci.RTVClearValue = { {0, 0, 0, 0} };
+			ci.DSVClearValue = { 1.0f, 0xFF };
+			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
+			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
+			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
+			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
+			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.ownership = OWNERSHIP_REFERENCE;
+
+			ci.usageFlags.flags |= options.mAdditionalUsage;
+
+			ppxres = pQueue->GetDevice()->CreateTexture(&ci, &targetTexture);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetTexture);
+		}
+
+		// Since this mipmap is temporary, it's safe to use the static pool.
+		Mipmap mipmap = Mipmap(*pBitmap, mipLevelCount, /* useStaticPool= */ true);
+		if (!mipmap.IsOk()) {
+			return ERROR_FAILED;
+		}
+
+		// Copy mips to texture
+		for (uint32_t mipLevel = 0; mipLevel < mipLevelCount; ++mipLevel) {
+			const Bitmap* pMip = mipmap.GetMip(mipLevel);
+
+			ppxres = CopyBitmapToTexture(
+				pQueue,
+				pMip,
+				targetTexture,
+				mipLevel,
+				0,
+				options.mInitialState,
+				options.mInitialState);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetTexture->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppTexture = targetTexture;
+
+		return SUCCESS;
+	}
+
+	Result CreateTextureFromMipmap(
+		Queue* pQueue,
+		const Mipmap* pMipmap,
+		Texture** ppTexture,
+		const TextureOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pMipmap);
+		ASSERT_NULL_ARG(ppTexture);
+
+		Result ppxres = ERROR_FAILED;
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Cap mip level count
+		auto pMip0 = pMipmap->GetMip(0);
+
+		// Create target texture
+		TexturePtr targetTexture;
+		{
+			TextureCreateInfo ci = {};
+			ci.pImage = nullptr;
+			ci.imageType = IMAGE_TYPE_2D;
+			ci.width = pMip0->GetWidth();
+			ci.height = pMip0->GetHeight();
+			ci.depth = 1;
+			ci.imageFormat = ToGrfxFormat(pMip0->GetFormat());
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = pMipmap->GetLevelCount();
+			ci.arrayLayerCount = 1;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.sampled = true;
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.initialState = options.mInitialState;
+			ci.RTVClearValue = { {0, 0, 0, 0} };
+			ci.DSVClearValue = { 1.0f, 0xFF };
+			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
+			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
+			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
+			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
+			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.ownership = OWNERSHIP_REFERENCE;
+
+			ci.usageFlags.flags |= options.mAdditionalUsage;
+
+			ppxres = pQueue->GetDevice()->CreateTexture(&ci, &targetTexture);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetTexture);
+		}
+
+		// Copy mips to texture
+		for (uint32_t mipLevel = 0; mipLevel < pMipmap->GetLevelCount(); ++mipLevel) {
+			const Bitmap* pMip = pMipmap->GetMip(mipLevel);
+
+			ppxres = CopyBitmapToTexture(
+				pQueue,
+				pMip,
+				targetTexture,
+				mipLevel,
+				0,
+				options.mInitialState,
+				options.mInitialState);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetTexture->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppTexture = targetTexture;
+
+		return SUCCESS;
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CreateTextureFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Texture** ppTexture,
+		const TextureOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppTexture);
+
+		ScopedTimer timer("Texture creation from image file '" + path.string() + "'");
+
+		// Load bitmap
+		Bitmap bitmap;
+		Result ppxres = Bitmap::LoadFile(path, &bitmap);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+		return CreateTextureFromBitmap(pQueue, &bitmap, ppTexture, options);
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	struct SubImage
+	{
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t bufferOffset = 0;
+	};
+
+	SubImage CalcSubimageCrossHorizontalLeft(
+		uint32_t     subImageIndex,
+		uint32_t     imageWidth,
+		uint32_t     imageHeight,
+		Format format)
+	{
+		uint32_t cellPixelsX = imageWidth / 4;
+		uint32_t cellPixelsY = imageHeight / 3;
+		uint32_t cellX = 0;
+		uint32_t cellY = 0;
+		switch (subImageIndex) {
+		default: break;
+
+		case 0: {
+			cellX = 1;
+			cellY = 0;
+		} break;
+
+		case 1: {
+			cellX = 0;
+			cellY = 1;
+		} break;
+
+		case 2: {
+			cellX = 1;
+			cellY = 1;
+		} break;
+
+		case 3: {
+			cellX = 2;
+			cellY = 1;
+		} break;
+
+		case 4: {
+			cellX = 3;
+			cellY = 1;
+		} break;
+
+		case 5: {
+			cellX = 1;
+			cellY = 2;
+
+		} break;
+		}
+
+		uint32_t pixelStride = GetFormatDescription(format)->bytesPerTexel;
+		uint32_t pixelOffsetX = cellX * cellPixelsX * pixelStride;
+		uint32_t pixelOffsetY = cellY * cellPixelsY * imageWidth * pixelStride;
+
+		SubImage subImage = {};
+		subImage.width = cellPixelsX;
+		subImage.height = cellPixelsY;
+		subImage.bufferOffset = pixelOffsetX + pixelOffsetY;
+
+		return subImage;
+	}
+
+	Result CreateIBLTexturesFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Texture** ppIrradianceTexture,
+		Texture** ppEnvironmentTexture)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppIrradianceTexture);
+		ASSERT_NULL_ARG(ppEnvironmentTexture);
+
+		auto fileBytes = fs::load_file(path);
+		if (!fileBytes.has_value()) {
+			return ERROR_IMAGE_FILE_LOAD_FAILED;
+		}
+
+		auto is = std::istringstream(std::string(fileBytes.value().data(), fileBytes.value().size()));
+		if (!is.good()) {
+			return ERROR_IMAGE_FILE_LOAD_FAILED;
+		}
+
+		std::filesystem::path irrFile;
+		is >> irrFile;
+
+		std::filesystem::path envFile;
+		is >> envFile;
+
+		uint32_t baseWidth = 0;
+		is >> baseWidth;
+
+		uint32_t baseHeight = 0;
+		is >> baseHeight;
+
+		uint32_t levelCount = 0;
+		is >> levelCount;
+
+		if (irrFile.empty() || envFile.empty() || (baseWidth == 0) || (baseHeight == 0) || (levelCount == 0)) {
+			return ERROR_IMAGE_FILE_LOAD_FAILED;
+		}
+
+		// Create irradiance texture - does not require mip maps
+		std::filesystem::path irrFilePath = path.parent_path() / irrFile;
+		Result                ppxres;
+		{
+			ScopedTimer timer("Texture creation from file '" + irrFilePath.string() + "'");
+			ppxres = CreateTextureFromFile(pQueue, irrFilePath, ppIrradianceTexture);
+		}
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		// Load IBL environment map - this is stored as a bitmap on disk
+		std::filesystem::path envFilePath = path.parent_path() / envFile;
+		ScopedTimer           timer("Texture creation from mipmap file '" + envFilePath.string() + "'");
+		Mipmap                mipmap = {};
+		ppxres = Mipmap::LoadFile(envFilePath, baseWidth, baseHeight, &mipmap, levelCount);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		// Create environment texture
+		return CreateTextureFromMipmap(pQueue, &mipmap, ppEnvironmentTexture);
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CreateCubeMapFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		const CubeMapCreateInfo* pCreateInfo,
+		Image** ppImage,
+		const ImageUsageFlags& additionalImageUsage)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppImage);
+		ScopedTimer timer("Cubemap creation from file '" + path.string() + "'");
+
+		// Load bitmap
+		Bitmap bitmap;
+		Result ppxres = Bitmap::LoadFile(path, &bitmap);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		// Scoped destroy
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Create staging buffer
+		BufferPtr stagingBuffer;
+		{
+			uint64_t bitmapFootprintSize = bitmap.GetFootprintSize();
+
+			BufferCreateInfo ci = {};
+			ci.size = bitmapFootprintSize;
+			ci.usageFlags.bits.transferSrc = true;
+			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+
+			ppxres = pQueue->GetDevice()->CreateBuffer(&ci, &stagingBuffer);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(stagingBuffer);
+
+			// Map and copy to staging buffer
+			void* pBufferAddress = nullptr;
+			ppxres = stagingBuffer->MapMemory(0, &pBufferAddress);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			std::memcpy(pBufferAddress, bitmap.GetData(), bitmapFootprintSize);
+			stagingBuffer->UnmapMemory();
+		}
+
+		// Target format
+		Format targetFormat = FORMAT_R8G8B8A8_UNORM;
+
+		ASSERT_MSG(bitmap.GetWidth() * 3 == bitmap.GetHeight() * 4, "cubemap texture dimension must be a multiple of 4x3");
+		// Calculate subImage to use for target image dimensions
+		SubImage tmpSubImage = CalcSubimageCrossHorizontalLeft(0, bitmap.GetWidth(), bitmap.GetHeight(), targetFormat);
+
+		ASSERT_MSG(tmpSubImage.width == tmpSubImage.height, "cubemap face width != height");
+		// Create target image
+		ImagePtr targetImage;
+		{
+			ImageCreateInfo ci = {};
+			ci.type = IMAGE_TYPE_CUBE;
+			ci.width = tmpSubImage.width;
+			ci.height = tmpSubImage.height;
+			ci.depth = 1;
+			ci.format = targetFormat;
+			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.mipLevelCount = 1;
+			ci.arrayLayerCount = 6;
+			ci.usageFlags.bits.transferDst = true;
+			ci.usageFlags.bits.sampled = true;
+			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+
+			ci.usageFlags.flags |= additionalImageUsage.flags;
+
+			ppxres = pQueue->GetDevice()->CreateImage(&ci, &targetImage);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetImage);
+		}
+
+		// Copy to GPU image
+		//
+		{
+			uint32_t faces[6] = {
+				pCreateInfo->posX,
+				pCreateInfo->negX,
+				pCreateInfo->posY,
+				pCreateInfo->negY,
+				pCreateInfo->posZ,
+				pCreateInfo->negZ,
+			};
+
+			std::vector<BufferToImageCopyInfo> copyInfos(6);
+			for (uint32_t arrayLayer = 0; arrayLayer < 6; ++arrayLayer) {
+				uint32_t subImageIndex = faces[arrayLayer];
+				SubImage subImage = CalcSubimageCrossHorizontalLeft(subImageIndex, bitmap.GetWidth(), bitmap.GetHeight(), targetFormat);
+
+				// Copy info
+				BufferToImageCopyInfo& copyInfo = copyInfos[arrayLayer];
+				copyInfo.srcBuffer.imageWidth = bitmap.GetWidth();
+				copyInfo.srcBuffer.imageHeight = bitmap.GetHeight();
+				copyInfo.srcBuffer.imageRowStride = bitmap.GetRowStride();
+				copyInfo.srcBuffer.footprintOffset = subImage.bufferOffset;
+				copyInfo.srcBuffer.footprintWidth = subImage.width;
+				copyInfo.srcBuffer.footprintHeight = subImage.height;
+				copyInfo.srcBuffer.footprintDepth = 1;
+				copyInfo.dstImage.mipLevel = 0;
+				copyInfo.dstImage.arrayLayer = arrayLayer;
+				copyInfo.dstImage.arrayLayerCount = 1;
+				copyInfo.dstImage.x = 0;
+				copyInfo.dstImage.y = 0;
+				copyInfo.dstImage.z = 0;
+				copyInfo.dstImage.width = subImage.width;
+				copyInfo.dstImage.height = subImage.height;
+				copyInfo.dstImage.depth = 1;
+			}
+
+			ppxres = pQueue->CopyBufferToImage(
+				copyInfos,
+				stagingBuffer,
+				targetImage,
+				ALL_SUBRESOURCES,
+				RESOURCE_STATE_UNDEFINED,
+				RESOURCE_STATE_SHADER_RESOURCE);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppImage = targetImage;
+
+		return SUCCESS;
+	}
+
+	// -------------------------------------------------------------------------------------------------
+
+	Result CreateMeshFromGeometry(
+		Queue* pQueue,
+		const Geometry* pGeometry,
+		Mesh** ppMesh)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pGeometry);
+		ASSERT_NULL_ARG(ppMesh);
+
+		ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+
+		// Create staging buffer
+		BufferPtr stagingBuffer;
+		{
+			uint32_t biggestBufferSize = pGeometry->GetLargestBufferSize();
+
+			BufferCreateInfo ci = {};
+			ci.size = biggestBufferSize;
+			ci.usageFlags.bits.transferSrc = true;
+			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+
+			Result ppxres = pQueue->GetDevice()->CreateBuffer(&ci, &stagingBuffer);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(stagingBuffer);
+		}
+
+		// Create target mesh
+		MeshPtr targetMesh;
+		{
+			MeshCreateInfo ci = MeshCreateInfo(*pGeometry);
+
+			Result ppxres = pQueue->GetDevice()->CreateMesh(&ci, &targetMesh);
+			if (Failed(ppxres)) {
+				return ppxres;
+			}
+			SCOPED_DESTROYER.AddObject(targetMesh);
+		}
+
+		// Copy geometry data to mesh
+		{
+			// Copy info
+			BufferToBufferCopyInfo copyInfo = {};
+
+			// Index buffer
+			if (pGeometry->GetIndexType() != INDEX_TYPE_UNDEFINED) {
+				const Geometry::Buffer* pGeoBuffer = pGeometry->GetIndexBuffer();
+				ASSERT_NULL_ARG(pGeoBuffer);
+
+				uint32_t geoBufferSize = pGeoBuffer->GetSize();
+
+				Result ppxres = stagingBuffer->CopyFromSource(geoBufferSize, pGeoBuffer->GetData());
+				if (Failed(ppxres)) {
+					return ppxres;
+				}
+
+				copyInfo.size = geoBufferSize;
+
+				// Copy to GPU buffer
+				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetMesh->GetIndexBuffer(), RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_INDEX_BUFFER);
+				if (Failed(ppxres)) {
+					return ppxres;
+				}
+			}
+
+			// Vertex buffers
+			uint32_t vertexBufferCount = pGeometry->GetVertexBufferCount();
+			for (uint32_t i = 0; i < vertexBufferCount; ++i) {
+				const Geometry::Buffer* pGeoBuffer = pGeometry->GetVertexBuffer(i);
+				ASSERT_NULL_ARG(pGeoBuffer);
+
+				uint32_t geoBufferSize = pGeoBuffer->GetSize();
+
+				Result ppxres = stagingBuffer->CopyFromSource(geoBufferSize, pGeoBuffer->GetData());
+				if (Failed(ppxres)) {
+					return ppxres;
+				}
+
+				copyInfo.size = geoBufferSize;
+
+				BufferPtr targetBuffer = targetMesh->GetVertexBuffer(i);
+
+				// Copy to GPU buffer
+				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetBuffer, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_VERTEX_BUFFER);
+				if (Failed(ppxres)) {
+					return ppxres;
+				}
+			}
+		}
+
+		// Change ownership to reference so object doesn't get destroyed
+		targetMesh->SetOwnership(OWNERSHIP_REFERENCE);
+
+		// Assign output
+		*ppMesh = targetMesh;
+
+		return SUCCESS;
+	}
+
+	Result CreateMeshFromTriMesh(
+		Queue* pQueue,
+		const TriMesh* pTriMesh,
+		Mesh** ppMesh)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pTriMesh);
+		ASSERT_NULL_ARG(ppMesh);
+
+		Result ppxres = ERROR_FAILED;
+
+		Geometry geo;
+		ppxres = Geometry::Create(*pTriMesh, &geo);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		ppxres = CreateMeshFromGeometry(pQueue, &geo, ppMesh);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		return SUCCESS;
+	}
+
+	Result CreateMeshFromWireMesh(
+		Queue* pQueue,
+		const WireMesh* pWireMesh,
+		Mesh** ppMesh)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(pWireMesh);
+		ASSERT_NULL_ARG(ppMesh);
+
+		Result ppxres = ERROR_FAILED;
+
+		Geometry geo;
+		ppxres = Geometry::Create(*pWireMesh, &geo);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		ppxres = CreateMeshFromGeometry(pQueue, &geo, ppMesh);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		return SUCCESS;
+	}
+
+	Result CreateMeshFromFile(
+		Queue* pQueue,
+		const std::filesystem::path& path,
+		Mesh** ppMesh,
+		const TriMeshOptions& options)
+	{
+		ASSERT_NULL_ARG(pQueue);
+		ASSERT_NULL_ARG(ppMesh);
+
+		TriMesh mesh = TriMesh::CreateFromOBJ(path, options);
+
+		Result ppxres = CreateMeshFromTriMesh(pQueue, &mesh, ppMesh);
+		if (Failed(ppxres)) {
+			return ppxres;
+		}
+
+		return SUCCESS;
+	}
+
+} // namespace grfx_util
 
 #pragma endregion

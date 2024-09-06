@@ -101,10 +101,10 @@ Left handed
 	| /
 	|/___X
 */
-#define GLM_FORCE_LEFT_HANDED
+//#define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_INLINE
 #define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_XYZW_ONLY
+//#define GLM_FORCE_XYZW_ONLY
 #define GLM_FORCE_SILENT_WARNINGS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE // Depth buffer range, OpenGL default -1.0 to 1.0, but Vulkan default as 0.0 to 1.0
 #define GLM_FORCE_RADIANS
@@ -122,8 +122,10 @@ Left handed
 #include <glm/gtx/normal.hpp>
 
 #include <stb/stb_image.h>
+#include <stb/stb_image_resize.h>
 //#include <stb/stb_truetype.h>
 
+#include <gli/gli.hpp>
 #include <gli/target.hpp>
 #include <gli/format.hpp>
 

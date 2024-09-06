@@ -10,6 +10,185 @@
 
 #pragma endregion
 
+#pragma region Base Types
+
+// Import GLM types as HLSL friendly names
+
+// bool
+using bool2 = glm::bool2;
+using bool3 = glm::bool3;
+using bool4 = glm::bool4;
+
+// 8-bit signed integer
+using i8 = glm::i8;
+using i8vec2 = glm::i8vec2;
+using i8vec3 = glm::i8vec3;
+using i8vec4 = glm::i8vec4;
+
+// 16-bit unsigned integer
+using half = glm::u16;
+using half2 = glm::u16vec2;
+using half3 = glm::u16vec3;
+using half4 = glm::u16vec4;
+
+// 32-bit signed integer
+using int2 = glm::ivec2;
+using int3 = glm::ivec3;
+using int4 = glm::ivec4;
+// 32-bit unsigned integer
+using uint = glm::uint;
+using uint2 = glm::uvec2;
+using uint3 = glm::uvec3;
+using uint4 = glm::uvec4;
+
+// 32-bit float
+using float2 = glm::vec2;
+using float3 = glm::vec3;
+using float4 = glm::vec4;
+// 32-bit float2 matrices
+using float2x2 = glm::mat2x2;
+using float2x3 = glm::mat2x3;
+using float2x4 = glm::mat2x4;
+// 32-bit float3 matrices
+using float3x2 = glm::mat3x2;
+using float3x3 = glm::mat3x3;
+using float3x4 = glm::mat3x4;
+// 32-bit float4 matrices
+using float4x2 = glm::mat4x2;
+using float4x3 = glm::mat4x3;
+using float4x4 = glm::mat4x4;
+// 32-bit float quaternion
+using quat = glm::quat;
+
+// 64-bit float
+using double2 = glm::dvec2;
+using double3 = glm::dvec3;
+using double4 = glm::dvec4;
+// 64-bit float2 matrices
+using double2x2 = glm::dmat2x2;
+using double2x3 = glm::dmat2x3;
+using double2x4 = glm::dmat2x4;
+// 64-bit float3 matrices
+using double3x2 = glm::dmat3x2;
+using double3x3 = glm::dmat3x3;
+using double3x4 = glm::dmat3x4;
+// 64-bit float4 matrices
+using double4x2 = glm::dmat4x2;
+using double4x3 = glm::dmat4x3;
+using double4x4 = glm::dmat4x4;
+
+// Output overloads for common data types.
+std::ostream& operator<<(std::ostream& os, const float2& i);
+std::ostream& operator<<(std::ostream& os, const float3& i);
+std::ostream& operator<<(std::ostream& os, const float4& i);
+std::ostream& operator<<(std::ostream& os, const uint3& i);
+
+#if defined(_MSC_VER)
+#define PRAGMA(X) __pragma(X)
+#else
+#define PRAGMA(X) _Pragma(#X)
+#endif
+#define HLSL_PACK_BEGIN() PRAGMA(pack(push, 1))
+#define HLSL_PACK_END()   PRAGMA(pack(pop))
+
+HLSL_PACK_BEGIN();
+
+struct float2x2_aligned
+{
+	float4 v0;
+	float2 v1;
+
+	float2x2_aligned() {}
+
+	float2x2_aligned(const float2x2& m)
+		: v0(m[0], 0, 0), v1(m[1]) {}
+
+	float2x2_aligned& operator=(const float2x2& rhs)
+	{
+		v0 = float4(rhs[0], 0, 0);
+		v1 = rhs[1];
+		return *this;
+	}
+
+	operator float2x2() const
+	{
+		float2x2 m;
+		m[0] = float2(v0);
+		m[1] = float2(v1);
+		return m;
+	}
+};
+
+struct float3x3_aligned
+{
+	float4 v0;
+	float4 v1;
+	float3 v2;
+
+	float3x3_aligned() {}
+
+	float3x3_aligned(const float3x3& m)
+		: v0(m[0], 0), v1(m[1], 0), v2(m[2]) {}
+
+	float3x3_aligned& operator=(const float3x3& rhs)
+	{
+		v0 = float4(rhs[0], 0);
+		v1 = float4(rhs[1], 0);
+		v2 = rhs[2];
+		return *this;
+	}
+
+	operator float3x3() const
+	{
+		float3x3 m;
+		m[0] = float3(v0);
+		m[1] = float3(v1);
+		m[2] = v2;
+		return m;
+	}
+};
+
+template <typename T, size_t Size>
+union hlsl_type
+{
+	T       value;
+	uint8_t padded[Size];
+
+	hlsl_type& operator=(const T& rhs)
+	{
+		value = rhs;
+		return *this;
+	}
+};
+
+template <size_t Size> using hlsl_float = hlsl_type<float, Size>;
+template <size_t Size> using hlsl_float2 = hlsl_type<float2, Size>;
+template <size_t Size> using hlsl_float3 = hlsl_type<float3, Size>;
+template <size_t Size> using hlsl_float4 = hlsl_type<float4, Size>;
+
+template <size_t Size> using hlsl_float2x2 = hlsl_type<float2x2_aligned, Size>;
+template <size_t Size> using hlsl_float3x3 = hlsl_type<float3x3_aligned, Size>;
+template <size_t Size> using hlsl_float4x4 = hlsl_type<float4x4, Size>;
+
+template <size_t Size> using hlsl_int = hlsl_type<int, Size>;
+template <size_t Size> using hlsl_int2 = hlsl_type<int2, Size>;
+template <size_t Size> using hlsl_int3 = hlsl_type<int3, Size>;
+template <size_t Size> using hlsl_int4 = hlsl_type<int4, Size>;
+
+template <size_t Size> using hlsl_uint = hlsl_type<uint, Size>;
+template <size_t Size> using hlsl_uint2 = hlsl_type<uint2, Size>;
+template <size_t Size> using hlsl_uint3 = hlsl_type<uint3, Size>;
+template <size_t Size> using hlsl_uint4 = hlsl_type<uint4, Size>;
+
+HLSL_PACK_END();
+
+template <typename T>
+T pi()
+{
+	return static_cast<T>(3.1415926535897932384626433832795);
+}
+#pragma endregion
+
 #pragma region Core Func
 
 template <typename T>
@@ -174,6 +353,13 @@ bool IsNull(const T* ptr)
 {
 	bool res = (ptr == nullptr);
 	return res;
+}
+
+// Returns true if [a,b) overlaps with [c, d)
+inline bool HasOverlapHalfOpen(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+	bool overlap = std::max<uint32_t>(a, c) < std::min<uint32_t>(c, d); // TODO: возможно тут ошибка
+	return overlap;
 }
 
 #pragma endregion
@@ -786,6 +972,41 @@ template< class T, class U >
 [[nodiscard]] inline int NumMipmap(int width, int height)
 {
 	return static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+}
+
+// Converts spherical coordinate 'sc' to unit cartesian position.
+//
+// theta is the azimuth angle between [0, 2pi].
+// phi is the polar angle between [0, pi].
+//
+// theta = 0, phi =[0, pi] sweeps the positive X axis:
+//    SphericalToCartesian(0, 0)    = (0,  1, 0)
+//    SphericalToCartesian(0, pi/2) = (1,  0, 0)
+//    SphericalToCartesian(0, pi)   = (0, -1, 0)
+//
+// theta = [0, 2pi], phi = [pi/2] sweeps a circle:
+//    SphericalToCartesian(0,     pi/2) = ( 1, 0, 0)
+//    SphericalToCartesian(pi/2,  pi/2) = ( 0, 0, 1)
+//    SphericalToCartesian(pi  ,  pi/2) = (-1, 0, 0)
+//    SphericalToCartesian(3pi/2, pi/2) = ( 0, 0,-1)
+//    SphericalToCartesian(2pi,   pi/2) = ( 1, 0, 0)
+//
+inline float3 SphericalToCartesian(float theta, float phi)
+{
+	return float3(
+		cos(theta) * sin(phi), // x
+		cos(phi),              // y
+		sin(theta) * sin(phi)  // z
+	);
+}
+
+inline float3 SphericalTangent(float theta, float phi)
+{
+	return float3(
+		sin(theta), // x
+		0,          // y
+		-cos(theta) // z
+	);
 }
 
 #pragma endregion
