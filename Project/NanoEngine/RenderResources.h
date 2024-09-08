@@ -1740,15 +1740,15 @@ namespace internal {
 	//! 'resourceDescriptorCount' and 'samplerDescriptorCount' tells the
 	//! D3D12 command buffer how large CBVSRVUAV and Sampler heaps should be.
 	//!
-	//! 'samplerDescriptorCount' cannot exceed PPX_MAX_SAMPLER_DESCRIPTORS.
+	//! 'samplerDescriptorCount' cannot exceed MAX_SAMPLER_DESCRIPTORS.
 	//!
 	//! Vulkan does not use 'samplerDescriptorCount' or 'samplerDescriptorCount'.
 	//!
 	struct CommandBufferCreateInfo
 	{
 		const CommandPool* pPool = nullptr;
-		uint32_t                 resourceDescriptorCount = PPX_DEFAULT_RESOURCE_DESCRIPTOR_COUNT;
-		uint32_t                 samplerDescriptorCount = PPX_DEFAULT_SAMPLE_DESCRIPTOR_COUNT;
+		uint32_t                 resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT;
+		uint32_t                 samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT;
 	};
 
 } // namespace internal
@@ -2149,8 +2149,8 @@ namespace internal
 	struct QueueCreateInfo
 	{
 		CommandType commandType = COMMAND_TYPE_UNDEFINED;
-		uint32_t          queueFamilyIndex = PPX_VALUE_IGNORED; // Vulkan
-		uint32_t          queueIndex = PPX_VALUE_IGNORED; // Vulkan
+		uint32_t          queueFamilyIndex = VALUE_IGNORED; // Vulkan
+		uint32_t          queueIndex = VALUE_IGNORED; // Vulkan
 		void* pApiObject = nullptr;           // D3D12
 	};
 }
@@ -2310,6 +2310,7 @@ public:
 	void ReleaseAll();
 
 private:
+	RenderDevice* mDevice;
 	std::vector<ImagePtr>                              mImages;
 	std::vector<BufferPtr>                             mBuffers;
 	std::vector<MeshPtr>                               mMeshes;
@@ -2510,49 +2511,6 @@ using VulkanSemaphorePtr = std::shared_ptr<VulkanSemaphore>;
 
 #pragma region VulkanImage
 
-struct ImageCreateInfo final
-{
-	ImageType              type = IMAGE_TYPE_2D;
-	uint32_t               width = 0;
-	uint32_t               height = 0;
-	uint32_t               depth = 0;
-	Format                 format = FORMAT_UNDEFINED;
-	SampleCount            sampleCount = SAMPLE_COUNT_1;
-	uint32_t               mipLevelCount = 1;
-	uint32_t               arrayLayerCount = 1;
-	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
-	MemoryUsage            memoryUsage = MEMORY_USAGE_GPU_ONLY;   // D3D12 will fail on any other memory usage
-	ResourceState          initialState = RESOURCE_STATE_GENERAL; // This may not be the best choice
-	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
-	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
-	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
-	Ownership              ownership = OWNERSHIP_REFERENCE;
-	bool                   concurrentMultiQueueUsage = false;
-	ImageCreateFlags       createFlags = {};
-
-	// Returns a create info for sampled image
-	static ImageCreateInfo SampledImage2D(
-		uint32_t          width,
-		uint32_t          height,
-		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1,
-		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY);
-
-	// Returns a create info for sampled image and depth stencil target
-	static ImageCreateInfo DepthStencilTarget(
-		uint32_t          width,
-		uint32_t          height,
-		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1);
-
-	// Returns a create info for sampled image and render target
-	static ImageCreateInfo RenderTarget2D(
-		uint32_t          width,
-		uint32_t          height,
-		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1);
-};
-
 class VulkanImage final
 {
 	friend class RenderDevice;
@@ -2629,11 +2587,6 @@ using VulkanBufferPtr = std::shared_ptr<VulkanBuffer>;
 #pragma endregion
 
 #pragma region VulkanCommandPool
-
-struct CommandPoolCreateInfo final
-{
-	DeviceQueuePtr queue{ nullptr };
-};
 
 class VulkanCommandPool final
 {

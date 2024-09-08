@@ -37,19 +37,91 @@ public:
 	Result CreateDepthStencilView(const DepthStencilViewCreateInfo& createInfo, DepthStencilView** ppDepthStencilView);
 	void   DestroyDepthStencilView(const DepthStencilView* pDepthStencilView);
 
-	Result CreateDescriptorPool(const DescriptorPoolCreateInfo& pCreateInfo, DescriptorPool** ppDescriptorPool);
+	Result CreateDescriptorPool(const DescriptorPoolCreateInfo& createInfo, DescriptorPool** ppDescriptorPool);
 	void   DestroyDescriptorPool(const DescriptorPool* pDescriptorPool);
 
-	Result CreateDescriptorSetLayout(const DescriptorSetLayoutCreateInfo* pCreateInfo, DescriptorSetLayout** ppDescriptorSetLayout);
+	Result CreateDescriptorSetLayout(const DescriptorSetLayoutCreateInfo& createInfo, DescriptorSetLayout** ppDescriptorSetLayout);
 	void   DestroyDescriptorSetLayout(const DescriptorSetLayout* pDescriptorSetLayout);
 
-	Result CreateDrawPass(const grfx::DrawPassCreateInfo* pCreateInfo, grfx::DrawPass** ppDrawPass);
-	Result CreateDrawPass(const grfx::DrawPassCreateInfo2* pCreateInfo, grfx::DrawPass** ppDrawPass);
-	Result CreateDrawPass(const grfx::DrawPassCreateInfo3* pCreateInfo, grfx::DrawPass** ppDrawPass);
-	void   DestroyDrawPass(const grfx::DrawPass* pDrawPass);
+	Result CreateDrawPass(const DrawPassCreateInfo& createInfo, DrawPass** ppDrawPass);
+	Result CreateDrawPass(const DrawPassCreateInfo2& createInfo, DrawPass** ppDrawPass);
+	Result CreateDrawPass(const DrawPassCreateInfo3& createInfo, DrawPass** ppDrawPass);
+	void   DestroyDrawPass(const DrawPass* pDrawPass);
 
 	Result CreateFence(const FenceCreateInfo& createInfo, Fence** ppFence);
 	void   DestroyFence(const Fence* pFence);
+
+	Result CreateShadingRatePattern(const ShadingRatePatternCreateInfo& createInfo, ShadingRatePattern** ppShadingRatePattern);
+	void   DestroyShadingRatePattern(const ShadingRatePattern* pShadingRatePattern);
+
+	Result CreateFullscreenQuad(const FullscreenQuadCreateInfo& createInfo, FullscreenQuad** ppFullscreenQuad);
+	void   DestroyFullscreenQuad(const FullscreenQuad* pFullscreenQuad);
+
+	Result CreateGraphicsPipeline(const GraphicsPipelineCreateInfo& createInfo, GraphicsPipeline** ppGraphicsPipeline);
+	Result CreateGraphicsPipeline(const GraphicsPipelineCreateInfo2& createInfo, GraphicsPipeline** ppGraphicsPipeline);
+	void   DestroyGraphicsPipeline(const GraphicsPipeline* pGraphicsPipeline);
+
+	Result CreateImage(const ImageCreateInfo& createInfo, Image** ppImage);
+	void   DestroyImage(const Image* pImage);
+
+	Result CreateMesh(const MeshCreateInfo& createInfo, Mesh** ppMesh);
+	void   DestroyMesh(const Mesh* pMesh);
+
+	Result CreatePipelineInterface(const PipelineInterfaceCreateInfo& createInfo, PipelineInterface** ppPipelineInterface);
+	void   DestroyPipelineInterface(const PipelineInterface* pPipelineInterface);
+
+	Result CreateQuery(const QueryCreateInfo& createInfo, Query** ppQuery);
+	void   DestroyQuery(const Query* pQuery);
+
+	Result CreateRenderPass(const RenderPassCreateInfo& createInfo, RenderPass** ppRenderPass);
+	Result CreateRenderPass(const RenderPassCreateInfo2& createInfo, RenderPass** ppRenderPass);
+	Result CreateRenderPass(const RenderPassCreateInfo3& createInfo, RenderPass** ppRenderPass);
+	void   DestroyRenderPass(const RenderPass* pRenderPass);
+
+	Result CreateRenderTargetView(const RenderTargetViewCreateInfo& createInfo, RenderTargetView** ppRenderTargetView);
+	void   DestroyRenderTargetView(const RenderTargetView* pRenderTargetView);
+
+	Result CreateSampledImageView(const SampledImageViewCreateInfo& createInfo, SampledImageView** ppSampledImageView);
+	void   DestroySampledImageView(const SampledImageView* pSampledImageView);
+
+	Result CreateSampler(const SamplerCreateInfo& createInfo, Sampler** ppSampler);
+	void   DestroySampler(const Sampler* pSampler);
+
+	Result CreateSamplerYcbcrConversion(const SamplerYcbcrConversionCreateInfo& createInfo, SamplerYcbcrConversion** ppConversion);
+	void   DestroySamplerYcbcrConversion(const SamplerYcbcrConversion* pConversion);
+
+	Result CreateSemaphore(const SemaphoreCreateInfo& createInfo, Semaphore** ppSemaphore);
+	void   DestroySemaphore(const Semaphore* pSemaphore);
+
+	Result CreateShaderModule(const ShaderModuleCreateInfo& createInfo, ShaderModule** ppShaderModule);
+	void   DestroyShaderModule(const ShaderModule* pShaderModule);
+
+	Result CreateStorageImageView(const StorageImageViewCreateInfo& createInfo, StorageImageView** ppStorageImageView);
+	void   DestroyStorageImageView(const StorageImageView* pStorageImageView);
+
+	//Result CreateSwapchain(const SwapchainCreateInfo& createInfo, Swapchain** ppSwapchain);
+	//void   DestroySwapchain(const Swapchain* pSwapchain);
+
+	Result CreateTextDraw(const TextDrawCreateInfo& createInfo, TextDraw** ppTextDraw);
+	void   DestroyTextDraw(const TextDraw* pTextDraw);
+
+	Result CreateTexture(const TextureCreateInfo& createInfo, Texture** ppTexture);
+	void   DestroyTexture(const Texture* pTexture);
+
+	Result CreateTextureFont(const TextureFontCreateInfo& createInfo, TextureFont** ppTextureFont);
+	void   DestroyTextureFont(const TextureFont* pTextureFont);
+
+	Result AllocateCommandBuffer(
+		const CommandPool* pPool,
+		CommandBuffer** ppCommandBuffer,
+		uint32_t                 resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT,
+		uint32_t                 samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT);
+	void FreeCommandBuffer(const CommandBuffer* pCommandBuffer);
+
+	Result AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet);
+	void   FreeDescriptorSet(const DescriptorSet* pSet);
+
+	Result WaitIdle();
 
 	//===================================================================
 	// OLD
@@ -97,7 +169,6 @@ private:
 	Result allocateObject(Texture** ppObject);
 	Result allocateObject(TextureFont** ppObject);
 
-
 	template <typename ObjectT, typename CreateInfoT, typename ContainerT = std::vector<ObjPtr<ObjectT>>>
 	Result createObject(const CreateInfoT& createInfo, ContainerT& container, ObjectT** ppObject);
 
@@ -110,7 +181,40 @@ private:
 	EngineApplication& m_engine;
 	RenderSystem& m_render;
 
-	std::vector<FencePtr> m_fences;
+	std::vector<BufferPtr>                 mBuffers;
+	std::vector<CommandBufferPtr>          mCommandBuffers;
+	std::vector<CommandPoolPtr>            mCommandPools;
+	std::vector<ComputePipelinePtr>        mComputePipelines;
+	std::vector<DepthStencilViewPtr>       mDepthStencilViews;
+	std::vector<DescriptorPoolPtr>         mDescriptorPools;
+	std::vector<DescriptorSetPtr>          mDescriptorSets;
+	std::vector<DescriptorSetLayoutPtr>    mDescriptorSetLayouts;
+	std::vector<DrawPassPtr>               mDrawPasses;
+	std::vector<FencePtr>                  mFences;
+	std::vector<ShadingRatePatternPtr>     mShadingRatePatterns;
+	std::vector<FullscreenQuadPtr>         mFullscreenQuads;
+	std::vector<GraphicsPipelinePtr>       mGraphicsPipelines;
+	std::vector<ImagePtr>                  mImages;
+	std::vector<MeshPtr>                   mMeshes;
+	std::vector<PipelineInterfacePtr>      mPipelineInterfaces;
+	std::vector<QueryPtr>                  mQuerys;
+	std::vector<RenderPassPtr>             mRenderPasses;
+	std::vector<RenderTargetViewPtr>       mRenderTargetViews;
+	std::vector<SampledImageViewPtr>       mSampledImageViews;
+	std::vector<SamplerPtr>                mSamplers;
+	std::vector<SamplerYcbcrConversionPtr> mSamplerYcbcrConversions;
+	std::vector<SemaphorePtr>              mSemaphores;
+	std::vector<ShaderModulePtr>           mShaderModules;
+	std::vector<ShaderProgramPtr>          mShaderPrograms;
+	std::vector<StorageImageViewPtr>       mStorageImageViews;
+	std::vector<SwapchainPtr>              mSwapchains;
+	std::vector<TextDrawPtr>               mTextDraws;
+	std::vector<TexturePtr>                mTextures;
+	std::vector<TextureFontPtr>            mTextureFonts;
+	std::vector<QueuePtr>                  mGraphicsQueues;
+	std::vector<QueuePtr>                  mComputeQueues;
+	std::vector<QueuePtr>                  mTransferQueues;
+	ShadingRateCapabilities                mShadingRateCapabilities;
 };
 
 #pragma endregion

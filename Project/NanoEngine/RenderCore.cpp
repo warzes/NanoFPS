@@ -1376,15 +1376,27 @@ static Result ToVkBarrier(
 	VkAccessFlags& accessMask,
 	VkImageLayout& layout)
 {
-	VkPipelineStageFlags PIPELINE_STAGE_ALL_SHADER_STAGES = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if (commandType == CommandType::COMMAND_TYPE_GRAPHICS) {
+	VkPipelineStageFlags PIPELINE_STAGE_ALL_SHADER_STAGES = {};
+	if (commandType == CommandType::COMMAND_TYPE_COMPUTE) {
+		PIPELINE_STAGE_ALL_SHADER_STAGES |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	}
+	else if (commandType == CommandType::COMMAND_TYPE_GRAPHICS) {
 		PIPELINE_STAGE_ALL_SHADER_STAGES |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
 			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
+	else {
+		PIPELINE_STAGE_ALL_SHADER_STAGES |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
 
-	VkPipelineStageFlags PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	if (commandType == CommandType::COMMAND_TYPE_GRAPHICS) {
+	VkPipelineStageFlags PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES = {};
+	if (commandType == CommandType::COMMAND_TYPE_COMPUTE) {
+		PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	}
+	else if (commandType == CommandType::COMMAND_TYPE_GRAPHICS) {
 		PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	}
+	else {
+		PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES |= VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 
 	if (commandType == CommandType::COMMAND_TYPE_GRAPHICS && features.geometryShader) {
@@ -1415,10 +1427,14 @@ static Result ToVkBarrier(
 		layout = VK_IMAGE_LAYOUT_GENERAL;
 	} break;
 
-	case RESOURCE_STATE_CONSTANT_BUFFER:
-	case RESOURCE_STATE_VERTEX_BUFFER: {
+	case RESOURCE_STATE_CONSTANT_BUFFER: {
 		stageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT;
+		layout = InvalidValue<VkImageLayout>();
+	} break;
+	case RESOURCE_STATE_VERTEX_BUFFER: {
+		stageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | PIPELINE_STAGE_ALL_SHADER_STAGES;
+		accessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
@@ -1471,7 +1487,7 @@ static Result ToVkBarrier(
 	} break;
 
 	case RESOURCE_STATE_SHADER_RESOURCE: {
-		stageMask = PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		stageMask = PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_SHADER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	} break;
@@ -1549,6 +1565,7 @@ static Result ToVkBarrier(
 	} break;
 	}
 
+	ASSERT_MSG(stageMask != 0, "stageMask must never be 0 (we don't use synchronization2).");
 	return SUCCESS;
 }
 
@@ -6106,7 +6123,7 @@ namespace grfx_util
 
 		{ // Uniform buffer
 			BufferCreateInfo bufferCreateInfo = {};
-			bufferCreateInfo.size = PPX_MINIMUM_UNIFORM_BUFFER_SIZE;
+			bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 			bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
 			CHECKED_CALL(pQueue->GetDevice()->CreateBuffer(&bufferCreateInfo, &uniformBuffer));
@@ -6141,7 +6158,7 @@ namespace grfx_util
 				write.binding = 1;
 				write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				write.bufferOffset = 0;
-				write.bufferRange = PPX_WHOLE_SIZE;
+				write.bufferRange = WHOLE_SIZE;
 				write.pBuffer = uniformBuffer;
 				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
 
@@ -6367,15 +6384,15 @@ namespace grfx_util
 		const uint32_t     imageHeight = static_cast<uint32_t>(image.extent(0)[1]);
 
 		// Row stride and texture offset alignment to handle DX's requirements
-		const uint32_t rowStrideAlignment = IsDx12(pQueue->GetDevice()->GetApi()) ? PPX_D3D12_TEXTURE_DATA_PITCH_ALIGNMENT : 1;
-		const uint32_t offsetAlignment = IsDx12(pQueue->GetDevice()->GetApi()) ? PPX_D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT : 1;
+		const uint32_t rowStrideAlignment =/* IsDx12(pQueue->GetDevice()->GetApi()) ? D3D12_TEXTURE_DATA_PITCH_ALIGNMENT :*/ 1;
+		const uint32_t offsetAlignment = /*IsDx12(pQueue->GetDevice()->GetApi()) ? D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT :*/ 1;
 		const uint32_t bytesPerTexel = GetFormatDescription(format)->bytesPerTexel;
 		const uint32_t blockWidth = GetFormatDescription(format)->blockWidth;
 
 		// Create staging buffer
 		BufferPtr stagingBuffer;
-		LOG_INFO("Storage size for image: " << image.size() << " bytes\n");
-		LOG_INFO("Is image compressed: " << (gli::is_compressed(image.format()) ? "YES" : "NO"));
+		LOG_INFO("Storage size for image: " + image.size() + " bytes\n");
+		LOG_INFO("Is image compressed: " + (gli::is_compressed(image.format()) ? "YES" : "NO"));
 
 		BufferCreateInfo ci = {};
 		ci.size = 0;
@@ -6401,7 +6418,7 @@ namespace grfx_util
 			// Since imagemagick can create invalid mipmap levels, I'd assume it can also create invalid
 			// textures with non-multiple-of-4 sizes. Asserting to catch those.
 			if (ls.width % blockWidth != 0 || ls.height % blockWidth != 0) {
-				PPX_LOG_ERROR("Compressed textures width & height must be a multiple of the block size.");
+				LOG_ERROR("Compressed textures width & height must be a multiple of the block size.");
 				return ERROR_IMAGE_INVALID_FORMAT;
 			}
 

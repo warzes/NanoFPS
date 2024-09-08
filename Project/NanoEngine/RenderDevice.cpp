@@ -63,13 +63,13 @@ std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
 Result RenderDevice::CreateFence(const FenceCreateInfo& createInfo, Fence** ppFence)
 {
 	ASSERT_NULL_ARG(ppFence);
-	return createObject(createInfo, m_fences, ppFence);
+	return createObject(createInfo, mFences, ppFence);
 }
 
 void RenderDevice::DestroyFence(const Fence* fence)
 {
 	ASSERT_NULL_ARG(fence);
-	destroyObject(m_fences, fence);
+	destroyObject(mFences, fence);
 }
 
 Result RenderDevice::allocateObject(Fence** ppObject)

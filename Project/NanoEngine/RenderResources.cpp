@@ -598,7 +598,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 		ci.concurrentMultiQueueUsage = pCreateInfo.concurrentMultiQueueUsage;
 		ci.createFlags = pCreateInfo.imageCreateFlags;
 
-		Result ppxres = GetDevice()->CreateImage(&ci, &m_image);
+		Result ppxres = GetDevice()->CreateImage(ci, &m_image);
 		if (Failed(ppxres))
 		{
 			ASSERT_MSG(false, "texture create image failed");
@@ -615,7 +615,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 		}
 		ci.pYcbcrConversion = pCreateInfo.pSampledImageYcbcrConversion;
 
-		Result ppxres = GetDevice()->CreateSampledImageView(&ci, &m_sampledImageView);
+		Result ppxres = GetDevice()->CreateSampledImageView(ci, &m_sampledImageView);
 		if (Failed(ppxres)) 
 		{
 			ASSERT_MSG(false, "texture create sampled image view failed");
@@ -631,7 +631,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 			ci.format = pCreateInfo.renderTargetViewFormat;
 		}
 
-		Result ppxres = GetDevice()->CreateRenderTargetView(&ci, &m_renderTargetView);
+		Result ppxres = GetDevice()->CreateRenderTargetView(ci, &m_renderTargetView);
 		if (Failed(ppxres))
 		{
 			ASSERT_MSG(false, "texture create render target view failed");
@@ -647,7 +647,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 			ci.format = pCreateInfo.depthStencilViewFormat;
 		}
 
-		Result ppxres = GetDevice()->CreateDepthStencilView(&ci, &m_depthStencilView);
+		Result ppxres = GetDevice()->CreateDepthStencilView(ci, &m_depthStencilView);
 		if (Failed(ppxres))
 		{
 			ASSERT_MSG(false, "texture create depth stencil view failed");
@@ -663,7 +663,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 			ci.format = pCreateInfo.storageImageViewFormat;
 		}
 
-		Result ppxres = GetDevice()->CreateStorageImageView(&ci, &m_storageImageView);
+		Result ppxres = GetDevice()->CreateStorageImageView(ci, &m_storageImageView);
 		if (Failed(ppxres))
 		{
 			ASSERT_MSG(false, "texture create storage image view failed");
@@ -679,7 +679,7 @@ void Texture::destroyApiObjects()
 	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != OWNERSHIP_REFERENCE))
 	{
 		GetDevice()->DestroySampledImageView(m_sampledImageView);
-		mSampledImageView.Reset();
+		m_sampledImageView.Reset();
 	}
 
 	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != OWNERSHIP_REFERENCE))
@@ -1025,7 +1025,7 @@ Result RenderPass::CreateImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			imageCreateInfo.ownership = pCreateInfo.ownership;
 
 			ImagePtr image;
-			Result         ppxres = GetDevice()->CreateImage(&imageCreateInfo, &image);
+			Result         ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "RTV image create failed");
 				return ppxres;
@@ -1057,7 +1057,7 @@ Result RenderPass::CreateImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			imageCreateInfo.ownership = pCreateInfo.ownership;
 
 			ImagePtr image;
-			Result         ppxres = GetDevice()->CreateImage(&imageCreateInfo, &image);
+			Result         ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "DSV image create failed");
 				return ppxres;
@@ -1087,7 +1087,7 @@ Result RenderPass::CreateImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			rtvCreateInfo.ownership = pCreateInfo.ownership;
 
 			RenderTargetViewPtr rtv;
-			Result                    ppxres = GetDevice()->CreateRenderTargetView(&rtvCreateInfo, &rtv);
+			Result                    ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "RTV create failed");
 				return ppxres;
@@ -1118,7 +1118,7 @@ Result RenderPass::CreateImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			dsvCreateInfo.ownership = pCreateInfo.ownership;
 
 			DepthStencilViewPtr dsv;
-			Result                    ppxres = GetDevice()->CreateDepthStencilView(&dsvCreateInfo, &dsv);
+			Result                    ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "RTV create failed");
 				return ppxres;
@@ -1174,7 +1174,7 @@ Result RenderPass::CreateImagesAndViewsV3(const internal::RenderPassCreateInfo& 
 			rtvCreateInfo.ownership = pCreateInfo.ownership;
 
 			RenderTargetViewPtr rtv;
-			Result                    ppxres = GetDevice()->CreateRenderTargetView(&rtvCreateInfo, &rtv);
+			Result                    ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "RTV create failed");
 				return ppxres;
@@ -1205,7 +1205,7 @@ Result RenderPass::CreateImagesAndViewsV3(const internal::RenderPassCreateInfo& 
 			dsvCreateInfo.ownership = pCreateInfo.ownership;
 
 			DepthStencilViewPtr dsv;
-			Result                    ppxres = GetDevice()->CreateDepthStencilView(&dsvCreateInfo, &dsv);
+			Result                    ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "DSV create failed");
 				return ppxres;
@@ -1548,7 +1548,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(&ci, &texture);
+			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "render target texture create failed");
 				return ppxres;
@@ -1582,7 +1582,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(&ci, &texture);
+			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "depth stencil texture create failed");
 				return ppxres;
@@ -1604,7 +1604,7 @@ Result DrawPass::CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInf
 			ci.pImage = pCreateInfo.V2.pRenderTargetImages[i];
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(&ci, &texture);
+			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "render target texture create failed");
 				return ppxres;
@@ -1619,9 +1619,9 @@ Result DrawPass::CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInf
 			ci.pImage = pCreateInfo.V2.pDepthStencilImage;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(&ci, &texture);
+			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
 			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "dpeth stencil texture create failed");
+				ASSERT_MSG(false, "depth stencil texture create failed");
 				return ppxres;
 			}
 
@@ -1760,7 +1760,7 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 		Pass pass = {};
 		pass.clearMask = clearMask;
 
-		Result ppxres = GetDevice()->CreateRenderPass(&rpCreateInfo, &pass.renderPass);
+		Result ppxres = GetDevice()->CreateRenderPass(rpCreateInfo, &pass.renderPass);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "create render pass failed for clearMask=" + std::to_string(clearMask));
 			return ppxres;
@@ -2146,7 +2146,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 		createInfo.initialState = RESOURCE_STATE_GENERAL;
 		createInfo.ownership = OWNERSHIP_REFERENCE;
 
-		auto ppxres = GetDevice()->CreateBuffer(&createInfo, &mIndexBuffer);
+		auto ppxres = GetDevice()->CreateBuffer(createInfo, &mIndexBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "create mesh index buffer failed");
 			return ppxres;
@@ -2209,7 +2209,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 			createInfo.initialState = RESOURCE_STATE_GENERAL;
 			createInfo.ownership = OWNERSHIP_REFERENCE;
 
-			auto ppxres = GetDevice()->CreateBuffer(&createInfo, &mVertexBuffers[vbIdx].first);
+			auto ppxres = GetDevice()->CreateBuffer(createInfo, &mVertexBuffers[vbIdx].first);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "create mesh vertex buffer failed");
 				return ppxres;
@@ -2496,9 +2496,6 @@ Result ComputePipeline::create(const ComputePipelineCreateInfo& pCreateInfo)
 	return SUCCESS;
 }
 
-// -------------------------------------------------------------------------------------------------
-// GraphicsPipeline
-// -------------------------------------------------------------------------------------------------
 Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
 {
 	//// Checked binding range
@@ -2562,10 +2559,10 @@ Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
 		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 	}
 
-	if (pCreateInfo.dynamicRenderPass && !GetDevice()->DynamicRenderingSupported()) {
-		ASSERT_MSG(false, "Cannot create a pipeline with dynamic render pass, dynamic rendering is not supported.");
-		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
-	}
+	//if (pCreateInfo.dynamicRenderPass && !GetDevice()->DynamicRenderingSupported()) {
+	//	ASSERT_MSG(false, "Cannot create a pipeline with dynamic render pass, dynamic rendering is not supported.");
+	//	return ERROR_GRFX_OPERATION_NOT_PERMITTED;
+	//}
 
 	Result ppxres = DeviceObject<GraphicsPipelineCreateInfo>::create(pCreateInfo);
 	if (Failed(ppxres)) {
@@ -2628,7 +2625,7 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 	//
 	if (pCreateInfo.pushConstants.count > 0) {
 		if (pCreateInfo.pushConstants.count > MAX_PUSH_CONSTANTS) {
-			ASSERT_MSG(false, "push constants count (" + pCreateInfo.pushConstants.count + ") exceeds MAX_PUSH_CONSTANTS (" + MAX_PUSH_CONSTANTS + ")");
+			ASSERT_MSG(false, "push constants count (" + std::to_string(pCreateInfo.pushConstants.count) + ") exceeds MAX_PUSH_CONSTANTS (" + std::to_string(MAX_PUSH_CONSTANTS) + ")");
 			return ERROR_LIMIT_EXCEEDED;
 		}
 
@@ -2658,7 +2655,7 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 					return match; });
 			// Error out if a match is found
 			if (it != bindings.end()) {
-				ASSERT_MSG(false, "push constants binding and set overlaps with a binding in set " + set.set);
+				ASSERT_MSG(false, "push constants binding and set overlaps with a binding in set " + std::to_string(set.set));
 				return ERROR_GRFX_NON_UNIQUE_BINDING;
 			}
 		}
@@ -3204,7 +3201,7 @@ Result Queue::CreateCommandBuffer(
 	CommandPoolCreateInfo ci = {};
 	ci.pQueue = this;
 
-	Result ppxres = GetDevice()->CreateCommandPool(&ci, &set.commandPool);
+	Result ppxres = GetDevice()->CreateCommandPool(ci, &set.commandPool);
 	if (Failed(ppxres)) {
 		return ppxres;
 	}
@@ -3366,8 +3363,6 @@ Result Queue::CopyBufferToImage(
 
 Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateInfo)
 {
-	ASSERT_NULL_ARG(pCreateInfo);
-
 	Result ppxres = ERROR_FAILED;
 
 	// Pipeline interface
@@ -3379,7 +3374,7 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 			createInfo.sets[i].pLayout = pCreateInfo.sets[i].pLayout;
 		}
 
-		ppxres = GetDevice()->CreatePipelineInterface(&createInfo, &mPipelineInterface);
+		ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
 		if (Failed(ppxres))
 		{
 			ASSERT_MSG(false, "failed creating pipeline interface");
@@ -3403,7 +3398,7 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 			createInfo.outputState.renderTargetFormats[i] = pCreateInfo.renderTargetFormats[i];
 		}
 
-		ppxres = GetDevice()->CreateGraphicsPipeline(&createInfo, &mPipeline);
+		ppxres = GetDevice()->CreateGraphicsPipeline(createInfo, &mPipeline);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating graphics pipeline");
 			return ppxres;
@@ -3781,7 +3776,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
 		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
 
-		Result ppxres = GetDevice()->CreateBuffer(&createInfo, &mCpuIndexBuffer);
+		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuIndexBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating CPU index buffer");
 			return ppxres;
@@ -3793,7 +3788,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		createInfo.initialState = RESOURCE_STATE_INDEX_BUFFER;
 
-		ppxres = GetDevice()->CreateBuffer(&createInfo, &mGpuIndexBuffer);
+		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuIndexBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating GPU index buffer");
 			return ppxres;
@@ -3814,7 +3809,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
 		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
 
-		Result ppxres = GetDevice()->CreateBuffer(&createInfo, &mCpuVertexBuffer);
+		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuVertexBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating CPU vertex buffer");
 			return ppxres;
@@ -3826,7 +3821,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		createInfo.initialState = RESOURCE_STATE_VERTEX_BUFFER;
 
-		ppxres = GetDevice()->CreateBuffer(&createInfo, &mGpuVertexBuffer);
+		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuVertexBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating GPU vertex buffer");
 			return ppxres;
@@ -3854,7 +3849,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.maxLod = 1.0f;
 		createInfo.borderColor = BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 
-		Result ppxres = GetDevice()->CreateSampler(&createInfo, &sSampler);
+		Result ppxres = GetDevice()->CreateSampler(createInfo, &sSampler);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating sampler");
 			return ppxres;
@@ -3871,7 +3866,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
 		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
 
-		Result ppxres = GetDevice()->CreateBuffer(&createInfo, &mCpuConstantBuffer);
+		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuConstantBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating CPU constant buffer");
 			return ppxres;
@@ -3883,7 +3878,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		createInfo.initialState = RESOURCE_STATE_CONSTANT_BUFFER;
 
-		ppxres = GetDevice()->CreateBuffer(&createInfo, &mGpuConstantBuffer);
+		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuConstantBuffer);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating GPU constant buffer");
 			return ppxres;
@@ -3897,7 +3892,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.sampledImage = 1;
 		createInfo.uniformBuffer = 1;
 
-		Result ppxres = GetDevice()->CreateDescriptorPool(&createInfo, &mDescriptorPool);
+		Result ppxres = GetDevice()->CreateDescriptorPool(createInfo, &mDescriptorPool);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating descriptor pool");
 			return ppxres;
@@ -3915,7 +3910,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		DescriptorSetLayoutCreateInfo createInfo = {};
 		createInfo.bindings = bindings;
 
-		Result ppxres = GetDevice()->CreateDescriptorSetLayout(&createInfo, &mDescriptorSetLayout);
+		Result ppxres = GetDevice()->CreateDescriptorSetLayout(createInfo, &mDescriptorSetLayout);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating descriptor set layout");
 			return ppxres;
@@ -3942,7 +3937,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.sets[0].set = 0;
 		createInfo.sets[0].pLayout = mDescriptorSetLayout;
 
-		Result ppxres = GetDevice()->CreatePipelineInterface(&createInfo, &mPipelineInterface);
+		Result ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating pipeline interface");
 			return ppxres;
@@ -3973,7 +3968,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.outputState.depthStencilFormat = pCreateInfo.depthStencilFormat;
 		createInfo.pPipelineInterface = mPipelineInterface;
 
-		Result ppxres = GetDevice()->CreateGraphicsPipeline(&createInfo, &mPipeline);
+		Result ppxres = GetDevice()->CreateGraphicsPipeline(createInfo, &mPipeline);
 		if (Failed(ppxres)) {
 			ASSERT_MSG(false, "failed creating pipeline");
 			return ppxres;
