@@ -46,7 +46,7 @@
 #include <algorithm>
 //#include <regex>
 #include <optional>
-//#include <bitset>
+#include <bitset>
 #include <span>
 #include <array>
 #include <deque>

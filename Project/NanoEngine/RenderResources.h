@@ -112,11 +112,24 @@ public:
 	QueryType GetType() const { return m_createInfo.type; }
 	uint32_t  GetCount() const { return m_createInfo.count; }
 
-	virtual void   Reset(uint32_t firstQuery, uint32_t queryCount) = 0;
-	virtual Result GetData(void* pDstData, uint64_t dstDataSize) = 0;
+	VkQueryPoolPtr GetVkQueryPool() const { return mQueryPool; }
+	uint32_t       GetQueryTypeSize() const { return GetQueryTypeSize(mType, mMultiplier); }
+	VkBufferPtr    GetReadBackBuffer() const;
+
+	void   Reset(uint32_t firstQuery, uint32_t queryCount);
+	Result GetData(void* pDstData, uint64_t dstDataSize);
 
 private:
-	virtual Result create(const QueryCreateInfo& pCreateInfo) final;
+	Result create(const QueryCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const QueryCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+	uint32_t       GetQueryTypeSize(VkQueryType type, uint32_t multiplier) const;
+	VkQueryType    GetQueryType() const { return mType; }
+
+	VkQueryPoolPtr  mQueryPool;
+	VkQueryType     mType = VK_QUERY_TYPE_MAX_ENUM;
+	BufferPtr mBuffer;
+	uint32_t        mMultiplier = 1;
 };
 
 #pragma endregion
@@ -247,6 +260,10 @@ public:
 	bool                          GetConcurrentMultiQueueUsageEnabled() const { return m_createInfo.concurrentMultiQueueUsage; }
 	ImageCreateFlags              GetCreateFlags() const { return m_createInfo.createFlags; }
 
+	VkImagePtr                    GetVkImage() const { return mImage; }
+	VkFormat                      GetVkFormat() const { return mVkFormat; }
+	VkImageAspectFlags            GetVkImageAspectFlags() const { return mImageAspect; }
+
 	// Convenience functions
 	ImageViewType GuessImageViewType(bool isCube = false) const;
 
@@ -255,15 +272,30 @@ public:
 
 private:
 	Result create(const ImageCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const ImageCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() override;
+
+	VkImagePtr         mImage;
+	VmaAllocationPtr   mAllocation;
+	VmaAllocationInfo  mAllocationInfo = {};
+	VkFormat           mVkFormat = VK_FORMAT_UNDEFINED;
+	VkImageAspectFlags mImageAspect = InvalidValue<VkImageAspectFlags>();
 };
 
 namespace internal
 {
-	class ImageResourceView
+	class ImageResourceView final
 	{
 	public:
-		ImageResourceView() {}
-		virtual ~ImageResourceView() {}
+		ImageResourceView(VkImageViewPtr vkImageView, VkImageLayout layout)
+			: mImageView(vkImageView), mImageLayout(layout) {}
+
+		VkImageViewPtr GetVkImageView() const { return mImageView; }
+		VkImageLayout  GetVkImageLayout() const { return mImageLayout; }
+
+	private:
+		VkImageViewPtr mImageView;
+		VkImageLayout  mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	};
 } // namespace internal
 
@@ -307,11 +339,16 @@ struct SamplerCreateInfo final
 	SamplerCreateFlags      createFlags = {};
 };
 
-class Sampler : public DeviceObject<SamplerCreateInfo>
+class Sampler final : public DeviceObject<SamplerCreateInfo>
 {
 public:
-	Sampler() {}
-	virtual ~Sampler() {}
+	VkSamplerPtr GetVkSampler() const { return mSampler; }
+
+private:
+	Result createApiObjects(const SamplerCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkSamplerPtr mSampler;
 };
 
 struct DepthStencilViewCreateInfo final
@@ -345,6 +382,14 @@ public:
 	AttachmentStoreOp GetDepthStoreOp() const { return m_createInfo.depthStoreOp; }
 	AttachmentLoadOp  GetStencilLoadOp() const { return m_createInfo.stencilLoadOp; }
 	AttachmentStoreOp GetStencilStoreOp() const { return m_createInfo.stencilStoreOp; }
+
+	VkImageViewPtr GetVkImageView() const { return mImageView; }
+
+private:
+	Result createApiObjects(const DepthStencilViewCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkImageViewPtr mImageView;
 };
 
 struct RenderTargetViewCreateInfo
@@ -364,7 +409,7 @@ struct RenderTargetViewCreateInfo
 	static RenderTargetViewCreateInfo GuessFromImage(Image* pImage);
 };
 
-class RenderTargetView : public DeviceObject<RenderTargetViewCreateInfo>, public ImageView
+class RenderTargetView final : public DeviceObject<RenderTargetViewCreateInfo>, public ImageView
 {
 public:
 	ImagePtr          GetImage() const { return m_createInfo.pImage; }
@@ -374,6 +419,14 @@ public:
 	uint32_t         GetArrayLayer() const { return m_createInfo.arrayLayer; }
 	AttachmentLoadOp  GetLoadOp() const { return m_createInfo.loadOp; }
 	AttachmentStoreOp GetStoreOp() const { return m_createInfo.storeOp; }
+
+	VkImageViewPtr GetVkImageView() const { return mImageView; }
+
+private:
+	Result createApiObjects(const RenderTargetViewCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkImageViewPtr mImageView;
 };
 
 struct SampledImageViewCreateInfo
@@ -405,6 +458,14 @@ public:
 	uint32_t                GetArrayLayer() const { return m_createInfo.arrayLayer; }
 	uint32_t                GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
 	const ComponentMapping& GetComponents() const { return m_createInfo.components; }
+
+	VkImageViewPtr GetVkImageView() const { return mImageView; }
+
+private:
+	Result createApiObjects(const SampledImageViewCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkImageViewPtr mImageView;
 };
 
 // SamplerYcbcrConversionCreateInfo defines a color model conversion for a texture, sampler, or sampled image.
@@ -420,11 +481,16 @@ struct SamplerYcbcrConversionCreateInfo final
 	bool                 forceExplicitReconstruction = false;
 };
 
-class SamplerYcbcrConversion : public DeviceObject<SamplerYcbcrConversionCreateInfo>
+class SamplerYcbcrConversion final : public DeviceObject<SamplerYcbcrConversionCreateInfo>
 {
 public:
-	SamplerYcbcrConversion() {}
-	virtual ~SamplerYcbcrConversion() {}
+	VkSamplerYcbcrConversionPtr GetVkSamplerYcbcrConversion() const { return mSamplerYcbcrConversion; }
+
+private:
+	Result createApiObjects(const SamplerYcbcrConversionCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkSamplerYcbcrConversionPtr mSamplerYcbcrConversion;
 };
 
 struct StorageImageViewCreateInfo
@@ -453,6 +519,14 @@ public:
 	uint32_t      GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
 	uint32_t      GetArrayLayer() const { return m_createInfo.arrayLayer; }
 	uint32_t      GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
+
+	VkImageViewPtr GetVkImageView() const { return mImageView; }
+
+private:
+	Result createApiObjects(const StorageImageViewCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkImageViewPtr mImageView;
 };
 
 #pragma endregion
@@ -688,12 +762,10 @@ namespace internal
 
 }
 
-class RenderPass : public DeviceObject<internal::RenderPassCreateInfo>
+class RenderPass final: public DeviceObject<internal::RenderPassCreateInfo>
 {
+	friend class RenderDevice;
 public:
-	RenderPass() {}
-	virtual ~RenderPass() {}
-
 	const Rect& GetRenderArea() const { return mRenderArea; }
 	const Rect& GetScissor() const { return mRenderArea; }
 	const Viewport& GetViewport() const { return mViewport; }
@@ -727,14 +799,24 @@ public:
 	// Returns true if render targets or depth stencil contains ATTACHMENT_LOAD_OP_CLEAR
 	bool HasLoadOpClear() const { return mHasLoadOpClear; }
 
+	VkRenderPassPtr  GetVkRenderPass() const { return mRenderPass; }
+	VkFramebufferPtr GetVkFramebuffer() const { return mFramebuffer; }
+
 private:
 	Result create(const internal::RenderPassCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const internal::RenderPassCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
 	void   destroy() final;
-	friend class Device;
 
-	Result CreateImagesAndViewsV1(const internal::RenderPassCreateInfo& pCreateInfo);
-	Result CreateImagesAndViewsV2(const internal::RenderPassCreateInfo& pCreateInfo);
-	Result CreateImagesAndViewsV3(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createImagesAndViewsV1(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createImagesAndViewsV2(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createImagesAndViewsV3(const internal::RenderPassCreateInfo& pCreateInfo);
+
+	Result createRenderPass(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createFramebuffer(const internal::RenderPassCreateInfo& pCreateInfo);
+
+	VkRenderPassPtr  mRenderPass;
+	VkFramebufferPtr mFramebuffer;
 
 	Rect                             mRenderArea = {};
 	Viewport                         mViewport = {};
@@ -744,6 +826,17 @@ private:
 	ImagePtr                         mDepthStencilImage;
 	bool                             mHasLoadOpClear = false;
 };
+
+VkResult CreateTransientRenderPass(
+	RenderDevice* device,
+	uint32_t              renderTargetCount,
+	const VkFormat* pRenderTargetFormats,
+	VkFormat              depthStencilFormat,
+	VkSampleCountFlagBits sampleCount,
+	uint32_t              viewMask,
+	uint32_t              correlationMask,
+	VkRenderPass* pRenderPass,
+	ShadingRateMode shadingRateMode = SHADING_RATE_NONE);
 
 #pragma endregion
 
@@ -856,12 +949,9 @@ namespace internal
 
 }
 
-class DrawPass : public DeviceObject<internal::DrawPassCreateInfo>
+class DrawPass final : public DeviceObject<internal::DrawPassCreateInfo>
 {
 public:
-	DrawPass() {}
-	virtual ~DrawPass() {}
-
 	uint32_t              GetWidth() const { return m_createInfo.width; }
 	uint32_t              GetHeight() const { return m_createInfo.height; }
 	const Rect& GetRenderArea() const;
@@ -955,11 +1045,16 @@ struct DescriptorPoolCreateInfo
 	uint32_t inputAttachment = 0;
 };
 
-class DescriptorPool : public DeviceObject<DescriptorPoolCreateInfo>
+class DescriptorPool final : public DeviceObject<DescriptorPoolCreateInfo>
 {
 public:
-	DescriptorPool() {}
-	virtual ~DescriptorPool() {}
+	VkDescriptorPoolPtr GetVkDescriptorPool() const { return mDescriptorPool; }
+
+private:
+	Result createApiObjects(const DescriptorPoolCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkDescriptorPoolPtr mDescriptorPool;
 };
 
 namespace internal
@@ -971,16 +1066,13 @@ namespace internal
 	};
 }
 
-class DescriptorSet : public DeviceObject<internal::DescriptorSetCreateInfo>
+class DescriptorSet final : public DeviceObject<internal::DescriptorSetCreateInfo>
 {
 public:
-	DescriptorSet() {}
-	virtual ~DescriptorSet() {}
-
 	DescriptorPoolPtr          GetPool() const { return m_createInfo.pPool; }
 	const DescriptorSetLayout* GetLayout() const { return m_createInfo.pLayout; }
 
-	virtual Result UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* pWrites) = 0;
+	Result UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* pWrites);
 
 	Result UpdateSampler(
 		uint32_t             binding,
@@ -1008,6 +1100,25 @@ public:
 		const Buffer* pBuffer,
 		uint64_t            offset = 0,
 		uint64_t            range = WHOLE_SIZE);
+
+	VkDescriptorSetPtr GetVkDescriptorSet() const { return mDescriptorSet; }
+
+private:
+	Result createApiObjects(const internal::DescriptorSetCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkDescriptorSetPtr  mDescriptorSet;
+	VkDescriptorPoolPtr mDescriptorPool;
+
+	// Reduce memory allocations during update process
+	std::vector<VkWriteDescriptorSet>   mWriteStore;
+	std::vector<VkDescriptorImageInfo>  mImageInfoStore;
+	std::vector<VkBufferView>           mTexelBufferStore;
+	std::vector<VkDescriptorBufferInfo> mBufferInfoStore;
+	uint32_t                            mWriteCount = 0;
+	uint32_t                            mImageCount = 0;
+	uint32_t                            mTexelBufferCount = 0;
+	uint32_t                            mBufferCount = 0;
 };
 
 struct DescriptorSetLayoutCreateInfo
@@ -1020,30 +1131,42 @@ class DescriptorSetLayout final : public DeviceObject<DescriptorSetLayoutCreateI
 {
 	friend class RenderDevice;
 public:
-	DescriptorSetLayout() {}
-	virtual ~DescriptorSetLayout() {}
-
 	bool IsPushable() const { return m_createInfo.flags.bits.pushable; }
 
 	const std::vector<DescriptorBinding>& GetBindings() const { return m_createInfo.bindings; }
 
+	VkDescriptorSetLayoutPtr GetVkDescriptorSetLayout() const { return mDescriptorSetLayout; }
+
 private:
 	Result create(const DescriptorSetLayoutCreateInfo& pCreateInfo) final;
+
+	Result createApiObjects(const DescriptorSetLayoutCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+	Result validateDescriptorBindingFlags(const DescriptorBindingFlags& flags) const;
+
+	VkDescriptorSetLayoutPtr mDescriptorSetLayout;
 };
 
 #pragma endregion
 
 #pragma region Shader
 
-struct ShaderModuleCreateInfo
+struct ShaderModuleCreateInfo final
 {
 	uint32_t    size = 0;
 	const char* pCode = nullptr;
 };
 
-class ShaderModule : public DeviceObject<ShaderModuleCreateInfo>
+class ShaderModule final : public DeviceObject<ShaderModuleCreateInfo>
 {
 public:
+	VkShaderModulePtr GetVkShaderModule() const { return mShaderModule; }
+
+private:
+	Result createApiObjects(const ShaderModuleCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkShaderModulePtr mShaderModule;
 };
 
 #pragma endregion
@@ -1051,7 +1174,7 @@ public:
 #pragma region ShadingRate
 
 // A supported shading rate supported by the device.
-struct SupportedShadingRate
+struct SupportedShadingRate final
 {
 	// Bit mask of supported sample counts.
 	uint32_t sampleCountMask;
@@ -1061,7 +1184,7 @@ struct SupportedShadingRate
 };
 
 // Information about GPU support for shading rate features.
-struct ShadingRateCapabilities
+struct ShadingRateCapabilities final
 {
 	// The shading rate mode supported by this device.
 	ShadingRateMode supportedShadingRateMode = SHADING_RATE_NONE;
@@ -1108,7 +1231,43 @@ public:
 	virtual uint32_t EncodeFragmentSize(uint8_t fragmentWidth, uint8_t fragmentHeight) const = 0;
 };
 
-struct ShadingRatePatternCreateInfo
+namespace internal
+{
+	// Encodes fragment sizes/densities for FDM.
+	class FDMShadingRateEncoder final : public ShadingRateEncoder
+	{
+	public:
+		uint32_t EncodeFragmentDensity(uint8_t xDensity, uint8_t yDensity) const final;
+		uint32_t EncodeFragmentSize(uint8_t fragmentWidth, uint8_t fragmentHeight) const final;
+
+	private:
+		static uint32_t encodeFragmentDensityImpl(uint8_t xDensity, uint8_t yDensity);
+	};
+
+	// Encodes fragment sizes/densities for VRS.
+	class VRSShadingRateEncoder final : public ShadingRateEncoder
+	{
+	public:
+		void Initialize(SampleCount sampleCount, const ShadingRateCapabilities& capabilities);
+
+		uint32_t EncodeFragmentDensity(uint8_t xDensity, uint8_t yDensity) const final;
+		uint32_t EncodeFragmentSize(uint8_t fragmentWidth, uint8_t fragmentHeight) const final;
+
+	private:
+		// Maximum encoded value of a shading rate.
+		static constexpr size_t kMaxEncodedShadingRate = (2 << 2) | 2;
+
+		uint32_t        encodeFragmentSizeImpl(uint8_t xDensity, uint8_t yDensity) const;
+		static uint32_t rawEncode(uint8_t width, uint8_t height);
+
+		// Maps a requested shading rate to a supported shading rate.
+		// The fragment width/height of the supported shading rate will be no larger than the fragment width/height of the requested shading rate.
+		// Ties are broken lexicographically, e.g. if 2x2, 1x4 and 4x1 are supported, then 2x4 will be mapped to 2x2 but 4x2 will map to 4x1.
+		std::array<uint8_t, kMaxEncodedShadingRate + 1> mMapRateToSupported;
+	};
+} // namespace internal
+
+struct ShadingRatePatternCreateInfo final
 {
 	// The size of the framebuffer image that will be used with the created ShadingRatePattern.
 	Extent2D framebufferSize;
@@ -1124,11 +1283,9 @@ struct ShadingRatePatternCreateInfo
 };
 
 // An image representing fragment sizes/densities that can be used in a render pass to control the shading rate.
-class ShadingRatePattern : public DeviceObject<ShadingRatePatternCreateInfo>
+class ShadingRatePattern final : public DeviceObject<ShadingRatePatternCreateInfo>
 {
 public:
-	virtual ~ShadingRatePattern() = default;
-
 	// The shading rate mode (FDM or VRS).
 	ShadingRateMode GetShadingRateMode() const { return mShadingRateMode; }
 
@@ -1154,12 +1311,116 @@ public:
 	Result LoadFromBitmap(Bitmap* bitmap);
 
 	// Get the pixel format of a bitmap that can store the fragment density/size data.
-	virtual Bitmap::Format GetBitmapFormat() const = 0;
+	Bitmap::Format GetBitmapFormat() const;
 
 	// Get an encoder that can encode fragment density/size values for this pattern.
-	virtual const ShadingRateEncoder* GetShadingRateEncoder() const = 0;
+	const ShadingRateEncoder* GetShadingRateEncoder() const;
 
-protected:
+	VkImageViewPtr GetAttachmentImageView() const
+	{
+		return mAttachmentView;
+	}
+
+	// Creates a modified version of the render pass create info which supports the required shading rate mode.
+	// The shared_ptr also manages the memory of all referenced pointers and arrays in the VkRenderPassCreateInfo2 struct.
+	std::shared_ptr<const VkRenderPassCreateInfo2>        GetModifiedRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci);
+	std::shared_ptr<const VkRenderPassCreateInfo2>        GetModifiedRenderPassCreateInfo(const VkRenderPassCreateInfo2& vkci);
+	static std::shared_ptr<const VkRenderPassCreateInfo2> GetModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode, const VkRenderPassCreateInfo& vkci);
+	static std::shared_ptr<const VkRenderPassCreateInfo2> GetModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode, const VkRenderPassCreateInfo2& vkci);
+
+private:
+	// Handles modification of VkRenderPassCreateInfo/VkRenderPassCreateInfo2 to add support for a ShadingRatePattern.
+	// The ModifiedRenderPassCreateInfo object handles the lifetimes of the pointers and arrays referenced in the modified VkRenderPassCreateInfo2.
+	class ModifiedRenderPassCreateInfo : public std::enable_shared_from_this<ModifiedRenderPassCreateInfo>
+	{
+	public:
+		virtual ~ModifiedRenderPassCreateInfo() = default;
+
+		// Initializes the modified VkRenderPassCreateInfo2, based on the
+		// values in the input VkRenderPassCreateInfo/VkRenderPassCreateInfo2,
+		// with appropriate modifications for the shading rate implementation.
+		ModifiedRenderPassCreateInfo& Initialize(const VkRenderPassCreateInfo& vkci);
+		ModifiedRenderPassCreateInfo& Initialize(const VkRenderPassCreateInfo2& vkci);
+
+		// Returns the modified VkRenderPassCreateInfo2.
+		//
+		// The returned pointer, as well as pointers and arrays inside the
+		// VkRenderPassCreateInfo2 struct, point to memory owned by this
+		/// ModifiedRenderPassCreateInfo object, and so cannot be used after
+		// this object is destroyed.
+		std::shared_ptr<const VkRenderPassCreateInfo2> Get()
+		{
+			return std::shared_ptr<const VkRenderPassCreateInfo2>(shared_from_this(), &mVkRenderPassCreateInfo2);
+		}
+
+	protected:
+		// Initializes the internal VkRenderPassCreateInfo2, based on the values in the input VkRenderPassCreateInfo/VkRenderPassCreateInfo2.
+		// All arrays are copied to internal vectors, and the internal
+		// VkRenderPassCreateInfo2 references the data in these vectors, rather than the poitners in the input VkRenderPassCreateInfo.
+		void LoadVkRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci);
+		void LoadVkRenderPassCreateInfo2(const VkRenderPassCreateInfo2& vkci);
+
+		// Modifies the internal VkRenderPassCreateInfo2 to enable the shading rate implementation.
+		virtual void UpdateRenderPassForShadingRateImplementation() = 0;
+
+		VkRenderPassCreateInfo2               mVkRenderPassCreateInfo2 = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2 };
+		std::vector<VkAttachmentDescription2> mAttachments;
+		std::vector<VkSubpassDescription2>    mSubpasses;
+		struct SubpassAttachments
+		{
+			std::vector<VkAttachmentReference2> inputAttachments;
+			std::vector<VkAttachmentReference2> colorAttachments;
+			std::vector<VkAttachmentReference2> resolveAttachments;
+			VkAttachmentReference2              depthStencilAttachment;
+			std::vector<uint32_t>               preserveAttachments;
+		};
+		std::vector<SubpassAttachments>   mSubpassAttachments;
+		std::vector<VkSubpassDependency2> mDependencies;
+	};
+
+	// Creates a ModifiedRenderPassCreateInfo that will modify
+	// VkRenderPassCreateInfo/VkRenderPassCreateInfo2  to support the given ShadingRateMode on the given device.
+	static std::shared_ptr<ModifiedRenderPassCreateInfo> CreateModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode);
+
+	// Creates a ModifiedRenderPassCreateInfo that will modify
+	// VkRenderPassCreateInfo/VkRenderPassCreateInfo2 to support this ShadingRatePattern.
+	std::shared_ptr<ModifiedRenderPassCreateInfo> CreateModifiedRenderPassCreateInfo() const
+	{
+		return CreateModifiedRenderPassCreateInfo(GetDevice(), GetShadingRateMode());
+	}
+
+	// Handles modification of VkRenderPassCreateInfo(2) to add support for FDM.
+	class FDMModifiedRenderPassCreateInfo : public ModifiedRenderPassCreateInfo
+	{
+	protected:
+		void UpdateRenderPassForShadingRateImplementation() override;
+
+	private:
+		VkRenderPassFragmentDensityMapCreateInfoEXT mFdmInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
+	};
+
+	// Handles modification of VkRenderPassCreateInfo(2) to add support for VRS.
+	class VRSModifiedRenderPassCreateInfo : public ModifiedRenderPassCreateInfo
+	{
+	public:
+		VRSModifiedRenderPassCreateInfo(const ShadingRateCapabilities& capabilities)
+			: mCapabilities(capabilities) {}
+
+	protected:
+		void UpdateRenderPassForShadingRateImplementation() override;
+
+	private:
+		ShadingRateCapabilities                mCapabilities;
+		VkFragmentShadingRateAttachmentInfoKHR mVrsAttachmentInfo = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR };
+		VkAttachmentReference2                 mVrsAttachmentRef = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR };
+	};
+
+	Result createApiObjects(const ShadingRatePatternCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	std::unique_ptr<ShadingRateEncoder> mShadingRateEncoder;
+	VkImageViewPtr                      mAttachmentView;
+
 	ShadingRateMode mShadingRateMode;
 	ImagePtr        mAttachmentImage;
 	Extent2D        mTexelSize;
@@ -1292,18 +1553,20 @@ struct ComputePipelineCreateInfo
 	const PipelineInterface* pPipelineInterface = nullptr;
 };
 
-class ComputePipeline : public DeviceObject<ComputePipelineCreateInfo>
+class ComputePipeline final : public DeviceObject<ComputePipelineCreateInfo>
 {
-public:
-	ComputePipeline() {}
-	virtual ~ComputePipeline() {}
-
-protected:
-	Result create(const ComputePipelineCreateInfo& pCreateInfo) final;
 	friend class RenderDevice;
-};
+public:
 
-// -------------------------------------------------------------------------------------------------
+	VkPipelinePtr GetVkPipeline() const { return mPipeline; }
+
+private:
+	Result create(const ComputePipelineCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const ComputePipelineCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkPipelinePtr mPipeline;
+};
 
 struct VertexInputState
 {
@@ -1404,9 +1667,6 @@ struct OutputState
 	Format depthStencilFormat = FORMAT_UNDEFINED;
 };
 
-//! @struct GraphicsPipelineCreateInfo
-//!
-//!
 struct GraphicsPipelineCreateInfo
 {
 	ShaderStageInfo          VS = {};
@@ -1456,23 +1716,58 @@ namespace internal {
 
 } // namespace internal
 
-class GraphicsPipeline
-	: public DeviceObject<GraphicsPipelineCreateInfo>
+class GraphicsPipeline final: public DeviceObject<GraphicsPipelineCreateInfo>
 {
-public:
-	GraphicsPipeline() {}
-	virtual ~GraphicsPipeline() {}
-
-protected:
-	Result create(const GraphicsPipelineCreateInfo& pCreateInfo) final;
 	friend class RenderDevice;
+public:
+	VkPipelinePtr GetVkPipeline() const { return mPipeline; }
+
+private:
+	Result create(const GraphicsPipelineCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const GraphicsPipelineCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	Result initializeShaderStages(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
+		VkGraphicsPipelineCreateInfo& vkCreateInfo);
+	Result initializeVertexInput(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		std::vector<VkVertexInputAttributeDescription>& attribues,
+		std::vector<VkVertexInputBindingDescription>& bindings,
+		VkPipelineVertexInputStateCreateInfo& stateCreateInfo);
+	Result initializeInputAssembly(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo);
+	Result initializeTessellation(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo,
+		VkPipelineTessellationStateCreateInfo& stateCreateInfo);
+	Result initializeViewports(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineViewportStateCreateInfo& stateCreateInfo);
+	Result initializeRasterization(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo,
+		VkPipelineRasterizationStateCreateInfo& stateCreateInfo);
+	Result initializeMultisample(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineMultisampleStateCreateInfo& stateCreateInfo);
+	Result initializeDepthStencil(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		VkPipelineDepthStencilStateCreateInfo& stateCreateInfo);
+	Result initializeColorBlend(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		std::vector<VkPipelineColorBlendAttachmentState>& attachments,
+		VkPipelineColorBlendStateCreateInfo& stateCreateInfo);
+	Result initializeDynamicState(
+		const GraphicsPipelineCreateInfo& pCreateInfo,
+		std::vector<VkDynamicState>& dynamicStates,
+		VkPipelineDynamicStateCreateInfo& stateCreateInfo);
+
+	VkPipelinePtr mPipeline;
 };
 
-// -------------------------------------------------------------------------------------------------
-
-//! @struct PipelineInterfaceCreateInfo
-//!
-//!
 struct PipelineInterfaceCreateInfo
 {
 	uint32_t setCount = 0;
@@ -1501,23 +1796,26 @@ struct PipelineInterfaceCreateInfo
 	} pushConstants;
 };
 
-class PipelineInterface
-	: public DeviceObject<PipelineInterfaceCreateInfo>
+class PipelineInterface final : public DeviceObject<PipelineInterfaceCreateInfo>
 {
+	friend class RenderDevice;
 public:
-	PipelineInterface() {}
-	virtual ~PipelineInterface() {}
-
 	bool                         HasConsecutiveSetNumbers() const { return mHasConsecutiveSetNumbers; }
 	const std::vector<uint32_t>& GetSetNumbers() const { return mSetNumbers; }
 
 	const DescriptorSetLayout* GetSetLayout(uint32_t setNumber) const;
 
-protected:
-	Result create(const PipelineInterfaceCreateInfo& pCreateInfo) final;
-	friend class RenderDevice;
+	VkPipelineLayoutPtr GetVkPipelineLayout() const { return mPipelineLayout; }
+
+	VkShaderStageFlags GetPushConstantShaderStageFlags() const { return mPushConstantShaderStageFlags; }
 
 private:
+	Result create(const PipelineInterfaceCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const PipelineInterfaceCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+	VkPipelineLayoutPtr mPipelineLayout;
+	VkShaderStageFlags  mPushConstantShaderStageFlags = 0;
 	bool                  mHasConsecutiveSetNumbers = false;
 	std::vector<uint32_t> mSetNumbers = {};
 };
@@ -1541,9 +1839,6 @@ struct BufferToBufferCopyInfo
 	} dstBuffer;
 };
 
-//! @struct BufferToImageCopyInfo
-//!
-//!
 struct BufferToImageCopyInfo
 {
 	struct
@@ -1571,9 +1866,6 @@ struct BufferToImageCopyInfo
 	} dstImage;
 };
 
-//! @struct ImageToBufferCopyInfo
-//!
-//!
 struct ImageToBufferCopyInfo
 {
 	struct
@@ -1597,17 +1889,11 @@ struct ImageToBufferCopyInfo
 	} extent;
 };
 
-//! @struct ImageToBufferOutputPitch
-//!
-//!
 struct ImageToBufferOutputPitch
 {
 	uint32_t rowPitch = 0;
 };
 
-//! @struct ImageToImageCopyInfo
-//!
-//!
 struct ImageToImageCopyInfo
 {
 	struct
@@ -1644,7 +1930,6 @@ struct ImageToImageCopyInfo
 	} extent;
 };
 
-// struct ImageBlitInfo
 struct ImageBlitInfo
 {
 	struct ImgInfo
@@ -1665,8 +1950,6 @@ struct ImageBlitInfo
 
 	Filter filter = FILTER_LINEAR;
 };
-
-// -------------------------------------------------------------------------------------------------
 
 struct RenderPassBeginInfo
 {
@@ -1695,30 +1978,23 @@ struct RenderingInfo
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };
 };
 
-// -------------------------------------------------------------------------------------------------
-
-//! @struct CommandPoolCreateInfo
-//!
-//!
 struct CommandPoolCreateInfo
 {
 	const Queue* pQueue = nullptr;
 };
 
-//! @class CommandPool
-//!
-//!
-class CommandPool
-	: public DeviceObject<CommandPoolCreateInfo>
+class CommandPool final : public DeviceObject<CommandPoolCreateInfo>
 {
 public:
-	CommandPool() {}
-	virtual ~CommandPool() {}
-
 	CommandType GetCommandType() const;
-};
+	VkCommandPoolPtr GetVkCommandPool() const { return mCommandPool; }
+	
+private:
+	Result createApiObjects(const CommandPoolCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
 
-// -------------------------------------------------------------------------------------------------
+	VkCommandPoolPtr mCommandPool;
+};
 
 namespace internal {
 
@@ -1753,20 +2029,14 @@ namespace internal {
 
 } // namespace internal
 
-//! @class CommandBuffer
-//!
-//!
-class CommandBuffer
-	: public DeviceObject<internal::CommandBufferCreateInfo>
+class CommandBuffer final : public DeviceObject<internal::CommandBufferCreateInfo>
 {
 public:
-	CommandBuffer() {}
-	virtual ~CommandBuffer() {}
-
 	CommandType GetCommandType() const { return m_createInfo.pPool->GetCommandType(); }
+	VkCommandBufferPtr GetVkCommandBuffer() const { return mCommandBuffer; }
 
-	virtual Result Begin() = 0;
-	virtual Result End() = 0;
+	Result Begin();
+	Result End();
 
 	void BeginRenderPass(const RenderPassBeginInfo* pBeginInfo);
 	void EndRenderPass();
@@ -1776,33 +2046,25 @@ public:
 
 	const RenderPass* GetCurrentRenderPass() const { return mCurrentRenderPass; }
 
-	//
 	// Clear functions must be called between BeginRenderPass and EndRenderPass.
 	// Arg for pImage must be an image in the current render pass.
-	//
-	// TODO: add support for calling inside a dynamic render pass
-	// (i.e., BeginRendering and EndRendering).
-	virtual void ClearRenderTarget(
+	// TODO: add support for calling inside a dynamic render pass (i.e., BeginRendering and EndRendering).
+	void ClearRenderTarget(
 		Image* pImage,
-		const RenderTargetClearValue& clearValue) = 0;
-	virtual void ClearDepthStencil(
+		const RenderTargetClearValue& clearValue);
+	void ClearDepthStencil(
 		Image* pImage,
 		const DepthStencilClearValue& clearValue,
-		uint32_t                            clearFlags) = 0;
+		uint32_t                            clearFlags);
 
 	//! @fn TransitionImageLayout
-	//!
 	//! Vulkan requires a queue ownership transfer if a resource
 	//! is used by queues in different queue families:
 	//!  - Use \b pSrcQueue to specify a queue in the source queue family
 	//!  - Use \b pDstQueue to specify a queue in the destination queue family
-	//!  - If \b pSrcQueue and \b pDstQueue belong to the same queue family
-	//!    then the queue ownership transfer won't happen.
-	//!
-	//! D3D12 ignores both \b pSrcQueue and \b pDstQueue since they're not
-	//! relevant.
-	//!
-	virtual void TransitionImageLayout(
+	//!  - If \b pSrcQueue and \b pDstQueue belong to the same queue family then the queue ownership transfer won't happen.
+	//! D3D12 ignores both \b pSrcQueue and \b pDstQueue since they're not relevant.
+	void TransitionImageLayout(
 		const Image* pImage,
 		uint32_t            mipLevel,
 		uint32_t            mipLevelCount,
@@ -1811,31 +2073,27 @@ public:
 		ResourceState beforeState,
 		ResourceState afterState,
 		const Queue* pSrcQueue = nullptr,
-		const Queue* pDstQueue = nullptr) = 0;
+		const Queue* pDstQueue = nullptr);
 
-	//
-	// See comment at function \b TransitionImageLayout for details
-	// on queue ownership transfer.
-	//
-	virtual void BufferResourceBarrier(
+	void BufferResourceBarrier(
 		const Buffer* pBuffer,
 		ResourceState beforeState,
 		ResourceState afterState,
 		const Queue* pSrcQueue = nullptr,
-		const Queue* pDstQueue = nullptr) = 0;
+		const Queue* pDstQueue = nullptr);
 
-	virtual void SetViewports(
+	void SetViewports(
 		uint32_t              viewportCount,
-		const Viewport* pViewports) = 0;
+		const Viewport* pViewports);
 
-	virtual void SetScissors(
+	void SetScissors(
 		uint32_t          scissorCount,
-		const Rect* pScissors) = 0;
+		const Rect* pScissors);
 
-	virtual void BindGraphicsDescriptorSets(
+	void BindGraphicsDescriptorSets(
 		const PipelineInterface* pInterface,
 		uint32_t                          setCount,
-		const DescriptorSet* const* ppSets) = 0;
+		const DescriptorSet* const* ppSets);
 
 	//
 	// Parameters count and dstOffset are measured in DWORDs (uint32_t) aka 32-bit values.
@@ -1848,193 +2106,189 @@ public:
 	//     with a different compiler or source language. The contents pointed to
 	//     by pValues must respect the packing rules in effect.
 	//
-	virtual void PushGraphicsConstants(
+	void PushGraphicsConstants(
 		const PipelineInterface* pInterface,
 		uint32_t                       count,
 		const void* pValues,
-		uint32_t                       dstOffset = 0) = 0;
+		uint32_t                       dstOffset = 0);
 
-	virtual void PushGraphicsUniformBuffer(
+	void PushGraphicsUniformBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushGraphicsStructuredBuffer(
+	void PushGraphicsStructuredBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushGraphicsStorageBuffer(
+	void PushGraphicsStorageBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushGraphicsSampledImage(
+	void PushGraphicsSampledImage(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const SampledImageView* pView);
 
-	virtual void PushGraphicsStorageImage(
+	void PushGraphicsStorageImage(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const StorageImageView* pView);
 
-	virtual void PushGraphicsSampler(
+	void PushGraphicsSampler(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const Sampler* pSampler);
 
-	virtual void BindGraphicsPipeline(const GraphicsPipeline* pPipeline) = 0;
+	void BindGraphicsPipeline(const GraphicsPipeline* pPipeline);
 
-	virtual void BindComputeDescriptorSets(
+	void BindComputeDescriptorSets(
 		const PipelineInterface* pInterface,
 		uint32_t                          setCount,
-		const DescriptorSet* const* ppSets) = 0;
+		const DescriptorSet* const* ppSets);
 
-	// See comments at SetGraphicsPushConstants for explanation about count, pValues and dstOffset.
-	virtual void PushComputeConstants(
+	void PushComputeConstants(
 		const PipelineInterface* pInterface,
 		uint32_t                       count,
 		const void* pValues,
-		uint32_t                       dstOffset = 0) = 0;
+		uint32_t                       dstOffset = 0);
 
-	virtual void PushComputeUniformBuffer(
+	void PushComputeUniformBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushComputeStructuredBuffer(
+	void PushComputeStructuredBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushComputeStorageBuffer(
+	void PushComputeStorageBuffer(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		uint32_t                       bufferOffset,
 		const Buffer* pBuffer);
 
-	virtual void PushComputeSampledImage(
+	void PushComputeSampledImage(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const SampledImageView* pView);
 
-	virtual void PushComputeStorageImage(
+	void PushComputeStorageImage(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const StorageImageView* pView);
 
-	virtual void PushComputeSampler(
+	void PushComputeSampler(
 		const PipelineInterface* pInterface,
 		uint32_t                       binding,
 		uint32_t                       set,
 		const Sampler* pSampler);
 
-	virtual void BindComputePipeline(const ComputePipeline* pPipeline) = 0;
+	void BindComputePipeline(const ComputePipeline* pPipeline);
 
-	virtual void BindIndexBuffer(const IndexBufferView* pView) = 0;
+	void BindIndexBuffer(const IndexBufferView* pView);
 
-	virtual void BindVertexBuffers(
+	void BindVertexBuffers(
 		uint32_t                      viewCount,
-		const VertexBufferView* pViews) = 0;
+		const VertexBufferView* pViews);
 
-	virtual void Draw(
+	void Draw(
 		uint32_t vertexCount,
 		uint32_t instanceCount = 1,
 		uint32_t firstVertex = 0,
-		uint32_t firstInstance = 0) = 0;
+		uint32_t firstInstance = 0);
 
-	virtual void DrawIndexed(
+	void DrawIndexed(
 		uint32_t indexCount,
 		uint32_t instanceCount = 1,
 		uint32_t firstIndex = 0,
 		int32_t  vertexOffset = 0,
-		uint32_t firstInstance = 0) = 0;
+		uint32_t firstInstance = 0);
 
-	virtual void Dispatch(
+	void Dispatch(
 		uint32_t groupCountX,
 		uint32_t groupCountY,
-		uint32_t groupCountZ) = 0;
+		uint32_t groupCountZ);
 
-	virtual void CopyBufferToBuffer(
+	void CopyBufferToBuffer(
 		const BufferToBufferCopyInfo* pCopyInfo,
 		Buffer* pSrcBuffer,
-		Buffer* pDstBuffer) = 0;
+		Buffer* pDstBuffer);
 
-	virtual void CopyBufferToImage(
+	void CopyBufferToImage(
 		const std::vector<BufferToImageCopyInfo>& pCopyInfos,
 		Buffer* pSrcBuffer,
-		Image* pDstImage) = 0;
+		Image* pDstImage);
 
-	virtual void CopyBufferToImage(
+	void CopyBufferToImage(
 		const BufferToImageCopyInfo* pCopyInfo,
 		Buffer* pSrcBuffer,
-		Image* pDstImage) = 0;
+		Image* pDstImage);
 
 	//! @brief Copies an image to a buffer.
 	//! @param pCopyInfo The specifications of the image region to copy.
 	//! @param pSrcImage The source image.
 	//! @param pDstBuffer The destination buffer.
 	//! @return The image row pitch as written to the destination buffer.
-	virtual ImageToBufferOutputPitch CopyImageToBuffer(
+	ImageToBufferOutputPitch CopyImageToBuffer(
 		const ImageToBufferCopyInfo* pCopyInfo,
 		Image* pSrcImage,
-		Buffer* pDstBuffer) = 0;
+		Buffer* pDstBuffer);
 
-	virtual void CopyImageToImage(
+	void CopyImageToImage(
 		const ImageToImageCopyInfo* pCopyInfo,
 		Image* pSrcImage,
-		Image* pDstImage) = 0;
+		Image* pDstImage);
 
-	virtual void BlitImage(
+	void BlitImage(
 		const ImageBlitInfo* pCopyInfo,
 		Image* pSrcImage,
-		Image* pDstImage) = 0;
+		Image* pDstImage);
 
-	virtual void BeginQuery(
+	void BeginQuery(
 		const Query* pQuery,
-		uint32_t           queryIndex) = 0;
+		uint32_t           queryIndex);
 
-	virtual void EndQuery(
+	void EndQuery(
 		const Query* pQuery,
-		uint32_t           queryIndex) = 0;
+		uint32_t           queryIndex);
 
-	virtual void WriteTimestamp(
+	void WriteTimestamp(
 		const Query* pQuery,
 		PipelineStage pipelineStage,
-		uint32_t            queryIndex) = 0;
+		uint32_t            queryIndex);
 
-	virtual void ResolveQueryData(
+	void ResolveQueryData(
 		Query* pQuery,
 		uint32_t     startIndex,
-		uint32_t     numQueries) = 0;
+		uint32_t     numQueries);
 
-	// ---------------------------------------------------------------------------------------------
-	// Convenience functions
-	// ---------------------------------------------------------------------------------------------
 	void BeginRenderPass(const RenderPass* pRenderPass);
 
 	void BeginRenderPass(
 		const DrawPass* pDrawPass,
 		const DrawPassClearFlags& clearFlags = DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
-	virtual void TransitionImageLayout(
+	void TransitionImageLayout(
 		const Texture* pTexture,
 		uint32_t             mipLevel,
 		uint32_t             mipLevelCount,
@@ -2091,7 +2345,10 @@ public:
 	//
 	void Draw(const FullscreenQuad* pQuad, uint32_t setCount, const DescriptorSet* const* ppSets);
 
-protected:
+private:
+	Result createApiObjects(const internal::CommandBufferCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
 	struct DynamicRenderPassInfo
 	{
 		Rect                             mRenderArea = {};
@@ -2105,14 +2362,13 @@ protected:
 	bool                  mDynamicRenderPassActive = false;
 	DynamicRenderPassInfo mDynamicRenderPassInfo = {};
 
-private:
-	virtual void BeginRenderPassImpl(const RenderPassBeginInfo* pBeginInfo) = 0;
-	virtual void EndRenderPassImpl() = 0;
+	void BeginRenderPassImpl(const RenderPassBeginInfo* pBeginInfo);
+	void EndRenderPassImpl();
 
-	virtual void BeginRenderingImpl(const RenderingInfo* pRenderingInfo) = 0;
-	virtual void EndRenderingImpl() = 0;
+	void BeginRenderingImpl(const RenderingInfo* pRenderingInfo);
+	void EndRenderingImpl();
 
-	virtual void PushDescriptorImpl(
+	void PushDescriptorImpl(
 		CommandType              pipelineBindPoint,
 		const PipelineInterface* pInterface,
 		DescriptorType           descriptorType,
@@ -2122,9 +2378,22 @@ private:
 		const Buffer* pBuffer,
 		const SampledImageView* pSampledImageView,
 		const StorageImageView* pStorageImageView,
-		const Sampler* pSampler) = 0;
+		const Sampler* pSampler);
+
+	void BindDescriptorSets(
+		VkPipelineBindPoint               bindPoint,
+		const PipelineInterface* pInterface,
+		uint32_t                          setCount,
+		const DescriptorSet* const* ppSets);
+
+	void PushConstants(
+		const PipelineInterface* pInterface,
+		uint32_t                       count,
+		const void* pValues,
+		uint32_t                       dstOffset);
 
 	const RenderPass* mCurrentRenderPass = nullptr;
+	VkCommandBufferPtr mCommandBuffer;
 };
 
 #pragma endregion
@@ -2155,24 +2424,23 @@ namespace internal
 	};
 }
 
-class Queue : public DeviceObject<internal::QueueCreateInfo>
+class Queue final : public DeviceObject<internal::QueueCreateInfo>
 {
 public:
-	Queue() {}
-	virtual ~Queue() {}
-
 	CommandType GetCommandType() const { return m_createInfo.commandType; }
+	VkQueuePtr GetVkQueue() const { return mQueue; }
+	uint32_t GetQueueFamilyIndex() const { return m_createInfo.queueFamilyIndex; }
 
-	virtual Result WaitIdle() = 0;
+	Result WaitIdle();
 
-	virtual Result Submit(const SubmitInfo* pSubmitInfo) = 0;
+	Result Submit(const SubmitInfo* pSubmitInfo);
 
 	// Timeline semaphore functions
-	virtual Result QueueWait(Semaphore* pSemaphore, uint64_t value) = 0;
-	virtual Result QueueSignal(Semaphore* pSemaphore, uint64_t value) = 0;
+	Result QueueWait(Semaphore* pSemaphore, uint64_t value);
+	Result QueueSignal(Semaphore* pSemaphore, uint64_t value);
 
 	// GPU timestamp frequency counter in ticks per second
-	virtual Result GetTimestampFrequency(uint64_t* pFrequency) const = 0;
+	Result GetTimestampFrequency(uint64_t* pFrequency) const;
 
 	Result CreateCommandBuffer(
 		CommandBuffer** ppCommandBuffer,
@@ -2200,7 +2468,22 @@ public:
 		ResourceState                             stateBefore,
 		ResourceState                             stateAfter);
 
+	VkResult TransitionImageLayout(
+		VkImage              image,
+		VkImageAspectFlags   aspectMask,
+		uint32_t             baseMipLevel,
+		uint32_t             levelCount,
+		uint32_t             baseArrayLayer,
+		uint32_t             layerCount,
+		VkImageLayout        oldLayout,
+		VkImageLayout        newLayout,
+		VkPipelineStageFlags newPipelineStage);
+
 private:
+	Result createApiObjects(const internal::QueueCreateInfo& pCreateInfo) final;
+	void   destroyApiObjects() final;
+
+
 	struct CommandSet
 	{
 		CommandPoolPtr   commandPool;
@@ -2208,6 +2491,11 @@ private:
 	};
 	std::vector<CommandSet> mCommandSets;
 	std::mutex              mCommandSetMutex;
+
+	VkQueuePtr       mQueue;
+	VkCommandPoolPtr mTransientPool;
+	std::mutex       mQueueMutex;
+	std::mutex       mCommandPoolMutex;
 };
 
 #pragma endregion
