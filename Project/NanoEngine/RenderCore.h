@@ -1380,15 +1380,15 @@ private:
 
 #pragma region Utils
 
-const char* ToString(DescriptorType value);
-const char* ToString(VertexSemantic value);
-const char* ToString(IndexType value);
+std::string ToString(DescriptorType value);
+std::string ToString(VertexSemantic value);
+std::string ToString(IndexType value);
 
 uint32_t    IndexTypeSize(IndexType value);
 Format      VertexSemanticFormat(VertexSemantic value);
 
-const char* ToString(const gli::target& target);
-const char* ToString(const gli::format& format);
+std::string ToString(const gli::target& target);
+std::string ToString(const gli::format& format);
 
 #pragma endregion
 

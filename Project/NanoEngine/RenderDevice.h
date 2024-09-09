@@ -16,14 +16,16 @@ public:
 	VkDevice& GetVkDevice();
 	VmaAllocatorPtr GetVmaAllocator();
 
-	DeviceQueuePtr GetGraphicsQueue() const;
-	DeviceQueuePtr GetPresentQueue() const;
-	DeviceQueuePtr GetTransferQueue() const;
-	DeviceQueuePtr GetComputeQueue() const;
+	DeviceQueuePtr GetGraphicsDeviceQueue() const;
+	DeviceQueuePtr GetPresentDeviceQueue() const;
+	DeviceQueuePtr GetTransferDeviceQueue() const;
+	DeviceQueuePtr GetComputeDeviceQueue() const;
 	uint32_t GetGraphicsQueueFamilyIndex() const;
 	uint32_t GetComputeQueueFamilyIndex() const;
 	uint32_t GetTransferQueueFamilyIndex() const;
 	std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
+
+	QueuePtr GetGraphicsQueue() const;
 
 	Result CreateBuffer(const BufferCreateInfo& createInfo, Buffer** ppBuffer);
 	void   DestroyBuffer(const Buffer* pBuffer);

@@ -2155,8 +2155,7 @@ namespace internal
 	};
 }
 
-class Queue
-	: public DeviceObject<internal::QueueCreateInfo>
+class Queue : public DeviceObject<internal::QueueCreateInfo>
 {
 public:
 	Queue() {}

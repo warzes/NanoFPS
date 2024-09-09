@@ -23,36 +23,36 @@ VmaAllocatorPtr RenderDevice::GetVmaAllocator()
 	return m_render.GetVmaAllocator();
 }
 
-DeviceQueuePtr RenderDevice::GetGraphicsQueue() const
+DeviceQueuePtr RenderDevice::GetGraphicsDeviceQueue() const
 {
 	return m_render.GetVkGraphicsQueue();
 }
-DeviceQueuePtr RenderDevice::GetPresentQueue() const
+DeviceQueuePtr RenderDevice::GetPresentDeviceQueue() const
 {
 	return m_render.GetVkPresentQueue();
 }
-DeviceQueuePtr RenderDevice::GetTransferQueue() const
+DeviceQueuePtr RenderDevice::GetTransferDeviceQueue() const
 {
 	return m_render.GetVkTransferQueue();
 }
-DeviceQueuePtr RenderDevice::GetComputeQueue() const
+DeviceQueuePtr RenderDevice::GetComputeDeviceQueue() const
 {
 	return m_render.GetVkComputeQueue();
 }
 
 uint32_t RenderDevice::GetGraphicsQueueFamilyIndex() const
 {
-	return GetGraphicsQueue()->QueueFamily;
+	return GetGraphicsDeviceQueue()->QueueFamily;
 }
 
 uint32_t RenderDevice::GetComputeQueueFamilyIndex() const
 {
-	return GetComputeQueue()->QueueFamily;
+	return GetComputeDeviceQueue()->QueueFamily;
 }
 
 uint32_t RenderDevice::GetTransferQueueFamilyIndex() const
 {
-	return GetTransferQueue()->QueueFamily;
+	return GetTransferDeviceQueue()->QueueFamily;
 }
 
 std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
