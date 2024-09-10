@@ -33,8 +33,8 @@ struct InstanceCreateInfo final
 		//VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,   // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
 		//VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
 		VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,      // Variable rate shading or Fragment density map
-		VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, 
-		VK_KHR_MULTIVIEW_EXTENSION_NAME,
+		VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, // TODO: не забыть пофиксить RenderDevice::HasDepthClipEnabled() если изменю
+		VK_KHR_MULTIVIEW_EXTENSION_NAME, // RenderDevice::HasMultiView()
 		VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 		VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
 		VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
@@ -43,7 +43,7 @@ struct InstanceCreateInfo final
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 		VK_KHR_MAINTENANCE2_EXTENSION_NAME,
 
-		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, // RenderDevice::HasDescriptorIndexingFeatures()
 		//VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
 		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
 		VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
@@ -75,23 +75,26 @@ public:
 	[[nodiscard]] float GetDeviceTimestampPeriod() const { return physicalDeviceProperties.limits.timestampPeriod; }
 	[[nodiscard]] const char* GetDeviceName() const { return physicalDeviceProperties.deviceName; }
 
-	VkInstance                 instance{ nullptr };
-	VkDebugUtilsMessengerEXT   debugMessenger{ nullptr };
+	VkInstance                                 instance{ nullptr };
+	VkDebugUtilsMessengerEXT                   debugMessenger{ nullptr };
 
-	VkSurfaceKHR               surface{ nullptr };
+	VkSurfaceKHR                               surface{ nullptr };
 
-	VkPhysicalDevice           physicalDevice{ nullptr };
-	VkPhysicalDeviceProperties physicalDeviceProperties{};
-	VkPhysicalDeviceFeatures   physicalDeviceFeatures{};
+	VkPhysicalDevice                           physicalDevice{ nullptr };
+	VkPhysicalDeviceProperties                 physicalDeviceProperties{};
+	VkPhysicalDeviceFeatures                   physicalDeviceFeatures{};
+	VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures = {};
 
-	VkDevice                   device{ nullptr };
+	uint32_t                                   maxPushDescriptors{ 0 };
 
-	DeviceQueuePtr             graphicsQueue{ new DeviceQueue() };
-	DeviceQueuePtr             presentQueue{ new DeviceQueue() };
-	DeviceQueuePtr             transferQueue{ new DeviceQueue() };
-	DeviceQueuePtr             computeQueue{ new DeviceQueue() };
+	VkDevice                                   device{ nullptr };
 
-	VmaAllocatorPtr            vmaAllocator{ nullptr };
+	DeviceQueuePtr                             graphicsQueue{ new DeviceQueue() };
+	DeviceQueuePtr                             presentQueue{ new DeviceQueue() };
+	DeviceQueuePtr                             transferQueue{ new DeviceQueue() };
+	DeviceQueuePtr                             computeQueue{ new DeviceQueue() };
+
+	VmaAllocatorPtr                            vmaAllocator{ nullptr };
 
 private:
 	std::optional<vkb::Instance> createInstance(const InstanceCreateInfo& createInfo);
@@ -99,6 +102,7 @@ private:
 	std::optional<vkb::PhysicalDevice> selectDevice(const vkb::Instance& instance, const InstanceCreateInfo& createInfo);
 	bool getQueues(vkb::Device& vkbDevice);
 	bool initVma();
+	bool getDeviceInfo();
 	RenderSystem& m_render;
 };
 
@@ -160,6 +164,8 @@ public:
 	[[nodiscard]] const VkPhysicalDeviceFeatures& GetDeviceFeatures() const { return m_instance.physicalDeviceFeatures; }
 	[[nodiscard]] const VkPhysicalDeviceLimits& GetDeviceLimits() const { return m_instance.GetDeviceLimits(); }
 	[[nodiscard]] float GetDeviceTimestampPeriod() const { return m_instance.GetDeviceTimestampPeriod(); }
+	[[nodiscard]] uint32_t GetMaxPushDescriptors() const { return m_instance.maxPushDescriptors; }
+	[[nodiscard]] bool PartialDescriptorBindingsSupported() const { return m_instance.descriptorIndexingFeatures.descriptorBindingPartiallyBound; }
 
 	[[nodiscard]] DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
 	[[nodiscard]] DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }

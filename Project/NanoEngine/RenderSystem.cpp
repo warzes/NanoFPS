@@ -36,8 +36,6 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	if (!physicalDeviceRet) return false;	
 	vkb::PhysicalDevice vkbPhysicalDevice = physicalDeviceRet.value();
 	physicalDevice = vkbPhysicalDevice.physical_device;
-	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-	vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
 
 	vkb::DeviceBuilder deviceBuilder{ vkbPhysicalDevice };
 	auto deviceRet = deviceBuilder.build();
@@ -55,6 +53,7 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 
 	if (!getQueues(vkbDevice)) return false;
 	if (!initVma()) return false;
+	if (!getDeviceInfo()) return false;
 
 	return true;
 }
@@ -234,6 +233,50 @@ bool VulkanInstance::initVma()
 	{
 		ASSERT_MSG(false, "vmaCreateAllocator failed: " + ToString(result));
 		return false;
+	}
+
+	return true;
+}
+
+bool VulkanInstance::getDeviceInfo()
+{
+	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+	vkGetPhysicalDeviceFeatures(physicalDevice, &physicalDeviceFeatures);
+
+	{
+		VkPhysicalDevicePushDescriptorPropertiesKHR pushDescriptorProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR };
+		VkPhysicalDeviceProperties2 properties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+		properties.pNext = &pushDescriptorProperties;
+
+		vkGetPhysicalDeviceProperties2(physicalDevice, &properties);
+		maxPushDescriptors = pushDescriptorProperties.maxPushDescriptors;
+	}
+
+	{
+		VkPhysicalDeviceDescriptorIndexingFeatures foundDiFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+		VkPhysicalDeviceFeatures2 foundFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &foundDiFeatures };
+		vkGetPhysicalDeviceFeatures2(physicalDevice, &foundFeatures);
+
+		descriptorIndexingFeatures.shaderInputAttachmentArrayDynamicIndexing = foundDiFeatures.shaderInputAttachmentArrayDynamicIndexing;
+		descriptorIndexingFeatures.shaderUniformTexelBufferArrayDynamicIndexing = foundDiFeatures.shaderUniformTexelBufferArrayDynamicIndexing;
+		descriptorIndexingFeatures.shaderStorageTexelBufferArrayDynamicIndexing = foundDiFeatures.shaderStorageTexelBufferArrayDynamicIndexing;
+		descriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = foundDiFeatures.shaderUniformBufferArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = foundDiFeatures.shaderSampledImageArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = foundDiFeatures.shaderStorageBufferArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderStorageImageArrayNonUniformIndexing = foundDiFeatures.shaderStorageImageArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderInputAttachmentArrayNonUniformIndexing = foundDiFeatures.shaderInputAttachmentArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderUniformTexelBufferArrayNonUniformIndexing = foundDiFeatures.shaderUniformTexelBufferArrayNonUniformIndexing;
+		descriptorIndexingFeatures.shaderStorageTexelBufferArrayNonUniformIndexing = foundDiFeatures.shaderStorageTexelBufferArrayNonUniformIndexing;
+		descriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = foundDiFeatures.descriptorBindingUniformBufferUpdateAfterBind;
+		descriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		descriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind = foundDiFeatures.descriptorBindingStorageImageUpdateAfterBind;
+		descriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = foundDiFeatures.descriptorBindingStorageBufferUpdateAfterBind;
+		descriptorIndexingFeatures.descriptorBindingUniformTexelBufferUpdateAfterBind = foundDiFeatures.descriptorBindingUniformTexelBufferUpdateAfterBind;
+		descriptorIndexingFeatures.descriptorBindingStorageTexelBufferUpdateAfterBind = foundDiFeatures.descriptorBindingStorageTexelBufferUpdateAfterBind;
+		descriptorIndexingFeatures.descriptorBindingUpdateUnusedWhilePending = foundDiFeatures.descriptorBindingUpdateUnusedWhilePending;
+		descriptorIndexingFeatures.descriptorBindingPartiallyBound = foundDiFeatures.descriptorBindingPartiallyBound;
+		descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = foundDiFeatures.descriptorBindingVariableDescriptorCount;
+		descriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
 	}
 
 	return true;

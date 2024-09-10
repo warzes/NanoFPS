@@ -19,15 +19,7 @@ bool RenderDevice::Setup(ShadingRateMode supportShadingRateMode)
 	{
 		// TODO:
 	}
-
-	перенести в инстанс
-	VkPhysicalDevicePushDescriptorPropertiesKHR pushDescriptorProperties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR };
-	VkPhysicalDeviceProperties2 properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-	properties.pNext = &pushDescriptorProperties;
-
-	vkGetPhysicalDeviceProperties2(ToApi(pCreateInfo->pGpu)->GetVkGpu(), &properties);
-
-	mMaxPushDescriptors = pushDescriptorProperties.maxPushDescriptors;
+	return true;
 }
 
 void RenderDevice::Shutdown()
@@ -102,7 +94,27 @@ const ShadingRateCapabilities& RenderDevice::GetShadingRateCapabilities() const
 
 uint32_t RenderDevice::GetMaxPushDescriptors() const
 {
-	return mMaxPushDescriptors;
+	return m_render.GetMaxPushDescriptors();
+}
+
+bool RenderDevice::HasDepthClipEnabled() const
+{
+	return true; // TODO: требуется VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, я его сейчас включаю обязательным
+}
+
+bool RenderDevice::HasDescriptorIndexingFeatures() const
+{
+	return true; // TODO: VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME или vk1.3?
+}
+
+bool RenderDevice::HasMultiView() const
+{
+	return true; // VK_KHR_MULTIVIEW_EXTENSION_NAME
+}
+
+bool RenderDevice::PartialDescriptorBindingsSupported() const
+{
+	return m_render.PartialDescriptorBindingsSupported();
 }
 
 DeviceQueuePtr RenderDevice::GetGraphicsDeviceQueue() const

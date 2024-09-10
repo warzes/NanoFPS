@@ -230,8 +230,6 @@ private:
 	std::vector<QueuePtr>                  mComputeQueues;
 	std::vector<QueuePtr>                  mTransferQueues;
 	ShadingRateCapabilities                mShadingRateCapabilities{};
-
-	uint32_t                               mMaxPushDescriptors = 0;
 };
 
 #pragma endregion
