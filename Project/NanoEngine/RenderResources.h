@@ -2418,9 +2418,6 @@ namespace internal
 	struct QueueCreateInfo
 	{
 		CommandType commandType = COMMAND_TYPE_UNDEFINED;
-		uint32_t          queueFamilyIndex = VALUE_IGNORED; // Vulkan
-		uint32_t          queueIndex = VALUE_IGNORED; // Vulkan
-		void* pApiObject = nullptr;           // D3D12
 	};
 }
 
@@ -2428,8 +2425,8 @@ class Queue final : public DeviceObject<internal::QueueCreateInfo>
 {
 public:
 	CommandType GetCommandType() const { return m_createInfo.commandType; }
-	VkQueuePtr GetVkQueue() const { return mQueue; }
-	uint32_t GetQueueFamilyIndex() const { return m_createInfo.queueFamilyIndex; }
+	DeviceQueuePtr GetQueue() { return m_queue; }
+	uint32_t GetQueueFamilyIndex() const { return m_queue->QueueFamily; }
 
 	Result WaitIdle();
 
@@ -2492,7 +2489,7 @@ private:
 	std::vector<CommandSet> mCommandSets;
 	std::mutex              mCommandSetMutex;
 
-	VkQueuePtr       mQueue;
+	DeviceQueuePtr m_queue;
 	VkCommandPoolPtr mTransientPool;
 	std::mutex       mQueueMutex;
 	std::mutex       mCommandPoolMutex;

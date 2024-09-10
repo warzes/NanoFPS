@@ -6868,17 +6868,22 @@ Result Queue::CopyBufferToImage(
 	return SUCCESS;
 }
 
-Result Queue::createApiObjects(const internal::QueueCreateInfo& pCreateInfo)
+Result Queue::createApiObjects(const internal::QueueCreateInfo& createInfo)
 {
-	vkGetDeviceQueue(
-		GetDevice()->GetVkDevice(),
-		pCreateInfo.queueFamilyIndex,
-		pCreateInfo.queueIndex,
-		&mQueue);
+	if (createInfo.commandType == COMMAND_TYPE_UNDEFINED)
+		return ERROR_API_FAILURE;
+	else if (createInfo.commandType == COMMAND_TYPE_GRAPHICS)
+		m_queue = GetDevice()->GetGraphicsDeviceQueue();
+	else if (createInfo.commandType == COMMAND_TYPE_COMPUTE)
+		m_queue = GetDevice()->GetComputeDeviceQueue();
+	else if (createInfo.commandType == COMMAND_TYPE_TRANSFER)
+		m_queue = GetDevice()->GetTransferDeviceQueue();
+	else if (createInfo.commandType == COMMAND_TYPE_PRESENT)
+		m_queue = GetDevice()->GetPresentDeviceQueue();
 
 	VkCommandPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
 	vkci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	vkci.queueFamilyIndex = pCreateInfo.queueFamilyIndex;
+	vkci.queueFamilyIndex = m_queue->QueueFamily;
 
 	VkResult vkres = vkCreateCommandPool(
 		GetDevice()->GetVkDevice(),
@@ -6903,9 +6908,10 @@ void Queue::destroyApiObjects()
 		mTransientPool.Reset();
 	}
 
-	if (mQueue) {
+	if (m_queue)
+	{
 		WaitIdle();
-		mQueue.Reset();
+		m_queue.reset();
 	}
 }
 
@@ -6914,7 +6920,7 @@ Result Queue::WaitIdle()
 	// Synchronized queue access
 	std::lock_guard<std::mutex> lock(mQueueMutex);
 
-	VkResult vkres = vkQueueWaitIdle(mQueue);
+	VkResult vkres = vkQueueWaitIdle(m_queue->Queue);
 	if (vkres != VK_SUCCESS) {
 		ASSERT_MSG(false, "vkQueueWaitIdle failed" + ToString(vkres));
 		return ERROR_API_FAILURE;
@@ -6973,7 +6979,7 @@ Result Queue::Submit(const SubmitInfo* pSubmitInfo)
 		std::lock_guard<std::mutex> lock(mQueueMutex);
 
 		VkResult vkres = vkQueueSubmit(
-			mQueue,
+			m_queue->Queue,
 			1,
 			&vksi,
 			fence);
@@ -7012,7 +7018,7 @@ Result Queue::QueueWait(Semaphore* pSemaphore, uint64_t value)
 		std::lock_guard<std::mutex> lock(mQueueMutex);
 
 		VkResult vkres = vkQueueSubmit(
-			mQueue,
+			m_queue->Queue,
 			1,
 			&vksi,
 			VK_NULL_HANDLE);
@@ -7051,7 +7057,7 @@ Result Queue::QueueSignal(Semaphore* pSemaphore, uint64_t value)
 		std::lock_guard<std::mutex> lock(mQueueMutex);
 
 		VkResult vkres = vkQueueSubmit(
-			mQueue,
+			m_queue->Queue,
 			1,
 			&vksi,
 			VK_NULL_HANDLE);
@@ -7358,14 +7364,14 @@ VkResult Queue::TransitionImageLayout(
 	{
 		std::lock_guard<std::mutex> lock(mQueueMutex);
 
-		vkres = vkQueueSubmit(mQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkres = vkQueueSubmit(m_queue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
 		if (vkres != VK_SUCCESS) {
 			FreeCommandBuffer();
 			ASSERT_MSG(false, "vkQueueSubmit failed" + ToString(vkres));
 			return vkres;
 		}
 
-		vkres = vkQueueWaitIdle(mQueue);
+		vkres = vkQueueWaitIdle(m_queue->Queue);
 	}
 
 	if (vkres != VK_SUCCESS) {

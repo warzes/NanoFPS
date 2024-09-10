@@ -15,6 +15,9 @@ RenderDevice::RenderDevice(EngineApplication& engine, RenderSystem& render)
 
 bool RenderDevice::Setup(ShadingRateMode supportShadingRateMode)
 {
+	auto cr = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_GRAPHICS };
+	auto res = createGraphicsQueue(cr, &m_graphicsQueue);
+
 	if (supportShadingRateMode != SHADING_RATE_NONE)
 	{
 		// TODO:
@@ -152,6 +155,11 @@ uint32_t RenderDevice::GetTransferQueueFamilyIndex() const
 std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
 {
 	return { GetGraphicsQueueFamilyIndex(), GetComputeQueueFamilyIndex(), GetTransferQueueFamilyIndex() };
+}
+
+QueuePtr RenderDevice::GetGraphicsQueue() const
+{
+	return m_graphicsQueue;
 }
 
 QueuePtr RenderDevice::GetAnyAvailableQueue() const
@@ -860,6 +868,24 @@ Result RenderDevice::allocateObject(TextureFont** ppObject)
 	}
 	*ppObject = pObject;
 	return SUCCESS;
+}
+
+Result RenderDevice::createGraphicsQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+{
+	ASSERT_NULL_ARG(ppQueue);
+	return createObject(pCreateInfo, mGraphicsQueues, ppQueue);
+}
+
+Result RenderDevice::createComputeQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+{
+	ASSERT_NULL_ARG(ppQueue);
+	return createObject(pCreateInfo, mComputeQueues, ppQueue);
+}
+
+Result RenderDevice::createTransferQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+{
+	ASSERT_NULL_ARG(ppQueue);
+	return createObject(pCreateInfo, mTransferQueues, ppQueue);
 }
 
 template<typename ObjectT, typename CreateInfoT, typename ContainerT>

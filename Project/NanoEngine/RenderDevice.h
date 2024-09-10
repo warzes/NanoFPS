@@ -185,6 +185,10 @@ private:
 	Result allocateObject(Texture** ppObject);
 	Result allocateObject(TextureFont** ppObject);
 
+	Result createGraphicsQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
+	Result createComputeQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
+	Result createTransferQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
+
 	template <typename ObjectT, typename CreateInfoT, typename ContainerT = std::vector<ObjPtr<ObjectT>>>
 	Result createObject(const CreateInfoT& createInfo, ContainerT& container, ObjectT** ppObject);
 
@@ -230,6 +234,8 @@ private:
 	std::vector<QueuePtr>                  mComputeQueues;
 	std::vector<QueuePtr>                  mTransferQueues;
 	ShadingRateCapabilities                mShadingRateCapabilities{};
+
+	QueuePtr                               m_graphicsQueue;
 };
 
 #pragma endregion
