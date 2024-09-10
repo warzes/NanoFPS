@@ -481,6 +481,8 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		return false;
 	if (!m_swapChain.Setup(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
 		return false;
+	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
+		return false;
 
 	//=======================================================================
 	// create_render_pass
@@ -709,6 +711,8 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 void RenderSystem::Shutdown()
 {
 	vkDeviceWaitIdle(m_instance.device);
+
+	m_device.Shutdown();
 
 	availableSemaphores.clear();
 	finishedSemaphore.clear();

@@ -16,6 +16,8 @@ struct InstanceCreateInfo final
 	uint32_t                 requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
 	bool                     useValidationLayers{ false };
 
+	ShadingRateMode          supportShadingRateMode = SHADING_RATE_NONE; // TODO: возможно вынести в другой конфиг
+
 	std::vector<const char*> instanceExtensions = {
 		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
 	};

@@ -13,6 +13,9 @@ class RenderDevice final
 public:
 	RenderDevice(EngineApplication& engine, RenderSystem& render);
 
+	bool Setup(ShadingRateMode supportShadingRateMode);
+	void Shutdown();
+
 	[[nodiscard]] VkDevice& GetVkDevice();
 	[[nodiscard]] VmaAllocatorPtr GetVmaAllocator();
 
@@ -175,8 +178,6 @@ private:
 	Result allocateObject(ShaderProgram** ppObject);
 	Result allocateObject(ShadingRatePattern** ppObject);
 	Result allocateObject(StorageImageView** ppObject);
-	Result allocateObject(Swapchain** ppObject);
-
 	Result allocateObject(DrawPass** ppObject);
 	Result allocateObject(FullscreenQuad** ppObject);
 	Result allocateObject(Mesh** ppObject);
@@ -222,14 +223,15 @@ private:
 	std::vector<ShaderModulePtr>           mShaderModules;
 	std::vector<ShaderProgramPtr>          mShaderPrograms;
 	std::vector<StorageImageViewPtr>       mStorageImageViews;
-	std::vector<SwapchainPtr>              mSwapchains;
 	std::vector<TextDrawPtr>               mTextDraws;
 	std::vector<TexturePtr>                mTextures;
 	std::vector<TextureFontPtr>            mTextureFonts;
 	std::vector<QueuePtr>                  mGraphicsQueues;
 	std::vector<QueuePtr>                  mComputeQueues;
 	std::vector<QueuePtr>                  mTransferQueues;
-	ShadingRateCapabilities                mShadingRateCapabilities;
+	ShadingRateCapabilities                mShadingRateCapabilities{};
+
+	uint32_t                               mMaxPushDescriptors = 0;
 };
 
 #pragma endregion

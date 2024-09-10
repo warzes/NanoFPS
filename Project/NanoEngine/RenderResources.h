@@ -1711,7 +1711,7 @@ struct GraphicsPipelineCreateInfo2
 namespace internal {
 
 	void FillOutGraphicsPipelineCreateInfo(
-		const GraphicsPipelineCreateInfo2* pSrcCreateInfo,
+		const GraphicsPipelineCreateInfo2& pSrcCreateInfo,
 		GraphicsPipelineCreateInfo* pDstCreateInfo);
 
 } // namespace internal

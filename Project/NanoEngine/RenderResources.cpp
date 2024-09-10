@@ -4163,49 +4163,45 @@ BlendAttachmentState BlendAttachmentState::BlendModePremultAlpha()
 	return state;
 }
 
-namespace internal {
+namespace internal
+{
 
-	// -------------------------------------------------------------------------------------------------
-	// internal
-	// -------------------------------------------------------------------------------------------------
-	void FillOutGraphicsPipelineCreateInfo(
-		const GraphicsPipelineCreateInfo2* pSrcCreateInfo,
-		GraphicsPipelineCreateInfo* pDstCreateInfo)
+	void FillOutGraphicsPipelineCreateInfo(const GraphicsPipelineCreateInfo2& pSrcCreateInfo, GraphicsPipelineCreateInfo* pDstCreateInfo)
 	{
 		// Set to default values
 		*pDstCreateInfo = {};
 
-		pDstCreateInfo->dynamicRenderPass = pSrcCreateInfo->dynamicRenderPass;
+		pDstCreateInfo->dynamicRenderPass = pSrcCreateInfo.dynamicRenderPass;
 
 		// Shaders
-		pDstCreateInfo->VS = pSrcCreateInfo->VS;
-		pDstCreateInfo->PS = pSrcCreateInfo->PS;
+		pDstCreateInfo->VS = pSrcCreateInfo.VS;
+		pDstCreateInfo->PS = pSrcCreateInfo.PS;
 
 		// Vertex input
 		{
-			pDstCreateInfo->vertexInputState.bindingCount = pSrcCreateInfo->vertexInputState.bindingCount;
+			pDstCreateInfo->vertexInputState.bindingCount = pSrcCreateInfo.vertexInputState.bindingCount;
 			for (uint32_t i = 0; i < pDstCreateInfo->vertexInputState.bindingCount; ++i) {
-				pDstCreateInfo->vertexInputState.bindings[i] = pSrcCreateInfo->vertexInputState.bindings[i];
+				pDstCreateInfo->vertexInputState.bindings[i] = pSrcCreateInfo.vertexInputState.bindings[i];
 			}
 		}
 
 		// Input aasembly
 		{
-			pDstCreateInfo->inputAssemblyState.topology = pSrcCreateInfo->topology;
+			pDstCreateInfo->inputAssemblyState.topology = pSrcCreateInfo.topology;
 		}
 
 		// Raster
 		{
-			pDstCreateInfo->rasterState.polygonMode = pSrcCreateInfo->polygonMode;
-			pDstCreateInfo->rasterState.cullMode = pSrcCreateInfo->cullMode;
-			pDstCreateInfo->rasterState.frontFace = pSrcCreateInfo->frontFace;
+			pDstCreateInfo->rasterState.polygonMode = pSrcCreateInfo.polygonMode;
+			pDstCreateInfo->rasterState.cullMode = pSrcCreateInfo.cullMode;
+			pDstCreateInfo->rasterState.frontFace = pSrcCreateInfo.frontFace;
 		}
 
 		// Depth/stencil
 		{
-			pDstCreateInfo->depthStencilState.depthTestEnable = pSrcCreateInfo->depthReadEnable;
-			pDstCreateInfo->depthStencilState.depthWriteEnable = pSrcCreateInfo->depthWriteEnable;
-			pDstCreateInfo->depthStencilState.depthCompareOp = pSrcCreateInfo->depthCompareOp;
+			pDstCreateInfo->depthStencilState.depthTestEnable = pSrcCreateInfo.depthReadEnable;
+			pDstCreateInfo->depthStencilState.depthWriteEnable = pSrcCreateInfo.depthWriteEnable;
+			pDstCreateInfo->depthStencilState.depthCompareOp = pSrcCreateInfo.depthCompareOp;
 			pDstCreateInfo->depthStencilState.depthBoundsTestEnable = false;
 			pDstCreateInfo->depthStencilState.minDepthBounds = 0.0f;
 			pDstCreateInfo->depthStencilState.maxDepthBounds = 1.0f;
@@ -4216,9 +4212,9 @@ namespace internal {
 
 		// Color blend
 		{
-			pDstCreateInfo->colorBlendState.blendAttachmentCount = pSrcCreateInfo->outputState.renderTargetCount;
+			pDstCreateInfo->colorBlendState.blendAttachmentCount = pSrcCreateInfo.outputState.renderTargetCount;
 			for (uint32_t i = 0; i < pDstCreateInfo->colorBlendState.blendAttachmentCount; ++i) {
-				switch (pSrcCreateInfo->blendModes[i]) {
+				switch (pSrcCreateInfo.blendModes[i]) {
 				default: break;
 
 				case BLEND_MODE_ADDITIVE: {
@@ -4247,22 +4243,22 @@ namespace internal {
 
 		// Output
 		{
-			pDstCreateInfo->outputState.renderTargetCount = pSrcCreateInfo->outputState.renderTargetCount;
+			pDstCreateInfo->outputState.renderTargetCount = pSrcCreateInfo.outputState.renderTargetCount;
 			for (uint32_t i = 0; i < pDstCreateInfo->outputState.renderTargetCount; ++i) {
-				pDstCreateInfo->outputState.renderTargetFormats[i] = pSrcCreateInfo->outputState.renderTargetFormats[i];
+				pDstCreateInfo->outputState.renderTargetFormats[i] = pSrcCreateInfo.outputState.renderTargetFormats[i];
 			}
 
-			pDstCreateInfo->outputState.depthStencilFormat = pSrcCreateInfo->outputState.depthStencilFormat;
+			pDstCreateInfo->outputState.depthStencilFormat = pSrcCreateInfo.outputState.depthStencilFormat;
 		}
 
 		// Shading rate mode
-		pDstCreateInfo->shadingRateMode = pSrcCreateInfo->shadingRateMode;
+		pDstCreateInfo->shadingRateMode = pSrcCreateInfo.shadingRateMode;
 
 		// Pipeline internface
-		pDstCreateInfo->pPipelineInterface = pSrcCreateInfo->pPipelineInterface;
+		pDstCreateInfo->pPipelineInterface = pSrcCreateInfo.pPipelineInterface;
 
 		// MultiView details
-		pDstCreateInfo->multiViewState = pSrcCreateInfo->multiViewState;
+		pDstCreateInfo->multiViewState = pSrcCreateInfo.multiViewState;
 	}
 
 } // namespace internal
