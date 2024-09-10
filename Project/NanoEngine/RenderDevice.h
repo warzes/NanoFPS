@@ -13,19 +13,32 @@ class RenderDevice final
 public:
 	RenderDevice(EngineApplication& engine, RenderSystem& render);
 
-	VkDevice& GetVkDevice();
-	VmaAllocatorPtr GetVmaAllocator();
+	[[nodiscard]] VkDevice& GetVkDevice();
+	[[nodiscard]] VmaAllocatorPtr GetVmaAllocator();
 
-	DeviceQueuePtr GetGraphicsDeviceQueue() const;
-	DeviceQueuePtr GetPresentDeviceQueue() const;
-	DeviceQueuePtr GetTransferDeviceQueue() const;
-	DeviceQueuePtr GetComputeDeviceQueue() const;
-	uint32_t GetGraphicsQueueFamilyIndex() const;
-	uint32_t GetComputeQueueFamilyIndex() const;
-	uint32_t GetTransferQueueFamilyIndex() const;
-	std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
+	[[nodiscard]] const VkPhysicalDeviceFeatures& GetDeviceFeatures() const;
+	[[nodiscard]] const VkPhysicalDeviceLimits& GetDeviceLimits() const;
+	[[nodiscard]] float GetDeviceTimestampPeriod() const;
 
-	QueuePtr GetGraphicsQueue() const;
+	[[nodiscard]] const ShadingRateCapabilities& GetShadingRateCapabilities() const;
+
+	[[nodiscard]] uint32_t GetMaxPushDescriptors() const;
+	[[nodiscard]] bool HasDepthClipEnabled() const;
+	[[nodiscard]] bool HasDescriptorIndexingFeatures() const;
+	[[nodiscard]] bool HasMultiView() const;
+	[[nodiscard]] bool PartialDescriptorBindingsSupported() const;
+
+	[[nodiscard]] DeviceQueuePtr GetGraphicsDeviceQueue() const;
+	[[nodiscard]] DeviceQueuePtr GetPresentDeviceQueue() const;
+	[[nodiscard]] DeviceQueuePtr GetTransferDeviceQueue() const;
+	[[nodiscard]] DeviceQueuePtr GetComputeDeviceQueue() const;
+	[[nodiscard]] uint32_t GetGraphicsQueueFamilyIndex() const;
+	[[nodiscard]] uint32_t GetComputeQueueFamilyIndex() const;
+	[[nodiscard]] uint32_t GetTransferQueueFamilyIndex() const;
+	[[nodiscard]] std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
+
+	[[nodiscard]] QueuePtr GetGraphicsQueue() const;
+	[[nodiscard]] QueuePtr GetAnyAvailableQueue() const;
 
 	Result CreateBuffer(const BufferCreateInfo& createInfo, Buffer** ppBuffer);
 	void   DestroyBuffer(const Buffer* pBuffer);

@@ -149,19 +149,22 @@ public:
 
 	void TestDraw();
 
-	VkInstance& GetVkInstance() { return m_instance.instance; }
-	VkSurfaceKHR& GetVkSurface() { return m_instance.surface; }
-	VkPhysicalDevice& GetVkPhysicalDevice() { return m_instance.physicalDevice; }
-	VkDevice& GetVkDevice() { return m_instance.device; }
-	VmaAllocatorPtr GetVmaAllocator() { return m_instance.vmaAllocator; }
+	[[nodiscard]] VkInstance& GetVkInstance() { return m_instance.instance; }
+	[[nodiscard]] VkSurfaceKHR& GetVkSurface() { return m_instance.surface; }
+	[[nodiscard]] VkPhysicalDevice& GetVkPhysicalDevice() { return m_instance.physicalDevice; }
+	[[nodiscard]] VkDevice& GetVkDevice() { return m_instance.device; }
+	[[nodiscard]] VmaAllocatorPtr GetVmaAllocator() { return m_instance.vmaAllocator; }
 
-	DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
-	DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }
-	DeviceQueuePtr GetVkTransferQueue() { return m_instance.transferQueue; }
-	DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
+	[[nodiscard]] const VkPhysicalDeviceFeatures& GetDeviceFeatures() const { return m_instance.physicalDeviceFeatures; }
+	[[nodiscard]] const VkPhysicalDeviceLimits& GetDeviceLimits() const { return m_instance.GetDeviceLimits(); }
+	[[nodiscard]] float GetDeviceTimestampPeriod() const { return m_instance.GetDeviceTimestampPeriod(); }
 
-	RenderDevice& GetRenderDevice() { return m_device; }
+	[[nodiscard]] DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
+	[[nodiscard]] DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }
+	[[nodiscard]] DeviceQueuePtr GetVkTransferQueue() { return m_instance.transferQueue; }
+	[[nodiscard]] DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
+	[[nodiscard]] RenderDevice& GetRenderDevice() { return m_device; }
 
 private:
 	EngineApplication& m_engine;

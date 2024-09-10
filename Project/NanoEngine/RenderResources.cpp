@@ -976,7 +976,7 @@ Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& pCre
 	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
 	vkci.format = ToVkFormat(pCreateInfo.format);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.subresourceRange.aspectMask = (pCreateInfo.pImage->GetVkImageAspectFlags();
+	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
 	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
 	vkci.subresourceRange.levelCount = pCreateInfo.mipLevelCount;
 	vkci.subresourceRange.baseArrayLayer = pCreateInfo.arrayLayer;
@@ -2017,7 +2017,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 				"The sample count of the depth attachment must match the sample count of the shading rate pattern.");
 		}
 		auto     modifiedCreateInfo = pCreateInfo.pShadingRatePattern->GetModifiedRenderPassCreateInfo(vkci);
-		VkResult vkres = vkCreateRenderPass(GetDevice()->GetVkDevice(), modifiedCreateInfo.get(), nullptr, &mRenderPass);
+		VkResult vkres = vkCreateRenderPass2KHR(GetDevice()->GetVkDevice(), modifiedCreateInfo.get(), nullptr, &mRenderPass);
 		if (vkres != VK_SUCCESS)
 		{
 			ASSERT_MSG(false, "vkCreateRenderPass failed: " + ToString(vkres));
@@ -2076,11 +2076,11 @@ Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& pCrea
 					RenderTargetViewPtr rtv = mRenderTargetViews[i];
 					if (subsampled)
 					{
-						ASSERT_MSG(rtv->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render target image 0 is subsampled, but render target " << i << " is not subsampled.");
+						ASSERT_MSG(rtv->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render target image 0 is subsampled, but render target " + std::to_string(i) + " is not subsampled.");
 					}
 					else
 					{
-						ASSERT_MSG(!rtv->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render target image 0 is not subsampled, but render target " << i << " is subsampled.");
+						ASSERT_MSG(!rtv->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render target image 0 is not subsampled, but render target " + std::to_string(i) + " is subsampled.");
 					}
 				}
 				if (hasDepthSencil)
@@ -2386,7 +2386,7 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 	if (shadingRateMode != SHADING_RATE_NONE) {
 		auto     modifiedCreateInfo = ShadingRatePattern::GetModifiedRenderPassCreateInfo(device, shadingRateMode, vkci);
-		VkResult vkres = vkCreateRenderPass(
+		VkResult vkres = vkCreateRenderPass2KHR(
 			device->GetVkDevice(),
 			modifiedCreateInfo.get(),
 			nullptr,
@@ -4610,7 +4610,7 @@ Result GraphicsPipeline::initializeDepthStencil(
 	stateCreateInfo.front.passOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.passOp);
 	stateCreateInfo.front.depthFailOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.depthFailOp);
 	stateCreateInfo.front.compareOp = ToVkCompareOp(pCreateInfo.depthStencilState.front.compareOp);
-	stateCreateInfo.front.compareMask = pCreateInfo->depthStencilState.front.compareMask;
+	stateCreateInfo.front.compareMask = pCreateInfo.depthStencilState.front.compareMask;
 	stateCreateInfo.front.writeMask = pCreateInfo.depthStencilState.front.writeMask;
 	stateCreateInfo.front.reference = pCreateInfo.depthStencilState.front.reference;
 	stateCreateInfo.back.failOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.failOp);
@@ -5009,7 +5009,7 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 		const uint32_t sizeInBytes = pCreateInfo.pushConstants.count * sizeof(uint32_t);
 
 		// Double check device limits
-		auto& limits = GetDevice()->GetLimits();
+		auto& limits = GetDevice()->GetDeviceLimits();
 		if (sizeInBytes > limits.maxPushConstantsSize)
 		{
 			ASSERT_MSG(false, "push constants size in bytes (" + std::to_string(sizeInBytes) + ") exceeds VkPhysicalDeviceLimits::maxPushConstantsSize (" + std::to_string(limits.maxPushConstantsSize) + ")");
@@ -6441,7 +6441,7 @@ void CommandBuffer::CopyBufferToImage(
 		regions[i].bufferOffset = static_cast<VkDeviceSize>(pCopyInfos[i].srcBuffer.footprintOffset);
 		regions[i].bufferRowLength = pCopyInfos[i].srcBuffer.imageWidth;
 		regions[i].bufferImageHeight = pCopyInfos[i].srcBuffer.imageHeight;
-		regions[i].imageSubresource.aspectMask = ToApi(pDstImage)->GetVkImageAspectFlags();
+		regions[i].imageSubresource.aspectMask = pDstImage->GetVkImageAspectFlags();
 		regions[i].imageSubresource.mipLevel = pCopyInfos[i].dstImage.mipLevel;
 		regions[i].imageSubresource.baseArrayLayer = pCopyInfos[i].dstImage.arrayLayer;
 		regions[i].imageSubresource.layerCount = pCopyInfos[i].dstImage.arrayLayerCount;
@@ -6455,8 +6455,8 @@ void CommandBuffer::CopyBufferToImage(
 
 	vkCmdCopyBufferToImage(
 		mCommandBuffer,
-		ToApi(pSrcBuffer)->GetVkBuffer(),
-		ToApi(pDstImage)->GetVkImage(),
+		pSrcBuffer->GetVkBuffer(),
+		pDstImage->GetVkImage(),
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		static_cast<uint32_t>(pCopyInfos.size()),
 		regions.data());
@@ -6576,9 +6576,9 @@ void CommandBuffer::CopyImageToImage(
 
 	vkCmdCopyImage(
 		mCommandBuffer,
-		ToApi(pSrcImage)->GetVkImage(),
+		pSrcImage->GetVkImage(),
 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		ToApi(pDstImage)->GetVkImage(),
+		pDstImage->GetVkImage(),
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&region);
@@ -6876,8 +6876,8 @@ Result Queue::createApiObjects(const internal::QueueCreateInfo& pCreateInfo)
 {
 	vkGetDeviceQueue(
 		GetDevice()->GetVkDevice(),
-		pCreateInfo->queueFamilyIndex,
-		pCreateInfo->queueIndex,
+		pCreateInfo.queueFamilyIndex,
+		pCreateInfo.queueIndex,
 		&mQueue);
 
 	VkCommandPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -7073,7 +7073,7 @@ Result Queue::GetTimestampFrequency(uint64_t* pFrequency) const
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
 
-	float  timestampPeriod = GetDevice()->GetTimestampPeriod();
+	float  timestampPeriod = GetDevice()->GetDeviceTimestampPeriod();
 	double ticksPerSecond = 1000000000.0 / static_cast<double>(timestampPeriod);
 	*pFrequency = static_cast<uint64_t>(ticksPerSecond);
 

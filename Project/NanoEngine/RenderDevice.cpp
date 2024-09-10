@@ -23,6 +23,21 @@ VmaAllocatorPtr RenderDevice::GetVmaAllocator()
 	return m_render.GetVmaAllocator();
 }
 
+const VkPhysicalDeviceFeatures& RenderDevice::GetDeviceFeatures() const
+{
+	return m_render.GetDeviceFeatures();
+}
+
+const VkPhysicalDeviceLimits& RenderDevice::GetDeviceLimits() const
+{
+	return m_render.GetDeviceLimits();
+}
+
+float RenderDevice::GetDeviceTimestampPeriod() const
+{
+	return m_render.GetDeviceTimestampPeriod();
+}
+
 DeviceQueuePtr RenderDevice::GetGraphicsDeviceQueue() const
 {
 	return m_render.GetVkGraphicsQueue();
@@ -59,6 +74,27 @@ std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
 {
 	return { GetGraphicsQueueFamilyIndex(), GetComputeQueueFamilyIndex(), GetTransferQueueFamilyIndex() };
 }
+
+QueuePtr RenderDevice::GetAnyAvailableQueue() const
+{
+	return GetGraphicsQueue(); // TODO: по идее сюда можно вставить любую очередь, не только графическую, а более свободную
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Result RenderDevice::CreateFence(const FenceCreateInfo& createInfo, Fence** ppFence)
 {
