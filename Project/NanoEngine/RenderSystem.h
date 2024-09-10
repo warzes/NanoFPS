@@ -53,7 +53,7 @@ struct InstanceCreateInfo final
 		//VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
 		//VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
 		//VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-		//VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE3_EXTENSION_NAME,
 		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
 		//VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
@@ -173,6 +173,7 @@ public:
 	[[nodiscard]] DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
 	[[nodiscard]] RenderDevice& GetRenderDevice() { return m_device; }
+	[[nodiscard]] VulkanSwapchain& GetSwapChain() { return m_swapChain; }
 
 private:
 	EngineApplication& m_engine;

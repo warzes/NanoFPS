@@ -374,6 +374,50 @@ size_t current_frame = 0;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
+struct PerFrame
+{
+	CommandBufferPtr cmd;
+	SemaphorePtr     imageAcquiredSemaphore;
+	FencePtr         imageAcquiredFence;
+	SemaphorePtr     renderCompleteSemaphore;
+	FencePtr         renderCompleteFence;
+};
+
+std::vector<PerFrame>      mPerFrame;
+ShaderModulePtr      mVS;
+ShaderModulePtr      mPS;
+PipelineInterfacePtr mPipelineInterface;
+GraphicsPipelinePtr  mPipeline;
+BufferPtr            mVertexBuffer;
+VertexBinding        mVertexBinding;
+
+std::optional<std::filesystem::path> GetShaderPathSuffix(const std::filesystem::path& baseName)
+{
+	return (std::filesystem::path("spv") / baseName).concat(".spv");
+};
+
+std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName)
+{
+	ASSERT_MSG(baseDir.is_relative(), "baseDir must be relative. Do not call GetAssetPath() on the directory.");
+	ASSERT_MSG(baseName.is_relative(), "baseName must be relative. Do not call GetAssetPath() on the directory.");
+	auto suffix = GetShaderPathSuffix(baseName);
+	if (!suffix.has_value())
+	{
+		ASSERT_MSG(false, "unsupported API");
+		return {};
+	}
+
+	const auto filePath = baseDir / suffix.value();
+	auto       bytecode = LoadFile(filePath);
+	if (!bytecode.has_value()) {
+		ASSERT_MSG(false, "could not load file: " + filePath.string());
+		return {};
+	}
+
+	Print("Loaded shader from " + filePath.string());
+	return bytecode.value();
+}
+
 bool createFramebuffers(VkDevice device, VulkanSwapchain& swapchain)
 {
 	framebuffers.resize(swapchain.GetImageViewNum());
@@ -527,223 +571,312 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;
 
-	//=======================================================================
+	// NEW =>
+	{
+		// Pipeline
+		{
+			std::vector<char> bytecode = LoadShader("basic/shaders", "StaticVertexColors.vs");
+			ASSERT_MSG(!bytecode.empty(), "VS shader bytecode load failed");
+			ShaderModuleCreateInfo shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
+			CHECKED_CALL(GetRenderDevice().CreateShaderModule(shaderCreateInfo, &mVS));
+
+			bytecode = LoadShader("basic/shaders", "StaticVertexColors.ps");
+			ASSERT_MSG(!bytecode.empty(), "PS shader bytecode load failed");
+			shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
+			CHECKED_CALL(GetRenderDevice().CreateShaderModule(shaderCreateInfo, &mPS));
+
+			PipelineInterfaceCreateInfo piCreateInfo = {};
+			CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
+
+			mVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+			mVertexBinding.AppendAttribute({ "COLOR", 1, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+
+			GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+			gpCreateInfo.VS = { mVS.Get(), "vsmain" };
+			gpCreateInfo.PS = { mPS.Get(), "psmain" };
+			gpCreateInfo.vertexInputState.bindingCount = 1;
+			gpCreateInfo.vertexInputState.bindings[0] = mVertexBinding;
+			gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
+			gpCreateInfo.cullMode = CULL_MODE_NONE;
+			gpCreateInfo.frontFace = FRONT_FACE_CCW;
+			gpCreateInfo.depthReadEnable = false;
+			gpCreateInfo.depthWriteEnable = false;
+			gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+			gpCreateInfo.outputState.renderTargetCount = 1;
+			gpCreateInfo.outputState.renderTargetFormats[0] = FORMAT_B8G8R8A8_UNORM;// GetSwapChain().GetFormat();
+			gpCreateInfo.pPipelineInterface = mPipelineInterface;
+			CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mPipeline));
+		}
+
+		// Per frame data
+		{
+			PerFrame frame = {};
+
+			CHECKED_CALL(GetRenderDevice().GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
+
+			SemaphoreCreateInfo semaCreateInfo = {};
+			CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
+
+			FenceCreateInfo fenceCreateInfo = {};
+			CHECKED_CALL(GetRenderDevice().CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
+
+			CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
+
+			fenceCreateInfo = { true }; // Create signaled
+			CHECKED_CALL(GetRenderDevice().CreateFence(fenceCreateInfo, &frame.renderCompleteFence));
+
+			mPerFrame.push_back(frame);
+		}
+
+		// Buffer and geometry data
+		{
+			// clang-format off
+			std::vector<float> vertexData = {
+				// position           // vertex colors
+				 0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+				-0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+				 0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
+			};
+			// clang-format on
+			uint32_t dataSize = SizeInBytesU32(vertexData);
+
+			BufferCreateInfo bufferCreateInfo = {};
+			bufferCreateInfo.size = dataSize;
+			bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
+			bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			bufferCreateInfo.initialState = RESOURCE_STATE_VERTEX_BUFFER;
+
+			CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mVertexBuffer));
+
+			void* pAddr = nullptr;
+			CHECKED_CALL(mVertexBuffer->MapMemory(0, &pAddr));
+			memcpy(pAddr, vertexData.data(), dataSize);
+			mVertexBuffer->UnmapMemory();
+		}
+	}
+
+
+	// OLD =>
+	{
+		//=======================================================================
 	// create_render_pass
 	//=======================================================================
-	{
-		VkAttachmentDescription color_attachment = {};
-		color_attachment.format = m_swapChain.GetFormat();
-		color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		VkAttachmentReference color_attachment_ref = {};
-		color_attachment_ref.attachment = 0;
-		color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		VkSubpassDescription subpass = {};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &color_attachment_ref;
-
-		VkSubpassDependency dependency = {};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-		VkRenderPassCreateInfo render_pass_info = {};
-		render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		render_pass_info.attachmentCount = 1;
-		render_pass_info.pAttachments = &color_attachment;
-		render_pass_info.subpassCount = 1;
-		render_pass_info.pSubpasses = &subpass;
-		render_pass_info.dependencyCount = 1;
-		render_pass_info.pDependencies = &dependency;
-
-		if (vkCreateRenderPass(m_instance.device, &render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
 		{
-			Fatal("failed to create render pass");
-			return false; // failed to create render pass!
-		}
-	}
+			VkAttachmentDescription color_attachment = {};
+			color_attachment.format = m_swapChain.GetFormat();
+			color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	//=======================================================================
-	// create_graphics_pipeline
-	//=======================================================================
-	{
-		auto vert_code = LoadFile("vert.spv").value();
-		auto frag_code = LoadFile("frag.spv").value();
+			VkAttachmentReference color_attachment_ref = {};
+			color_attachment_ref.attachment = 0;
+			color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		VkShaderModule vert_module = createShaderModule(m_instance.device, vert_code);
-		VkShaderModule frag_module = createShaderModule(m_instance.device, frag_code);
-		if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE)
-		{
-			Fatal("failed to create shader module");
-			return false; // failed to create shader modules
-		}
+			VkSubpassDescription subpass = {};
+			subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpass.colorAttachmentCount = 1;
+			subpass.pColorAttachments = &color_attachment_ref;
 
-		VkPipelineShaderStageCreateInfo vert_stage_info = {};
-		vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vert_stage_info.module = vert_module;
-		vert_stage_info.pName = "main";
+			VkSubpassDependency dependency = {};
+			dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+			dependency.dstSubpass = 0;
+			dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			dependency.srcAccessMask = 0;
+			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-		VkPipelineShaderStageCreateInfo frag_stage_info = {};
-		frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		frag_stage_info.module = frag_module;
-		frag_stage_info.pName = "main";
+			VkRenderPassCreateInfo render_pass_info = {};
+			render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			render_pass_info.attachmentCount = 1;
+			render_pass_info.pAttachments = &color_attachment;
+			render_pass_info.subpassCount = 1;
+			render_pass_info.pSubpasses = &subpass;
+			render_pass_info.dependencyCount = 1;
+			render_pass_info.pDependencies = &dependency;
 
-		VkPipelineShaderStageCreateInfo shader_stages[] = { vert_stage_info, frag_stage_info };
-
-		VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
-		vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertex_input_info.vertexBindingDescriptionCount = 0;
-		vertex_input_info.vertexAttributeDescriptionCount = 0;
-
-		VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
-		input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		input_assembly.primitiveRestartEnable = VK_FALSE;
-
-		VkViewport viewport = {};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)m_swapChain.GetExtent().width;
-		viewport.height = (float)m_swapChain.GetExtent().height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-
-		VkRect2D scissor = {};
-		scissor.offset = { 0, 0 };
-		scissor.extent = m_swapChain.GetExtent();
-
-		VkPipelineViewportStateCreateInfo viewport_state = {};
-		viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewport_state.viewportCount = 1;
-		viewport_state.pViewports = &viewport;
-		viewport_state.scissorCount = 1;
-		viewport_state.pScissors = &scissor;
-
-		VkPipelineRasterizationStateCreateInfo rasterizer = {};
-		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizer.depthClampEnable = VK_FALSE;
-		rasterizer.rasterizerDiscardEnable = VK_FALSE;
-		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizer.lineWidth = 1.0f;
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		rasterizer.depthBiasEnable = VK_FALSE;
-
-		VkPipelineMultisampleStateCreateInfo multisampling = {};
-		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampling.sampleShadingEnable = VK_FALSE;
-		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-		VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-		colorBlendAttachment.colorWriteMask =
-			VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_FALSE;
-
-		VkPipelineColorBlendStateCreateInfo color_blending = {};
-		color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		color_blending.logicOpEnable = VK_FALSE;
-		color_blending.logicOp = VK_LOGIC_OP_COPY;
-		color_blending.attachmentCount = 1;
-		color_blending.pAttachments = &colorBlendAttachment;
-		color_blending.blendConstants[0] = 0.0f;
-		color_blending.blendConstants[1] = 0.0f;
-		color_blending.blendConstants[2] = 0.0f;
-		color_blending.blendConstants[3] = 0.0f;
-
-		VkPipelineLayoutCreateInfo pipeline_layout_info = {};
-		pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipeline_layout_info.setLayoutCount = 0;
-		pipeline_layout_info.pushConstantRangeCount = 0;
-
-		if (vkCreatePipelineLayout(m_instance.device, &pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS)
-		{
-			Fatal("failed to create pipeline layout");
-			return -1; // failed to create pipeline layout
-		}
-
-		std::vector<VkDynamicState> dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-
-		VkPipelineDynamicStateCreateInfo dynamic_info = {};
-		dynamic_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamic_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-		dynamic_info.pDynamicStates = dynamic_states.data();
-
-		VkGraphicsPipelineCreateInfo pipeline_info = {};
-		pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipeline_info.stageCount = 2;
-		pipeline_info.pStages = shader_stages;
-		pipeline_info.pVertexInputState = &vertex_input_info;
-		pipeline_info.pInputAssemblyState = &input_assembly;
-		pipeline_info.pViewportState = &viewport_state;
-		pipeline_info.pRasterizationState = &rasterizer;
-		pipeline_info.pMultisampleState = &multisampling;
-		pipeline_info.pColorBlendState = &color_blending;
-		pipeline_info.pDynamicState = &dynamic_info;
-		pipeline_info.layout = pipelineLayout;
-		pipeline_info.renderPass = renderPass;
-		pipeline_info.subpass = 0;
-		pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-
-		if (vkCreateGraphicsPipelines(m_instance.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
-		{
-			Fatal("failed to create pipline");
-			return false; // failed to create graphics pipeline
-		}
-
-		vkDestroyShaderModule(m_instance.device, frag_module, nullptr);
-		vkDestroyShaderModule(m_instance.device, vert_module, nullptr);
-	}
-
-	//=======================================================================
-	// create_framebuffers
-	//=======================================================================
-	if (!createFramebuffers(m_instance.device, m_swapChain))
-		return false;
-
-	//=======================================================================
-	// create_command_pool
-	//=======================================================================
-	if (!createCommandPool(m_instance.device, m_instance.graphicsQueue))
-		return false;
-
-	//=======================================================================
-	// create_command_buffers
-	//=======================================================================
-	if (!createCommandBuffers(m_instance.device, m_swapChain))
-		return false;
-
-	//=======================================================================
-	// create_sync_objects
-	//=======================================================================
-	{
-		availableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		finishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
-		inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-		imageInFlight.resize(m_swapChain.GetImageNum(), nullptr);
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			inFlightFences[i] = m_device.CreateFence({ .signaled = true });
-			availableSemaphores[i] = m_device.CreateSemaphore({});
-			finishedSemaphore[i] = m_device.CreateSemaphore({});
-
-			if (availableSemaphores[i] == nullptr || finishedSemaphore[i] == nullptr || inFlightFences[i] == nullptr)
+			if (vkCreateRenderPass(m_instance.device, &render_pass_info, nullptr, &renderPass) != VK_SUCCESS)
 			{
-				Fatal("failed to create sync objects");
-				return false; // failed to create synchronization objects for a frame
+				Fatal("failed to create render pass");
+				return false; // failed to create render pass!
+			}
+		}
+
+		//=======================================================================
+		// create_graphics_pipeline
+		//=======================================================================
+		{
+			auto vert_code = LoadFile("vert.spv").value();
+			auto frag_code = LoadFile("frag.spv").value();
+
+			VkShaderModule vert_module = createShaderModule(m_instance.device, vert_code);
+			VkShaderModule frag_module = createShaderModule(m_instance.device, frag_code);
+			if (vert_module == VK_NULL_HANDLE || frag_module == VK_NULL_HANDLE)
+			{
+				Fatal("failed to create shader module");
+				return false; // failed to create shader modules
+			}
+
+			VkPipelineShaderStageCreateInfo vert_stage_info = {};
+			vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+			vert_stage_info.module = vert_module;
+			vert_stage_info.pName = "main";
+
+			VkPipelineShaderStageCreateInfo frag_stage_info = {};
+			frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+			frag_stage_info.module = frag_module;
+			frag_stage_info.pName = "main";
+
+			VkPipelineShaderStageCreateInfo shader_stages[] = { vert_stage_info, frag_stage_info };
+
+			VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+			vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+			vertex_input_info.vertexBindingDescriptionCount = 0;
+			vertex_input_info.vertexAttributeDescriptionCount = 0;
+
+			VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+			input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+			input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			input_assembly.primitiveRestartEnable = VK_FALSE;
+
+			VkViewport viewport = {};
+			viewport.x = 0.0f;
+			viewport.y = 0.0f;
+			viewport.width = (float)m_swapChain.GetExtent().width;
+			viewport.height = (float)m_swapChain.GetExtent().height;
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+
+			VkRect2D scissor = {};
+			scissor.offset = { 0, 0 };
+			scissor.extent = m_swapChain.GetExtent();
+
+			VkPipelineViewportStateCreateInfo viewport_state = {};
+			viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+			viewport_state.viewportCount = 1;
+			viewport_state.pViewports = &viewport;
+			viewport_state.scissorCount = 1;
+			viewport_state.pScissors = &scissor;
+
+			VkPipelineRasterizationStateCreateInfo rasterizer = {};
+			rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+			rasterizer.depthClampEnable = VK_FALSE;
+			rasterizer.rasterizerDiscardEnable = VK_FALSE;
+			rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+			rasterizer.lineWidth = 1.0f;
+			rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+			rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+			rasterizer.depthBiasEnable = VK_FALSE;
+
+			VkPipelineMultisampleStateCreateInfo multisampling = {};
+			multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+			multisampling.sampleShadingEnable = VK_FALSE;
+			multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+			VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+			colorBlendAttachment.colorWriteMask =
+				VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+			colorBlendAttachment.blendEnable = VK_FALSE;
+
+			VkPipelineColorBlendStateCreateInfo color_blending = {};
+			color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+			color_blending.logicOpEnable = VK_FALSE;
+			color_blending.logicOp = VK_LOGIC_OP_COPY;
+			color_blending.attachmentCount = 1;
+			color_blending.pAttachments = &colorBlendAttachment;
+			color_blending.blendConstants[0] = 0.0f;
+			color_blending.blendConstants[1] = 0.0f;
+			color_blending.blendConstants[2] = 0.0f;
+			color_blending.blendConstants[3] = 0.0f;
+
+			VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+			pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+			pipeline_layout_info.setLayoutCount = 0;
+			pipeline_layout_info.pushConstantRangeCount = 0;
+
+			if (vkCreatePipelineLayout(m_instance.device, &pipeline_layout_info, nullptr, &pipelineLayout) != VK_SUCCESS)
+			{
+				Fatal("failed to create pipeline layout");
+				return -1; // failed to create pipeline layout
+			}
+
+			std::vector<VkDynamicState> dynamic_states = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+			VkPipelineDynamicStateCreateInfo dynamic_info = {};
+			dynamic_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+			dynamic_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+			dynamic_info.pDynamicStates = dynamic_states.data();
+
+			VkGraphicsPipelineCreateInfo pipeline_info = {};
+			pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+			pipeline_info.stageCount = 2;
+			pipeline_info.pStages = shader_stages;
+			pipeline_info.pVertexInputState = &vertex_input_info;
+			pipeline_info.pInputAssemblyState = &input_assembly;
+			pipeline_info.pViewportState = &viewport_state;
+			pipeline_info.pRasterizationState = &rasterizer;
+			pipeline_info.pMultisampleState = &multisampling;
+			pipeline_info.pColorBlendState = &color_blending;
+			pipeline_info.pDynamicState = &dynamic_info;
+			pipeline_info.layout = pipelineLayout;
+			pipeline_info.renderPass = renderPass;
+			pipeline_info.subpass = 0;
+			pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+
+			if (vkCreateGraphicsPipelines(m_instance.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphicsPipeline) != VK_SUCCESS)
+			{
+				Fatal("failed to create pipline");
+				return false; // failed to create graphics pipeline
+			}
+
+			vkDestroyShaderModule(m_instance.device, frag_module, nullptr);
+			vkDestroyShaderModule(m_instance.device, vert_module, nullptr);
+		}
+
+		//=======================================================================
+		// create_framebuffers
+		//=======================================================================
+		if (!createFramebuffers(m_instance.device, m_swapChain))
+			return false;
+
+		//=======================================================================
+		// create_command_pool
+		//=======================================================================
+		if (!createCommandPool(m_instance.device, m_instance.graphicsQueue))
+			return false;
+
+		//=======================================================================
+		// create_command_buffers
+		//=======================================================================
+		if (!createCommandBuffers(m_instance.device, m_swapChain))
+			return false;
+
+		//=======================================================================
+		// create_sync_objects
+		//=======================================================================
+		{
+			availableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+			finishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
+			inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+			imageInFlight.resize(m_swapChain.GetImageNum(), nullptr);
+
+			for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+			{
+				inFlightFences[i] = m_device.CreateFence({ .signaled = true });
+				availableSemaphores[i] = m_device.CreateSemaphore({});
+				finishedSemaphore[i] = m_device.CreateSemaphore({});
+
+				if (availableSemaphores[i] == nullptr || finishedSemaphore[i] == nullptr || inFlightFences[i] == nullptr)
+				{
+					Fatal("failed to create sync objects");
+					return false; // failed to create synchronization objects for a frame
+				}
 			}
 		}
 	}
@@ -779,72 +912,138 @@ void RenderSystem::Shutdown()
 
 void RenderSystem::TestDraw()
 {
-	inFlightFences[current_frame]->Wait();
-
-	uint32_t image_index = UINT32_MAX;
-	VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, availableSemaphores[current_frame]->Get(), VK_NULL_HANDLE, &image_index);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	// NEW =>
 	{
-		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
-			Fatal("recreateSwapchain failed");
+		PerFrame& frame = mPerFrame[0];
+
+		SwapchainPtr swapchain = GetSwapchain();
+
+		// Wait for and reset render complete fence
+		CHECKED_CALL(frame.renderCompleteFence->WaitAndReset());
+
+		uint32_t imageIndex = UINT32_MAX;
+		CHECKED_CALL(swapchain->AcquireNextImage(UINT64_MAX, frame.imageAcquiredSemaphore, frame.imageAcquiredFence, &imageIndex));
+
+		// Wait for and reset image acquired fence
+		CHECKED_CALL(frame.imageAcquiredFence->WaitAndReset());
+
+		// Build command buffer
+		CHECKED_CALL(frame.cmd->Begin());
+		{
+			RenderPassPtr renderPass = swapchain->GetRenderPass(imageIndex);
+			ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
+
+			RenderPassBeginInfo beginInfo = {};
+			beginInfo.pRenderPass = renderPass;
+			beginInfo.renderArea = renderPass->GetRenderArea();
+			beginInfo.RTVClearCount = 1;
+			beginInfo.RTVClearValues[0] = { {1, 0, 0, 1} };
+
+			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+			frame.cmd->BeginRenderPass(&beginInfo);
+			{
+				frame.cmd->SetScissors(GetScissor());
+				frame.cmd->SetViewports(GetViewport());
+				frame.cmd->BindGraphicsDescriptorSets(mPipelineInterface, 0, nullptr);
+				frame.cmd->BindGraphicsPipeline(mPipeline);
+				frame.cmd->BindVertexBuffers(1, &mVertexBuffer, &mVertexBinding.GetStride());
+				frame.cmd->Draw(3, 1, 0, 0);
+
+				// Draw ImGui
+				DrawDebugInfo();
+				DrawImGui(frame.cmd);
+			}
+			frame.cmd->EndRenderPass();
+			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		}
+		CHECKED_CALL(frame.cmd->End());
+
+		SubmitInfo submitInfo = {};
+		submitInfo.commandBufferCount = 1;
+		submitInfo.ppCommandBuffers = &frame.cmd;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.ppWaitSemaphores = &frame.imageAcquiredSemaphore;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.ppSignalSemaphores = &frame.renderCompleteSemaphore;
+		submitInfo.pFence = frame.renderCompleteFence;
+
+		CHECKED_CALL(GetGraphicsQueue()->Submit(&submitInfo));
+
+		CHECKED_CALL(swapchain->Present(imageIndex, 1, &frame.renderCompleteSemaphore));
+
 		return;
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+
+
+	// OLD =>
 	{
-		Fatal("failed to acquire swapchain image. Error " + result);
-		return;
+		inFlightFences[current_frame]->Wait();
+
+		uint32_t image_index = UINT32_MAX;
+		VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, availableSemaphores[current_frame]->Get(), VK_NULL_HANDLE, &image_index);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
+				Fatal("recreateSwapchain failed");
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			Fatal("failed to acquire swapchain image. Error " + result);
+			return;
+		}
+
+		if (imageInFlight[image_index] != nullptr)
+		{
+			imageInFlight[image_index]->Wait();
+		}
+		imageInFlight[image_index] = inFlightFences[current_frame];
+
+		VkSemaphore wait_semaphores[] = { availableSemaphores[current_frame]->Get() };
+		VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSemaphore signal_semaphores[] = { finishedSemaphore[current_frame]->Get() };
+
+		VkSubmitInfo submitInfo = { .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO }; // TODO: переделать
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = wait_semaphores;
+		submitInfo.pWaitDstStageMask = wait_stages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &command_buffers[image_index];
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signal_semaphores;
+
+		inFlightFences[current_frame]->Reset();
+
+		if (vkQueueSubmit(m_instance.graphicsQueue->Queue, 1, &submitInfo, inFlightFences[current_frame]->Get()) != VK_SUCCESS)
+		{
+			Fatal("failed to submit draw command buffer");
+			return; //"failed to submit draw command buffer
+		}
+
+		VkSwapchainKHR swapChains[] = { m_swapChain.Get() };
+
+		VkPresentInfoKHR present_info = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+		present_info.waitSemaphoreCount = 1;
+		present_info.pWaitSemaphores = signal_semaphores;
+		present_info.swapchainCount = 1;
+		present_info.pSwapchains = swapChains;
+		present_info.pImageIndices = &image_index;
+
+		result = vkQueuePresentKHR(m_instance.presentQueue->Queue, &present_info);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		{
+			if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
+				Fatal("recreateSwapchain failed");
+			return;
+		}
+		else if (result != VK_SUCCESS)
+		{
+			Fatal("failed to present swapchain image");
+			return;
+		}
+
+		current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
-
-	if (imageInFlight[image_index] != nullptr)
-	{
-		imageInFlight[image_index]->Wait();
-	}
-	imageInFlight[image_index] = inFlightFences[current_frame];
-
-	VkSemaphore wait_semaphores[] = { availableSemaphores[current_frame]->Get()};
-	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	VkSemaphore signal_semaphores[] = { finishedSemaphore[current_frame]->Get() };
-
-	VkSubmitInfo submitInfo = { .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO }; // TODO: переделать
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = wait_semaphores;
-	submitInfo.pWaitDstStageMask = wait_stages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &command_buffers[image_index];
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signal_semaphores;
-
-	inFlightFences[current_frame]->Reset();
-
-	if (vkQueueSubmit(m_instance.graphicsQueue->Queue, 1, &submitInfo, inFlightFences[current_frame]->Get()) != VK_SUCCESS)
-	{
-		Fatal("failed to submit draw command buffer");
-		return; //"failed to submit draw command buffer
-	}
-
-	VkSwapchainKHR swapChains[] = { m_swapChain.Get()};
-
-	VkPresentInfoKHR present_info = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
-	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = signal_semaphores;
-	present_info.swapchainCount = 1;
-	present_info.pSwapchains = swapChains;
-	present_info.pImageIndices = &image_index;
-
-	result = vkQueuePresentKHR(m_instance.presentQueue->Queue, &present_info);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
-			Fatal("recreateSwapchain failed");
-		return;
-	}
-	else if (result != VK_SUCCESS)
-	{
-		Fatal("failed to present swapchain image");
-		return ;
-	}
-
-	current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 #pragma endregion
