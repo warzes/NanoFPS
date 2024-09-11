@@ -874,17 +874,17 @@ std::string ToString(const gli::format& format)
 
 #pragma region Vk Utils
 
-const char* ToString(VkResult value)
+std::string ToString(VkResult value)
 {
 	return string_VkResult(value);
 }
 
-const char* ToString(VkDescriptorType value)
+std::string ToString(VkDescriptorType value)
 {
 	return string_VkDescriptorType(value);	
 }
 
-const char* ToString(VkPresentModeKHR value)
+std::string ToString(VkPresentModeKHR value)
 {
 	return string_VkPresentModeKHR(value);
 }

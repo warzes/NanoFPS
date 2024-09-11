@@ -144,6 +144,7 @@ private:
 
 struct SwapChainCreateInfo final
 {
+	Queue*              queue = nullptr;
 	ShadingRatePattern* shadingRatePattern = nullptr;
 	uint32_t            width = 0;
 	uint32_t            height = 0;
@@ -160,6 +161,7 @@ public:
 	VulkanSwapChain(RenderSystem& render);
 
 	bool Setup(const SwapChainCreateInfo& createInfo);
+	void Shutdown2();
 
 	uint32_t GetWidth() const { return m_createInfo.width; }
 	uint32_t GetHeight() const { return m_createInfo.height; }
@@ -193,14 +195,16 @@ public:
 
 	uint32_t GetCurrentImageIndex() const { return m_currentImageIndex; }
 
+	VkSwapchainKHR& GetVkSwapChain() { return m_swapChain; }
+
 	// OLD =>
 
 	[[nodiscard]] bool Resize(uint32_t width, uint32_t height);
-	void Shutdown();
+	void Close();
 
 	VkFormat GetFormat();
 
-	VkSwapchainKHR& Get() { return m_swapChain; }
+
 	size_t GetImageNum() const { return m_swapChainImages.size(); }
 	size_t GetImageViewNum() const { return m_swapChainImageViews.size(); }
 	VkImageView& GetImageView(size_t i);
@@ -227,22 +231,12 @@ private:
 		uint32_t                waitSemaphoreCount,
 		const Semaphore* const* ppWaitSemaphores);// TODO: перенесети в Present
 
-	Result acquireNextImageHeadless(
-		uint64_t   timeout,
-		Semaphore* pSemaphore,
-		Fence*     pFence,
-		uint32_t*  pImageIndex); // TODO: возможно не нужно. это без surface
-
-	Result presentHeadless(
-		uint32_t                imageIndex,
-		uint32_t                waitSemaphoreCount,
-		const Semaphore* const* ppWaitSemaphores); // TODO: возможно не нужно. это без surface
-
 	RenderSystem&                    m_render;
 	VulkanSurface                    m_surface;
 	SwapChainCreateInfo              m_createInfo;
 
-	std::vector<CommandBufferPtr>    m_headlessCommandBuffers;// TODO: возможно не нужно. это без surface
+	VkSwapchainKHR                   m_swapChain{ nullptr };
+
 	QueuePtr                         m_queue;
 	std::vector<ImagePtr>            m_depthImages;
 	std::vector<ImagePtr>            m_colorImages;
@@ -258,8 +252,6 @@ private:
 
 
 
-
-	VkSwapchainKHR           m_swapChain{ nullptr };
 	VkFormat                 m_colorFormat{ VK_FORMAT_B8G8R8A8_UNORM };
 	std::vector<VkImage>     m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
@@ -306,6 +298,11 @@ public:
 
 	[[nodiscard]] RenderDevice& GetRenderDevice() { return m_device; }
 	[[nodiscard]] VulkanSwapChain& GetSwapChain() { return m_swapChain; }
+
+	[[nodiscard]] QueuePtr GetGraphicsQueue() { return GetRenderDevice().GetGraphicsQueue(); }
+
+	[[nodiscard]] Rect GetScissor() const;
+	[[nodiscard]] Viewport GetViewport(float minDepth = 0.0f, float maxDepth = 1.0f) const;
 
 private:
 	EngineApplication& m_engine;

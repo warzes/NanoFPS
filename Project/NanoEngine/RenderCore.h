@@ -1582,9 +1582,9 @@ const uint32_t kGraphicsQueueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT
 const uint32_t kComputeQueueMask  = VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 const uint32_t kTransferQueueMask = VK_QUEUE_TRANSFER_BIT;
 
-const char* ToString(VkResult value);
-const char* ToString(VkDescriptorType value);
-const char* ToString(VkPresentModeKHR value);
+std::string ToString(VkResult value);
+std::string ToString(VkDescriptorType value);
+std::string ToString(VkPresentModeKHR value);
 
 VkAttachmentLoadOp            ToVkAttachmentLoadOp(AttachmentLoadOp value);
 VkAttachmentStoreOp           ToVkAttachmentStoreOp(AttachmentStoreOp value);

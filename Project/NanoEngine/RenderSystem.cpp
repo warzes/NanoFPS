@@ -425,10 +425,7 @@ uint32_t VulkanSurface::GetCurrentImageHeight() const
 
 #pragma endregion
 
-
 #pragma region VulkanSwapchain
-
-
 
 VulkanSwapChain::VulkanSwapChain(RenderSystem& render)
 	: m_render(render)
@@ -440,7 +437,349 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 {
 	m_createInfo = createInfo;
 
-	return false;
+	ASSERT_NULL_ARG(createInfo.queue);
+	if (IsNull(createInfo.queue)) return false;
+
+	m_surface.Setup();
+
+	// Vulkan create
+	{
+		std::vector<VkImage> colorImages;
+		std::vector<VkImage> depthImages;
+
+#if 1
+		{
+			// Currently, we're going to assume IDENTITY for all platforms.
+			// On Android we will incur the cost of the compositor doing the rotation for us. We don't currently have the facilities in place to inform the application of orientation changes and supply it with the correct pretransform matrix.
+			VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+			// Surface capabilities check
+			{
+				bool  isImageCountValid = false;
+				const VkSurfaceCapabilitiesKHR& caps = m_surface.GetCapabilities();
+				if (caps.maxImageCount > 0)
+				{
+					bool isInBoundsMin = (m_createInfo.imageCount >= caps.minImageCount);
+					bool isInBoundsMax = (m_createInfo.imageCount <= caps.maxImageCount);
+					isImageCountValid = isInBoundsMin && isInBoundsMax;
+				}
+				else
+				{
+					isImageCountValid = (m_createInfo.imageCount >= caps.minImageCount);
+				}
+				if (!isImageCountValid)
+				{
+					ASSERT_MSG(false, "Invalid swapchain image count");
+					return false;
+				}
+			}
+
+			// Surface format
+			VkSurfaceFormatKHR surfaceFormat = {};
+			{
+				VkFormat format = ToVkFormat(m_createInfo.colorFormat);
+				if (format == VK_FORMAT_UNDEFINED)
+				{
+					ASSERT_MSG(false, "Invalid swapchain format");
+					return false;
+				}
+
+				const std::vector<VkSurfaceFormatKHR>& surfaceFormats = m_surface .GetSurfaceFormats();
+				auto it = std::find_if(
+					std::begin(surfaceFormats),
+					std::end(surfaceFormats),
+					[format](const VkSurfaceFormatKHR& elem) -> bool {
+						bool isMatch = (elem.format == format);
+						return isMatch; });
+
+				if (it == std::end(surfaceFormats))
+				{
+					ASSERT_MSG(false, "Unsupported swapchain format");
+					return false;
+				}
+
+				surfaceFormat = *it;
+			}
+
+			// Present mode
+			VkPresentModeKHR presentMode = ToVkPresentMode(createInfo.presentMode);
+			if (presentMode == InvalidValue<VkPresentModeKHR>())
+			{
+				ASSERT_MSG(false, "Invalid swapchain present mode");
+				return false;
+			}
+			// Fall back if present mode isn't supported
+			{
+				uint32_t count = 0;
+				VkResult vkres = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
+				if (vkres != VK_SUCCESS)
+				{
+					ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+					return false;
+				}
+
+				std::vector<VkPresentModeKHR> presentModes(count);
+				vkres = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, presentModes.data());
+				if (vkres != VK_SUCCESS)
+				{
+					ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+					return false;
+				}
+
+				bool supported = false;
+				for (uint32_t i = 0; i < count; ++i)
+				{
+					if (presentMode == presentModes[i])
+					{
+						supported = true;
+						break;
+					}
+				}
+				if (!supported)
+				{
+					Warning("Switching Vulkan present mode to VK_PRESENT_MODE_FIFO_KHR because " + ToString(presentMode) + " is not supported");
+					presentMode = VK_PRESENT_MODE_FIFO_KHR;
+				}
+			}
+
+			// Image usage
+			// NOTE: D3D12 support for DXGI_USAGE_UNORDERED_ACCESS is pretty spotty so we'll leave out VK_IMAGE_USAGE_STORAGE_BIT for now to keep the swwapchains between D3D12 and Vulkan as equivalent as possible.
+			VkImageUsageFlags usageFlags =
+				VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+				VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+				VK_IMAGE_USAGE_SAMPLED_BIT |
+				VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+			// Create swapchain
+			VkSwapchainCreateInfoKHR vkci = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+			vkci.pNext = nullptr;
+			vkci.flags = 0;
+			vkci.surface = m_render.GetVkSurface();
+			vkci.minImageCount = createInfo.imageCount;
+			vkci.imageFormat = surfaceFormat.format;
+			vkci.imageColorSpace = surfaceFormat.colorSpace;
+			vkci.imageExtent = { createInfo.width, createInfo.height };
+			vkci.imageArrayLayers = 1;
+			vkci.imageUsage = usageFlags;
+			vkci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			vkci.queueFamilyIndexCount = 0;
+			vkci.pQueueFamilyIndices = nullptr;
+			vkci.preTransform = preTransform;
+			vkci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+			vkci.presentMode = presentMode;
+			vkci.clipped = VK_FALSE;
+			vkci.oldSwapchain = VK_NULL_HANDLE;
+
+			VkResult vkres = vkCreateSwapchainKHR(m_render.GetVkDevice(), &vkci, nullptr, &m_swapChain);
+			if (vkres != VK_SUCCESS)
+			{
+				ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+				return false;
+			}
+
+			uint32_t imageCount = 0;
+			vkres = vkGetSwapchainImagesKHR(m_render.GetVkDevice(), m_swapChain, &imageCount, nullptr);
+			if (vkres != VK_SUCCESS)
+			{
+				ASSERT_MSG(false, "vkGetSwapchainImagesKHR(0) failed: " + ToString(vkres));
+				return false;
+			}
+			Print("Vulkan swapchain image count: " + std::to_string(imageCount));
+
+			if (imageCount > 0)
+			{
+				colorImages.resize(imageCount);
+				vkres = vkGetSwapchainImagesKHR(m_render.GetVkDevice(), m_swapChain, &imageCount, colorImages.data());
+				if (vkres != VK_SUCCESS)
+				{
+					ASSERT_MSG(false, "vkGetSwapchainImagesKHR(1) failed: " + ToString(vkres));
+					return false;
+				}
+			}
+		}
+#else
+		{
+			vkb::SwapchainBuilder swapChainBuilder{ m_render.GetVkPhysicalDevice(), m_render.GetVkDevice(), m_render.GetVkSurface() };
+
+			const VkSurfaceFormatKHR surfaceFormat
+			{
+				.format = m_colorFormat,
+				.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+			};
+
+			auto swapChainRet = swapChainBuilder
+				//.use_default_format_selection()
+				.set_desired_format(surfaceFormat)
+				.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // TODO: VK_PRESENT_MODE_MAILBOX_KHR эффективней но пока крашится
+				.set_desired_extent(width, height)
+				//.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+				.build();
+			if (!swapChainRet)
+			{
+				Fatal(swapChainRet.error().message() + " " + std::string(string_VkResult(swapChainRet.vk_result())));
+				return false;
+			}
+
+			vkb::Swapchain vkbSwapchain = swapChainRet.value();
+
+			m_swapChain = vkbSwapchain.swapchain;
+			m_swapChainExtent = vkbSwapchain.extent;
+			m_swapChainImages = vkbSwapchain.get_images().value();
+			m_swapChainImageViews = vkbSwapchain.get_image_views().value();
+		}
+#endif
+		// Transition images from VK_IMAGE_LAYOUT_UNDEFINED to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR.
+		{
+			VkImageLayout newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			for (uint32_t i = 0; i < colorImages.size(); ++i) 
+			{
+				VkResult vkres = createInfo.queue->TransitionImageLayout(
+					colorImages[i],                     // image
+					VK_IMAGE_ASPECT_COLOR_BIT,          // aspectMask
+					0,                                  // baseMipLevel
+					1,                                  // levelCount
+					0,                                  // baseArrayLayer
+					createInfo.arrayLayerCount,       // layerCount
+					VK_IMAGE_LAYOUT_UNDEFINED,          // oldLayout
+					newLayout,                          // newLayout
+					VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT); // newPipelineStage
+				if (vkres != VK_SUCCESS)
+				{
+					ASSERT_MSG(false, "Queue::TransitionImageLayout failed: " + ToString(vkres));
+					return false;
+				}
+			}
+		}
+
+		// Create images.
+		{
+			for (uint32_t i = 0; i < colorImages.size(); ++i)
+			{
+				ImageCreateInfo imageCreateInfo = {};
+				imageCreateInfo.type = IMAGE_TYPE_2D;
+				imageCreateInfo.width = createInfo.width;
+				imageCreateInfo.height = createInfo.height;
+				imageCreateInfo.depth = 1;
+				imageCreateInfo.format = createInfo.colorFormat;
+				imageCreateInfo.sampleCount = SAMPLE_COUNT_1;
+				imageCreateInfo.mipLevelCount = 1;
+				imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
+				imageCreateInfo.usageFlags.bits.transferSrc = true;
+				imageCreateInfo.usageFlags.bits.transferDst = true;
+				imageCreateInfo.usageFlags.bits.sampled = true;
+				imageCreateInfo.usageFlags.bits.storage = true;
+				imageCreateInfo.usageFlags.bits.colorAttachment = true;
+				imageCreateInfo.pApiObject = (void*)(colorImages[i]);
+
+				ImagePtr image;
+				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);
+				if (Failed(ppxres))
+				{
+					ASSERT_MSG(false, "image create failed");
+					return false;
+				}
+
+				m_colorImages.push_back(image);
+			}
+
+			for (size_t i = 0; i < depthImages.size(); ++i)
+			{
+				ImageCreateInfo imageCreateInfo = ImageCreateInfo::DepthStencilTarget(createInfo.width, createInfo.height, createInfo.depthFormat, SAMPLE_COUNT_1);
+				imageCreateInfo.pApiObject = (void*)(depthImages[i]);
+				imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
+				ImagePtr image;
+				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);
+				if (Failed(ppxres))
+				{
+					ASSERT_MSG(false, "image create failed");
+					return false;
+				}
+
+				m_depthImages.push_back(image);
+			}
+		}
+
+		// Save queue for presentation.
+		m_queue = createInfo.queue;
+
+
+
+
+
+	}
+
+
+	// Update the stored create info's image count since the actual number of images might be different (hopefully more) than what was originally requested.
+	m_createInfo.imageCount = CountU32(m_colorImages);
+
+	if (m_createInfo.imageCount != createInfo.imageCount)
+	{
+		Print(std::string("Swapchain actual image count is different from what was requested\n")
+			+ "   actual    : " + std::to_string(createInfo.imageCount) + "\n"
+			+ "   requested : " + std::to_string(createInfo.imageCount));
+	}
+
+	// NOTE: mCreateInfo will be used from this point on.
+
+	// Create color images if needed. This is only needed if we're creating a headless swapchain.
+	if (m_colorImages.empty())
+	{
+		for (uint32_t i = 0; i < m_createInfo.imageCount; ++i)
+		{
+			ImageCreateInfo rtCreateInfo = ImageCreateInfo::RenderTarget2D(m_createInfo.width, m_createInfo.height, m_createInfo.colorFormat);
+			rtCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			rtCreateInfo.RTVClearValue = { 0.0f, 0.0f, 0.0f, 0.0f };
+			rtCreateInfo.initialState = RESOURCE_STATE_PRESENT;
+			rtCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
+			rtCreateInfo.usageFlags =
+				IMAGE_USAGE_COLOR_ATTACHMENT |
+				IMAGE_USAGE_TRANSFER_SRC |
+				IMAGE_USAGE_TRANSFER_DST |
+				IMAGE_USAGE_SAMPLED;
+
+			ImagePtr renderTarget;
+			auto ppxres = m_render.GetRenderDevice().CreateImage(rtCreateInfo, &renderTarget);
+			if (Failed(ppxres)) {
+				return false; // TODO: error
+			}
+
+			m_colorImages.push_back(renderTarget);
+		}
+	}
+
+	// Create depth images if needed. This is usually needed for both normal swapchains and headless swapchains, but not needed for XR swapchains which create their own depth images.
+	//
+	auto ppxres = createDepthImages();
+	if (Failed(ppxres)) {
+		return false; // TODO: error
+	}
+
+	ppxres = createRenderTargets();
+	if (Failed(ppxres)) {
+		return false; // TODO: error
+	}
+
+	ppxres = createRenderPasses();
+	if (Failed(ppxres)) {
+		return false; // TODO: error
+	}
+
+	Print("Swapchain created");
+	Print("   " + std::string("resolution  : ") + std::to_string(m_createInfo.width) + "x" + std::to_string(m_createInfo.height));
+	Print("   " + std::string("image count : ") + std::to_string(m_createInfo.imageCount));
+
+	return true;
+}
+
+void VulkanSwapChain::Shutdown2()
+{
+	destroyRenderPasses();
+	destroyRenderTargets();
+	destroyDepthImages();
+	destroyColorImages();
+
+	if (m_swapChain)
+		vkDestroySwapchainKHR(m_render.GetVkDevice(), m_swapChain, nullptr);
 }
 
 Result VulkanSwapChain::GetColorImage(uint32_t imageIndex, Image** ppImage) const
@@ -774,9 +1113,71 @@ void VulkanSwapChain::destroyRenderTargets()
 	m_loadDepthStencilViews.clear();
 }
 
+Result VulkanSwapChain::acquireNextImageInternal(uint64_t timeout, Semaphore* pSemaphore, Fence* pFence, uint32_t* pImageIndex)
+{
+	VkSemaphore semaphore = VK_NULL_HANDLE;
+	if (!IsNull(pSemaphore))
+	{
+		semaphore = pSemaphore->GetVkSemaphore();
+	}
 
+	VkFence fence = VK_NULL_HANDLE;
+	if (!IsNull(pFence))
+	{
+		fence = pFence->GetVkFence();
+	}
 
+	VkResult vkres = vkAcquireNextImageKHR(m_render.GetVkDevice(), m_swapChain, timeout, semaphore, fence, pImageIndex);
 
+	// Handle failure cases
+	if (vkres < VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkAcquireNextImageKHR failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+	// Handle warning cases
+	if (vkres > VK_SUCCESS)
+	{
+		Warning("vkAcquireNextImageKHR returned: " + ToString(vkres));
+	}
+
+	m_currentImageIndex = *pImageIndex;
+
+	return SUCCESS;
+}
+
+Result VulkanSwapChain::presentInternal(uint32_t imageIndex, uint32_t waitSemaphoreCount, const Semaphore* const* ppWaitSemaphores)
+{
+	std::vector<VkSemaphore> semaphores;
+	for (uint32_t i = 0; i < waitSemaphoreCount; ++i)
+	{
+		VkSemaphore semaphore = ppWaitSemaphores[i]->GetVkSemaphore();
+		semaphores.push_back(semaphore);
+	}
+
+	VkPresentInfoKHR vkpi = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+	vkpi.waitSemaphoreCount = CountU32(semaphores);
+	vkpi.pWaitSemaphores = DataPtr(semaphores);
+	vkpi.swapchainCount = 1;
+	vkpi.pSwapchains = &m_swapChain;
+	vkpi.pImageIndices = &imageIndex;
+	vkpi.pResults = nullptr;
+
+	VkResult vkres = vkQueuePresentKHR(m_queue->GetQueue()->Queue, &vkpi);
+	// Handle failure cases
+	if (vkres < VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkQueuePresentKHR failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+	// Handle warning cases
+	if (vkres > VK_SUCCESS)
+	{
+		Warning("vkQueuePresentKHR returned: " + ToString(vkres));
+	}
+
+	return SUCCESS;
+}
 
 
 // OLD =>
@@ -786,7 +1187,7 @@ bool VulkanSwapChain::Resize(uint32_t width, uint32_t height)
 
 
 
-	Shutdown();
+	Close();
 
 	vkb::SwapchainBuilder swapChainBuilder{ m_render.GetVkPhysicalDevice(), m_render.GetVkDevice(), m_render.GetVkSurface() };
 
@@ -819,7 +1220,7 @@ bool VulkanSwapChain::Resize(uint32_t width, uint32_t height)
 	return true;
 }
 
-void VulkanSwapChain::Shutdown()
+void VulkanSwapChain::Close()
 {
 	if (m_render.GetVkDevice())
 	{
@@ -1059,8 +1460,8 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
 	if (!m_instance.Setup(createInfo.instance, m_engine.GetWindow().GetWindow()))
 		return false;
-	if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
-		return false;
+	//if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
+	//	return false;
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;
 
@@ -1149,6 +1550,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		}
 	}
 
+	return true;
 
 	// OLD =>
 	{
@@ -1399,7 +1801,7 @@ void RenderSystem::Shutdown()
 	vkDestroyPipelineLayout(m_instance.device, pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_instance.device, renderPass, nullptr);
 
-	m_swapChain.Shutdown();
+	m_swapChain.Close();
 	m_instance.Shutdown();	
 }
 
@@ -1409,13 +1811,11 @@ void RenderSystem::TestDraw()
 	{
 		PerFrame& frame = mPerFrame[0];
 
-		SwapchainPtr swapchain = GetSwapchain();
-
 		// Wait for and reset render complete fence
 		CHECKED_CALL(frame.renderCompleteFence->WaitAndReset());
 
 		uint32_t imageIndex = UINT32_MAX;
-		CHECKED_CALL(swapchain->AcquireNextImage(UINT64_MAX, frame.imageAcquiredSemaphore, frame.imageAcquiredFence, &imageIndex));
+		CHECKED_CALL(m_swapChain.AcquireNextImage(UINT64_MAX, frame.imageAcquiredSemaphore, frame.imageAcquiredFence, &imageIndex));
 
 		// Wait for and reset image acquired fence
 		CHECKED_CALL(frame.imageAcquiredFence->WaitAndReset());
@@ -1423,7 +1823,7 @@ void RenderSystem::TestDraw()
 		// Build command buffer
 		CHECKED_CALL(frame.cmd->Begin());
 		{
-			RenderPassPtr renderPass = swapchain->GetRenderPass(imageIndex);
+			RenderPassPtr renderPass = m_swapChain.GetRenderPass(imageIndex);
 			ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
 			RenderPassBeginInfo beginInfo = {};
@@ -1462,7 +1862,7 @@ void RenderSystem::TestDraw()
 
 		CHECKED_CALL(GetGraphicsQueue()->Submit(&submitInfo));
 
-		CHECKED_CALL(swapchain->Present(imageIndex, 1, &frame.renderCompleteSemaphore));
+		CHECKED_CALL(m_swapChain.Present(imageIndex, 1, &frame.renderCompleteSemaphore));
 
 		return;
 	}
@@ -1473,7 +1873,7 @@ void RenderSystem::TestDraw()
 		inFlightFences[current_frame]->Wait();
 
 		uint32_t image_index = UINT32_MAX;
-		VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.Get(), UINT64_MAX, availableSemaphores[current_frame]->Get(), VK_NULL_HANDLE, &image_index);
+		VkResult result = vkAcquireNextImageKHR(m_instance.device, m_swapChain.GetVkSwapChain(), UINT64_MAX, availableSemaphores[current_frame]->Get(), VK_NULL_HANDLE, &image_index);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			if (recreateSwapchain(m_swapChain, m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight(), m_instance.physicalDevice, m_instance.device, m_instance.surface, m_instance.graphicsQueue) != 0)
@@ -1513,7 +1913,7 @@ void RenderSystem::TestDraw()
 			return; //"failed to submit draw command buffer
 		}
 
-		VkSwapchainKHR swapChains[] = { m_swapChain.Get() };
+		VkSwapchainKHR swapChains[] = { m_swapChain.GetVkSwapChain() };
 
 		VkPresentInfoKHR present_info = { .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
 		present_info.waitSemaphoreCount = 1;
@@ -1537,6 +1937,28 @@ void RenderSystem::TestDraw()
 
 		current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
+}
+
+Rect RenderSystem::GetScissor() const
+{
+	Rect rect = {};
+	rect.x = 0;
+	rect.y = 0;
+	rect.width = m_engine.GetWindow().GetWidth();
+	rect.height = m_engine.GetWindow().GetHeight();
+	return rect;
+}
+
+Viewport RenderSystem::GetViewport(float minDepth, float maxDepth) const
+{
+	Viewport viewport = {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(m_engine.GetWindow().GetWidth());
+	viewport.height = static_cast<float>(m_engine.GetWindow().GetHeight());
+	viewport.minDepth = minDepth;
+	viewport.maxDepth = maxDepth;
+	return viewport;
 }
 
 #pragma endregion
