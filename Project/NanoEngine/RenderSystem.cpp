@@ -284,15 +284,508 @@ bool VulkanInstance::getDeviceInfo()
 
 #pragma endregion
 
-#pragma region VulkanSwapchain
+#pragma region VulkanSurface
 
-VulkanSwapchain::VulkanSwapchain(RenderSystem& render)
+VulkanSurface::VulkanSurface(RenderSystem& render)
 	: m_render(render)
 {
 }
 
-bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
+bool VulkanSurface::Setup()
 {
+	VkResult result = VK_SUCCESS;
+	VkSurfaceCapabilitiesKHR surfaceCaps = {};
+	result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &surfaceCaps);
+	if (result != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed: " + ToString(result));
+		return false;
+	}
+
+	Print("Vulkan swapchain surface info");
+	Print("   minImageCount : " + std::to_string(surfaceCaps.minImageCount));
+	Print("   maxImageCount : " + std::to_string(surfaceCaps.maxImageCount));
+
+	// Surface formats
+	{
+		uint32_t count = 0;
+
+		result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
+		if (result != VK_SUCCESS)
+		{
+			ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceFormatsKHR(0) failed: " + ToString(result));
+			return false;
+		}
+
+		if (count > 0)
+		{
+			m_surfaceFormats.resize(count);
+
+			result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, m_surfaceFormats.data());
+			if (result != VK_SUCCESS)
+			{
+				ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceFormatsKHR(1) failed: " + ToString(result));
+				return false;
+			}
+		}
+	}
+
+	// Present modes
+	{
+		uint32_t count = 0;
+
+		result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
+		if (result != VK_SUCCESS)
+		{
+			ASSERT_MSG(false, "vkGetPhysicalDeviceSurfacePresentModesKHR(0) failed: " + ToString(result));
+			return false;
+		}
+
+		if (count > 0)
+		{
+			m_presentModes.resize(count);
+
+			result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, m_presentModes.data());
+			if (result != VK_SUCCESS)
+			{
+				ASSERT_MSG(false, "vkGetPhysicalDeviceSurfacePresentModesKHR(1) failed: " + ToString(result));
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+VkSurfaceCapabilitiesKHR VulkanSurface::GetCapabilities() const
+{
+	VkSurfaceCapabilitiesKHR surfaceCaps = {};
+	VkResult                 vkres = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+		m_render.GetVkPhysicalDevice(),
+		m_render.GetVkSurface(),
+		&surfaceCaps);
+	if (vkres != VK_SUCCESS)
+	{
+		ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(1) failed: " + ToString(vkres));
+	}
+	return surfaceCaps;
+}
+
+uint32_t VulkanSurface::GetMinImageWidth() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.minImageExtent.width;
+}
+
+uint32_t VulkanSurface::GetMinImageHeight() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.minImageExtent.height;
+}
+
+uint32_t VulkanSurface::GetMinImageCount() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.minImageCount;
+}
+
+uint32_t VulkanSurface::GetMaxImageWidth() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.maxImageExtent.width;
+}
+
+uint32_t VulkanSurface::GetMaxImageHeight() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.maxImageExtent.height;
+}
+
+uint32_t VulkanSurface::GetMaxImageCount() const
+{
+	auto surfaceCaps = GetCapabilities();
+	return surfaceCaps.maxImageCount;
+}
+
+uint32_t VulkanSurface::GetCurrentImageWidth() const
+{
+	auto surfaceCaps = GetCapabilities();
+	// When surface size is determined by swapchain size
+	//   currentExtent.width == kInvalidExtend
+	return surfaceCaps.currentExtent.width;
+}
+
+uint32_t VulkanSurface::GetCurrentImageHeight() const
+{
+	auto surfaceCaps = GetCapabilities();
+	// When surface size is determined by swapchain size
+	//   currentExtent.height == kInvalidExtend
+	return surfaceCaps.currentExtent.height;
+}
+
+#pragma endregion
+
+
+#pragma region VulkanSwapchain
+
+
+
+VulkanSwapChain::VulkanSwapChain(RenderSystem& render)
+	: m_render(render)
+	, m_surface(render)
+{
+}
+
+bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
+{
+	m_createInfo = createInfo;
+
+	return false;
+}
+
+Result VulkanSwapChain::GetColorImage(uint32_t imageIndex, Image** ppImage) const
+{
+	if (!IsIndexInRange(imageIndex, m_colorImages))
+	{
+		return ERROR_OUT_OF_RANGE;
+	}
+	*ppImage = m_colorImages[imageIndex];
+	return SUCCESS;
+}
+
+Result VulkanSwapChain::GetDepthImage(uint32_t imageIndex, Image** ppImage) const
+{
+	if (!IsIndexInRange(imageIndex, m_depthImages))
+	{
+		return ERROR_OUT_OF_RANGE;
+	}
+	*ppImage = m_depthImages[imageIndex];
+	return SUCCESS;
+}
+
+Result VulkanSwapChain::GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp, RenderPass** ppRenderPass) const
+{
+	if (!IsIndexInRange(imageIndex, m_clearRenderPasses))
+	{
+		return ERROR_OUT_OF_RANGE;
+	}
+	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	{
+		*ppRenderPass = m_clearRenderPasses[imageIndex];
+	}
+	else {
+		*ppRenderPass = m_loadRenderPasses[imageIndex];
+	}
+	return SUCCESS;
+}
+
+Result VulkanSwapChain::GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp, RenderTargetView** ppView) const
+{
+	if (!IsIndexInRange(imageIndex, m_clearRenderTargets))
+	{
+		return ERROR_OUT_OF_RANGE;
+	}
+	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	{
+		*ppView = m_clearRenderTargets[imageIndex];
+	}
+	else
+	{
+		*ppView = m_loadRenderTargets[imageIndex];
+	}
+	return SUCCESS;
+}
+
+Result VulkanSwapChain::GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp, DepthStencilView** ppView) const
+{
+	if (!IsIndexInRange(imageIndex, m_clearDepthStencilViews))
+	{
+		return ERROR_OUT_OF_RANGE;
+	}
+	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	{
+		*ppView = m_clearDepthStencilViews[imageIndex];
+	}
+	else {
+		*ppView = m_loadDepthStencilViews[imageIndex];
+	}
+	return SUCCESS;
+}
+
+ImagePtr VulkanSwapChain::GetColorImage(uint32_t imageIndex) const
+{
+	ImagePtr object;
+	GetColorImage(imageIndex, &object);
+	return object;
+}
+
+ImagePtr VulkanSwapChain::GetDepthImage(uint32_t imageIndex) const
+{
+	ImagePtr object;
+	GetDepthImage(imageIndex, &object);
+	return object;
+}
+
+RenderPassPtr VulkanSwapChain::GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp) const
+{
+	RenderPassPtr object;
+	GetRenderPass(imageIndex, loadOp, &object);
+	return object;
+}
+
+RenderTargetViewPtr VulkanSwapChain::GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp) const
+{
+	RenderTargetViewPtr object;
+	GetRenderTargetView(imageIndex, loadOp, &object);
+	return object;
+}
+
+DepthStencilViewPtr VulkanSwapChain::GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp) const
+{
+	DepthStencilViewPtr object;
+	GetDepthStencilView(imageIndex, loadOp, &object);
+	return object;
+}
+
+Result VulkanSwapChain::AcquireNextImage(uint64_t timeout, Semaphore* pSemaphore, Fence* pFence, uint32_t* pImageIndex)
+{
+	return acquireNextImageInternal(timeout, pSemaphore, pFence, pImageIndex);
+}
+
+Result VulkanSwapChain::Present(uint32_t imageIndex, uint32_t waitSemaphoreCount, const Semaphore* const* ppWaitSemaphores)
+{
+	return presentInternal(imageIndex, waitSemaphoreCount, ppWaitSemaphores);
+}
+
+void VulkanSwapChain::destroyColorImages()
+{
+	for (auto& elem : m_colorImages)
+	{
+		if (elem)
+		{
+			m_render.GetRenderDevice().DestroyImage(elem);
+		}
+	}
+	m_colorImages.clear();
+}
+
+Result VulkanSwapChain::createDepthImages()
+{
+	if ((m_createInfo.depthFormat != FORMAT_UNDEFINED) && m_depthImages.empty())
+	{
+		for (uint32_t i = 0; i < m_createInfo.imageCount; ++i)
+		{
+			ImageCreateInfo dpCreateInfo = ImageCreateInfo::DepthStencilTarget(m_createInfo.width, m_createInfo.height, m_createInfo.depthFormat);
+			dpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			dpCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
+			dpCreateInfo.DSVClearValue = { 1.0f, 0xFF };
+
+			ImagePtr depthStencilTarget;
+			auto ppxres = m_render.GetRenderDevice().CreateImage(dpCreateInfo, &depthStencilTarget);
+			if (Failed(ppxres))
+			{
+				return ppxres;
+			}
+
+			m_depthImages.push_back(depthStencilTarget);
+		}
+	}
+
+	return SUCCESS;
+}
+
+void VulkanSwapChain::destroyDepthImages()
+{
+	for (auto& elem : m_depthImages)
+	{
+		if (elem) {
+			m_render.GetRenderDevice().DestroyImage(elem);
+		}
+	}
+	m_depthImages.clear();
+}
+
+Result VulkanSwapChain::createRenderPasses()
+{
+	uint32_t imageCount = CountU32(m_colorImages);
+	ASSERT_MSG((imageCount > 0), "No color images found for swapchain renderpasses");
+
+	// Create render passes with ATTACHMENT_LOAD_OP_CLEAR for render target.
+	for (size_t i = 0; i < imageCount; ++i)
+	{
+		RenderPassCreateInfo rpCreateInfo = {};
+		rpCreateInfo.width = m_createInfo.width;
+		rpCreateInfo.height = m_createInfo.height;
+		rpCreateInfo.renderTargetCount = 1;
+		rpCreateInfo.pRenderTargetViews[0] = m_clearRenderTargets[i];
+		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_clearDepthStencilViews[i];
+		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
+		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
+		rpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
+		rpCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
+
+		RenderPassPtr renderPass;
+		auto ppxres = m_render.GetRenderDevice().CreateRenderPass(rpCreateInfo, &renderPass);
+		if (Failed(ppxres)) {
+			ASSERT_MSG(false, "Swapchain::CreateRenderPass(CLEAR) failed");
+			return ppxres;
+		}
+
+		m_clearRenderPasses.push_back(renderPass);
+	}
+
+	// Create render passes with ATTACHMENT_LOAD_OP_LOAD for render target.
+	for (size_t i = 0; i < imageCount; ++i)
+	{
+		RenderPassCreateInfo rpCreateInfo = {};
+		rpCreateInfo.width = m_createInfo.width;
+		rpCreateInfo.height = m_createInfo.height;
+		rpCreateInfo.renderTargetCount = 1;
+		rpCreateInfo.pRenderTargetViews[0] = m_loadRenderTargets[i];
+		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_loadDepthStencilViews[i];
+		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
+		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
+		rpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
+
+		RenderPassPtr renderPass;
+		auto ppxres = m_render.GetRenderDevice().CreateRenderPass(rpCreateInfo, &renderPass);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "Swapchain::CreateRenderPass(LOAD) failed");
+			return ppxres;
+		}
+
+		m_loadRenderPasses.push_back(renderPass);
+	}
+
+	return SUCCESS;
+}
+
+void VulkanSwapChain::destroyRenderPasses()
+{
+	for (auto& elem : m_clearRenderPasses)
+	{
+		if (elem)
+		{
+			m_render.GetRenderDevice().DestroyRenderPass(elem);
+		}
+	}
+	m_clearRenderPasses.clear();
+
+	for (auto& elem : m_loadRenderPasses)
+	{
+		if (elem)
+		{
+			m_render.GetRenderDevice().DestroyRenderPass(elem);
+		}
+	}
+	m_loadRenderPasses.clear();
+}
+
+Result VulkanSwapChain::createRenderTargets()
+{
+	uint32_t imageCount = CountU32(m_colorImages);
+	ASSERT_MSG((imageCount > 0), "No color images found for swapchain renderpasses");
+	for (size_t i = 0; i < imageCount; ++i)
+	{
+		auto imagePtr = m_colorImages[i];
+		RenderTargetViewCreateInfo rtvCreateInfo = RenderTargetViewCreateInfo::GuessFromImage(imagePtr);
+		rtvCreateInfo.loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+		rtvCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rtvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
+
+		RenderTargetViewPtr rtv;
+		Result ppxres = m_render.GetRenderDevice().CreateRenderTargetView(rtvCreateInfo, &rtv);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for LOAD_OP_CLEAR failed");
+			return ppxres;
+		}
+		m_clearRenderTargets.push_back(rtv);
+
+		rtvCreateInfo.loadOp = ATTACHMENT_LOAD_OP_LOAD;
+		ppxres = m_render.GetRenderDevice().CreateRenderTargetView(rtvCreateInfo, &rtv);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for LOAD_OP_LOAD failed");
+			return ppxres;
+		}
+		m_loadRenderTargets.push_back(rtv);
+
+		if (!m_depthImages.empty())
+		{
+			auto depthImage = m_depthImages[i];
+			DepthStencilViewCreateInfo dsvCreateInfo = DepthStencilViewCreateInfo::GuessFromImage(depthImage);
+			dsvCreateInfo.depthLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+			dsvCreateInfo.stencilLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+			dsvCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			dsvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
+
+			DepthStencilViewPtr clearDsv;
+			ppxres = m_render.GetRenderDevice().CreateDepthStencilView(dsvCreateInfo, &clearDsv);
+			if (Failed(ppxres))
+			{
+				ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for depth stencil view failed");
+				return ppxres;
+			}
+
+			m_clearDepthStencilViews.push_back(clearDsv);
+
+			dsvCreateInfo.depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+			dsvCreateInfo.stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+			DepthStencilViewPtr loadDsv;
+			ppxres = m_render.GetRenderDevice().CreateDepthStencilView(dsvCreateInfo, &loadDsv);
+			if (Failed(ppxres))
+			{
+				ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for depth stencil view failed");
+				return ppxres;
+			}
+
+			m_loadDepthStencilViews.push_back(loadDsv);
+		}
+	}
+
+	return SUCCESS;
+}
+
+void VulkanSwapChain::destroyRenderTargets()
+{
+	for (auto& rtv : m_clearRenderTargets)
+	{
+		m_render.GetRenderDevice().DestroyRenderTargetView(rtv);
+	}
+	m_clearRenderTargets.clear();
+	for (auto& rtv : m_loadRenderTargets)
+	{
+		m_render.GetRenderDevice().DestroyRenderTargetView(rtv);
+	}
+	m_loadRenderTargets.clear();
+	for (auto& rtv : m_clearDepthStencilViews)
+	{
+		m_render.GetRenderDevice().DestroyDepthStencilView(rtv);
+	}
+	m_clearDepthStencilViews.clear();
+	for (auto& rtv : m_loadDepthStencilViews)
+	{
+		m_render.GetRenderDevice().DestroyDepthStencilView(rtv);
+	}
+	m_loadDepthStencilViews.clear();
+}
+
+
+
+
+
+
+// OLD =>
+
+bool VulkanSwapChain::Resize(uint32_t width, uint32_t height)
+{
+
+
+
 	Shutdown();
 
 	vkb::SwapchainBuilder swapChainBuilder{ m_render.GetVkPhysicalDevice(), m_render.GetVkDevice(), m_render.GetVkSurface() };
@@ -326,7 +819,7 @@ bool VulkanSwapchain::Setup(uint32_t width, uint32_t height)
 	return true;
 }
 
-void VulkanSwapchain::Shutdown()
+void VulkanSwapChain::Shutdown()
 {
 	if (m_render.GetVkDevice())
 	{
@@ -341,12 +834,12 @@ void VulkanSwapchain::Shutdown()
 	m_swapChain = nullptr;
 }
 
-VkFormat VulkanSwapchain::GetFormat()
+VkFormat VulkanSwapChain::GetFormat()
 {
 	return m_colorFormat;
 }
 
-VkImageView& VulkanSwapchain::GetImageView(size_t i)
+VkImageView& VulkanSwapChain::GetImageView(size_t i)
 {
 	assert(i < m_swapChainImageViews.size());
 	return m_swapChainImageViews[i];
@@ -418,7 +911,7 @@ std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::fi
 	return bytecode.value();
 }
 
-bool createFramebuffers(VkDevice device, VulkanSwapchain& swapchain)
+bool createFramebuffers(VkDevice device, VulkanSwapChain& swapchain)
 {
 	framebuffers.resize(swapchain.GetImageViewNum());
 
@@ -457,7 +950,7 @@ bool createCommandPool(VkDevice device, DeviceQueuePtr graphicsQueue)
 	return true;
 }
 
-bool createCommandBuffers(VkDevice device, VulkanSwapchain& swapchain)
+bool createCommandBuffers(VkDevice device, VulkanSwapChain& swapchain)
 {
 	command_buffers.resize(framebuffers.size());
 
@@ -540,7 +1033,7 @@ VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code
 	return shaderModule;
 }
 
-int recreateSwapchain(VulkanSwapchain& swapchain, uint32_t width, uint32_t height, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, DeviceQueuePtr graphicsQueue)
+int recreateSwapchain(VulkanSwapChain& swapchain, uint32_t width, uint32_t height, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, DeviceQueuePtr graphicsQueue)
 {
 	vkDeviceWaitIdle(device);
 	vkDestroyCommandPool(device, command_pool, nullptr);
@@ -550,7 +1043,7 @@ int recreateSwapchain(VulkanSwapchain& swapchain, uint32_t width, uint32_t heigh
 		vkDestroyFramebuffer(device, framebuffer, nullptr);
 	}
 
-	if (!swapchain.Setup(width, height)) return -1;
+	if (!swapchain.Resize(width, height)) return -1;
 	if (!createFramebuffers(device, swapchain)) return -1;
 	if (!createCommandPool(device, graphicsQueue)) return -1;
 	if (!createCommandBuffers(device, swapchain)) return -1;
@@ -566,7 +1059,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
 	if (!m_instance.Setup(createInfo.instance, m_engine.GetWindow().GetWindow()))
 		return false;
-	if (!m_swapChain.Setup(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
+	if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
 		return false;
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;

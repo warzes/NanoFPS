@@ -108,14 +108,94 @@ private:
 
 #pragma endregion
 
-#pragma region VulkanSwapchain
+#pragma region VulkanSurface
 
-class VulkanSwapchain final
+class VulkanSurface final
 {
 public:
-	VulkanSwapchain(RenderSystem& render);
+	VulkanSurface(RenderSystem& render);
 
-	[[nodiscard]] bool Setup(uint32_t width, uint32_t height);
+	[[nodiscard]] bool Setup();
+
+	[[nodiscard]] VkSurfaceCapabilitiesKHR              GetCapabilities() const;
+	[[nodiscard]] const std::vector<VkSurfaceFormatKHR> GetSurfaceFormats() const { return m_surfaceFormats; }
+
+	[[nodiscard]] uint32_t GetMinImageWidth() const;
+	[[nodiscard]] uint32_t GetMinImageHeight() const;
+	[[nodiscard]] uint32_t GetMinImageCount() const;
+	[[nodiscard]] uint32_t GetMaxImageWidth() const;
+	[[nodiscard]] uint32_t GetMaxImageHeight() const;
+	[[nodiscard]] uint32_t GetMaxImageCount() const;
+
+	[[nodiscard]] uint32_t GetCurrentImageWidth() const;
+	[[nodiscard]] uint32_t GetCurrentImageHeight() const;
+
+	static constexpr uint32_t kInvalidExtent = std::numeric_limits<uint32_t>::max();
+
+private:
+	RenderSystem&                   m_render;
+	std::vector<VkSurfaceFormatKHR> m_surfaceFormats;
+	std::vector<VkPresentModeKHR>   m_presentModes;
+};
+
+#pragma endregion
+
+#pragma region VulkanSwapchain
+
+struct SwapChainCreateInfo final
+{
+	ShadingRatePattern* shadingRatePattern = nullptr;
+	uint32_t            width = 0;
+	uint32_t            height = 0;
+	Format              colorFormat = FORMAT_UNDEFINED;
+	Format              depthFormat = FORMAT_UNDEFINED;
+	uint32_t            imageCount = 0;
+	uint32_t            arrayLayerCount = 1;
+	PresentMode         presentMode = PRESENT_MODE_IMMEDIATE;
+};
+
+class VulkanSwapChain final
+{
+public:
+	VulkanSwapChain(RenderSystem& render);
+
+	bool Setup(const SwapChainCreateInfo& createInfo);
+
+	uint32_t GetWidth() const { return m_createInfo.width; }
+	uint32_t GetHeight() const { return m_createInfo.height; }
+	uint32_t GetImageCount() const { return m_createInfo.imageCount; }
+	Format   GetColorFormat() const { return m_createInfo.colorFormat; }
+	Format   GetDepthFormat() const { return m_createInfo.depthFormat; }
+
+	Result GetColorImage(uint32_t imageIndex, Image** ppImage) const;
+	Result GetDepthImage(uint32_t imageIndex, Image** ppImage) const;
+	Result GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp, RenderPass** ppRenderPass) const;
+	Result GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp, RenderTargetView** ppView) const;
+	Result GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp, DepthStencilView** ppView) const;
+
+	// Convenience functions - returns empty object if index is invalid
+	ImagePtr            GetColorImage(uint32_t imageIndex) const;
+	ImagePtr            GetDepthImage(uint32_t imageIndex) const;
+	RenderPassPtr       GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
+	RenderTargetViewPtr GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
+	DepthStencilViewPtr GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
+
+	Result AcquireNextImage(
+		uint64_t   timeout,    // Nanoseconds
+		Semaphore* pSemaphore, // Wait sempahore
+		Fence*     pFence,     // Wait fence
+		uint32_t*  pImageIndex);
+
+	Result Present(
+		uint32_t                imageIndex,
+		uint32_t                waitSemaphoreCount,
+		const Semaphore* const* ppWaitSemaphores);
+
+	uint32_t GetCurrentImageIndex() const { return m_currentImageIndex; }
+
+	// OLD =>
+
+	[[nodiscard]] bool Resize(uint32_t width, uint32_t height);
 	void Shutdown();
 
 	VkFormat GetFormat();
@@ -127,7 +207,58 @@ public:
 	const VkExtent2D& GetExtent() const { return m_swapChainExtent; }
 
 private:
-	RenderSystem&            m_render;
+	// Make these protected since D3D12's swapchain resize will need to call them
+	void   destroyColorImages();
+	Result createDepthImages();
+	void   destroyDepthImages();
+	Result createRenderPasses();
+	void   destroyRenderPasses();
+	Result createRenderTargets();
+	void   destroyRenderTargets();
+
+	Result acquireNextImageInternal(
+		uint64_t   timeout,    // Nanoseconds
+		Semaphore* pSemaphore, // Wait sempahore
+		Fence*     pFence,     // Wait fence
+		uint32_t*  pImageIndex); // TODO: перенесети в AcquireNextImage
+
+	Result presentInternal(
+		uint32_t                imageIndex,
+		uint32_t                waitSemaphoreCount,
+		const Semaphore* const* ppWaitSemaphores);// TODO: перенесети в Present
+
+	Result acquireNextImageHeadless(
+		uint64_t   timeout,
+		Semaphore* pSemaphore,
+		Fence*     pFence,
+		uint32_t*  pImageIndex); // TODO: возможно не нужно. это без surface
+
+	Result presentHeadless(
+		uint32_t                imageIndex,
+		uint32_t                waitSemaphoreCount,
+		const Semaphore* const* ppWaitSemaphores); // TODO: возможно не нужно. это без surface
+
+	RenderSystem&                    m_render;
+	VulkanSurface                    m_surface;
+	SwapChainCreateInfo              m_createInfo;
+
+	std::vector<CommandBufferPtr>    m_headlessCommandBuffers;// TODO: возможно не нужно. это без surface
+	QueuePtr                         m_queue;
+	std::vector<ImagePtr>            m_depthImages;
+	std::vector<ImagePtr>            m_colorImages;
+	std::vector<RenderTargetViewPtr> m_clearRenderTargets;
+	std::vector<RenderTargetViewPtr> m_loadRenderTargets;
+	std::vector<DepthStencilViewPtr> m_clearDepthStencilViews;
+	std::vector<DepthStencilViewPtr> m_loadDepthStencilViews;
+	std::vector<RenderPassPtr>       m_clearRenderPasses;
+	std::vector<RenderPassPtr>       m_loadRenderPasses;
+
+	// Keeps track of the image index returned by the last AcquireNextImage call.
+	uint32_t                         m_currentImageIndex = 0;
+
+
+
+
 	VkSwapchainKHR           m_swapChain{ nullptr };
 	VkFormat                 m_colorFormat{ VK_FORMAT_B8G8R8A8_UNORM };
 	std::vector<VkImage>     m_swapChainImages;
@@ -141,7 +272,8 @@ private:
 
 struct RenderCreateInfo final
 {
-	InstanceCreateInfo instance;
+	InstanceCreateInfo  instance;
+	SwapChainCreateInfo swapChain;
 };
 
 class RenderSystem final
@@ -173,13 +305,13 @@ public:
 	[[nodiscard]] DeviceQueuePtr GetVkComputeQueue() { return m_instance.computeQueue; }
 
 	[[nodiscard]] RenderDevice& GetRenderDevice() { return m_device; }
-	[[nodiscard]] VulkanSwapchain& GetSwapChain() { return m_swapChain; }
+	[[nodiscard]] VulkanSwapChain& GetSwapChain() { return m_swapChain; }
 
 private:
 	EngineApplication& m_engine;
 	
 	VulkanInstance m_instance{ *this };
-	VulkanSwapchain m_swapChain{ *this };
+	VulkanSwapChain m_swapChain{ *this };
 
 	RenderDevice m_device{ m_engine, *this };
 };
