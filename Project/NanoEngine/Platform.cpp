@@ -5,6 +5,9 @@
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "glfw3.lib" )
+#	if defined(_WIN32)
+#		pragma comment( lib, "Shcore.lib" )
+#	endif
 #endif
 
 #pragma region Window

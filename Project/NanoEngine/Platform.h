@@ -38,7 +38,7 @@ private:
 	GLFWwindow* m_window = nullptr;
 	uint32_t m_width = 0;
 	uint32_t m_height = 0;
-	bool IsWindowResize = true; // TODO: убрать
+	bool IsWindowResize = true;
 };
 
 #pragma endregion

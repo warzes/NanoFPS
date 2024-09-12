@@ -64,6 +64,7 @@ public:
 
 	Window& GetWindow();
 	Input& GetInput();
+	RenderSystem& GetRender();
 
 	EngineApplication* engine = nullptr;
 };
@@ -94,6 +95,7 @@ public:
 
 	Window& GetWindow() { return m_window; }
 	Input& GetInput() { return m_input; }
+	RenderSystem& GetRender() { return m_render; }
 
 private:
 	EngineApplication();

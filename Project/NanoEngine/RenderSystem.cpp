@@ -6,6 +6,8 @@
 #include "RenderSystem.h"
 #include "Application.h"
 
+#include "font_inconsolata.h"
+
 #pragma region VulkanInstance
 
 VulkanInstance::VulkanInstance(RenderSystem& render)
@@ -429,7 +431,6 @@ uint32_t VulkanSurface::GetCurrentImageHeight() const
 
 VulkanSwapChain::VulkanSwapChain(RenderSystem& render)
 	: m_render(render)
-	, m_surface(render)
 {
 }
 
@@ -439,8 +440,6 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 
 	ASSERT_NULL_ARG(createInfo.queue);
 	if (IsNull(createInfo.queue)) return false;
-
-	m_surface.Setup();
 
 	// Vulkan create
 	{
@@ -456,7 +455,7 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 			// Surface capabilities check
 			{
 				bool  isImageCountValid = false;
-				const VkSurfaceCapabilitiesKHR& caps = m_surface.GetCapabilities();
+				const VkSurfaceCapabilitiesKHR& caps = m_createInfo.surface->GetCapabilities();
 				if (caps.maxImageCount > 0)
 				{
 					bool isInBoundsMin = (m_createInfo.imageCount >= caps.minImageCount);
@@ -484,7 +483,7 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 					return false;
 				}
 
-				const std::vector<VkSurfaceFormatKHR>& surfaceFormats = m_surface .GetSurfaceFormats();
+				const std::vector<VkSurfaceFormatKHR>& surfaceFormats = m_createInfo.surface->GetSurfaceFormats();
 				auto it = std::find_if(
 					std::begin(surfaceFormats),
 					std::end(surfaceFormats),
@@ -701,11 +700,6 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 
 		// Save queue for presentation.
 		m_queue = createInfo.queue;
-
-
-
-
-
 	}
 
 
@@ -1248,6 +1242,219 @@ VkImageView& VulkanSwapChain::GetImageView(size_t i)
 
 #pragma endregion
 
+#pragma region ImGui
+
+ImGuiImpl::ImGuiImpl(RenderSystem& render)
+	: m_render(render)
+{
+}
+
+bool ImGuiImpl::Setup()
+{
+	// Setup Dear ImGui binding
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+
+	float fontSize = 16.0f;
+#if defined(_WIN32)
+	HWND activeWindow = GetActiveWindow();
+	HMONITOR monitor = MonitorFromWindow(activeWindow, MONITOR_DEFAULTTONEAREST);
+
+	DEVICE_SCALE_FACTOR scale = SCALE_100_PERCENT;
+	HRESULT hr = GetScaleFactorForMonitor(monitor, &scale);
+	if (FAILED(hr)) return false;
+
+	float fontScale = 1.0f;
+	switch (scale) {
+	default: break;
+	case SCALE_120_PERCENT: fontScale = 1.20f; break;
+	case SCALE_125_PERCENT: fontScale = 1.25f; break;
+	case SCALE_140_PERCENT: fontScale = 1.40f; break;
+	case SCALE_150_PERCENT: fontScale = 1.50f; break;
+	case SCALE_160_PERCENT: fontScale = 1.60f; break;
+	case SCALE_175_PERCENT: fontScale = 1.75f; break;
+	case SCALE_180_PERCENT: fontScale = 1.80f; break;
+	case SCALE_200_PERCENT: fontScale = 2.00f; break;
+	case SCALE_225_PERCENT: fontScale = 2.25f; break;
+	case SCALE_250_PERCENT: fontScale = 2.50f; break;
+	case SCALE_300_PERCENT: fontScale = 3.00f; break;
+	case SCALE_350_PERCENT: fontScale = 3.50f; break;
+	case SCALE_400_PERCENT: fontScale = 4.00f; break;
+	case SCALE_450_PERCENT: fontScale = 4.50f; break;
+	case SCALE_500_PERCENT: fontScale = 5.00f; break;
+	}	
+	fontSize *= fontScale;
+#endif
+
+	ImFontConfig fontConfig = {};
+	fontConfig.FontDataOwnedByAtlas = false;
+
+	ImFont* pFont = io.Fonts->AddFontFromMemoryTTF(
+		const_cast<void*>(static_cast<const void*>(imgui::kFontInconsolata)),
+		static_cast<int>(imgui::kFontInconsolataSize),
+		fontSize,
+		&fontConfig);
+
+	ASSERT_MSG(!IsNull(pFont), "imgui add font failed");
+
+	Result ppxres = initApiObjects();
+	if (Failed(ppxres)) return false;
+
+	return true;
+}
+
+void ImGuiImpl::Shutdown()
+{
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	if (m_pool)
+	{
+		m_render.GetRenderDevice().DestroyDescriptorPool(m_pool);
+		m_pool.Reset();
+	}
+}
+
+void ImGuiImpl::NewFrame()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = static_cast<float>(m_render.GetUIWidth());
+	io.DisplaySize.y = static_cast<float>(m_render.GetUIHeight());
+	newFrameApi();
+}
+
+void ImGuiImpl::Render(CommandBuffer* pCommandBuffer)
+{
+	ImGui::Render();
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), pCommandBuffer->GetVkCommandBuffer());
+}
+
+void ImGuiImpl::ProcessEvents()
+{
+}
+
+Result ImGuiImpl::initApiObjects()
+{
+	// Setup GLFW binding
+	GLFWwindow* pWindow = m_render.GetEngine().GetWindow().GetWindow();
+	ImGui_ImplGlfw_InitForVulkan(pWindow, false);
+
+	// Setup style
+	setColorStyle();
+
+	// Create descriptor pool
+	{
+		DescriptorPoolCreateInfo ci = {};
+		ci.combinedImageSampler = 1;
+
+		Result ppxres = m_render.GetRenderDevice().CreateDescriptorPool(ci, &m_pool);
+		if (Failed(ppxres)) return ppxres;
+	}
+
+	// Setup Vulkan binding
+	{
+		ImGui_ImplVulkan_InitInfo init_info = {};
+		init_info.Instance = m_render.GetVkInstance();
+		init_info.PhysicalDevice = m_render.GetVkPhysicalDevice();
+		init_info.Device = m_render.GetVkDevice();
+		init_info.QueueFamily = m_render.GetVkGraphicsQueue()->QueueFamily;
+		init_info.Queue = m_render.GetVkGraphicsQueue()->Queue;
+		init_info.PipelineCache = VK_NULL_HANDLE;
+		init_info.DescriptorPool = m_pool->GetVkDescriptorPool();
+		init_info.MinImageCount = m_render.GetSwapChain().GetImageCount();
+		init_info.ImageCount = m_render.GetSwapChain().GetImageCount();
+		init_info.Allocator = VK_NULL_HANDLE;
+		init_info.CheckVkResultFn = nullptr;
+#if defined(IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
+		init_info.UseDynamicRendering = true;//pApp->GetSettings()->grfx.enableImGuiDynamicRendering;
+		init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+		VkFormat colorFormat = ToVkFormat(m_render.GetSwapChain().GetColorFormat());
+		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+		init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+#else
+		ASSERT_MSG(!pApp->GetSettings()->grfx.enableImGuiDynamicRendering, "This version of ImGui does not have dynamic rendering support");
+#endif
+
+		RenderPassPtr renderPass = m_render.GetSwapChain().GetRenderPass(0, ATTACHMENT_LOAD_OP_LOAD);
+		ASSERT_MSG(!renderPass.IsNull(), "[imgui:vk] failed to get swapchain renderpass");
+
+		init_info.RenderPass = renderPass->GetVkRenderPass();
+		bool result = ImGui_ImplVulkan_Init(&init_info);
+		if (!result) return ERROR_IMGUI_INITIALIZATION_FAILED;
+	}
+
+	// Upload Fonts
+	{
+		// Create command buffer
+		CommandBufferPtr commandBuffer;
+		Result ppxres = m_render.GetGraphicsQueue()->CreateCommandBuffer(&commandBuffer, 0, 0);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "[imgui:vk] command buffer create failed");
+			return ppxres;
+		}
+
+		// Begin command buffer
+		ppxres = commandBuffer->Begin();
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "[imgui:vk] command buffer begin failed");
+			return ppxres;
+		}
+
+		// End command buffer
+		ppxres = commandBuffer->End();
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "[imgui:vk] command buffer end failed");
+			return ppxres;
+		}
+
+		// Submit
+		SubmitInfo submitInfo = {};
+		submitInfo.commandBufferCount = 1;
+		submitInfo.ppCommandBuffers = &commandBuffer;
+
+		ppxres = m_render.GetGraphicsQueue()->Submit(&submitInfo);
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "[imgui:vk] command buffer submit failed");
+			return ppxres;
+		}
+
+		// Wait for idle
+		ppxres = m_render.GetGraphicsQueue()->WaitIdle();
+		if (Failed(ppxres))
+		{
+			ASSERT_MSG(false, "[imgui:vk] queue wait idle failed");
+			return ppxres;
+		}
+
+		// Destroy command buffer
+		m_render.GetGraphicsQueue()->DestroyCommandBuffer(commandBuffer);
+	}
+
+	return SUCCESS;
+}
+
+void ImGuiImpl::setColorStyle()
+{
+	// ImGui::StyleColorsClassic();
+	ImGui::StyleColorsDark();
+	// ImGui::StyleColorsLight();
+}
+
+void ImGuiImpl::newFrameApi()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+#pragma endregion
+
 #pragma region RenderSystem
 
 VkRenderPass renderPass;
@@ -1460,10 +1667,15 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
 	if (!m_instance.Setup(createInfo.instance, m_engine.GetWindow().GetWindow()))
 		return false;
-	//if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight()))
-	//	return false;
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;
+	if (!m_surface.Setup()) return false;
+	if (!createSwapchains()) return false;	
+	if (!m_imgui.Setup())
+		return false;
+
+	m_width = m_engine.GetWindow().GetWidth();
+	m_height = m_engine.GetWindow().GetHeight();
 
 	// NEW =>
 	{
@@ -1554,7 +1766,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 
 	// OLD =>
 	{
-		//=======================================================================
+	//=======================================================================
 	// create_render_pass
 	//=======================================================================
 		{
@@ -1783,6 +1995,8 @@ void RenderSystem::Shutdown()
 {
 	vkDeviceWaitIdle(m_instance.device);
 
+	m_imgui.Shutdown();
+	m_swapChain.Shutdown2();
 	m_device.Shutdown();
 
 	availableSemaphores.clear();
@@ -1801,12 +2015,37 @@ void RenderSystem::Shutdown()
 	vkDestroyPipelineLayout(m_instance.device, pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_instance.device, renderPass, nullptr);
 
-	m_swapChain.Close();
+	//m_swapChain.Close();
 	m_instance.Shutdown();	
 }
 
 void RenderSystem::TestDraw()
 {
+	// Update imgui
+	//m_imgui.ProcessEvents();
+	//if (!IsWindowIconified())
+	//	m_imgui.NewFrame();
+
+
+	// Vulkan will return an error if either dimension is 1
+	if ((m_engine.GetWindow().GetWidth() <= 1) || (m_engine.GetWindow().GetHeight() <= 1))
+		return;
+
+	// resize
+	if (m_width != m_engine.GetWindow().GetWidth() || m_height != m_engine.GetWindow().GetHeight())
+	{
+		m_width = m_engine.GetWindow().GetWidth();
+		m_height = m_engine.GetWindow().GetHeight();
+
+		vkDeviceWaitIdle(m_instance.device);
+		m_swapChain.Shutdown2();
+		if (!createSwapchains())
+		{
+			Fatal("Vulkan swapchain recreate failed");
+		}
+		return;
+	}
+
 	// NEW =>
 	{
 		PerFrame& frame = mPerFrame[0];
@@ -1843,8 +2082,8 @@ void RenderSystem::TestDraw()
 				frame.cmd->Draw(3, 1, 0, 0);
 
 				// Draw ImGui
-				DrawDebugInfo();
-				DrawImGui(frame.cmd);
+				//DrawDebugInfo();
+				//DrawImGui(frame.cmd);
 			}
 			frame.cmd->EndRenderPass();
 			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
@@ -1939,6 +2178,124 @@ void RenderSystem::TestDraw()
 	}
 }
 
+void RenderSystem::DrawDebugInfo()
+{
+	const uint32_t kImGuiMinWidth = 400;
+	const uint32_t kImGuiMinHeight = 300;
+
+	uint32_t minWidth = std::min(kImGuiMinWidth, GetUIWidth() / 2);
+	uint32_t minHeight = std::min(kImGuiMinHeight, GetUIHeight() / 2);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { static_cast<float>(minWidth), static_cast<float>(minHeight) });
+	if (ImGui::Begin("Debug Info")) {
+		ImGui::Columns(2);
+		
+		// Application PID
+		{
+			ImGui::Text("Application PID");
+			ImGui::NextColumn();
+			ImGui::Text("%d", GetCurrentProcessId());
+			ImGui::NextColumn();
+		}
+
+		ImGui::Separator();
+
+		// GPU
+		{
+			ImGui::Text("GPU");
+			ImGui::NextColumn();
+			ImGui::Text("%s", m_instance.GetDeviceName());
+			ImGui::NextColumn();
+		}
+
+		ImGui::Separator();
+
+		//// CPU
+		//{
+		//	ImGui::Text("CPU");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%s", Platform::GetCpuInfo().GetBrandString());
+		//	ImGui::NextColumn();
+
+		//	ImGui::Text("Architecture");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%s", Platform::GetCpuInfo().GetMicroarchitectureString());
+		//	ImGui::NextColumn();
+		//}
+
+		//ImGui::Separator();
+
+		//// Frame count
+		//{
+		//	ImGui::Text("Frame Count");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%" PRIu64, m_frameCount);
+		//	ImGui::NextColumn();
+		//}
+
+		//// Average FPS
+		//{
+		//	ImGui::Text("Average FPS");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%f", m_averageFPS);
+		//	ImGui::NextColumn();
+		//}
+
+		//// Previous frame time
+		//{
+		//	ImGui::Text("Previous CPU Frame Time");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%f ms", m_previousFrameTime);
+		//	ImGui::NextColumn();
+		//}
+
+		//// Average frame time
+		//{
+		//	ImGui::Text("Average Frame Time");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%f ms", m_averageFrameTime);
+		//	ImGui::NextColumn();
+		//}
+
+		//ImGui::Separator();
+
+		//// Num Frame In Flight
+		//{
+		//	ImGui::Text("Num Frames In Flight");
+		//	ImGui::NextColumn();
+		//	ImGui::Text("%d", mSettings.grfx.numFramesInFlight);
+		//	ImGui::NextColumn();
+		//}
+
+		ImGui::Separator();
+
+		// Swapchain
+		{
+			ImGui::Text("Swapchain Resolution");
+			ImGui::NextColumn();
+			ImGui::Text("%dx%d", m_swapChain.GetWidth(), m_swapChain.GetHeight());
+			ImGui::NextColumn();
+
+			ImGui::Text("Swapchain Image Count");
+			ImGui::NextColumn();
+			ImGui::Text("%d", m_swapChain.GetImageCount());
+			ImGui::NextColumn();
+		}
+
+		ImGui::Columns(1);
+
+		// Draw additional elements
+		// TODO: user draw ui
+	}
+	ImGui::End();
+	ImGui::PopStyleVar();
+}
+
+void RenderSystem::DrawImGui(CommandBuffer* pCommandBuffer)
+{
+	m_imgui.Render(pCommandBuffer);
+}
+
 Rect RenderSystem::GetScissor() const
 {
 	Rect rect = {};
@@ -1959,6 +2316,76 @@ Viewport RenderSystem::GetViewport(float minDepth, float maxDepth) const
 	viewport.minDepth = minDepth;
 	viewport.maxDepth = maxDepth;
 	return viewport;
+}
+
+uint32_t RenderSystem::GetUIWidth() const
+{
+	return m_engine.GetWindow().GetWidth();
+}
+
+uint32_t RenderSystem::GetUIHeight() const
+{
+	return m_engine.GetWindow().GetHeight();
+}
+
+bool RenderSystem::createSwapchains()
+{
+	// NVIDIA only supports B8G8R8A8, ANDROID only supports R8G8B8A8, and AMD supports both. So the default has to special-case either NVIDIA or ANDROID
+#if defined(_ANDROID)
+	Format colorFormat = FORMAT_R8G8B8A8_UNORM;
+#else
+	Format colorFormat = FORMAT_B8G8R8A8_UNORM;
+#endif
+	Format depthFormat = FORMAT_UNDEFINED;
+	uint32_t imageCount = 2;
+
+	// m_surface
+	{
+		const uint32_t surfaceMinImageCount = m_surface.GetMinImageCount();
+		if (imageCount < surfaceMinImageCount)
+		{
+			Warning("readjusting swapchain's image count from " + std::to_string(imageCount) + " to " + std::to_string(surfaceMinImageCount) + " to match surface requirements");
+			imageCount = surfaceMinImageCount;
+		}
+
+		// Cap the image width/height to what the surface caps are.
+		// The reason for this is that on Windows the TaskBar affect the maximum size of the window if it has borders.
+		// For example an application can request a 1920x1080 window but because of the task bar, the window may get created at 1920x1061. This limits the swapchain's max image extents to 1920x1061.
+		const uint32_t surfaceMaxImageWidth = m_surface.GetMaxImageWidth();
+		const uint32_t surfaceMaxImageHeight = m_surface.GetMaxImageHeight();
+		if ((m_engine.GetWindow().GetWidth() > surfaceMaxImageWidth) || (m_engine.GetWindow().GetHeight() > surfaceMaxImageHeight))
+		{
+			Warning("readjusting swapchain/window size from " + std::to_string(m_engine.GetWindow().GetWidth()) + "x" + std::to_string(m_engine.GetWindow().GetHeight()) + " to " + std::to_string(surfaceMaxImageWidth) + "x" + std::to_string(surfaceMaxImageHeight) + " to match surface requirements");
+			//m_engine.GetWindow().GetWidth() = std::min(m_engine.GetWindow().GetWidth(), surfaceMaxImageWidth); // TODO:
+			//m_engine.GetWindow().GetHeight() = std::min(m_engine.GetWindow().GetHeight(), surfaceMaxImageHeight);
+		}
+
+		const uint32_t surfaceCurrentImageWidth = m_surface.GetCurrentImageWidth();
+		const uint32_t surfaceCurrentImageHeight = m_surface.GetCurrentImageHeight();
+		if ((surfaceCurrentImageWidth != VulkanSurface::kInvalidExtent) && (surfaceCurrentImageHeight != VulkanSurface::kInvalidExtent))
+		{
+			if ((m_engine.GetWindow().GetWidth() != surfaceCurrentImageWidth) || (m_engine.GetWindow().GetHeight() != surfaceCurrentImageHeight))
+			{
+				Warning("window size " + std::to_string(m_engine.GetWindow().GetWidth()) + "x" + std::to_string(m_engine.GetWindow().GetHeight()) + " does not match current surface extent " + std::to_string(surfaceCurrentImageWidth) + "x" + std::to_string(surfaceCurrentImageHeight));
+			}
+			Warning("surface current extent " + std::to_string(surfaceCurrentImageWidth) + "x" + std::to_string(surfaceCurrentImageHeight));
+		}
+	}
+
+	SwapChainCreateInfo ci = {};
+	ci.queue = GetRenderDevice().GetGraphicsQueue();
+	ci.surface = &m_surface;
+	ci.width = m_engine.GetWindow().GetWidth();
+	ci.height = m_engine.GetWindow().GetHeight();
+	ci.colorFormat = colorFormat;
+	ci.depthFormat = depthFormat;
+	ci.imageCount = imageCount;
+	ci.presentMode = PRESENT_MODE_IMMEDIATE;
+
+	if (!m_swapChain.Setup(ci)) return false;
+	//if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight())) return false;
+
+	return true;
 }
 
 #pragma endregion

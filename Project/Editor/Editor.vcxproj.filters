@@ -23,6 +23,18 @@
     <ClCompile Include="3rdparty\imgui\rlImGui.cpp">
       <Filter>3rdparty\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="app.cpp" />
+    <ClCompile Include="assets.cpp" />
+    <ClCompile Include="dialogs.cpp" />
+    <ClCompile Include="ent.cpp" />
+    <ClCompile Include="ent_mode.cpp" />
+    <ClCompile Include="map_man.cpp" />
+    <ClCompile Include="map_man_export.cpp" />
+    <ClCompile Include="map_man_te2.cpp" />
+    <ClCompile Include="menu_bar.cpp" />
+    <ClCompile Include="pick_mode.cpp" />
+    <ClCompile Include="place_mode.cpp" />
+    <ClCompile Include="tile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -54,5 +66,20 @@
     <ClInclude Include="assets\fonts\softball_gold_ttf.h">
       <Filter>assets\fonts</Filter>
     </ClInclude>
+    <ClInclude Include="app.h" />
+    <ClInclude Include="assets.h" />
+    <ClInclude Include="c_helpers.h" />
+    <ClInclude Include="dialogs.h" />
+    <ClInclude Include="draw_extras.h" />
+    <ClInclude Include="ent.h" />
+    <ClInclude Include="ent_mode.h" />
+    <ClInclude Include="grid.h" />
+    <ClInclude Include="map_man.h" />
+    <ClInclude Include="math_stuff.h" />
+    <ClInclude Include="menu_bar.h" />
+    <ClInclude Include="pick_mode.h" />
+    <ClInclude Include="place_mode.h" />
+    <ClInclude Include="text_util.h" />
+    <ClInclude Include="tile.h" />
   </ItemGroup>
 </Project>

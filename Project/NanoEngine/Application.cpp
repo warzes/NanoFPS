@@ -38,6 +38,11 @@ Input& IApplication::GetInput()
 	return engine->GetInput();
 }
 
+RenderSystem& IApplication::GetRender()
+{
+	return engine->GetRender();
+}
+
 #pragma endregion
 
 #pragma region Engine Application

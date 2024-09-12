@@ -144,6 +144,7 @@ private:
 
 struct SwapChainCreateInfo final
 {
+	VulkanSurface*      surface = nullptr;
 	Queue*              queue = nullptr;
 	ShadingRatePattern* shadingRatePattern = nullptr;
 	uint32_t            width = 0;
@@ -232,7 +233,6 @@ private:
 		const Semaphore* const* ppWaitSemaphores);// TODO: перенесети в Present
 
 	RenderSystem&                    m_render;
-	VulkanSurface                    m_surface;
 	SwapChainCreateInfo              m_createInfo;
 
 	VkSwapchainKHR                   m_swapChain{ nullptr };
@@ -260,6 +260,30 @@ private:
 
 #pragma endregion
 
+#pragma region ImGui
+
+class ImGuiImpl
+{
+public:
+	ImGuiImpl(RenderSystem& render);
+
+	bool Setup();
+	void Shutdown();
+	void NewFrame();
+	void Render(CommandBuffer* pCommandBuffer);
+	void ProcessEvents();
+
+private:
+	Result initApiObjects();
+	void setColorStyle();
+	void newFrameApi();
+
+	RenderSystem& m_render;
+	DescriptorPoolPtr m_pool;
+};
+
+#pragma endregion
+
 #pragma region RenderSystem
 
 struct RenderCreateInfo final
@@ -278,6 +302,8 @@ public:
 	void Shutdown();
 
 	void TestDraw();
+	void DrawDebugInfo();
+	void DrawImGui(CommandBuffer* pCommandBuffer);
 
 	[[nodiscard]] VkInstance& GetVkInstance() { return m_instance.instance; }
 	[[nodiscard]] VkSurfaceKHR& GetVkSurface() { return m_instance.surface; }
@@ -304,13 +330,31 @@ public:
 	[[nodiscard]] Rect GetScissor() const;
 	[[nodiscard]] Viewport GetViewport(float minDepth = 0.0f, float maxDepth = 1.0f) const;
 
+	uint32_t GetUIWidth() const;
+	uint32_t GetUIHeight() const;
+
+	EngineApplication& GetEngine() { return m_engine; }
+
 private:
+	bool createSwapchains();
+
 	EngineApplication& m_engine;
 	
-	VulkanInstance m_instance{ *this };
-	VulkanSwapChain m_swapChain{ *this };
+	VulkanInstance     m_instance{ *this };
+	VulkanSurface      m_surface{ *this };
+	VulkanSwapChain    m_swapChain{ *this };
 
-	RenderDevice m_device{ m_engine, *this };
+	RenderDevice       m_device{ m_engine, *this };
+	ImGuiImpl          m_imgui{ *this };
+
+	uint32_t           m_width = 0;
+	uint32_t           m_height = 0;
+
+	//uint64_t           m_frameCount = 0;
+	//float              m_averageFPS = 0;
+	//float              m_frameStartTime = 0;
+	//float              m_previousFrameTime = 0;
+	//float              m_averageFrameTime = 0;
 };
 
 #pragma endregion

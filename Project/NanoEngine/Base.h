@@ -94,6 +94,10 @@
 //#endif
 //#include <GLFW/glfw3native.h>
 
+#if defined(_WIN32)
+#	include <ShellScalingApi.h>
+#endif
+
 /*
 Left handed
 	Y   Z
@@ -132,6 +136,10 @@ Left handed
 #include <tiny_obj_loader.h>
 
 #include <utf8.h>
+
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_vulkan.h>
 
 #undef near
 #undef far
