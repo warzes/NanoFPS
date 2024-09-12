@@ -295,6 +295,7 @@ struct RenderCreateInfo final
 class RenderSystem final
 {
 	friend class RenderDevice;
+	friend class EngineApplication;
 public:
 	RenderSystem(EngineApplication& engine);
 
@@ -337,6 +338,7 @@ public:
 
 private:
 	bool createSwapchains();
+	void resize();
 
 	EngineApplication& m_engine;
 	
@@ -346,15 +348,6 @@ private:
 
 	RenderDevice       m_device{ m_engine, *this };
 	ImGuiImpl          m_imgui{ *this };
-
-	uint32_t           m_width = 0;
-	uint32_t           m_height = 0;
-
-	//uint64_t           m_frameCount = 0;
-	//float              m_averageFPS = 0;
-	//float              m_frameStartTime = 0;
-	//float              m_previousFrameTime = 0;
-	//float              m_averageFrameTime = 0;
 };
 
 #pragma endregion

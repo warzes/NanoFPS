@@ -4,6 +4,13 @@
 
 class EngineApplication;
 
+enum WindowState
+{
+	WINDOW_STATE_RESTORED = 0,
+	WINDOW_STATE_ICONIFIED = 1,
+	WINDOW_STATE_MAXIMIZED = 2,
+};
+
 struct WindowCreateInfo final
 {
 	std::string_view title = "Game";
@@ -30,15 +37,19 @@ public:
 	void Update();
 
 	[[nodiscard]] GLFWwindow* GetWindow();
-	[[nodiscard]] uint32_t GetWidth() const;
-	[[nodiscard]] uint32_t GetHeight() const;
+	[[nodiscard]] uint32_t    GetWidth() const;
+	[[nodiscard]] uint32_t    GetHeight() const;
+	[[nodiscard]] WindowState GetState() const { return m_state; }
+	[[nodiscard]] bool        IsRestored() const { return (GetState() == WINDOW_STATE_RESTORED); }
+	[[nodiscard]] bool        IsIconified() const { return (GetState() == WINDOW_STATE_ICONIFIED); }
+	[[nodiscard]] bool        IsMaximized() const { return (GetState() == WINDOW_STATE_MAXIMIZED); }
 
 private:
 	EngineApplication& m_engine;
-	GLFWwindow* m_window = nullptr;
-	uint32_t m_width = 0;
-	uint32_t m_height = 0;
-	bool IsWindowResize = true;
+	GLFWwindow*        m_window = nullptr;
+	uint32_t           m_width = 0;
+	uint32_t           m_height = 0;
+	WindowState        m_state = WINDOW_STATE_RESTORED;
 };
 
 #pragma endregion

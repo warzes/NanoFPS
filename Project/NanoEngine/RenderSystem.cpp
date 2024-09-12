@@ -1674,9 +1674,6 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	if (!m_imgui.Setup())
 		return false;
 
-	m_width = m_engine.GetWindow().GetWidth();
-	m_height = m_engine.GetWindow().GetHeight();
-
 	// NEW =>
 	{
 		// Pipeline
@@ -2022,29 +2019,13 @@ void RenderSystem::Shutdown()
 void RenderSystem::TestDraw()
 {
 	// Update imgui
-	//m_imgui.ProcessEvents();
-	//if (!IsWindowIconified())
-	//	m_imgui.NewFrame();
-
+	m_imgui.ProcessEvents();
+	if (!m_engine.IsWindowIconified())
+		m_imgui.NewFrame();
 
 	// Vulkan will return an error if either dimension is 1
 	if ((m_engine.GetWindow().GetWidth() <= 1) || (m_engine.GetWindow().GetHeight() <= 1))
 		return;
-
-	// resize
-	if (m_width != m_engine.GetWindow().GetWidth() || m_height != m_engine.GetWindow().GetHeight())
-	{
-		m_width = m_engine.GetWindow().GetWidth();
-		m_height = m_engine.GetWindow().GetHeight();
-
-		vkDeviceWaitIdle(m_instance.device);
-		m_swapChain.Shutdown2();
-		if (!createSwapchains())
-		{
-			Fatal("Vulkan swapchain recreate failed");
-		}
-		return;
-	}
 
 	// NEW =>
 	{
@@ -2082,8 +2063,8 @@ void RenderSystem::TestDraw()
 				frame.cmd->Draw(3, 1, 0, 0);
 
 				// Draw ImGui
-				//DrawDebugInfo();
-				//DrawImGui(frame.cmd);
+				DrawDebugInfo();
+				DrawImGui(frame.cmd);
 			}
 			frame.cmd->EndRenderPass();
 			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
@@ -2386,6 +2367,17 @@ bool RenderSystem::createSwapchains()
 	//if (!m_swapChain.Resize(m_engine.GetWindow().GetWidth(), m_engine.GetWindow().GetHeight())) return false;
 
 	return true;
+}
+
+void RenderSystem::resize()
+{
+	// Vulkan will return an error if either dimension is 1
+	if ((m_engine.GetWindow().GetWidth() <= 1) || (m_engine.GetWindow().GetHeight() <= 1))
+		return;
+
+	vkDeviceWaitIdle(m_instance.device);
+	m_swapChain.Shutdown2();
+	if (!createSwapchains()) Fatal("Vulkan swapchain recreate failed");
 }
 
 #pragma endregion

@@ -128,6 +128,24 @@ void EngineApplication::Fatal(const std::string& msg)
 	Print("[FATAL] " + msg);
 }
 
+const KeyState& EngineApplication::GetKeyState(KeyCode code) const
+{
+	if ((code < KEY_RANGE_FIRST) || (code >= KEY_RANGE_LAST)) 
+		return m_keyStates[0];
+
+	return m_keyStates[static_cast<uint32_t>(code)];
+}
+
+bool EngineApplication::IsWindowIconified() const
+{
+	return m_window.IsIconified();
+}
+
+bool EngineApplication::IsWindowMaximized() const
+{
+	return m_window.IsMaximized();
+}
+
 void EngineApplication::run(IApplication* app)
 {
 	assert(app);
@@ -184,6 +202,78 @@ void EngineApplication::shutdownLog()
 {
 	if (m_log.fileStream.is_open())
 		m_log.fileStream.close();
+}
+
+void EngineApplication::resizeCallback(uint32_t width, uint32_t height)
+{
+	m_render.resize();
+	if (m_app) m_app->Resize(width, height);
+}
+
+void EngineApplication::windowIconifyCallback(bool iconified)
+{
+	if (m_app) m_app->WindowIconify(iconified);
+}
+
+void EngineApplication::windowMaximizeCallback(bool maximized)
+{
+	if (m_app) m_app->WindowMaximize(maximized);
+}
+
+void EngineApplication::mouseDownCallback(int32_t x, int32_t y, MouseButton buttons)
+{
+	if (ImGui::GetIO().WantCaptureMouse) 
+		return;
+
+	if (m_app) m_app->MouseDown(x, y, buttons);
+}
+
+void EngineApplication::mouseUpCallback(int32_t x, int32_t y, MouseButton buttons)
+{
+	if (ImGui::GetIO().WantCaptureMouse)
+		return;
+
+	if (m_app) m_app->MouseUp(x, y, buttons);
+}
+
+void EngineApplication::mouseMoveCallback(int32_t x, int32_t y, MouseButton buttons)
+{
+	if (ImGui::GetIO().WantCaptureMouse)
+		return;
+
+	int32_t dx = (m_previousMouseX != INT32_MAX) ? (x - m_previousMouseX) : 0;
+	int32_t dy = (m_previousMouseY != INT32_MAX) ? (y - m_previousMouseY) : 0;
+	if (m_app) m_app->MouseMove(x, y, dx, dy, buttons);
+	m_previousMouseX = x;
+	m_previousMouseY = y;
+}
+
+void EngineApplication::scrollCallback(float dx, float dy)
+{
+	if (ImGui::GetIO().WantCaptureMouse)
+		return;
+
+	if (m_app) m_app->Scroll(dx, dy);
+}
+
+void EngineApplication::keyDownCallback(KeyCode key)
+{
+	if (ImGui::GetIO().WantCaptureKeyboard) 
+		return;
+
+	m_keyStates[key].down = true;
+	//m_keyStates[key].timeDown = GetElapsedSeconds(); // TODO:
+	if (m_app) m_app->KeyDown(key);
+}
+
+void EngineApplication::keyUpCallback(KeyCode key)
+{
+	if (ImGui::GetIO().WantCaptureKeyboard)
+		return;
+
+	m_keyStates[key].down = false;
+	m_keyStates[key].timeDown = FLT_MAX;
+	if (m_app) m_app->KeyUp(key);
 }
 
 #pragma endregion
