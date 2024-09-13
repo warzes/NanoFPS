@@ -1255,6 +1255,7 @@ bool ImGuiImpl::Setup()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	io.LogFilename = nullptr;
 
 	float fontSize = 16.0f;
 #if defined(_WIN32)
@@ -1670,7 +1671,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;
 	if (!m_surface.Setup()) return false;
-	if (!createSwapchains()) return false;	
+	if (!createSwapChains()) return false;	
 	if (!m_imgui.Setup())
 		return false;
 
@@ -2013,7 +2014,7 @@ void RenderSystem::Shutdown()
 	vkDestroyRenderPass(m_instance.device, renderPass, nullptr);
 
 	//m_swapChain.Close();
-	m_instance.Shutdown();	
+	m_instance.Shutdown();
 }
 
 void RenderSystem::TestDraw()
@@ -2309,7 +2310,7 @@ uint32_t RenderSystem::GetUIHeight() const
 	return m_engine.GetWindow().GetHeight();
 }
 
-bool RenderSystem::createSwapchains()
+bool RenderSystem::createSwapChains()
 {
 	// NVIDIA only supports B8G8R8A8, ANDROID only supports R8G8B8A8, and AMD supports both. So the default has to special-case either NVIDIA or ANDROID
 #if defined(_ANDROID)
@@ -2377,7 +2378,7 @@ void RenderSystem::resize()
 
 	vkDeviceWaitIdle(m_instance.device);
 	m_swapChain.Shutdown2();
-	if (!createSwapchains()) Fatal("Vulkan swapchain recreate failed");
+	if (!createSwapChains()) Fatal("Vulkan swapchain recreate failed");
 }
 
 #pragma endregion

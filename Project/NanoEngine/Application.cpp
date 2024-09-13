@@ -105,10 +105,10 @@ void EngineApplication::Print(const std::string& msg)
 	puts(msg.data());
 
 	// file
-	if (m_log.fileStream.is_open())
+	if (m_logFile.is_open())
 	{
-		m_log.fileStream << msg << std::endl;
-		m_log.fileStream.flush();
+		m_logFile << msg << std::endl;
+		m_logFile.flush();
 	}
 }
 
@@ -192,7 +192,7 @@ bool EngineApplication::initializeLog(std::string_view filePath)
 {
 	if (!filePath.empty())
 	{
-		m_log.fileStream.open(filePath);
+		m_logFile.open(filePath);
 	}
 
 	return true;
@@ -200,8 +200,8 @@ bool EngineApplication::initializeLog(std::string_view filePath)
 
 void EngineApplication::shutdownLog()
 {
-	if (m_log.fileStream.is_open())
-		m_log.fileStream.close();
+	if (m_logFile.is_open())
+		m_logFile.close();
 }
 
 void EngineApplication::resizeCallback(uint32_t width, uint32_t height)

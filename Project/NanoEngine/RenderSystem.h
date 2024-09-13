@@ -331,13 +331,13 @@ public:
 	[[nodiscard]] Rect GetScissor() const;
 	[[nodiscard]] Viewport GetViewport(float minDepth = 0.0f, float maxDepth = 1.0f) const;
 
-	uint32_t GetUIWidth() const;
-	uint32_t GetUIHeight() const;
+	[[nodiscard]] uint32_t GetUIWidth() const;
+	[[nodiscard]] uint32_t GetUIHeight() const;
 
-	EngineApplication& GetEngine() { return m_engine; }
+	[[nodiscard]] EngineApplication& GetEngine() { return m_engine; }
 
 private:
-	bool createSwapchains();
+	[[nodiscard]] bool createSwapChains();
 	void resize();
 
 	EngineApplication& m_engine;

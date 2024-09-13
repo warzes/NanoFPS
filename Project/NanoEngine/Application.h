@@ -76,6 +76,14 @@ public:
 
 #pragma region Engine Application
 
+enum class StatusApp : uint8_t
+{
+	NonInit,
+	Success,
+	ErrorFailed,
+	Quit
+};
+
 class EngineApplication final
 {
 	friend class Window;
@@ -125,27 +133,15 @@ private:
 
 	IApplication* m_app = nullptr;
 
-	enum class StatusApp : uint8_t
-	{
-		NonInit,
-		Success,
-		ErrorFailed,
-		Quit
-	};
-	StatusApp m_status = StatusApp::NonInit;
+	std::ofstream m_logFile;
+	Window        m_window;
+	Input         m_input;
+	RenderSystem  m_render;
 
-	struct
-	{
-		std::ofstream fileStream;
-	} m_log;
-
-	Window m_window;
-	Input m_input;
-	RenderSystem m_render;
-
-	int32_t m_previousMouseX = INT32_MAX;
-	int32_t m_previousMouseY = INT32_MAX;
-	KeyState m_keyStates[TOTAL_KEY_COUNT] = { false, 0.0f };
+	StatusApp     m_status = StatusApp::NonInit;
+	int32_t       m_previousMouseX = INT32_MAX;
+	int32_t       m_previousMouseY = INT32_MAX;
+	KeyState      m_keyStates[TOTAL_KEY_COUNT] = { false, 0.0f };
 };
 
 #pragma endregion
