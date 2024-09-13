@@ -159,19 +159,28 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\3rdparty\xxhash.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Core.cpp" />
+    <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="RenderCore.cpp" />
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="RenderDevice.cpp" />
     <ClCompile Include="RenderResources.cpp" />
     <ClCompile Include="RenderSystem.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\3rdparty\cgltf.h" />
     <ClInclude Include="..\3rdparty\font_inconsolata.h" />
     <ClInclude Include="..\3rdparty\imgui\imconfig.h" />
     <ClInclude Include="..\3rdparty\imgui\imgui.h" />
@@ -190,15 +199,18 @@
     <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h" />
     <ClInclude Include="..\3rdparty\vk_mem_alloc.h" />
     <ClInclude Include="..\3rdparty\volk\volk.h" />
+    <ClInclude Include="..\3rdparty\xxhash.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Base.h" />
     <ClInclude Include="Core.h" />
+    <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngine.h" />
     <ClInclude Include="RenderCore.h" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="RenderDevice.h" />
     <ClInclude Include="RenderResources.h" />
     <ClInclude Include="RenderSystem.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

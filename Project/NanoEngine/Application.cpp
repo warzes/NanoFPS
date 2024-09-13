@@ -181,8 +181,12 @@ void EngineApplication::run(IApplication* app)
 		{
 			if (m_window.ShouldClose()) break;
 
+			// Update
 			m_window.Update();
 			m_input.Update();
+			m_render.Update();
+
+			// Draw
 			m_render.TestDraw();
 		}
 	}

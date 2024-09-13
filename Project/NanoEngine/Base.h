@@ -53,6 +53,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <set>
 #include <map>
 #include <unordered_map>
 #include <mutex>
@@ -135,11 +136,15 @@ Left handed
 
 #include <tiny_obj_loader.h>
 
+#include <cgltf.h>
+
 #include <utf8.h>
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_vulkan.h>
+
+#include <xxhash.h>
 
 #undef near
 #undef far

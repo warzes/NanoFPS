@@ -2,6 +2,8 @@
 
 #include "RenderCore.h"
 
+// TODO: возможно рендер также загнать в пространство имен как сцена (и возможно графика)
+
 #pragma region Decl Class
 
 class RenderDevice;

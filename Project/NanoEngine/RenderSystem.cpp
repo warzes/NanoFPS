@@ -1520,6 +1520,22 @@ std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::fi
 	return bytecode.value();
 }
 
+Result CreateShader(RenderDevice& device, const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule)
+{
+	std::vector<char> bytecode = LoadShader(baseDir, baseName);
+	if (bytecode.empty()) {
+		return ERROR_GRFX_INVALID_SHADER_BYTE_CODE;
+	}
+
+	ShaderModuleCreateInfo shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
+	Result                       ppxres = device.CreateShaderModule(shaderCreateInfo, ppShaderModule);
+	if (Failed(ppxres)) {
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
 bool createFramebuffers(VkDevice device, VulkanSwapChain& swapchain)
 {
 	framebuffers.resize(swapchain.GetImageViewNum());
@@ -2017,16 +2033,20 @@ void RenderSystem::Shutdown()
 	m_instance.Shutdown();
 }
 
-void RenderSystem::TestDraw()
+void RenderSystem::Update()
 {
 	// Update imgui
-	m_imgui.ProcessEvents();
-	if (!m_engine.IsWindowIconified())
-		m_imgui.NewFrame();
+	if (m_showImgui) m_imgui.ProcessEvents();
+}
 
+void RenderSystem::TestDraw()
+{
 	// Vulkan will return an error if either dimension is 1
 	if ((m_engine.GetWindow().GetWidth() <= 1) || (m_engine.GetWindow().GetHeight() <= 1))
 		return;
+
+	if (!m_engine.IsWindowIconified() && m_showImgui)
+		m_imgui.NewFrame();
 
 	// NEW =>
 	{
@@ -2162,6 +2182,8 @@ void RenderSystem::TestDraw()
 
 void RenderSystem::DrawDebugInfo()
 {
+	if (!m_showImgui) return;
+
 	const uint32_t kImGuiMinWidth = 400;
 	const uint32_t kImGuiMinHeight = 300;
 
@@ -2192,65 +2214,6 @@ void RenderSystem::DrawDebugInfo()
 
 		ImGui::Separator();
 
-		//// CPU
-		//{
-		//	ImGui::Text("CPU");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%s", Platform::GetCpuInfo().GetBrandString());
-		//	ImGui::NextColumn();
-
-		//	ImGui::Text("Architecture");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%s", Platform::GetCpuInfo().GetMicroarchitectureString());
-		//	ImGui::NextColumn();
-		//}
-
-		//ImGui::Separator();
-
-		//// Frame count
-		//{
-		//	ImGui::Text("Frame Count");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%" PRIu64, m_frameCount);
-		//	ImGui::NextColumn();
-		//}
-
-		//// Average FPS
-		//{
-		//	ImGui::Text("Average FPS");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%f", m_averageFPS);
-		//	ImGui::NextColumn();
-		//}
-
-		//// Previous frame time
-		//{
-		//	ImGui::Text("Previous CPU Frame Time");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%f ms", m_previousFrameTime);
-		//	ImGui::NextColumn();
-		//}
-
-		//// Average frame time
-		//{
-		//	ImGui::Text("Average Frame Time");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%f ms", m_averageFrameTime);
-		//	ImGui::NextColumn();
-		//}
-
-		//ImGui::Separator();
-
-		//// Num Frame In Flight
-		//{
-		//	ImGui::Text("Num Frames In Flight");
-		//	ImGui::NextColumn();
-		//	ImGui::Text("%d", mSettings.grfx.numFramesInFlight);
-		//	ImGui::NextColumn();
-		//}
-
-		ImGui::Separator();
-
 		// Swapchain
 		{
 			ImGui::Text("Swapchain Resolution");
@@ -2275,7 +2238,7 @@ void RenderSystem::DrawDebugInfo()
 
 void RenderSystem::DrawImGui(CommandBuffer* pCommandBuffer)
 {
-	m_imgui.Render(pCommandBuffer);
+	if (m_showImgui) m_imgui.Render(pCommandBuffer);
 }
 
 Rect RenderSystem::GetScissor() const
@@ -2375,6 +2338,8 @@ void RenderSystem::resize()
 	// Vulkan will return an error if either dimension is 1
 	if ((m_engine.GetWindow().GetWidth() <= 1) || (m_engine.GetWindow().GetHeight() <= 1))
 		return;
+
+	// TODO: пересоздавать свапчаин нужно по окончании ресайза, а не каждый его пиксель.  и тогда тут надо ловить этот момент и выбрасывать из функции если ресайз еще в процессе
 
 	vkDeviceWaitIdle(m_instance.device);
 	m_swapChain.Shutdown2();

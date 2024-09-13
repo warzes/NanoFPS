@@ -59,6 +59,15 @@
     <ClCompile Include="..\3rdparty\font_inconsolata.cpp">
       <Filter>3rdparty</Filter>
     </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rdparty\xxhash.c">
+      <Filter>3rdparty\xxhash</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -81,6 +90,9 @@
     </Filter>
     <Filter Include="3rdparty\imgui">
       <UniqueIdentifier>{2148f9a2-6aa1-4519-8853-efaebb4ed230}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\xxhash">
+      <UniqueIdentifier>{5e4645b0-159d-4d2b-ae44-22410f21b694}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +175,18 @@
     </ClInclude>
     <ClInclude Include="..\3rdparty\font_inconsolata.h">
       <Filter>3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\cgltf.h">
+      <Filter>3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\xxhash.h">
+      <Filter>3rdparty\xxhash</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

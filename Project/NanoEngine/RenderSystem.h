@@ -302,8 +302,10 @@ public:
 	[[nodiscard]] bool Setup(const RenderCreateInfo& createInfo);
 	void Shutdown();
 
+	void Update();
 	void TestDraw();
 	void DrawDebugInfo();
+
 	void DrawImGui(CommandBuffer* pCommandBuffer);
 
 	[[nodiscard]] VkInstance& GetVkInstance() { return m_instance.instance; }
@@ -348,6 +350,8 @@ private:
 
 	RenderDevice       m_device{ m_engine, *this };
 	ImGuiImpl          m_imgui{ *this };
+
+	bool               m_showImgui{ false };
 };
 
 #pragma endregion

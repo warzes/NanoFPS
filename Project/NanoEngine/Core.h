@@ -1594,7 +1594,7 @@ public:
 	float radius = 0.0f;
 };
 
-class Transform final
+class Transform
 {
 public:
 	enum class RotationOrder
@@ -1609,6 +1609,7 @@ public:
 
 	Transform() = default;
 	Transform(const glm::vec3& translation);
+	virtual ~Transform() = default;
 
 	bool IsDirty() const { return (m_dirty.mask != 0); }
 
@@ -1617,13 +1618,13 @@ public:
 	const glm::vec3& GetScale() const { return m_scale; }
 	RotationOrder GetRotationOrder() const { return m_rotationOrder; }
 
-	void SetTranslation(const glm::vec3& value);
-	void SetTranslation(float x, float y, float z);
-	void SetRotation(const glm::vec3& value);
-	void SetRotation(float x, float y, float z);
-	void SetScale(const glm::vec3& value);
-	void SetScale(float x, float y, float z);
-	void SetRotationOrder(Transform::RotationOrder value);
+	virtual void SetTranslation(const glm::vec3& value);
+	virtual void SetTranslation(float x, float y, float z);
+	virtual void SetRotation(const glm::vec3& value);
+	virtual void SetRotation(float x, float y, float z);
+	virtual void SetScale(const glm::vec3& value);
+	virtual void SetScale(float x, float y, float z);
+	virtual void SetRotationOrder(Transform::RotationOrder value);
 
 	const glm::mat4x4& GetTranslationMatrix() const;
 	const glm::mat4x4& GetRotationMatrix() const;
