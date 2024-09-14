@@ -2,49 +2,6 @@
 #include "Core.h"
 #include "Application.h"
 
-#pragma region IApplication
-
-void IApplication::Quit()
-{
-	engine->Quit();
-}
-
-void IApplication::Print(const std::string& msg)
-{
-	engine->Print(msg);
-}
-
-void IApplication::Warning(const std::string& msg)
-{
-	engine->Warning(msg);
-}
-
-void IApplication::Error(const std::string& msg)
-{
-	engine->Error(msg);
-}
-
-void IApplication::Fatal(const std::string& msg)
-{
-	engine->Fatal(msg);
-}
-
-Window& IApplication::GetWindow()
-{
-	return engine->GetWindow();
-}
-Input& IApplication::GetInput()
-{
-	return engine->GetInput();
-}
-
-RenderSystem& IApplication::GetRender()
-{
-	return engine->GetRender();
-}
-
-#pragma endregion
-
 #pragma region Engine Application
 
 EngineApplication* thisEngineApplication = nullptr;
@@ -88,6 +45,77 @@ EngineApplication::~EngineApplication()
 	m_window.Shutdown();
 	shutdownLog();
 }
+
+void EngineApplication::Run()
+{
+	assert(m_status == StatusApp::NonInit);
+
+	// Init
+	if (!setup())
+		return;
+
+	// Main Loop
+	{
+		while (m_status == StatusApp::Success)
+		{
+			if (m_window.ShouldClose()) break;
+
+			// Update
+			m_window.Update();
+			m_input.Update();
+			m_render.Update();
+			Update();
+
+			// Draw
+			m_render.TestDraw();
+			Render();
+		}
+	}
+	Shutdown();
+}
+
+bool EngineApplication::setup()
+{
+	EngineApplicationCreateInfo createInfo = Config();
+
+	if (!initializeLog(createInfo.logFilePath))
+		return false;
+
+	if (!m_window.Setup(createInfo.window))
+		return false;
+	if (!m_input.Setup())
+		return false;
+	if (!m_render.Setup(createInfo.render))
+		return false;
+
+	if (!Setup())
+		return false;
+
+	if (m_status == StatusApp::NonInit)
+		m_status = StatusApp::Success;
+
+	if (m_status != StatusApp::Success)
+		return false;
+
+	return true;
+}
+
+bool EngineApplication::initializeLog(std::string_view filePath)
+{
+	if (!filePath.empty())
+		m_logFile.open(filePath);
+
+	return true;
+}
+
+void EngineApplication::shutdownLog()
+{
+	if (m_logFile.is_open())
+		m_logFile.close();
+}
+
+
+
 
 void EngineApplication::Quit()
 {
@@ -146,82 +174,20 @@ bool EngineApplication::IsWindowMaximized() const
 	return m_window.IsMaximized();
 }
 
-void EngineApplication::run(IApplication* app)
-{
-	assert(app);
-	assert(m_status == StatusApp::NonInit);
-
-	m_app = app;
-	m_app->engine = this;
-
-	// Init
-	{
-		const EngineApplicationCreateInfo createInfo = m_app->Config();
-
-		if (!initializeLog(createInfo.logFilePath))
-			return;
-
-		if (!m_window.Setup(createInfo.window))
-			return;
-		if (!m_input.Setup())
-			return;
-		if (!m_render.Setup(createInfo.render))
-			return;
-
-		if (m_status == StatusApp::NonInit)
-			m_status = StatusApp::Success;
-
-		if (m_status != StatusApp::Success)
-			return;
-	}
-
-	// Main Loop
-	{
-		while (m_status == StatusApp::Success)
-		{
-			if (m_window.ShouldClose()) break;
-
-			// Update
-			m_window.Update();
-			m_input.Update();
-			m_render.Update();
-
-			// Draw
-			m_render.TestDraw();
-		}
-	}
-}
-
-bool EngineApplication::initializeLog(std::string_view filePath)
-{
-	if (!filePath.empty())
-	{
-		m_logFile.open(filePath);
-	}
-
-	return true;
-}
-
-void EngineApplication::shutdownLog()
-{
-	if (m_logFile.is_open())
-		m_logFile.close();
-}
-
 void EngineApplication::resizeCallback(uint32_t width, uint32_t height)
 {
 	m_render.resize();
-	if (m_app) m_app->Resize(width, height);
+	Resize(width, height);
 }
 
 void EngineApplication::windowIconifyCallback(bool iconified)
 {
-	if (m_app) m_app->WindowIconify(iconified);
+	WindowIconify(iconified);
 }
 
 void EngineApplication::windowMaximizeCallback(bool maximized)
 {
-	if (m_app) m_app->WindowMaximize(maximized);
+	WindowMaximize(maximized);
 }
 
 void EngineApplication::mouseDownCallback(int32_t x, int32_t y, MouseButton buttons)
@@ -229,7 +195,7 @@ void EngineApplication::mouseDownCallback(int32_t x, int32_t y, MouseButton butt
 	if (ImGui::GetIO().WantCaptureMouse) 
 		return;
 
-	if (m_app) m_app->MouseDown(x, y, buttons);
+	MouseDown(x, y, buttons);
 }
 
 void EngineApplication::mouseUpCallback(int32_t x, int32_t y, MouseButton buttons)
@@ -237,7 +203,7 @@ void EngineApplication::mouseUpCallback(int32_t x, int32_t y, MouseButton button
 	if (ImGui::GetIO().WantCaptureMouse)
 		return;
 
-	if (m_app) m_app->MouseUp(x, y, buttons);
+	MouseUp(x, y, buttons);
 }
 
 void EngineApplication::mouseMoveCallback(int32_t x, int32_t y, MouseButton buttons)
@@ -247,7 +213,7 @@ void EngineApplication::mouseMoveCallback(int32_t x, int32_t y, MouseButton butt
 
 	int32_t dx = (m_previousMouseX != INT32_MAX) ? (x - m_previousMouseX) : 0;
 	int32_t dy = (m_previousMouseY != INT32_MAX) ? (y - m_previousMouseY) : 0;
-	if (m_app) m_app->MouseMove(x, y, dx, dy, buttons);
+	MouseMove(x, y, dx, dy, buttons);
 	m_previousMouseX = x;
 	m_previousMouseY = y;
 }
@@ -257,7 +223,7 @@ void EngineApplication::scrollCallback(float dx, float dy)
 	if (ImGui::GetIO().WantCaptureMouse)
 		return;
 
-	if (m_app) m_app->Scroll(dx, dy);
+	Scroll(dx, dy);
 }
 
 void EngineApplication::keyDownCallback(KeyCode key)
@@ -267,7 +233,7 @@ void EngineApplication::keyDownCallback(KeyCode key)
 
 	m_keyStates[key].down = true;
 	//m_keyStates[key].timeDown = GetElapsedSeconds(); // TODO:
-	if (m_app) m_app->KeyDown(key);
+	KeyDown(key);
 }
 
 void EngineApplication::keyUpCallback(KeyCode key)
@@ -277,7 +243,7 @@ void EngineApplication::keyUpCallback(KeyCode key)
 
 	m_keyStates[key].down = false;
 	m_keyStates[key].timeDown = FLT_MAX;
-	if (m_app) m_app->KeyUp(key);
+	KeyUp(key);
 }
 
 #pragma endregion

@@ -15,20 +15,28 @@ struct EngineApplicationCreateInfo final
 
 #pragma endregion
 
-#pragma region IApplication
+#pragma region Engine Application
 
-class EngineApplication;
-
-class IApplication
+enum class StatusApp : uint8_t
 {
-	friend class EngineApplication;
+	NonInit,
+	Success,
+	ErrorFailed,
+	Quit
+};
+
+class EngineApplication
+{
+	friend class Window;
+	friend class WindowEvents;
 public:
-	IApplication() = default;
-	virtual ~IApplication() = default;
+	EngineApplication();
+	~EngineApplication();
 
-	[[nodiscard]] virtual const EngineApplicationCreateInfo Config() const { return {}; }
+	void Run();
 
-	virtual void Setup() {}
+	virtual EngineApplicationCreateInfo Config() const { return {}; }
+	virtual bool Setup() { return true; }
 	virtual void Shutdown() {}
 
 	// Window resize event
@@ -43,58 +51,15 @@ public:
 	virtual void MouseUp([[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] MouseButton buttons) {}
 	// Mouse move event
 	virtual void MouseMove([[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] int32_t dx, [[maybe_unused]] int32_t dy, [[maybe_unused]] MouseButton buttons) {}
-
-
-
 	// Key down event
 	virtual void KeyDown([[maybe_unused]] KeyCode key) {}
 	// Key up event
 	virtual void KeyUp([[maybe_unused]] KeyCode key) {}
-
-
 	// Mouse wheel or touchpad scroll event
 	virtual void Scroll([[maybe_unused]] float dx, [[maybe_unused]] float dy) {}
 
 	virtual void Update() {}
 	virtual void Render() {}
-
-	void Quit();
-
-	void Print(const std::string& msg);
-	void Warning(const std::string& msg);
-	void Error(const std::string& msg);
-	void Fatal(const std::string& msg);
-
-	Window& GetWindow();
-	Input& GetInput();
-	RenderSystem& GetRender();
-
-	EngineApplication* engine = nullptr;
-};
-
-#pragma endregion
-
-#pragma region Engine Application
-
-enum class StatusApp : uint8_t
-{
-	NonInit,
-	Success,
-	ErrorFailed,
-	Quit
-};
-
-class EngineApplication final
-{
-	friend class Window;
-	friend class WindowEvents;
-public:
-	template<typename T>
-	static void Run()
-	{
-		EngineApplication engine;
-		engine.run((IApplication*)new T);
-	}
 
 	void Quit();
 	void Failed();
@@ -114,10 +79,8 @@ public:
 	bool IsWindowMaximized() const;
 
 private:
-	EngineApplication();
-	~EngineApplication();
+	bool setup();
 
-	void run(IApplication* app);
 	bool initializeLog(std::string_view filePath);
 	void shutdownLog();
 
@@ -130,8 +93,6 @@ private:
 	void scrollCallback(float dx, float dy);
 	void keyDownCallback(KeyCode key);
 	void keyUpCallback(KeyCode key);
-
-	IApplication* m_app = nullptr;
 
 	std::ofstream m_logFile;
 	Window        m_window;

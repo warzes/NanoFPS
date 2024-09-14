@@ -8,6 +8,7 @@ int main(
 	[[maybe_unused]] int   argc,
 	[[maybe_unused]] char* argv[])
 {
-	EngineApplication::Run<GameApplication>();
+	GameApplication app;
+	app.Run();
 }
 //-----------------------------------------------------------------------------

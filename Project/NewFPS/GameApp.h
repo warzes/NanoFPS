@@ -2,7 +2,7 @@
 
 #include "NanoEngine.h"
 
-class GameApplication final : public IApplication
+class GameApplication final : public EngineApplication
 {
 
 };
