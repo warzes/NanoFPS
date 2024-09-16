@@ -15,6 +15,18 @@
     <ClCompile Include="004_Cube.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="005_CubeTextured.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="006_ComputeFill.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="007_DrawIndexed.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="008_BasicGeometry.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -28,6 +40,18 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="004_Cube.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="005_CubeTextured.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="006_ComputeFill.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="007_DrawIndexed.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="008_BasicGeometry.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

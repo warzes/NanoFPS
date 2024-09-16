@@ -152,6 +152,7 @@ void Example_003::Shutdown()
 	mPipelineInterface.Reset();
 	mPipeline.Reset();
 	mVertexBuffer.Reset();
+	// TODO: доделать очистку
 }
 
 void Example_003::Update()

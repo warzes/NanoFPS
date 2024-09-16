@@ -99,6 +99,10 @@
     <ClCompile Include="002TriangleSpinning.cpp" />
     <ClCompile Include="003_SquateTextured.cpp" />
     <ClCompile Include="004_Cube.cpp" />
+    <ClCompile Include="005_CubeTextured.cpp" />
+    <ClCompile Include="006_ComputeFill.cpp" />
+    <ClCompile Include="007_DrawIndexed.cpp" />
+    <ClCompile Include="008_BasicGeometry.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -107,6 +111,10 @@
     <ClInclude Include="002TriangleSpinning.h" />
     <ClInclude Include="003_SquateTextured.h" />
     <ClInclude Include="004_Cube.h" />
+    <ClInclude Include="005_CubeTextured.h" />
+    <ClInclude Include="006_ComputeFill.h" />
+    <ClInclude Include="007_DrawIndexed.h" />
+    <ClInclude Include="008_BasicGeometry.h" />
     <ClInclude Include="GameApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

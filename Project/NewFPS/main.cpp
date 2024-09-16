@@ -3,6 +3,10 @@
 #include "002TriangleSpinning.h"
 #include "003_SquateTextured.h"
 #include "004_Cube.h"
+#include "005_CubeTextured.h"
+#include "006_ComputeFill.h"
+#include "007_DrawIndexed.h"
+#include "008_BasicGeometry.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -17,7 +21,12 @@ int main(
 	//Example_001 app;
 	//Example_002 app;
 	//Example_003 app;
-	Example_004 app;
+	//Example_004 app;
+	//Example_005 app;
+	//Example_006 app;
+	//Example_007 app;
+	Example_008 app;
+
 
 	app.Run();
 }
