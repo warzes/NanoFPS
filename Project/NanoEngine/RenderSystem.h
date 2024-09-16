@@ -142,7 +142,7 @@ private:
 
 #pragma region VulkanSwapchain
 
-struct SwapChainCreateInfo final
+struct VulkanSwapChainCreateInfo final
 {
 	VulkanSurface*      surface = nullptr;
 	Queue*              queue = nullptr;
@@ -156,12 +156,20 @@ struct SwapChainCreateInfo final
 	PresentMode         presentMode = PRESENT_MODE_IMMEDIATE;
 };
 
+// TODO: неудачно получается. VulkanSwapChainCreateInfo используется для создания ресурса свапчаина. а SwapChainCreateInfo - настройка пользователем. надо как-то переделать
+struct SwapChainCreateInfo final
+{
+	Format   colorFormat = FORMAT_B8G8R8A8_UNORM;
+	Format   depthFormat = FORMAT_UNDEFINED;
+	uint32_t imageCount = 2;
+};
+
 class VulkanSwapChain final
 {
 public:
 	VulkanSwapChain(RenderSystem& render);
 
-	bool Setup(const SwapChainCreateInfo& createInfo);
+	bool Setup(const VulkanSwapChainCreateInfo& createInfo);
 	void Shutdown2();
 
 	uint32_t GetWidth() const { return m_createInfo.width; }
@@ -233,7 +241,7 @@ private:
 		const Semaphore* const* ppWaitSemaphores);// TODO: перенесети в Present
 
 	RenderSystem&                    m_render;
-	SwapChainCreateInfo              m_createInfo;
+	VulkanSwapChainCreateInfo              m_createInfo;
 
 	VkSwapchainKHR                   m_swapChain{ nullptr };
 
@@ -342,19 +350,20 @@ public:
 	Result WaitIdle();
 
 private:
-	[[nodiscard]] bool createSwapChains();
+	[[nodiscard]] bool createSwapChains(const SwapChainCreateInfo& swapChain);
 	void resize();
 
-	EngineApplication& m_engine;
+	EngineApplication&  m_engine;
 	
-	VulkanInstance     m_instance{ *this };
-	VulkanSurface      m_surface{ *this };
-	VulkanSwapChain    m_swapChain{ *this };
+	VulkanInstance      m_instance{ *this };
+	VulkanSurface       m_surface{ *this };
+	VulkanSwapChain     m_swapChain{ *this };
+	SwapChainCreateInfo m_swapChainInfo{}; // TODO: на самом деле не нужен - вся эта инфа есть в m_swapChain, нужно получать оттуда.
 
-	RenderDevice       m_device{ m_engine, *this };
-	ImGuiImpl          m_imgui{ *this };
+	RenderDevice        m_device{ m_engine, *this };
+	ImGuiImpl           m_imgui{ *this };
 
-	bool               m_showImgui{ false };
+	bool                m_showImgui{ false };
 };
 
 #pragma endregion

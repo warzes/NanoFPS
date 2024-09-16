@@ -1,5 +1,12 @@
 #include "004_Cube.h"
 
+EngineApplicationCreateInfo Example_004::Config() const
+{
+	EngineApplicationCreateInfo createInfo{};
+	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	return createInfo;
+}
+
 bool Example_004::Setup()
 {
 	auto& device = GetRenderDevice();

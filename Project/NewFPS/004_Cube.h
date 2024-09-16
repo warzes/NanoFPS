@@ -5,6 +5,7 @@
 class Example_004 final : public EngineApplication
 {
 public:
+	EngineApplicationCreateInfo Config() const final;
 	bool Setup() final;
 	void Shutdown() final;
 	void Update() final;

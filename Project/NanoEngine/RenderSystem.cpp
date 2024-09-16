@@ -434,7 +434,7 @@ VulkanSwapChain::VulkanSwapChain(RenderSystem& render)
 {
 }
 
-bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
+bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 {
 	m_createInfo = createInfo;
 
@@ -742,7 +742,6 @@ bool VulkanSwapChain::Setup(const SwapChainCreateInfo& createInfo)
 	}
 
 	// Create depth images if needed. This is usually needed for both normal swapchains and headless swapchains, but not needed for XR swapchains which create their own depth images.
-	//
 	auto ppxres = createDepthImages();
 	if (Failed(ppxres)) {
 		return false; // TODO: error
@@ -1470,7 +1469,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))
 		return false;
 	if (!m_surface.Setup()) return false;
-	if (!createSwapChains()) return false;	
+	if (!createSwapChains(createInfo.swapChain)) return false;
 	if (!m_imgui.Setup())
 		return false;
 		
@@ -1611,24 +1610,27 @@ Result RenderSystem::WaitIdle()
 	return SUCCESS;
 }
 
-bool RenderSystem::createSwapChains()
+bool RenderSystem::createSwapChains(const SwapChainCreateInfo& swapChain)
 {
-	// NVIDIA only supports B8G8R8A8, ANDROID only supports R8G8B8A8, and AMD supports both. So the default has to special-case either NVIDIA or ANDROID
-#if defined(_ANDROID)
-	Format colorFormat = FORMAT_R8G8B8A8_UNORM;
-#else
-	Format colorFormat = FORMAT_B8G8R8A8_UNORM;
-#endif
-	Format depthFormat = FORMAT_UNDEFINED;
-	uint32_t imageCount = 2;
+	m_swapChainInfo = swapChain;
+
+	VulkanSwapChainCreateInfo ci = {};
+	ci.queue = m_device.GetGraphicsQueue();
+	ci.surface = &m_surface;
+	ci.width = m_engine.GetWindowWidth();
+	ci.height = m_engine.GetWindowHeight();
+	ci.colorFormat = swapChain.colorFormat;
+	ci.depthFormat = swapChain.depthFormat;
+	ci.imageCount = swapChain.imageCount;
+	ci.presentMode = PRESENT_MODE_IMMEDIATE;
 
 	// m_surface
 	{
 		const uint32_t surfaceMinImageCount = m_surface.GetMinImageCount();
-		if (imageCount < surfaceMinImageCount)
+		if (swapChain.imageCount < surfaceMinImageCount)
 		{
-			Warning("readjusting swapchain's image count from " + std::to_string(imageCount) + " to " + std::to_string(surfaceMinImageCount) + " to match surface requirements");
-			imageCount = surfaceMinImageCount;
+			Warning("readjusting swapchain's image count from " + std::to_string(swapChain.imageCount) + " to " + std::to_string(surfaceMinImageCount) + " to match surface requirements");
+			ci.imageCount = surfaceMinImageCount;
 		}
 
 		// Cap the image width/height to what the surface caps are.
@@ -1636,9 +1638,9 @@ bool RenderSystem::createSwapChains()
 		// For example an application can request a 1920x1080 window but because of the task bar, the window may get created at 1920x1061. This limits the swapchain's max image extents to 1920x1061.
 		const uint32_t surfaceMaxImageWidth = m_surface.GetMaxImageWidth();
 		const uint32_t surfaceMaxImageHeight = m_surface.GetMaxImageHeight();
-		if ((m_engine.GetWindowWidth() > surfaceMaxImageWidth) || (m_engine.GetWindowHeight() > surfaceMaxImageHeight))
+		if ((ci.width > surfaceMaxImageWidth) || (ci.height > surfaceMaxImageHeight))
 		{
-			Warning("readjusting swapchain/window size from " + std::to_string(m_engine.GetWindowWidth()) + "x" + std::to_string(m_engine.GetWindowHeight()) + " to " + std::to_string(surfaceMaxImageWidth) + "x" + std::to_string(surfaceMaxImageHeight) + " to match surface requirements");
+			Warning("readjusting swapchain/window size from " + std::to_string(ci.width) + "x" + std::to_string(ci.height) + " to " + std::to_string(surfaceMaxImageWidth) + "x" + std::to_string(surfaceMaxImageHeight) + " to match surface requirements");
 			//m_engine.GetWindowWidth() = std::min(m_engine.GetWindowWidth(), surfaceMaxImageWidth); // TODO:
 			//m_engine.GetWindowHeight() = std::min(m_engine.GetWindowHeight(), surfaceMaxImageHeight);
 		}
@@ -1647,26 +1649,24 @@ bool RenderSystem::createSwapChains()
 		const uint32_t surfaceCurrentImageHeight = m_surface.GetCurrentImageHeight();
 		if ((surfaceCurrentImageWidth != VulkanSurface::kInvalidExtent) && (surfaceCurrentImageHeight != VulkanSurface::kInvalidExtent))
 		{
-			if ((m_engine.GetWindowWidth() != surfaceCurrentImageWidth) || (m_engine.GetWindowHeight() != surfaceCurrentImageHeight))
+			if ((ci.width != surfaceCurrentImageWidth) || (ci.height != surfaceCurrentImageHeight))
 			{
-				Warning("window size " + std::to_string(m_engine.GetWindowWidth()) + "x" + std::to_string(m_engine.GetWindowHeight()) + " does not match current surface extent " + std::to_string(surfaceCurrentImageWidth) + "x" + std::to_string(surfaceCurrentImageHeight));
+				Warning("window size " + std::to_string(ci.width) + "x" + std::to_string(ci.height) + " does not match current surface extent " + std::to_string(surfaceCurrentImageWidth) + "x" + std::to_string(surfaceCurrentImageHeight));
 			}
 			Warning("surface current extent " + std::to_string(surfaceCurrentImageWidth) + "x" + std::to_string(surfaceCurrentImageHeight));
 		}
 	}
 
-	SwapChainCreateInfo ci = {};
-	ci.queue = GetRenderDevice().GetGraphicsQueue();
-	ci.surface = &m_surface;
-	ci.width = m_engine.GetWindowWidth();
-	ci.height = m_engine.GetWindowHeight();
-	ci.colorFormat = colorFormat;
-	ci.depthFormat = depthFormat;
-	ci.imageCount = imageCount;
-	ci.presentMode = PRESENT_MODE_IMMEDIATE;
+	Print("Creating application swapchain");
+	Print("   resolution  : " + std::to_string(ci.width) + "x" + std::to_string(ci.height));
+	Print("   image count : " + std::to_string(swapChain.imageCount));
 
-	if (!m_swapChain.Setup(ci)) return false;
-	//if (!m_swapChain.Resize(m_engine.GetWindowWidth(), m_engine.GetWindowHeight())) return false;
+	if (!m_swapChain.Setup(ci))
+	{
+		ASSERT_MSG(false, "RenderSystem::createSwapChains failed");
+		return false;
+	}
+
 
 	return true;
 }
@@ -1681,7 +1681,7 @@ void RenderSystem::resize()
 
 	vkDeviceWaitIdle(m_instance.device);
 	m_swapChain.Shutdown2();
-	if (!createSwapChains()) Fatal("Vulkan swapchain recreate failed");
+	if (!createSwapChains(m_swapChainInfo)) Fatal("Vulkan swapchain recreate failed");
 }
 
 #pragma endregion
