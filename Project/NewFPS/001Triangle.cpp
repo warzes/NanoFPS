@@ -1,11 +1,6 @@
-﻿#include "GameApp.h"
+#include "001Triangle.h"
 
-// TODO:
-// сделать таймер ScopedTimer
-//https://www.youtube.com/watch?v=kh1zqOVvBVo
-// Pangeon
-
-bool GameApplication::Setup()
+bool Example_001::Setup()
 {
 	auto& device = GetRenderDevice();
 
@@ -20,21 +15,21 @@ bool GameApplication::Setup()
 		mVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
 		mVertexBinding.AppendAttribute({ "COLOR", 1, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo        = {};
-		gpCreateInfo.VS                                 = { mVS.Get(), "vsmain" };
-		gpCreateInfo.PS                                 = { mPS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount      = 1;
-		gpCreateInfo.vertexInputState.bindings[0]       = mVertexBinding;
-		gpCreateInfo.topology                           = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode                        = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode                           = CULL_MODE_NONE;
-		gpCreateInfo.frontFace                          = FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable                    = false;
-		gpCreateInfo.depthWriteEnable                   = false;
-		gpCreateInfo.blendModes[0]                      = BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount      = 1;
+		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
+		gpCreateInfo.PS = { mPS.Get(), "psmain" };
+		gpCreateInfo.vertexInputState.bindingCount = 1;
+		gpCreateInfo.vertexInputState.bindings[0] = mVertexBinding;
+		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = CULL_MODE_NONE;
+		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.depthReadEnable = false;
+		gpCreateInfo.depthWriteEnable = false;
+		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.pPipelineInterface                 = mPipelineInterface;
+		gpCreateInfo.pPipelineInterface = mPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mPipeline));
 	}
 
@@ -69,11 +64,11 @@ bool GameApplication::Setup()
 		};
 		uint32_t dataSize = SizeInBytesU32(vertexData);
 
-		BufferCreateInfo bufferCreateInfo             = {};
-		bufferCreateInfo.size                         = dataSize;
+		BufferCreateInfo bufferCreateInfo = {};
+		bufferCreateInfo.size = dataSize;
 		bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-		bufferCreateInfo.memoryUsage                  = MEMORY_USAGE_CPU_TO_GPU;
-		bufferCreateInfo.initialState                 = RESOURCE_STATE_VERTEX_BUFFER;
+		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.initialState = RESOURCE_STATE_VERTEX_BUFFER;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mVertexBuffer));
 
 		void* pAddr = nullptr;
@@ -85,7 +80,7 @@ bool GameApplication::Setup()
 	return true;
 }
 
-void GameApplication::Shutdown()
+void Example_001::Shutdown()
 {
 	mPerFrame.clear();
 	mVS.Reset();
@@ -95,11 +90,11 @@ void GameApplication::Shutdown()
 	mVertexBuffer.Reset();
 }
 
-void GameApplication::Update()
+void Example_001::Update()
 {
 }
 
-void GameApplication::Render()
+void Example_001::Render()
 {
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();

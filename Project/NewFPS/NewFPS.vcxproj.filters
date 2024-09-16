@@ -3,8 +3,37 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GameApp.cpp" />
+    <ClCompile Include="001Triangle.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="002TriangleSpinning.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="003_SquateTextured.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="004_Cube.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
+    <ClInclude Include="001Triangle.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="002TriangleSpinning.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="003_SquateTextured.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="004_Cube.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="examples">
+      <UniqueIdentifier>{31337459-cc5f-4be3-a818-ad5eff566ffd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

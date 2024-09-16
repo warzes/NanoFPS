@@ -43,6 +43,9 @@ public:
 	[[nodiscard]] QueuePtr GetGraphicsQueue() const;
 	[[nodiscard]] QueuePtr GetAnyAvailableQueue() const;
 
+	std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName);
+	Result CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule);
+
 	Result CreateBuffer(const BufferCreateInfo& createInfo, Buffer** ppBuffer);
 	void   DestroyBuffer(const Buffer* pBuffer);
 
@@ -117,9 +120,6 @@ public:
 	Result CreateStorageImageView(const StorageImageViewCreateInfo& createInfo, StorageImageView** ppStorageImageView);
 	void   DestroyStorageImageView(const StorageImageView* pStorageImageView);
 
-	//Result CreateSwapchain(const SwapchainCreateInfo& createInfo, Swapchain** ppSwapchain);
-	//void   DestroySwapchain(const Swapchain* pSwapchain);
-
 	Result CreateTextDraw(const TextDrawCreateInfo& createInfo, TextDraw** ppTextDraw);
 	void   DestroyTextDraw(const TextDraw* pTextDraw);
 
@@ -138,8 +138,6 @@ public:
 
 	Result AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet);
 	void   FreeDescriptorSet(const DescriptorSet* pSet);
-
-	Result WaitIdle();
 
 	//===================================================================
 	// OLD
@@ -197,6 +195,8 @@ private:
 
 	template <typename ObjectT>
 	void destroyAllObjects(std::vector<ObjPtr<ObjectT>>& container);
+
+	std::optional<std::filesystem::path> getShaderPathSuffix(const std::filesystem::path& baseName);
 
 	EngineApplication& m_engine;
 	RenderSystem& m_render;

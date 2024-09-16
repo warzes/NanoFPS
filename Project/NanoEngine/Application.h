@@ -31,7 +31,7 @@ class EngineApplication
 	friend class WindowEvents;
 public:
 	EngineApplication();
-	~EngineApplication();
+	virtual ~EngineApplication();
 
 	void Run();
 
@@ -72,8 +72,13 @@ public:
 	Window& GetWindow() { return m_window; }
 	Input& GetInput() { return m_input; }
 	RenderSystem& GetRender() { return m_render; }
+	RenderDevice& GetRenderDevice() { return m_render.GetRenderDevice(); }
 
 	const KeyState& GetKeyState(KeyCode code) const;
+
+	uint32_t GetWindowWidth() const { return m_window.GetWidth(); }
+	uint32_t GetWindowHeight() const { return m_window.GetHeight(); }
+	float GetWindowAspect() const { return static_cast<float>(GetWindowWidth()) / static_cast<float>(GetWindowHeight()); }
 
 	bool IsWindowIconified() const;
 	bool IsWindowMaximized() const;

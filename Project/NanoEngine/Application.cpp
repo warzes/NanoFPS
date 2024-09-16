@@ -71,6 +71,7 @@ void EngineApplication::Run()
 			Render();
 		}
 	}
+	m_render.WaitIdle();
 	Shutdown();
 }
 
@@ -113,9 +114,6 @@ void EngineApplication::shutdownLog()
 	if (m_logFile.is_open())
 		m_logFile.close();
 }
-
-
-
 
 void EngineApplication::Quit()
 {

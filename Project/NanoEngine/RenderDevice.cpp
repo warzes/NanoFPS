@@ -167,6 +167,48 @@ QueuePtr RenderDevice::GetAnyAvailableQueue() const
 	return GetGraphicsQueue(); // TODO: по идее сюда можно вставить любую очередь, не только графическую, а более свободную
 }
 
+std::vector<char> RenderDevice::LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName)
+{
+	ASSERT_MSG(baseDir.is_relative(), "baseDir must be relative. Do not call GetAssetPath() on the directory.");
+	ASSERT_MSG(baseName.is_relative(), "baseName must be relative. Do not call GetAssetPath() on the directory.");
+	auto suffix = getShaderPathSuffix(baseName);
+	if (!suffix.has_value())
+	{
+		ASSERT_MSG(false, "unsupported API");
+		return {};
+	}
+
+	const auto filePath = baseDir / suffix.value();
+	auto       bytecode = LoadFile(filePath);
+	if (!bytecode.has_value()) {
+		ASSERT_MSG(false, "could not load file: " + filePath.string());
+		return {};
+	}
+
+	Print("Loaded shader from " + filePath.string());
+	return bytecode.value();
+}
+
+Result RenderDevice::CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule)
+{
+	std::vector<char> bytecode = LoadShader(baseDir, baseName);
+	if (bytecode.empty())
+	{
+		Fatal("Shader bytecode load failed");
+		return ERROR_GRFX_INVALID_SHADER_BYTE_CODE;
+	}
+
+	ShaderModuleCreateInfo shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
+	Result ppxres = CreateShaderModule(shaderCreateInfo, ppShaderModule);
+	if (Failed(ppxres))
+	{
+		Error("Shader not create.");
+		return ppxres;
+	}
+
+	return SUCCESS;
+}
+
 Result RenderDevice::CreateBuffer(const BufferCreateInfo& pCreateInfo, Buffer** ppBuffer)
 {
 	ASSERT_NULL_ARG(ppBuffer);
@@ -956,6 +998,10 @@ void RenderDevice::destroyAllObjects(std::vector<ObjPtr<ObjectT>>& container)
 	container.clear();
 }
 
+std::optional<std::filesystem::path> RenderDevice::getShaderPathSuffix(const std::filesystem::path& baseName)
+{
+	return (std::filesystem::path("spv") / baseName).concat(".spv");
+}
 
 //===================================================================
 // OLD

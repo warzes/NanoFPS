@@ -335,8 +335,11 @@ public:
 
 	[[nodiscard]] uint32_t GetUIWidth() const;
 	[[nodiscard]] uint32_t GetUIHeight() const;
+	[[nodiscard]] float2 GetNormalizedDeviceCoordinates(int32_t x, int32_t y) const;
 
 	[[nodiscard]] EngineApplication& GetEngine() { return m_engine; }
+
+	Result WaitIdle();
 
 private:
 	[[nodiscard]] bool createSwapChains();

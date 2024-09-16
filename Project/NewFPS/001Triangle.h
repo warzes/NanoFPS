@@ -2,7 +2,7 @@
 
 #include "NanoEngine.h"
 
-class GameApplication final : public EngineApplication
+class Example_001 final : public EngineApplication
 {
 public:
 	bool Setup() final;

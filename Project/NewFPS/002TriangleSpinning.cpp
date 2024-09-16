@@ -1,20 +1,51 @@
-﻿#include "GameApp.h"
+#include "002TriangleSpinning.h"
 
-// TODO:
-// сделать таймер ScopedTimer
-//https://www.youtube.com/watch?v=kh1zqOVvBVo
-// Pangeon
-
-bool GameApplication::Setup()
+bool Example_002::Setup()
 {
 	auto& device = GetRenderDevice();
 
+	// Uniform buffer
+	// add new example
+	{
+		BufferCreateInfo bufferCreateInfo              = {};
+		bufferCreateInfo.size                          = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
+		bufferCreateInfo.memoryUsage                   = MEMORY_USAGE_CPU_TO_GPU;
+
+		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mUniformBuffer));
+	}
+
+	// Descriptor
+	// add new example
+	{
+		DescriptorPoolCreateInfo poolCreateInfo = {};
+		poolCreateInfo.uniformBuffer = 1;
+		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
+
+		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(DescriptorBinding{ 0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
+
+		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &mDescriptorSet));
+
+		WriteDescriptor write = {};
+		write.binding = 0;
+		write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.bufferOffset = 0;
+		write.bufferRange = WHOLE_SIZE;
+		write.pBuffer = mUniformBuffer;
+		CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
+	}
+
 	// Pipeline
 	{
-		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticVertexColors.vs", &mVS));
-		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticVertexColors.ps", &mPS));
+		CHECKED_CALL(device.CreateShader("basic/shaders", "VertexColors.vs", &mVS));
+		CHECKED_CALL(device.CreateShader("basic/shaders", "VertexColors.ps", &mPS));
 
 		PipelineInterfaceCreateInfo piCreateInfo = {};
+		piCreateInfo.setCount                    = 1; // add new example
+		piCreateInfo.sets[0].set                 = 0;
+		piCreateInfo.sets[0].pLayout             = mDescriptorSetLayout; // add new example
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
 		mVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
@@ -58,7 +89,7 @@ bool GameApplication::Setup()
 		mPerFrame.push_back(frame);
 	}
 
-	// Buffer and geometry data
+	// Vertex buffer and geometry data
 	{
 		std::vector<float> vertexData =
 		{
@@ -73,7 +104,6 @@ bool GameApplication::Setup()
 		bufferCreateInfo.size                         = dataSize;
 		bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
 		bufferCreateInfo.memoryUsage                  = MEMORY_USAGE_CPU_TO_GPU;
-		bufferCreateInfo.initialState                 = RESOURCE_STATE_VERTEX_BUFFER;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mVertexBuffer));
 
 		void* pAddr = nullptr;
@@ -85,7 +115,7 @@ bool GameApplication::Setup()
 	return true;
 }
 
-void GameApplication::Shutdown()
+void Example_002::Shutdown()
 {
 	mPerFrame.clear();
 	mVS.Reset();
@@ -95,11 +125,11 @@ void GameApplication::Shutdown()
 	mVertexBuffer.Reset();
 }
 
-void GameApplication::Update()
+void Example_002::Update()
 {
 }
 
-void GameApplication::Render()
+void Example_002::Render()
 {
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
@@ -114,6 +144,20 @@ void GameApplication::Render()
 	// Wait for and reset image acquired fence
 	CHECKED_CALL(frame.imageAcquiredFence->WaitAndReset());
 
+	// Update uniform buffer
+	// add new example
+	{
+		//float    t = GetElapsedSeconds();
+		static float t = 0.0;
+		t += 0.001f;
+		float4x4 mat = glm::rotate(t, float3(0, 0, 1));
+
+		void* pData = nullptr;
+		CHECKED_CALL(mUniformBuffer->MapMemory(0, &pData));
+		memcpy(pData, &mat, sizeof(mat));
+		mUniformBuffer->UnmapMemory();
+	}
+
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
@@ -121,17 +165,17 @@ void GameApplication::Render()
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
 		RenderPassBeginInfo beginInfo = {};
-		beginInfo.pRenderPass = renderPass;
-		beginInfo.renderArea = renderPass->GetRenderArea();
-		beginInfo.RTVClearCount = 1;
-		beginInfo.RTVClearValues[0] = { {0.9, 0.8, 0.3, 1} };
+		beginInfo.pRenderPass         = renderPass;
+		beginInfo.renderArea          = renderPass->GetRenderArea();
+		beginInfo.RTVClearCount       = 1;
+		beginInfo.RTVClearValues[0]   = { {0.9, 0.8, 0.3, 1} };
 
 		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
 			frame.cmd->SetViewports(render.GetViewport());
-			frame.cmd->BindGraphicsDescriptorSets(mPipelineInterface, 0, nullptr);
+			frame.cmd->BindGraphicsDescriptorSets(mPipelineInterface, 1, &mDescriptorSet);
 			frame.cmd->BindGraphicsPipeline(mPipeline);
 			frame.cmd->BindVertexBuffers(1, &mVertexBuffer, &mVertexBinding.GetStride());
 			frame.cmd->Draw(3, 1, 0, 0);
@@ -145,14 +189,14 @@ void GameApplication::Render()
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
-	submitInfo.commandBufferCount = 1;
-	submitInfo.ppCommandBuffers = &frame.cmd;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.ppWaitSemaphores = &frame.imageAcquiredSemaphore;
+	SubmitInfo submitInfo           = {};
+	submitInfo.commandBufferCount   = 1;
+	submitInfo.ppCommandBuffers     = &frame.cmd;
+	submitInfo.waitSemaphoreCount   = 1;
+	submitInfo.ppWaitSemaphores     = &frame.imageAcquiredSemaphore;
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.ppSignalSemaphores = &frame.renderCompleteSemaphore;
-	submitInfo.pFence = frame.renderCompleteFence;
+	submitInfo.ppSignalSemaphores   = &frame.renderCompleteSemaphore;
+	submitInfo.pFence               = frame.renderCompleteFence;
 
 	CHECKED_CALL(render.GetGraphicsQueue()->Submit(&submitInfo));
 

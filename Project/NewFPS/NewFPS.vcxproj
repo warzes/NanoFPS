@@ -95,10 +95,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="001Triangle.cpp" />
+    <ClCompile Include="002TriangleSpinning.cpp" />
+    <ClCompile Include="003_SquateTextured.cpp" />
+    <ClCompile Include="004_Cube.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="001Triangle.h" />
+    <ClInclude Include="002TriangleSpinning.h" />
+    <ClInclude Include="003_SquateTextured.h" />
+    <ClInclude Include="004_Cube.h" />
     <ClInclude Include="GameApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
