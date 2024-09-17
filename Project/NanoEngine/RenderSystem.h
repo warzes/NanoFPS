@@ -298,6 +298,7 @@ struct RenderCreateInfo final
 {
 	InstanceCreateInfo  instance;
 	SwapChainCreateInfo swapChain;
+	bool                showImgui{ false };
 };
 
 class RenderSystem final

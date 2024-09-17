@@ -1465,6 +1465,8 @@ RenderSystem::RenderSystem(EngineApplication& engine)
 
 bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 {
+	m_showImgui = createInfo.showImgui;
+
 	if (!m_instance.Setup(createInfo.instance, m_engine.GetWindow().GetWindow()))
 		return false;
 	if (!m_device.Setup(createInfo.instance.supportShadingRateMode))

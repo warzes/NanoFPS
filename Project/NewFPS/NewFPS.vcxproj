@@ -105,6 +105,9 @@
     <ClCompile Include="008_BasicGeometry.cpp" />
     <ClCompile Include="009_ObjGeometry.cpp" />
     <ClCompile Include="010_CubeMap.cpp" />
+    <ClCompile Include="011_CompressedTexture.cpp" />
+    <ClCompile Include="012_Shadows.cpp" />
+    <ClCompile Include="013_NormalMap.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -119,6 +122,9 @@
     <ClInclude Include="008_BasicGeometry.h" />
     <ClInclude Include="009_ObjGeometry.h" />
     <ClInclude Include="010_CubeMap.h" />
+    <ClInclude Include="011_CompressedTexture.h" />
+    <ClInclude Include="012_Shadows.h" />
+    <ClInclude Include="013_NormalMap.h" />
     <ClInclude Include="GameApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -33,6 +33,15 @@
     <ClCompile Include="010_CubeMap.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="011_CompressedTexture.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="012_Shadows.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="013_NormalMap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -64,6 +73,15 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="010_CubeMap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="011_CompressedTexture.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="012_Shadows.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="013_NormalMap.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

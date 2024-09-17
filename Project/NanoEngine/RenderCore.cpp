@@ -6752,7 +6752,7 @@ namespace grfx_util
 			if (image.empty()) {
 				return Result::ERROR_IMAGE_FILE_LOAD_FAILED;
 			}
-			Error("Successfully loaded compressed image: " + path.string());
+			Print("Successfully loaded compressed image: " + path.string());
 			ppxres = CreateImageFromCompressedImage(pQueue, image, ppImage, options);
 		}
 		else

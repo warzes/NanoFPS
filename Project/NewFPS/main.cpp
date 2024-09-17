@@ -9,6 +9,9 @@
 #include "008_BasicGeometry.h"
 #include "009_ObjGeometry.h"
 #include "010_CubeMap.h"
+#include "011_CompressedTexture.h"
+#include "012_Shadows.h"
+#include "013_NormalMap.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -29,7 +32,10 @@ int main(
 	//Example_007 app;
 	//Example_008 app;
 	//Example_009 app;
-	Example_010 app;
+	//Example_010 app;
+	//Example_011 app;
+	//Example_012 app;
+	Example_013 app;
 
 	app.Run();
 }
