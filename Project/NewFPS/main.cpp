@@ -7,6 +7,8 @@
 #include "006_ComputeFill.h"
 #include "007_DrawIndexed.h"
 #include "008_BasicGeometry.h"
+#include "009_ObjGeometry.h"
+#include "010_CubeMap.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -25,8 +27,9 @@ int main(
 	//Example_005 app;
 	//Example_006 app;
 	//Example_007 app;
-	Example_008 app;
-
+	//Example_008 app;
+	//Example_009 app;
+	Example_010 app;
 
 	app.Run();
 }

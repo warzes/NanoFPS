@@ -170,7 +170,7 @@ public:
 
 	static void MouseButtonCallback(GLFWwindow* window, int event_button, int event_action, int event_mods) noexcept
 	{
-		MouseButton buttons{};
+		MouseButton buttons{ MouseButton::None };
 		if (event_button == GLFW_MOUSE_BUTTON_LEFT) buttons   = MouseButton::Left;
 		if (event_button == GLFW_MOUSE_BUTTON_RIGHT) buttons  = MouseButton::Right;
 		if (event_button == GLFW_MOUSE_BUTTON_MIDDLE) buttons = MouseButton::Middle;
@@ -189,7 +189,7 @@ public:
 
 	static void MouseMoveCallback(GLFWwindow* window, double event_x, double event_y) noexcept
 	{
-		MouseButton buttons{};
+		MouseButton buttons{ MouseButton::None };
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) buttons   = MouseButton::Left;
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) buttons  = MouseButton::Right;
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) buttons = MouseButton::Middle;

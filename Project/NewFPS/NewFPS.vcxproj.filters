@@ -27,6 +27,12 @@
     <ClCompile Include="008_BasicGeometry.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="009_ObjGeometry.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="010_CubeMap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -52,6 +58,12 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="008_BasicGeometry.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="009_ObjGeometry.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="010_CubeMap.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

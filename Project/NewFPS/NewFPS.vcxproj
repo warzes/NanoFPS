@@ -103,6 +103,8 @@
     <ClCompile Include="006_ComputeFill.cpp" />
     <ClCompile Include="007_DrawIndexed.cpp" />
     <ClCompile Include="008_BasicGeometry.cpp" />
+    <ClCompile Include="009_ObjGeometry.cpp" />
+    <ClCompile Include="010_CubeMap.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -115,6 +117,8 @@
     <ClInclude Include="006_ComputeFill.h" />
     <ClInclude Include="007_DrawIndexed.h" />
     <ClInclude Include="008_BasicGeometry.h" />
+    <ClInclude Include="009_ObjGeometry.h" />
+    <ClInclude Include="010_CubeMap.h" />
     <ClInclude Include="GameApp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -56,8 +56,9 @@ private:
 
 #pragma region Key Code
 
-enum class MouseButton
+enum class MouseButton : int8_t
 {
+	None = -1,
 	Left = GLFW_MOUSE_BUTTON_LEFT,
 	Right = GLFW_MOUSE_BUTTON_RIGHT,
 	Middle = GLFW_MOUSE_BUTTON_MIDDLE,

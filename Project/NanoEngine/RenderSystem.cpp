@@ -162,6 +162,7 @@ std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Insta
 	VkPhysicalDeviceVulkan12Features features12{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
 	features12.bufferDeviceAddress = VK_TRUE;
 	features12.descriptorIndexing = VK_TRUE;
+	features12.hostQueryReset = VK_TRUE;
 	// vulkan 1.3 features
 	VkPhysicalDeviceVulkan13Features features13{ .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
 	features13.dynamicRendering = VK_TRUE;
