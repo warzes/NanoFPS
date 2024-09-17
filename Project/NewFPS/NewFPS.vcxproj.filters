@@ -42,6 +42,12 @@
     <ClCompile Include="013_NormalMap.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="014_ArcballCamera.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="015_ImguiAndInput.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -82,6 +88,12 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="013_NormalMap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="014_ArcballCamera.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="015_ImguiAndInput.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>
