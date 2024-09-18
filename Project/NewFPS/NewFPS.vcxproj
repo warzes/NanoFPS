@@ -113,6 +113,7 @@
     <ClCompile Include="014_ArcballCamera.cpp" />
     <ClCompile Include="016_ImguiAndInput.cpp" />
     <ClCompile Include="015_CameraMotion.cpp" />
+    <ClCompile Include="017_GBuffer.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -137,6 +138,7 @@
     <ClInclude Include="014_ArcballCamera.h" />
     <ClInclude Include="016_ImguiAndInput.h" />
     <ClInclude Include="015_CameraMotion.h" />
+    <ClInclude Include="017_GBuffer.h" />
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

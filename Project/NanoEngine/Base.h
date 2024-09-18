@@ -146,6 +146,8 @@ Left handed
 
 #include <xxhash.h>
 
+#include <pcg32.h>
+
 #undef near
 #undef far
 
