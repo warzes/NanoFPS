@@ -14,7 +14,7 @@
 #include "012_Shadows.h"
 #include "013_NormalMap.h"
 #include "014_ArcballCamera.h"
-
+#include "015_CameraMotion.h"
 #include "016_ImguiAndInput.h"
 
 #if defined(_MSC_VER)
@@ -40,8 +40,9 @@ int main(
 	//Example_011 app;
 	//Example_012 app;
 	//Example_013 app;
-	Example_014 app;
-	//Example_015 app;
+	//Example_014 app;
+	Example_015 app;
+	//Example_016 app;
 
 	app.Run();
 }

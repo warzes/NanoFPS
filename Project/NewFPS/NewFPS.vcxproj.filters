@@ -49,6 +49,9 @@
       <Filter>examples</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="015_CameraMotion.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -98,6 +101,9 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="015_CameraMotion.h">
+      <Filter>examples</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="examples">
