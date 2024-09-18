@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "011_CompressedTexture.h"
 
 EngineApplicationCreateInfo Example_011::Config() const

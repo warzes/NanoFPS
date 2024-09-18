@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "006_ComputeFill.h"
 
 bool Example_006::Setup()

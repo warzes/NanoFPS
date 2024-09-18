@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "010_CubeMap.h"
 
 #define ENABLE_GPU_QUERIES

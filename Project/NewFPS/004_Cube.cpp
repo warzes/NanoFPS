@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "004_Cube.h"
 
 EngineApplicationCreateInfo Example_004::Config() const

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "NanoEngine.h"
-
 class Example_014 final : public EngineApplication
 {
 public:
@@ -13,6 +11,7 @@ public:
 
 	void MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons) final;
 	void Scroll(float dx, float dy) final;
+	void KeyDown(KeyCode key) final;
 
 private:
 	struct PerFrame

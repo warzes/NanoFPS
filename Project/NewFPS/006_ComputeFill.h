@@ -1,7 +1,5 @@
 #pragma once
 
-#include "NanoEngine.h"
-
 class Example_006 final : public EngineApplication
 {
 public:

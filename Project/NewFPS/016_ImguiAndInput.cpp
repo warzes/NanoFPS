@@ -1,6 +1,7 @@
-#include "015_ImguiAndInput.h"
+#include "stdafx.h"
+#include "016_ImguiAndInput.h"
 
-EngineApplicationCreateInfo Example_015::Config() const
+EngineApplicationCreateInfo Example_016::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
 	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
@@ -8,7 +9,7 @@ EngineApplicationCreateInfo Example_015::Config() const
 	return createInfo;
 }
 
-bool Example_015::Setup()
+bool Example_016::Setup()
 {
 	auto& device = GetRenderDevice();
 
@@ -35,17 +36,17 @@ bool Example_015::Setup()
 	return true;
 }
 
-void Example_015::Shutdown()
+void Example_016::Shutdown()
 {
 	mPerFrame.clear();
 	// TODO: доделать очистку
 }
 
-void Example_015::Update()
+void Example_016::Update()
 {
 }
 
-void Example_015::Render()
+void Example_016::Render()
 {
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
@@ -147,40 +148,40 @@ void Example_015::Render()
 	CHECKED_CALL(swapChain.Present(imageIndex, 1, &frame.renderCompleteSemaphore));
 }
 
-void Example_015::WindowIconify(bool iconified)
+void Example_016::WindowIconify(bool iconified)
 {
 	Print("Window " + std::string(iconified ? "iconified" : "restored"));
 }
 
-void Example_015::WindowMaximize(bool maximized)
+void Example_016::WindowMaximize(bool maximized)
 {
 	Print("Window " + std::string(maximized ? "maximized" : "restored"));
 }
 
-void Example_015::KeyDown(KeyCode key)
+void Example_016::KeyDown(KeyCode key)
 {
 	mKeyStates[key].down = true;
 	//mKeyStates[key].timeDown = GetElapsedSeconds();
 }
 
-void Example_015::KeyUp(KeyCode key)
+void Example_016::KeyUp(KeyCode key)
 {
 	mKeyStates[key].down = false;
 	mKeyStates[key].timeDown = FLT_MAX;
 }
 
-void Example_015::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons)
+void Example_016::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons)
 {
 	mMouseX = x;
 	mMouseY = y;
 }
 
-void Example_015::MouseDown(int32_t x, int32_t y, MouseButton buttons)
+void Example_016::MouseDown(int32_t x, int32_t y, MouseButton buttons)
 {
 	mMouseButtons = buttons;
 }
 
-void Example_015::MouseUp(int32_t x, int32_t y, MouseButton buttons)
+void Example_016::MouseUp(int32_t x, int32_t y, MouseButton buttons)
 {
 	mMouseButtons = MouseButton::None;
 }

@@ -1,4 +1,5 @@
-﻿#include "GameApp.h"
+﻿#include "stdafx.h"
+#include "GameApp.h"
 #include "001Triangle.h"
 #include "002TriangleSpinning.h"
 #include "003_SquateTextured.h"
@@ -13,7 +14,8 @@
 #include "012_Shadows.h"
 #include "013_NormalMap.h"
 #include "014_ArcballCamera.h"
-#include "015_ImguiAndInput.h"
+
+#include "016_ImguiAndInput.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -38,8 +40,8 @@ int main(
 	//Example_011 app;
 	//Example_012 app;
 	//Example_013 app;
-	//Example_014 app;
-	Example_015 app;
+	Example_014 app;
+	//Example_015 app;
 
 	app.Run();
 }

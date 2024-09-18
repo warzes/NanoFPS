@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "008_BasicGeometry.h"
 
 EngineApplicationCreateInfo Example_008::Config() const

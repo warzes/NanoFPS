@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "003_SquateTextured.h"
 
 bool Example_003::Setup()

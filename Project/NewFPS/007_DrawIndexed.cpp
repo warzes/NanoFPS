@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "007_DrawIndexed.h"
 
 EngineApplicationCreateInfo Example_007::Config() const

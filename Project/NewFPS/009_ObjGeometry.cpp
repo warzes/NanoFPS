@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "009_ObjGeometry.h"
 
 EngineApplicationCreateInfo Example_009::Config() const

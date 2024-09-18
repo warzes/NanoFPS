@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "001Triangle.h"
 
 bool Example_001::Setup()

@@ -1,4 +1,5 @@
-﻿#include "GameApp.h"
+﻿#include "stdafx.h"
+#include "GameApp.h"
 
 // TODO:
 // сделать таймер ScopedTimer

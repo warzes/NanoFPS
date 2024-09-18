@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "013_NormalMap.h"
 
 EngineApplicationCreateInfo Example_013::Config() const

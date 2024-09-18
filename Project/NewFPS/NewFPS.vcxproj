@@ -65,6 +65,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -85,6 +86,7 @@
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;$(SolutionDir)3rdparty\qformats\;$(SolutionDir)NanoEngine\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,9 +111,13 @@
     <ClCompile Include="012_Shadows.cpp" />
     <ClCompile Include="013_NormalMap.cpp" />
     <ClCompile Include="014_ArcballCamera.cpp" />
-    <ClCompile Include="015_ImguiAndInput.cpp" />
+    <ClCompile Include="016_ImguiAndInput.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="001Triangle.h" />
@@ -128,8 +134,9 @@
     <ClInclude Include="012_Shadows.h" />
     <ClInclude Include="013_NormalMap.h" />
     <ClInclude Include="014_ArcballCamera.h" />
-    <ClInclude Include="015_ImguiAndInput.h" />
+    <ClInclude Include="016_ImguiAndInput.h" />
     <ClInclude Include="GameApp.h" />
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

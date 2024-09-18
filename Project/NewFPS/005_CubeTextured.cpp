@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "005_CubeTextured.h"
 
 EngineApplicationCreateInfo Example_005::Config() const

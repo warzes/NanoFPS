@@ -555,6 +555,7 @@ std::string ToString(IndexType value)
 	case INDEX_TYPE_UNDEFINED: return "INDEX_TYPE_UNDEFINED";
 	case INDEX_TYPE_UINT16: return "INDEX_TYPE_UINT16";
 	case INDEX_TYPE_UINT32: return "INDEX_TYPE_UINT32";
+	case INDEX_TYPE_UINT8: return "INDEX_TYPE_UINT8";
 	}
 	return "<unknown IndexType>";
 }
@@ -565,6 +566,7 @@ uint32_t IndexTypeSize(IndexType value)
 	default: break;
 	case INDEX_TYPE_UINT16: return sizeof(uint16_t); break;
 	case INDEX_TYPE_UINT32: return sizeof(uint32_t); break;
+	case INDEX_TYPE_UINT8:  return sizeof(uint8_t);  break;
 	}
 	return 0;
 }
@@ -1361,6 +1363,7 @@ VkIndexType ToVkIndexType(IndexType value)
 	default: break;
 	case INDEX_TYPE_UINT16: return VK_INDEX_TYPE_UINT16; break;
 	case INDEX_TYPE_UINT32: return VK_INDEX_TYPE_UINT32; break;
+	case INDEX_TYPE_UINT8:  return VK_INDEX_TYPE_UINT8_EXT; break;
 	}
 	return InvalidValue<VkIndexType>();
 }
@@ -2749,6 +2752,8 @@ TriMesh::TriMesh()
 TriMesh::TriMesh(IndexType indexType)
 	: mIndexType(indexType)
 {
+	// TODO: #514 - Remove assert when UINT8 is supported
+	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in TriMesh");
 }
 
 TriMesh::TriMesh(TriMeshAttributeDim texCoordDim)
@@ -2759,6 +2764,8 @@ TriMesh::TriMesh(TriMeshAttributeDim texCoordDim)
 TriMesh::TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim)
 	: mIndexType(indexType), mTexCoordDim(texCoordDim)
 {
+	// TODO: #514 - Remove assert when UINT8 is supported
+	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in TriMesh");
 }
 
 TriMesh::~TriMesh()
@@ -3906,6 +3913,8 @@ WireMesh::WireMesh()
 WireMesh::WireMesh(IndexType indexType)
 	: mIndexType(indexType)
 {
+	// TODO: #514 - Remove assert when UINT8 is supported
+	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in WireMesh");
 }
 
 WireMesh::~WireMesh()
@@ -4686,6 +4695,7 @@ public:
 		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
 		if (vertexBindingCount != 1) {
 			ASSERT_MSG(false, "interleaved layout must have 1 binding");
+			return false;
 		}
 		return true;
 	}
@@ -4784,6 +4794,7 @@ public:
 		const uint32_t vertexBindingCount = this->GetVertexBindingCount(pGeom);
 		if (vertexBindingCount != 2) {
 			ASSERT_MSG(false, "position planar layout must have 2 bindings");
+			return false;
 		}
 		return true;
 	}
@@ -4801,7 +4812,7 @@ public:
 		const uint32_t attributeCount = this->GetVertexBindingAttributeCount(pGeom, kNonPositionBufferIndex);
 		for (uint32_t i = 0; i < attributeCount; ++i) {
 			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, i);
-			// clang-format off
+
 			switch (semantic) {
 			default: return Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC;
 			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
@@ -4811,7 +4822,6 @@ public:
 			case VERTEX_SEMANTIC_BITANGENT: this->SetBitangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
 			case VERTEX_SEMANTIC_TEXCOORD: this->SetTexCoordBufferIndex(pGeom, kNonPositionBufferIndex); break;
 			}
-			// clang-format on
 		}
 
 		return SUCCESS;
@@ -4827,7 +4837,6 @@ public:
 		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
 			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, attrIndex);
 
-			// clang-format off
 			switch (semantic) {
 			default: ASSERT_MSG(false, "should not have other sematic"); break;
 			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
@@ -4837,7 +4846,6 @@ public:
 			case VERTEX_SEMANTIC_BITANGENT: this->AppendDataToVertexBuffer(pGeom, this->GetBitangentBufferIndex(pGeom), vtx.bitangent); break;
 			case VERTEX_SEMANTIC_TEXCOORD: this->AppendDataToVertexBuffer(pGeom, this->GetTexCoordBufferIndex(pGeom), vtx.texCoord); break;
 			}
-			// clang-format on
 		}
 		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
 
@@ -4856,13 +4864,11 @@ public:
 		for (uint32_t attrIndex = 0; attrIndex < attrCount; ++attrIndex) {
 			const VertexSemantic semantic = this->GetVertexBindingAttributeSematic(pGeom, kNonPositionBufferIndex, attrIndex);
 
-			// clang-format off
 			switch (semantic) {
 			default: ASSERT_MSG(false, "should not have other sematic"); break;
 			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
 			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
 			}
-			// clang-format on
 		}
 		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
 
@@ -4890,9 +4896,16 @@ static VertexDataProcessorInterleaved<TriMeshVertexDataCompressed>    sVDProcess
 static VertexDataProcessorPositionPlanar<TriMeshVertexData>           sVDProcessorPositionPlanar;
 static VertexDataProcessorPositionPlanar<TriMeshVertexDataCompressed> sVDProcessorPositionPlanarCompressed;
 
-// -------------------------------------------------------------------------------------------------
-// GeometryCreateInfo
-// -------------------------------------------------------------------------------------------------
+GeometryCreateInfo GeometryCreateInfo::InterleavedU8(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
+	ci.indexType = INDEX_TYPE_UINT8;
+	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
+	ci.AddPosition(format);
+	return ci;
+}
+
 GeometryCreateInfo GeometryCreateInfo::InterleavedU16(Format format)
 {
 	GeometryCreateInfo ci = {};
@@ -4913,6 +4926,15 @@ GeometryCreateInfo GeometryCreateInfo::InterleavedU32(Format format)
 	return ci;
 }
 
+GeometryCreateInfo GeometryCreateInfo::PlanarU8(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT8;
+	ci.AddPosition(format);
+	return ci;
+}
+
 GeometryCreateInfo GeometryCreateInfo::PlanarU16(Format format)
 {
 	GeometryCreateInfo ci = {};
@@ -4927,6 +4949,15 @@ GeometryCreateInfo GeometryCreateInfo::PlanarU32(Format format)
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
 	ci.indexType = INDEX_TYPE_UINT32;
+	ci.AddPosition(format);
+	return ci;
+}
+
+GeometryCreateInfo GeometryCreateInfo::PositionPlanarU8(Format format)
+{
+	GeometryCreateInfo ci = {};
+	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
+	ci.indexType = INDEX_TYPE_UINT8;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4981,6 +5012,11 @@ GeometryCreateInfo& GeometryCreateInfo::IndexType(::IndexType indexType_)
 {
 	indexType = indexType_;
 	return *this;
+}
+
+GeometryCreateInfo& GeometryCreateInfo::IndexTypeU8()
+{
+	return IndexType(INDEX_TYPE_UINT8);
 }
 
 GeometryCreateInfo& GeometryCreateInfo::IndexTypeU16()
@@ -5094,9 +5130,6 @@ GeometryCreateInfo& GeometryCreateInfo::AddBitangent(Format format)
 	return *this;
 }
 
-// -------------------------------------------------------------------------------------------------
-// Geometry::Buffer
-// -------------------------------------------------------------------------------------------------
 uint32_t Geometry::Buffer::GetElementCount() const
 {
 	size_t sizeOfData = mUsedSize;
@@ -5105,9 +5138,6 @@ uint32_t Geometry::Buffer::GetElementCount() const
 	return count;
 }
 
-// -------------------------------------------------------------------------------------------------
-// Geometry
-// -------------------------------------------------------------------------------------------------
 Result Geometry::InternalCtor()
 {
 	switch (mCreateInfo.vertexAttributeLayout) {
@@ -5158,20 +5188,6 @@ Result Geometry::Create(const GeometryCreateInfo& createInfo, Geometry* pGeometr
 		return ERROR_INVALID_CREATE_ARGUMENT;
 	}
 
-	if (createInfo.indexType != INDEX_TYPE_UNDEFINED) {
-		uint32_t elementSize = 0;
-		if (createInfo.indexType == INDEX_TYPE_UINT16) {
-			elementSize = sizeof(uint16_t);
-		}
-		else if (createInfo.indexType == INDEX_TYPE_UINT32) {
-			elementSize = sizeof(uint32_t);
-		}
-		else {
-			ASSERT_MSG(false, "invalid index type");
-			return ERROR_INVALID_CREATE_ARGUMENT;
-		}
-	}
-
 	if (createInfo.vertexBindingCount == 0) {
 		ASSERT_MSG(false, "must have at least one vertex binding");
 		return ERROR_INVALID_CREATE_ARGUMENT;
@@ -5199,9 +5215,7 @@ Result Geometry::Create(
 		return ppxres;
 	}
 
-	//
 	// Target geometry WITHOUT index data
-	//
 	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
 		// Mesh has index data
 		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
@@ -5259,9 +5273,7 @@ Result Geometry::Create(
 			}
 		}
 	}
-	//
 	// Target geometry WITH index data
-	//
 	else {
 		// Mesh has index data
 		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
@@ -5343,9 +5355,7 @@ Result Geometry::Create(
 		return ppxres;
 	}
 
-	//
 	// Target geometry WITHOUT index data
-	//
 	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
 		// Mesh has index data
 		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
@@ -5394,9 +5404,7 @@ Result Geometry::Create(
 			}
 		}
 	}
-	//
 	// Target geometry WITH index data
-	//
 	else {
 		// Mesh has index data
 		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
@@ -5571,6 +5579,9 @@ void Geometry::AppendIndex(uint32_t idx)
 	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
 		mIndexBuffer.Append(idx);
 	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+		mIndexBuffer.Append(static_cast<uint8_t>(idx));
+	}
 }
 
 void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2)
@@ -5585,6 +5596,11 @@ void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2
 		mIndexBuffer.Append(idx1);
 		mIndexBuffer.Append(idx2);
 	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+		mIndexBuffer.Append(static_cast<uint8_t>(idx0));
+		mIndexBuffer.Append(static_cast<uint8_t>(idx1));
+		mIndexBuffer.Append(static_cast<uint8_t>(idx2));
+	}
 }
 
 void Geometry::AppendIndicesEdge(uint32_t idx0, uint32_t idx1)
@@ -5596,6 +5612,10 @@ void Geometry::AppendIndicesEdge(uint32_t idx0, uint32_t idx1)
 	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
 		mIndexBuffer.Append(idx0);
 		mIndexBuffer.Append(idx1);
+	}
+	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+		mIndexBuffer.Append(static_cast<uint8_t>(idx0));
+		mIndexBuffer.Append(static_cast<uint8_t>(idx1));
 	}
 }
 
@@ -5958,7 +5978,6 @@ namespace grfx_util
 
 	Format ToGrfxFormat(Bitmap::Format value)
 	{
-		// clang-format off
 		switch (value) {
 		default: break;
 		case Bitmap::FORMAT_R_UINT8: return FORMAT_R8_UNORM; break;
@@ -5969,22 +5988,20 @@ namespace grfx_util
 		case Bitmap::FORMAT_RG_UINT16: return FORMAT_R16G16_UNORM; break;
 		case Bitmap::FORMAT_RGB_UINT16: return FORMAT_R16G16B16_UNORM; break;
 		case Bitmap::FORMAT_RGBA_UINT16: return FORMAT_R16G16B16A16_UNORM; break;
-			//case Bitmap::FORMAT_R_UINT32    : return FORMAT_R32_UNORM; break;
-			//case Bitmap::FORMAT_RG_UINT32   : return FORMAT_R32G32_UNORM; break;
-			//case Bitmap::FORMAT_RGB_UINT32  : return FORMAT_R32G32B32_UNORM; break;
-			//case Bitmap::FORMAT_RGBA_UINT32 : return FORMAT_R32G32B32A32_UNORM; break;
+		//case Bitmap::FORMAT_R_UINT32    : return FORMAT_R32_UNORM; break;
+		//case Bitmap::FORMAT_RG_UINT32   : return FORMAT_R32G32_UNORM; break;
+		//case Bitmap::FORMAT_RGB_UINT32  : return FORMAT_R32G32B32_UNORM; break;
+		//case Bitmap::FORMAT_RGBA_UINT32 : return FORMAT_R32G32B32A32_UNORM; break;
 		case Bitmap::FORMAT_R_FLOAT: return FORMAT_R32_FLOAT; break;
 		case Bitmap::FORMAT_RG_FLOAT: return FORMAT_R32G32_FLOAT; break;
 		case Bitmap::FORMAT_RGB_FLOAT: return FORMAT_R32G32B32_FLOAT; break;
 		case Bitmap::FORMAT_RGBA_FLOAT: return FORMAT_R32G32B32A32_FLOAT; break;
 		}
-		// clang-format on
 		return FORMAT_UNDEFINED;
 	}
 
 	Format ToGrfxFormat(gli::format value)
 	{
-		// clang-format off
 		switch (value) {
 		case gli::FORMAT_RGB_DXT1_UNORM_BLOCK8: return FORMAT_BC1_RGB_UNORM;
 		case gli::FORMAT_RGB_DXT1_SRGB_BLOCK8: return FORMAT_BC1_RGB_SRGB;
@@ -6005,7 +6022,6 @@ namespace grfx_util
 		default:
 			return FORMAT_UNDEFINED;
 		}
-		// clang-format on
 	}
 
 	// -------------------------------------------------------------------------------------------------
@@ -6263,7 +6279,7 @@ namespace grfx_util
 			CHECKED_CALL(cmdBuffer->Begin());
 			cmdBuffer->TransitionImageLayout(targetImage, 1, mipLevelCount - 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
 			CHECKED_CALL(cmdBuffer->End());
-			// Submitt to queue
+			// Submit to queue
 			SubmitInfo submitInfo = {};
 			submitInfo.commandBufferCount = 1;
 			submitInfo.ppCommandBuffers = &cmdBuffer;

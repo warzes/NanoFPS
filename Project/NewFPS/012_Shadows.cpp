@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "012_Shadows.h"
 
 #define kShadowMapSize 1024

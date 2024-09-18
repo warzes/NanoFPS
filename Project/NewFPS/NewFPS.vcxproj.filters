@@ -45,9 +45,10 @@
     <ClCompile Include="014_ArcballCamera.cpp">
       <Filter>examples</Filter>
     </ClCompile>
-    <ClCompile Include="015_ImguiAndInput.cpp">
+    <ClCompile Include="016_ImguiAndInput.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -93,9 +94,10 @@
     <ClInclude Include="014_ArcballCamera.h">
       <Filter>examples</Filter>
     </ClInclude>
-    <ClInclude Include="015_ImguiAndInput.h">
+    <ClInclude Include="016_ImguiAndInput.h">
       <Filter>examples</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="examples">

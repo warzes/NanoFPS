@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "014_ArcballCamera.h"
 
 EngineApplicationCreateInfo Example_014::Config() const
@@ -25,8 +26,8 @@ bool Example_014::Setup()
 	// Entities
 	{
 		GeometryCreateInfo geometryCreateInfo = GeometryCreateInfo::Planar().AddColor();
-		TriMeshOptions     triMeshOptions = TriMeshOptions().Indices().VertexColors();
-		WireMeshOptions    wireMeshOptions = WireMeshOptions().Indices().VertexColors();
+		TriMeshOptions     triMeshOptions     = TriMeshOptions().Indices().VertexColors();
+		WireMeshOptions    wireMeshOptions    = WireMeshOptions().Indices().VertexColors();
 
 		TriMesh triMesh = TriMesh::CreateCube(float3(2, 2, 2), triMeshOptions);
 		setupEntity(triMesh, geometryCreateInfo, &mCube);
@@ -41,28 +42,28 @@ bool Example_014::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "VertexColors.ps", &mPS));
 
 		PipelineInterfaceCreateInfo piCreateInfo = {};
-		piCreateInfo.setCount = 1;
-		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
+		piCreateInfo.setCount                    = 1;
+		piCreateInfo.sets[0].set                 = 0;
+		piCreateInfo.sets[0].pLayout             = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
-		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
-		gpCreateInfo.PS = { mPS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 2;
-		gpCreateInfo.vertexInputState.bindings[0] = mCube.mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.vertexInputState.bindings[1] = mCube.mesh->GetDerivedVertexBindings()[1];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable = true;
-		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount = 1;
+		GraphicsPipelineCreateInfo2 gpCreateInfo        = {};
+		gpCreateInfo.VS                                 = { mVS.Get(), "vsmain" };
+		gpCreateInfo.PS                                 = { mPS.Get(), "psmain" };
+		gpCreateInfo.vertexInputState.bindingCount      = 2;
+		gpCreateInfo.vertexInputState.bindings[0]       = mCube.mesh->GetDerivedVertexBindings()[0];
+		gpCreateInfo.vertexInputState.bindings[1]       = mCube.mesh->GetDerivedVertexBindings()[1];
+		gpCreateInfo.topology                           = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode                        = POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode                           = CULL_MODE_NONE;
+		gpCreateInfo.frontFace                          = FRONT_FACE_CCW;
+		gpCreateInfo.depthReadEnable                    = true;
+		gpCreateInfo.depthWriteEnable                   = true;
+		gpCreateInfo.blendModes[0]                      = BLEND_MODE_NONE;
+		gpCreateInfo.outputState.renderTargetCount      = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mPipelineInterface;
+		gpCreateInfo.outputState.depthStencilFormat     = GetRender().GetSwapChain().GetDepthFormat();
+		gpCreateInfo.pPipelineInterface                 = mPipelineInterface;
 
 		// Triange pipeline
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mTrianglePipeline));
@@ -234,6 +235,15 @@ void Example_014::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseB
 void Example_014::Scroll(float dx, float dy)
 {
 	mArcballCamera.Zoom(dy / 2.0f);
+}
+
+void Example_014::KeyDown(KeyCode key)
+{
+	if (key == KEY_F) {
+		float3 bboxMin = float3(-5, -0.01f, -5);
+		float3 bboxMax = float3(5, 0.01f, 5);
+		mArcballCamera.FitToBoundingBox(bboxMin, bboxMax);
+	}
 }
 
 void Example_014::setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "002TriangleSpinning.h"
 
 bool Example_002::Setup()

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "NanoEngine.h"
-
 class Example_008 final : public EngineApplication
 {
 	struct Entity

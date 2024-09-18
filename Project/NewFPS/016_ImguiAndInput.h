@@ -1,10 +1,8 @@
 ﻿#pragma once
 
-#include "NanoEngine.h"
-
 // TODO: на этом примере починить имгуи
 
-class Example_015 final : public EngineApplication
+class Example_016 final : public EngineApplication
 {
 public:
 	EngineApplicationCreateInfo Config() const final;
