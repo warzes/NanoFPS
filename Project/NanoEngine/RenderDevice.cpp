@@ -118,6 +118,10 @@ bool RenderDevice::PartialDescriptorBindingsSupported() const
 {
 	return m_render.PartialDescriptorBindingsSupported();
 }
+bool RenderDevice::PipelineStatsAvailable() const
+{
+	return m_render.GetDeviceFeatures().pipelineStatisticsQuery;
+}
 
 DeviceQueuePtr RenderDevice::GetGraphicsDeviceQueue() const
 {

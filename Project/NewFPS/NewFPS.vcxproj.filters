@@ -64,6 +64,9 @@
     <ClCompile Include="020_GBuffer.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="021_PushConstants.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -126,6 +129,9 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="020_GBuffer.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="021_PushConstants.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

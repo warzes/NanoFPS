@@ -31,6 +31,8 @@ public:
 	[[nodiscard]] bool HasMultiView() const;
 	[[nodiscard]] bool PartialDescriptorBindingsSupported() const;
 
+	[[nodiscard]] bool PipelineStatsAvailable() const;
+
 	[[nodiscard]] DeviceQueuePtr GetGraphicsDeviceQueue() const;
 	[[nodiscard]] DeviceQueuePtr GetPresentDeviceQueue() const;
 	[[nodiscard]] DeviceQueuePtr GetTransferDeviceQueue() const;

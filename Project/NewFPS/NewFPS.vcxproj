@@ -117,6 +117,7 @@
     <ClCompile Include="018_DynamicRendering.cpp" />
     <ClCompile Include="019_gltf.cpp" />
     <ClCompile Include="020_GBuffer.cpp" />
+    <ClCompile Include="021_PushConstants.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -145,6 +146,7 @@
     <ClInclude Include="018_DynamicRendering.h" />
     <ClInclude Include="019_gltf.h" />
     <ClInclude Include="020_GBuffer.h" />
+    <ClInclude Include="021_PushConstants.h" />
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
