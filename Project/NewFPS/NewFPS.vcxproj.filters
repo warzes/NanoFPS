@@ -76,6 +76,9 @@
     <ClCompile Include="024_OIT.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="025_BasicMaterial.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -150,6 +153,9 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="024_OIT.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="025_BasicMaterial.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

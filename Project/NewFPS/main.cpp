@@ -24,6 +24,7 @@
 #include "022_PushDescriptors.h"
 #include "023_PushDescriptorsBuffers.h"
 #include "024_OIT.h"
+#include "025_BasicMaterial.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -58,7 +59,9 @@ int main(
 	//Example_021 app;
 	//Example_022 app;
 	//Example_023 app;
-	Example_024 app;
+	//Example_024 app;
+	Example_025 app;
+
 
 	app.Run();
 }
