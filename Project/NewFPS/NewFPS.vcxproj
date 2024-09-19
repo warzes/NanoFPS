@@ -118,6 +118,9 @@
     <ClCompile Include="019_gltf.cpp" />
     <ClCompile Include="020_GBuffer.cpp" />
     <ClCompile Include="021_PushConstants.cpp" />
+    <ClCompile Include="022_PushDescriptors.cpp" />
+    <ClCompile Include="023_PushDescriptorsBuffers.cpp" />
+    <ClCompile Include="024_OIT.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -147,6 +150,9 @@
     <ClInclude Include="019_gltf.h" />
     <ClInclude Include="020_GBuffer.h" />
     <ClInclude Include="021_PushConstants.h" />
+    <ClInclude Include="022_PushDescriptors.h" />
+    <ClInclude Include="023_PushDescriptorsBuffers.h" />
+    <ClInclude Include="024_OIT.h" />
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

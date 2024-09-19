@@ -21,6 +21,9 @@
 #include "019_gltf.h"
 #include "020_GBuffer.h"
 #include "021_PushConstants.h"
+#include "022_PushDescriptors.h"
+#include "023_PushDescriptorsBuffers.h"
+#include "024_OIT.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -52,8 +55,10 @@ int main(
 	//Example_018 app;
 	//Example_019 app;
 	//Example_020 app;
-	Example_021 app;
-
+	//Example_021 app;
+	//Example_022 app;
+	//Example_023 app;
+	Example_024 app;
 
 	app.Run();
 }

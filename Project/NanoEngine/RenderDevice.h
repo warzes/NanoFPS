@@ -32,6 +32,8 @@ public:
 	[[nodiscard]] bool PartialDescriptorBindingsSupported() const;
 
 	[[nodiscard]] bool PipelineStatsAvailable() const;
+	[[nodiscard]] bool IndependentBlendingSupported() const;
+	[[nodiscard]] bool FragmentStoresAndAtomicsSupported() const;
 
 	[[nodiscard]] DeviceQueuePtr GetGraphicsDeviceQueue() const;
 	[[nodiscard]] DeviceQueuePtr GetPresentDeviceQueue() const;

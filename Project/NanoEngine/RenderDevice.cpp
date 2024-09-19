@@ -123,6 +123,16 @@ bool RenderDevice::PipelineStatsAvailable() const
 	return m_render.GetDeviceFeatures().pipelineStatisticsQuery;
 }
 
+bool RenderDevice::IndependentBlendingSupported() const
+{
+	return m_render.GetDeviceFeatures().independentBlend == VK_TRUE;
+}
+
+bool RenderDevice::FragmentStoresAndAtomicsSupported() const
+{
+	return m_render.GetDeviceFeatures().fragmentStoresAndAtomics == VK_TRUE;
+}
+
 DeviceQueuePtr RenderDevice::GetGraphicsDeviceQueue() const
 {
 	return m_render.GetVkGraphicsQueue();

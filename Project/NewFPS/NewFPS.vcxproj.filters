@@ -67,6 +67,15 @@
     <ClCompile Include="021_PushConstants.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="022_PushDescriptors.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="023_PushDescriptorsBuffers.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="024_OIT.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -132,6 +141,15 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="021_PushConstants.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="022_PushDescriptors.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="023_PushDescriptorsBuffers.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="024_OIT.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>
