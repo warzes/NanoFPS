@@ -52,7 +52,16 @@
     <ClCompile Include="015_CameraMotion.cpp">
       <Filter>examples</Filter>
     </ClCompile>
-    <ClCompile Include="017_GBuffer.cpp">
+    <ClCompile Include="017_AsyncCompute.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="018_DynamicRendering.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="019_gltf.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="020_GBuffer.cpp">
       <Filter>examples</Filter>
     </ClCompile>
   </ItemGroup>
@@ -107,7 +116,16 @@
     <ClInclude Include="015_CameraMotion.h">
       <Filter>examples</Filter>
     </ClInclude>
-    <ClInclude Include="017_GBuffer.h">
+    <ClInclude Include="017_AsyncCompute.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="018_DynamicRendering.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="019_gltf.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="020_GBuffer.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

@@ -684,7 +684,7 @@ void Fatal(const std::string& msg);
 
 #define ASSERT_MSG(COND, MSG)                                         \
     if ((COND) == false) {                                            \
-        Fatal(std::string("*** ASSERT ***\n")                         \
+        ::Fatal(std::string("*** ASSERT ***\n")                       \
             + std::string("Message   : ") + MSG + "\n"                \
             + std::string("Condition : ") + #COND + "\n"              \
             + std::string("Function  : ") + __FUNCTION__ + "\n"       \
@@ -694,7 +694,7 @@ void Fatal(const std::string& msg);
 
 #define ASSERT_NULL_ARG(ARG)                                          \
     if ((ARG) == nullptr) {                                           \
-        Fatal(std::string("*** NULL ARGUMNET ***\n")                  \
+        ::Fatal(std::string("*** NULL ARGUMNET ***\n")                \
             + std::string("Argument  : ") + #ARG + "\n"               \
             + std::string("Function  : ") + __FUNCTION__ + "\n"       \
             + std::string("Location  : ") + __FILE__ + " : " + LINE); \
@@ -705,7 +705,7 @@ void Fatal(const std::string& msg);
     {                                                                      \
         Result checkedResult = EXPR;                                       \
         if (checkedResult != SUCCESS) {                                    \
-            Fatal(std::string("*** Call Failed ***\n")                     \
+            ::Fatal(std::string("*** Call Failed ***\n")                   \
                 + std::string("Return     : ") + ToString(checkedResult)   \
                 + std::string("Expression : ") + #EXPR + "\n"              \
                 + std::string("Function   : ") + __FUNCTION__ + "\n"       \

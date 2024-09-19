@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 // TODO: на этом примере починить имгуи
+// при этом в примере 018_DynamicRendering ошибок нет
 
 class Example_016 final : public EngineApplication
 {

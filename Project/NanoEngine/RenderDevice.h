@@ -41,6 +41,7 @@ public:
 	[[nodiscard]] std::array<uint32_t, 3> GetAllQueueFamilyIndices() const;
 
 	[[nodiscard]] QueuePtr GetGraphicsQueue() const;
+	[[nodiscard]] QueuePtr GetComputeQueue() const;
 	[[nodiscard]] QueuePtr GetAnyAvailableQueue() const;
 
 	std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName);
@@ -183,9 +184,9 @@ private:
 	Result allocateObject(Texture** ppObject);
 	Result allocateObject(TextureFont** ppObject);
 
-	Result createGraphicsQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
-	Result createComputeQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
-	Result createTransferQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue);
+	Result createGraphicsQueue(Queue** ppQueue);
+	Result createComputeQueue(Queue** ppQueue);
+	Result createTransferQueue(Queue** ppQueue);
 
 	template <typename ObjectT, typename CreateInfoT, typename ContainerT = std::vector<ObjPtr<ObjectT>>>
 	Result createObject(const CreateInfoT& createInfo, ContainerT& container, ObjectT** ppObject);
@@ -236,6 +237,7 @@ private:
 	ShadingRateCapabilities                mShadingRateCapabilities{};
 
 	QueuePtr                               m_graphicsQueue;
+	QueuePtr                               m_computeQueue;
 };
 
 #pragma endregion

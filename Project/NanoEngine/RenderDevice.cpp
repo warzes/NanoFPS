@@ -15,9 +15,8 @@ RenderDevice::RenderDevice(EngineApplication& engine, RenderSystem& render)
 
 bool RenderDevice::Setup(ShadingRateMode supportShadingRateMode)
 {
-	auto cr = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_GRAPHICS };
-	auto res = createGraphicsQueue(cr, &m_graphicsQueue);
-
+	CHECKED_CALL(createGraphicsQueue(&m_graphicsQueue), "TODO: error text"); // TODO: error text
+	CHECKED_CALL(createComputeQueue(&m_computeQueue), "TODO: error text"); // TODO: error text
 	if (supportShadingRateMode != SHADING_RATE_NONE)
 	{
 		// TODO:
@@ -160,6 +159,11 @@ std::array<uint32_t, 3> RenderDevice::GetAllQueueFamilyIndices() const
 QueuePtr RenderDevice::GetGraphicsQueue() const
 {
 	return m_graphicsQueue;
+}
+
+QueuePtr RenderDevice::GetComputeQueue() const
+{
+	return m_computeQueue;
 }
 
 QueuePtr RenderDevice::GetAnyAvailableQueue() const
@@ -912,22 +916,25 @@ Result RenderDevice::allocateObject(TextureFont** ppObject)
 	return SUCCESS;
 }
 
-Result RenderDevice::createGraphicsQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+Result RenderDevice::createGraphicsQueue(Queue** ppQueue)
 {
+	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_GRAPHICS };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(pCreateInfo, mGraphicsQueues, ppQueue);
+	return createObject(createInfo, mGraphicsQueues, ppQueue);
 }
 
-Result RenderDevice::createComputeQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+Result RenderDevice::createComputeQueue(Queue** ppQueue)
 {
+	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_COMPUTE };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(pCreateInfo, mComputeQueues, ppQueue);
+	return createObject(createInfo, mComputeQueues, ppQueue);
 }
 
-Result RenderDevice::createTransferQueue(const internal::QueueCreateInfo& pCreateInfo, Queue** ppQueue)
+Result RenderDevice::createTransferQueue(Queue** ppQueue)
 {
+	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_TRANSFER };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(pCreateInfo, mTransferQueues, ppQueue);
+	return createObject(createInfo, mTransferQueues, ppQueue);
 }
 
 template<typename ObjectT, typename CreateInfoT, typename ContainerT>

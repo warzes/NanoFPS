@@ -68,6 +68,9 @@
     <ClCompile Include="..\3rdparty\xxhash.c">
       <Filter>3rdparty\xxhash</Filter>
     </ClCompile>
+    <ClCompile Include="cgltf.cpp">
+      <Filter>3rdparty\cgltf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">
@@ -93,6 +96,9 @@
     </Filter>
     <Filter Include="3rdparty\xxhash">
       <UniqueIdentifier>{5e4645b0-159d-4d2b-ae44-22410f21b694}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\cgltf">
+      <UniqueIdentifier>{2fb4624a-80df-47ae-a7b8-5f2f7df48ede}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -182,11 +188,11 @@
     <ClInclude Include="Graphics.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\cgltf.h">
-      <Filter>3rdparty</Filter>
-    </ClInclude>
     <ClInclude Include="..\3rdparty\xxhash.h">
       <Filter>3rdparty\xxhash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\3rdparty\cgltf.h">
+      <Filter>3rdparty\cgltf</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
