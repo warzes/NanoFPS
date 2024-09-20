@@ -11,17 +11,8 @@
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp">
-      <Filter>3rdparty\VkBootstrap</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\volk\volk.c">
-      <Filter>3rdparty\volk</Filter>
-    </ClCompile>
     <ClCompile Include="RenderCore.cpp">
       <Filter>engine\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\vk_mem_alloc.cpp">
-      <Filter>3rdparty</Filter>
     </ClCompile>
     <ClCompile Include="RenderDevice.cpp">
       <Filter>engine\Render</Filter>
@@ -32,73 +23,19 @@
     <ClCompile Include="RenderSystem.cpp">
       <Filter>engine\Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\stb\stb.cpp">
-      <Filter>3rdparty\stb</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\tiny_obj_loader.cpp">
-      <Filter>3rdparty</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_draw.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_tables.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_widgets.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_glfw.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\imgui\imgui_impl_vulkan.cpp">
-      <Filter>3rdparty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\3rdparty\font_inconsolata.cpp">
-      <Filter>3rdparty</Filter>
-    </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="Graphics.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\xxhash.c">
-      <Filter>3rdparty\xxhash</Filter>
-    </ClCompile>
-    <ClCompile Include="cgltf.cpp">
-      <Filter>3rdparty\cgltf</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="3rdparty">
-      <UniqueIdentifier>{b323eaaf-e86f-4c89-987a-1d113b743e42}</UniqueIdentifier>
-    </Filter>
     <Filter Include="engine">
       <UniqueIdentifier>{4a2d847e-e9f6-46e2-acca-6afc8101b0ea}</UniqueIdentifier>
     </Filter>
     <Filter Include="engine\Render">
       <UniqueIdentifier>{26ff6c62-b739-4d1e-ad7a-44ef159a0629}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\VkBootstrap">
-      <UniqueIdentifier>{34d9a81a-f411-4ea7-94a2-50721a41adc3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\volk">
-      <UniqueIdentifier>{13fc360a-0b70-4413-8b6a-7e0ace1b33df}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\stb">
-      <UniqueIdentifier>{3d3c5794-fddc-4b9e-b81e-5b4462fd3a4b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\imgui">
-      <UniqueIdentifier>{2148f9a2-6aa1-4519-8853-efaebb4ed230}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\xxhash">
-      <UniqueIdentifier>{5e4645b0-159d-4d2b-ae44-22410f21b694}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3rdparty\cgltf">
-      <UniqueIdentifier>{2fb4624a-80df-47ae-a7b8-5f2f7df48ede}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -116,20 +53,8 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h">
-      <Filter>3rdparty\VkBootstrap</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrapDispatch.h">
-      <Filter>3rdparty\VkBootstrap</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\volk\volk.h">
-      <Filter>3rdparty\volk</Filter>
-    </ClInclude>
     <ClInclude Include="RenderCore.h">
       <Filter>engine\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\vk_mem_alloc.h">
-      <Filter>3rdparty</Filter>
     </ClInclude>
     <ClInclude Include="RenderDevice.h">
       <Filter>engine\Render</Filter>
@@ -140,59 +65,11 @@
     <ClInclude Include="RenderSystem.h">
       <Filter>engine\Render</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image_resize.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_image_write.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\stb\stb_truetype.h">
-      <Filter>3rdparty\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\tiny_obj_loader.h">
-      <Filter>3rdparty</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imconfig.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_internal.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_rectpack.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_textedit.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imstb_truetype.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_glfw.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\imgui\imgui_impl_vulkan.h">
-      <Filter>3rdparty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\font_inconsolata.h">
-      <Filter>3rdparty</Filter>
-    </ClInclude>
     <ClInclude Include="Scene.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="Graphics.h">
       <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\xxhash.h">
-      <Filter>3rdparty\xxhash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rdparty\cgltf.h">
-      <Filter>3rdparty\cgltf</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

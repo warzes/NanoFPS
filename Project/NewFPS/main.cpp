@@ -30,6 +30,7 @@
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
+#	pragma comment( lib, "NanoEngine3rdparty.lib" )
 #endif
 //-----------------------------------------------------------------------------
 int main(
@@ -55,9 +56,9 @@ int main(
 	//Example_015 app;
 	//Example_016 app;
 	//Example_017 app;
-	Example_018 app;
+	//Example_018 app;
 	//Example_019 app;
-	//Example_020 app;
+	Example_020 app;
 	//Example_021 app;
 	//Example_022 app;
 	//Example_023 app;

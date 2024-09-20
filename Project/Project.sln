@@ -18,11 +18,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NewFPS", "NewFPS\NewFPS.vcxproj", "{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7192DED7-6F6D-4082-B809-E565FA8B4CBB} = {7192DED7-6F6D-4082-B809-E565FA8B4CBB}
+		{A8451576-0372-4F16-9A1C-EC4059FBA3EF} = {A8451576-0372-4F16-9A1C-EC4059FBA3EF}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NanoEngine", "NanoEngine\NanoEngine.vcxproj", "{7192DED7-6F6D-4082-B809-E565FA8B4CBB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "old", "old", "{13DBE9EB-84EA-4C42-B3DB-D4B52F5B0DDB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NanoEngine3rdparty", "3rdparty\NanoEngine3rdparty.vcxproj", "{A8451576-0372-4F16-9A1C-EC4059FBA3EF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +53,10 @@ Global
 		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Debug|x64.Build.0 = Debug|x64
 		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Release|x64.ActiveCfg = Release|x64
 		{7192DED7-6F6D-4082-B809-E565FA8B4CBB}.Release|x64.Build.0 = Release|x64
+		{A8451576-0372-4F16-9A1C-EC4059FBA3EF}.Debug|x64.ActiveCfg = Debug|x64
+		{A8451576-0372-4F16-9A1C-EC4059FBA3EF}.Debug|x64.Build.0 = Debug|x64
+		{A8451576-0372-4F16-9A1C-EC4059FBA3EF}.Release|x64.ActiveCfg = Release|x64
+		{A8451576-0372-4F16-9A1C-EC4059FBA3EF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
