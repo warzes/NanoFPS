@@ -6,6 +6,7 @@ EngineApplicationCreateInfo Example_018::Config() const
 	EngineApplicationCreateInfo createInfo{};
 	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
+	createInfo.render.enableImGuiDynamicRendering = true;
 	return createInfo;
 }
 

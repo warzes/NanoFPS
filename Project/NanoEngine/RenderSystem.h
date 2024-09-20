@@ -270,7 +270,7 @@ class ImGuiImpl
 public:
 	ImGuiImpl(RenderSystem& render);
 
-	bool Setup();
+	bool Setup(bool enableImGuiDynamicRendering);
 	void Shutdown();
 	void NewFrame();
 	void Render(CommandBuffer* pCommandBuffer);
@@ -282,6 +282,7 @@ private:
 
 	RenderSystem& m_render;
 	DescriptorPoolPtr m_pool;
+	bool m_enableImGuiDynamicRendering = false;
 };
 
 #pragma endregion
@@ -293,6 +294,7 @@ struct RenderCreateInfo final
 	InstanceCreateInfo  instance;
 	SwapChainCreateInfo swapChain;
 	bool                showImgui{ false };
+	bool                enableImGuiDynamicRendering{ false };
 };
 
 class RenderSystem final

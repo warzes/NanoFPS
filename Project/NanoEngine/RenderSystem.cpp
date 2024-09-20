@@ -89,12 +89,15 @@ VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBi
 	bool isValidation = (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
 	if (isError && isValidation)
 	{
-		//Fatal(ss.str().c_str()); // TODO: пока не крашить
-		Error(ss.str().c_str());
+#if defined(_DEBUG)
+		Error(ss.str());
+#else
+		Fatal(ss.str());
+#endif
 	}
 	else
 	{
-		Error(ss.str().c_str());
+		Error(ss.str());
 	}
 
 	return VK_FALSE;
@@ -1341,8 +1344,10 @@ ImGuiImpl::ImGuiImpl(RenderSystem& render)
 {
 }
 
-bool ImGuiImpl::Setup()
+bool ImGuiImpl::Setup(bool enableImGuiDynamicRendering)
 {
+	m_enableImGuiDynamicRendering = enableImGuiDynamicRendering;
+
 	// Setup Dear ImGui binding
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -1464,7 +1469,7 @@ Result ImGuiImpl::initApiObjects()
 		init_info.Allocator = VK_NULL_HANDLE;
 		init_info.CheckVkResultFn = nullptr;
 #if defined(IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
-		init_info.UseDynamicRendering = false;//pApp->GetSettings()->grfx.enableImGuiDynamicRendering;
+		init_info.UseDynamicRendering = m_enableImGuiDynamicRendering;
 		init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
 		VkFormat colorFormat = ToVkFormat(m_render.GetSwapChain().GetColorFormat());
 		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -1561,7 +1566,7 @@ bool RenderSystem::Setup(const RenderCreateInfo& createInfo)
 		return false;
 	if (!m_surface.Setup()) return false;
 	if (!createSwapChains(createInfo.swapChain)) return false;
-	if (!m_imgui.Setup())
+	if (!m_imgui.Setup(createInfo.enableImGuiDynamicRendering))
 		return false;
 		
 	return true;
