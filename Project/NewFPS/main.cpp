@@ -25,6 +25,8 @@
 #include "023_PushDescriptorsBuffers.h"
 #include "024_OIT.h"
 #include "025_BasicMaterial.h"
+#include "026_Text.h"
+#include "027_Mipmap.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -60,8 +62,9 @@ int main(
 	//Example_022 app;
 	//Example_023 app;
 	//Example_024 app;
-	Example_025 app;
-
+	//Example_025 app;
+	//Example_026 app;
+	Example_027 app;
 
 	app.Run();
 }

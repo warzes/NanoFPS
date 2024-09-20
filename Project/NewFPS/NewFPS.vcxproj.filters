@@ -79,6 +79,12 @@
     <ClCompile Include="025_BasicMaterial.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="026_Text.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="027_Mipmap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -156,6 +162,12 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="025_BasicMaterial.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="026_Text.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="027_Mipmap.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>
