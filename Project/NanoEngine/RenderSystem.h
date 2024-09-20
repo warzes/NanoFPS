@@ -13,14 +13,12 @@ struct InstanceCreateInfo final
 	std::string_view         engineName{ "Nano VK Engine" };
 	uint32_t                 appVersion{ VK_MAKE_VERSION(0, 0, 1) };
 	uint32_t                 engineVersion{ VK_MAKE_VERSION(0, 0, 1) };
-	uint32_t                 requireVersion{ VK_MAKE_VERSION(1, 3, 0) };
+	uint32_t                 requireVulkanVersion{ VK_MAKE_VERSION(1, 3, 0) };
 	bool                     useValidationLayers{ false };
 
 	ShadingRateMode          supportShadingRateMode = SHADING_RATE_NONE; // TODO: возможно вынести в другой конфиг
 
-	std::vector<const char*> instanceExtensions = {
-		VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
-	};
+	std::vector<const char*> instanceExtensions = {};
 
 	// TODO: перенести
 	// TODO: на релизе убрать лишнее
@@ -60,7 +58,6 @@ struct InstanceCreateInfo final
 		//VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
 		//VK_NV_MESH_SHADER_EXTENSION_NAME,
 	};
-
 };
 
 class VulkanInstance final
@@ -258,8 +255,6 @@ private:
 	// Keeps track of the image index returned by the last AcquireNextImage call.
 	uint32_t                         m_currentImageIndex = 0;
 
-
-
 	VkFormat                 m_colorFormat{ VK_FORMAT_B8G8R8A8_UNORM };
 	std::vector<VkImage>     m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews;
@@ -284,7 +279,6 @@ public:
 private:
 	Result initApiObjects();
 	void setColorStyle();
-	void newFrameApi();
 
 	RenderSystem& m_render;
 	DescriptorPoolPtr m_pool;

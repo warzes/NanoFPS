@@ -10,6 +10,96 @@
 
 #pragma region VulkanInstance
 
+VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+{
+	// Ignore these messages because they're nonsense
+	if (
+		(std::string(pCallbackData->pMessageIdName) == "VUID-VkShaderModuleCreateInfo-pCode-08742") // vkCreateShaderModule(): The SPIR-V Extension (SPV_GOOGLE_hlsl_functionality1) was declared, but none of the requirements were met to use it. The Vulkan spec states: If pCode declares any of the SPIR-V extensions listed in the SPIR-V Environment appendix, one of the corresponding requirements must be satisfied
+		) {
+		return VK_FALSE;
+	}
+
+	// Severity
+	std::string severity = "<UNKNOWN MESSAGE SEVERITY>";
+	switch (messageSeverity) {
+	default: break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: severity = "VERBOSE"; break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = "INFO"; break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = "WARNING"; break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = "ERROR"; break;
+	}
+
+	// Type
+	std::stringstream ssType;
+	ssType << "[";
+	{
+		uint32_t type_count = 0;
+		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
+			ssType << "GENERAL";
+			++type_count;
+		}
+		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+			if (type_count > 0) {
+				ssType << ", ";
+			}
+			ssType << "VALIDATION";
+			++type_count;
+		}
+		if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+			if (type_count > 0) {
+				ssType << ", ";
+			}
+			ssType << "PERFORMANCE";
+		}
+	}
+	ssType << "]";
+	std::string type = ssType.str();
+	if (type.empty()) {
+		type = "<UNKNOWN MESSAGE TYPE>";
+	}
+
+	std::stringstream ss;
+	ss << "\n";
+	ss << "*** VULKAN VALIDATION " << severity << " MESSAGE ***" << "\n";
+	ss << "Severity : " << severity << "\n";
+	ss << "Type     : " << type << "\n";
+
+	if (pCallbackData->objectCount > 0)
+	{
+		ss << "Objects  : ";
+		for (uint32_t i = 0; i < pCallbackData->objectCount; ++i)
+		{
+			auto object_name_info = pCallbackData->pObjects[i];
+
+			std::string name = (object_name_info.pObjectName != nullptr)
+				? object_name_info.pObjectName
+				: "<UNNAMED OBJECT>";
+			if (i > 0)
+			{
+				ss << "           ";
+			}
+			ss << "[" << i << "]" << ": " << name << "\n";
+		}
+	}
+
+	ss << "Message  : " << pCallbackData->pMessage;
+	ss << std::endl;
+
+	bool isError = (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT);
+	bool isValidation = (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT);
+	if (isError && isValidation)
+	{
+		//Fatal(ss.str().c_str()); // TODO: пока не крашить
+		Error(ss.str().c_str());
+	}
+	else
+	{
+		Error(ss.str().c_str());
+	}
+
+	return VK_FALSE;
+}
+
 VulkanInstance::VulkanInstance(RenderSystem& render)
 	: m_render(render)
 {
@@ -102,10 +192,12 @@ std::optional<vkb::Instance> VulkanInstance::createInstance(const InstanceCreate
 		.set_engine_name(createInfo.engineName.data())
 		.set_app_version(createInfo.appVersion)
 		.set_engine_version(createInfo.engineVersion)
-		.require_api_version(createInfo.requireVersion)
+		.set_minimum_instance_version(createInfo.requireVulkanVersion)
+		.require_api_version(createInfo.requireVulkanVersion)
 		.enable_extensions(createInfo.instanceExtensions)
 		.request_validation_layers(useValidationLayers)
-		.use_default_debug_messenger()
+		//.use_default_debug_messenger()
+		.set_debug_callback(DebugUtilsMessengerCallback)
 		.build();
 	if (!instanceRet)
 	{
@@ -1256,6 +1348,7 @@ bool ImGuiImpl::Setup()
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.LogFilename = nullptr;
+	io.IniFilename = nullptr;
 
 	float fontSize = 16.0f;
 #if defined(_WIN32)
@@ -1323,7 +1416,9 @@ void ImGuiImpl::NewFrame()
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize.x = static_cast<float>(m_render.GetUIWidth());
 	io.DisplaySize.y = static_cast<float>(m_render.GetUIHeight());
-	newFrameApi();
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 }
 
 void ImGuiImpl::Render(CommandBuffer* pCommandBuffer)
@@ -1369,7 +1464,7 @@ Result ImGuiImpl::initApiObjects()
 		init_info.Allocator = VK_NULL_HANDLE;
 		init_info.CheckVkResultFn = nullptr;
 #if defined(IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
-		init_info.UseDynamicRendering = true;//pApp->GetSettings()->grfx.enableImGuiDynamicRendering;
+		init_info.UseDynamicRendering = false;//pApp->GetSettings()->grfx.enableImGuiDynamicRendering;
 		init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
 		VkFormat colorFormat = ToVkFormat(m_render.GetSwapChain().GetColorFormat());
 		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
@@ -1445,13 +1540,6 @@ void ImGuiImpl::setColorStyle()
 	// ImGui::StyleColorsClassic();
 	ImGui::StyleColorsDark();
 	// ImGui::StyleColorsLight();
-}
-
-void ImGuiImpl::newFrameApi()
-{
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
 }
 
 #pragma endregion
