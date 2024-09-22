@@ -50,7 +50,7 @@ int main(
 	//Example_009 app;
 	//Example_010 app;
 	//Example_011 app;
-	//Example_012 app;
+	Example_012 app;
 	//Example_013 app;
 	//Example_014 app;
 	//Example_015 app;
@@ -58,7 +58,7 @@ int main(
 	//Example_017 app;
 	//Example_018 app;
 	//Example_019 app;
-	Example_020 app;
+	//Example_020 app;
 	//Example_021 app;
 	//Example_022 app;
 	//Example_023 app;
