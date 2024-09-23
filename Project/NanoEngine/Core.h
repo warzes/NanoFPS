@@ -182,6 +182,12 @@ template <size_t Size> using hlsl_uint4 = hlsl_type<uint4, Size>;
 
 HLSL_PACK_END();
 
+struct RangeU32 final
+{
+	uint32_t start;
+	uint32_t end;
+};
+
 template <typename T>
 T pi()
 {
@@ -360,6 +366,11 @@ inline bool HasOverlapHalfOpen(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
 	bool overlap = std::max<uint32_t>(a, c) < std::min<uint32_t>(c, d); // TODO: возможно тут ошибка
 	return overlap;
+}
+
+inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
+{
+	return HasOverlapHalfOpen(r0.start, r0.end, r1.start, r1.end);
 }
 
 #pragma endregion

@@ -10,24 +10,24 @@ bool Example_001::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticVertexColors.vs", &mVS));
 		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticVertexColors.ps", &mPS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		mVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		mVertexBinding.AppendAttribute({ "COLOR", 1, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "COLOR", 1, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
 		gpCreateInfo.PS = { mPS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mVertexBinding;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.pPipelineInterface = mPipelineInterface;
@@ -40,10 +40,10 @@ bool Example_001::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -65,11 +65,11 @@ bool Example_001::Setup()
 		};
 		uint32_t dataSize = SizeInBytesU32(vertexData);
 
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = dataSize;
 		bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
-		bufferCreateInfo.initialState = RESOURCE_STATE_VERTEX_BUFFER;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.initialState = vkr::RESOURCE_STATE_VERTEX_BUFFER;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mVertexBuffer));
 
 		void* pAddr = nullptr;
@@ -113,16 +113,16 @@ void Example_001::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0.9, 0.8, 0.3, 1} };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -137,11 +137,11 @@ void Example_001::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;

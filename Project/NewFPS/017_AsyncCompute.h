@@ -18,19 +18,19 @@ private:
 
 	struct PerFrame
 	{
-		SemaphorePtr imageAcquiredSemaphore;
-		FencePtr     imageAcquiredFence;
-		SemaphorePtr renderCompleteSemaphore;
-		FencePtr     renderCompleteFence;
+		vkr::SemaphorePtr imageAcquiredSemaphore;
+		vkr::FencePtr     imageAcquiredFence;
+		vkr::SemaphorePtr renderCompleteSemaphore;
+		vkr::FencePtr     renderCompleteFence;
 
 		// Graphics pipeline objects.
 		struct RenderData
 		{
-			CommandBufferPtr cmd;
-			DescriptorSetPtr descriptorSet;
-			BufferPtr        constants;
-			DrawPassPtr      drawPass;
-			SemaphorePtr     completeSemaphore;
+			vkr::CommandBufferPtr cmd;
+			vkr::DescriptorSetPtr descriptorSet;
+			vkr::BufferPtr        constants;
+			vkr::DrawPassPtr      drawPass;
+			vkr::SemaphorePtr     completeSemaphore;
 		};
 
 		std::array<RenderData, 4> renderData;
@@ -38,32 +38,32 @@ private:
 		// Compute pipeline objects.
 		struct ComputeData
 		{
-			CommandBufferPtr    cmd;
-			DescriptorSetPtr    descriptorSet;
-			BufferPtr           constants;
-			ImagePtr            outputImage;
-			SampledImageViewPtr outputImageSampledView;
-			StorageImageViewPtr outputImageStorageView;
-			SemaphorePtr        completeSemaphore;
+			vkr::CommandBufferPtr    cmd;
+			vkr::DescriptorSetPtr    descriptorSet;
+			vkr::BufferPtr           constants;
+			vkr::ImagePtr            outputImage;
+			vkr::SampledImageViewPtr outputImageSampledView;
+			vkr::StorageImageViewPtr outputImageStorageView;
+			vkr::SemaphorePtr        completeSemaphore;
 		};
 		std::array<ComputeData, 4> computeData;
 
 		// Final image composition objects.
 		struct ComposeData
 		{
-			CommandBufferPtr cmd;
-			DescriptorSetPtr descriptorSet;
-			BufferPtr        quadVertexBuffer;
-			SemaphorePtr     completeSemaphore;
+			vkr::CommandBufferPtr cmd;
+			vkr::DescriptorSetPtr descriptorSet;
+			vkr::BufferPtr        quadVertexBuffer;
+			vkr::SemaphorePtr     completeSemaphore;
 		};
 		std::array<ComposeData, 4> composeData;
-		DrawPassPtr          composeDrawPass;
+		vkr::DrawPassPtr          composeDrawPass;
 
 		// Draw to swapchain objects.
 		struct DrawToSwapchainData
 		{
-			CommandBufferPtr cmd;
-			DescriptorSetPtr descriptorSet;
+			vkr::CommandBufferPtr cmd;
+			vkr::DescriptorSetPtr descriptorSet;
 		};
 		DrawToSwapchainData drawToSwapchainData;
 	};
@@ -79,38 +79,38 @@ private:
 
 	PerspCamera mCamera;
 
-	MeshPtr    mModelMesh;
-	TexturePtr mModelTexture;
+	vkr::MeshPtr    mModelMesh;
+	vkr::TexturePtr mModelTexture;
 	float            mModelRotation = 45.0f;
 	float            mModelTargetRotation = 45.0f;
 
 	int mGraphicsLoad = 150;
 	int mComputeLoad = 5;
 
-	SamplerPtr mLinearSampler;
-	SamplerPtr mNearestSampler;
+	vkr::SamplerPtr mLinearSampler;
+	vkr::SamplerPtr mNearestSampler;
 
 	// This will be a compute queue if async compute is enabled or a graphics queue otherwise.
-	QueuePtr mComputeQueue;
-	QueuePtr mGraphicsQueue;
+	vkr::QueuePtr mComputeQueue;
+	vkr::QueuePtr mGraphicsQueue;
 
-	DescriptorPoolPtr mDescriptorPool;
+	vkr::DescriptorPoolPtr mDescriptorPool;
 
-	DescriptorSetLayoutPtr mRenderLayout;
-	GraphicsPipelinePtr    mRenderPipeline;
-	PipelineInterfacePtr   mRenderPipelineInterface;
+	vkr::DescriptorSetLayoutPtr mRenderLayout;
+	vkr::GraphicsPipelinePtr    mRenderPipeline;
+	vkr::PipelineInterfacePtr   mRenderPipelineInterface;
 
-	DescriptorSetLayoutPtr mComputeLayout;
-	ComputePipelinePtr     mComputePipeline;
-	PipelineInterfacePtr   mComputePipelineInterface;
+	vkr::DescriptorSetLayoutPtr mComputeLayout;
+	vkr::ComputePipelinePtr     mComputePipeline;
+	vkr::PipelineInterfacePtr   mComputePipelineInterface;
 
-	DescriptorSetLayoutPtr mComposeLayout;
-	GraphicsPipelinePtr    mComposePipeline;
-	PipelineInterfacePtr   mComposePipelineInterface;
-	VertexBinding          mComposeVertexBinding;
+	vkr::DescriptorSetLayoutPtr mComposeLayout;
+	vkr::GraphicsPipelinePtr    mComposePipeline;
+	vkr::PipelineInterfacePtr   mComposePipelineInterface;
+	vkr::VertexBinding          mComposeVertexBinding;
 
-	DescriptorSetLayoutPtr mDrawToSwapchainLayout;
-	FullscreenQuadPtr      mDrawToSwapchainPipeline;
+	vkr::DescriptorSetLayoutPtr mDrawToSwapchainLayout;
+	vkr::FullscreenQuadPtr      mDrawToSwapchainPipeline;
 
 	bool mAsyncComputeEnabled = true;
 	bool mUseQueueFamilyTransfers = true;

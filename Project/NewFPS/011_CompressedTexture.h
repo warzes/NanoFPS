@@ -29,32 +29,32 @@ private:
 
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	struct TexturedShape
 	{
 		int                 id;
-		DescriptorSetPtr    descriptorSet;
-		BufferPtr           uniformBuffer;
-		ImagePtr            image;
-		SamplerPtr          sampler;
-		SampledImageViewPtr sampledImageView;
+		vkr::DescriptorSetPtr    descriptorSet;
+		vkr::BufferPtr           uniformBuffer;
+		vkr::ImagePtr            image;
+		vkr::SamplerPtr          sampler;
+		vkr::SampledImageViewPtr sampledImageView;
 		float3              homeLoc;
 	};
 
 	std::vector<PerFrame>      mPerFrame;
-	ShaderModulePtr            mVS;
-	ShaderModulePtr            mPS;
-	PipelineInterfacePtr       mPipelineInterface;
-	GraphicsPipelinePtr        mPipeline;
-	BufferPtr                  mVertexBuffer;
-	DescriptorPoolPtr          mDescriptorPool;
-	DescriptorSetLayoutPtr     mDescriptorSetLayout;
-	VertexBinding              mVertexBinding;
+	vkr::ShaderModulePtr            mVS;
+	vkr::ShaderModulePtr            mPS;
+	vkr::PipelineInterfacePtr       mPipelineInterface;
+	vkr::GraphicsPipelinePtr        mPipeline;
+	vkr::BufferPtr                  mVertexBuffer;
+	vkr::DescriptorPoolPtr          mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr     mDescriptorSetLayout;
+	vkr::VertexBinding              mVertexBinding;
 	std::vector<TexturedShape> mShapes;
 };

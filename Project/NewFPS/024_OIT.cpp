@@ -51,7 +51,7 @@ struct ShaderGlobals
 EngineApplicationCreateInfo Example_024::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -157,7 +157,7 @@ void Example_024::Render()
 	CHECKED_CALL(mCommandBuffer->End());
 
 	// Submit and present
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &mCommandBuffer;
 	submitInfo.waitSemaphoreCount = 1;
@@ -184,10 +184,10 @@ void Example_024::SetupCommon()
 
 	// Synchronization objects
 	{
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &mImageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(GetRenderDevice().CreateFence(fenceCreateInfo, &mImageAcquiredFence));
 
 		CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &mRenderCompleteSemaphore));
@@ -203,7 +203,7 @@ void Example_024::SetupCommon()
 
 	// Descriptor pool
 	{
-		DescriptorPoolCreateInfo createInfo = {};
+		vkr::DescriptorPoolCreateInfo createInfo = {};
 		createInfo.sampler = 16;
 		createInfo.sampledImage = 16;
 		createInfo.uniformBuffer = 16;
@@ -214,30 +214,30 @@ void Example_024::SetupCommon()
 
 	// Sampler
 	{
-		SamplerCreateInfo createInfo = {};
-		createInfo.magFilter = FILTER_NEAREST;
-		createInfo.minFilter = FILTER_NEAREST;
-		createInfo.mipmapMode = SAMPLER_MIPMAP_MODE_NEAREST;
+		vkr::SamplerCreateInfo createInfo = {};
+		createInfo.magFilter = vkr::FILTER_NEAREST;
+		createInfo.minFilter = vkr::FILTER_NEAREST;
+		createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_NEAREST;
 		CHECKED_CALL(GetRenderDevice().CreateSampler(createInfo, &mNearestSampler));
 	}
 
 	// Meshes
 	{
-		QueuePtr queue = GetRenderDevice().GetGraphicsQueue();
-		TriMeshOptions options = TriMeshOptions().Indices();
-		CHECKED_CALL(grfx_util::CreateMeshFromFile(queue, "basic/models/cube.obj", &mBackgroundMesh, options));
-		CHECKED_CALL(grfx_util::CreateMeshFromFile(queue, "basic/models/monkey.obj", &mTransparentMeshes[MESH_TYPE_MONKEY], options));
-		CHECKED_CALL(grfx_util::CreateMeshFromFile(queue, "basic/models/horse.obj", &mTransparentMeshes[MESH_TYPE_HORSE], options));
-		CHECKED_CALL(grfx_util::CreateMeshFromFile(queue, "basic/models/megaphone.obj", &mTransparentMeshes[MESH_TYPE_MEGAPHONE], options));
-		CHECKED_CALL(grfx_util::CreateMeshFromFile(queue, "basic/models/cannon.obj", &mTransparentMeshes[MESH_TYPE_CANNON], options));
+		vkr::QueuePtr queue = GetRenderDevice().GetGraphicsQueue();
+		vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices();
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/cube.obj", &mBackgroundMesh, options));
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/monkey.obj", &mTransparentMeshes[MESH_TYPE_MONKEY], options));
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/horse.obj", &mTransparentMeshes[MESH_TYPE_HORSE], options));
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/megaphone.obj", &mTransparentMeshes[MESH_TYPE_MEGAPHONE], options));
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/cannon.obj", &mTransparentMeshes[MESH_TYPE_CANNON], options));
 	}
 
 	// Shader globals
 	{
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = std::max(sizeof(ShaderGlobals), static_cast<size_t>(MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mShaderGlobalsBuffer));
 	}
 
@@ -247,16 +247,16 @@ void Example_024::SetupCommon()
 
 	// Pass
 	{
-		DrawPassCreateInfo createInfo = {};
+		vkr::DrawPassCreateInfo createInfo = {};
 		createInfo.width = swapChain.GetWidth();
 		createInfo.height = swapChain.GetHeight();
 		createInfo.renderTargetCount = 1;
 		createInfo.renderTargetFormats[0] = swapChain.GetColorFormat();
-		createInfo.depthStencilFormat = FORMAT_D32_FLOAT;
-		createInfo.renderTargetUsageFlags[0] = IMAGE_USAGE_SAMPLED;
-		createInfo.depthStencilUsageFlags = IMAGE_USAGE_TRANSFER_SRC | IMAGE_USAGE_SAMPLED;
-		createInfo.renderTargetInitialStates[0] = RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.depthStencilInitialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		createInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
+		createInfo.depthStencilUsageFlags = vkr::IMAGE_USAGE_TRANSFER_SRC | vkr::IMAGE_USAGE_SAMPLED;
+		createInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.depthStencilInitialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mOpaquePass));
@@ -264,15 +264,15 @@ void Example_024::SetupCommon()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mOpaqueDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mOpaqueDescriptorSetLayout, &mOpaqueDescriptorSet));
 
-		WriteDescriptor write = {};
+		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
 		write.pBuffer = mShaderGlobalsBuffer;
@@ -281,28 +281,28 @@ void Example_024::SetupCommon()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mOpaqueDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mOpaquePipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(device.CreateShader("basic/shaders/oit_demo", "Opaque.vs", &VS));
 		CHECKED_CALL(device.CreateShader("basic/shaders/oit_demo", "Opaque.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mBackgroundMesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_FRONT;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_FRONT;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mOpaquePass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
@@ -319,19 +319,19 @@ void Example_024::SetupCommon()
 
 	// Texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = swapChain.GetWidth();
 		createInfo.height = swapChain.GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = FORMAT_R16G16B16A16_FLOAT;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.imageFormat = vkr::FORMAT_R16G16B16A16_FLOAT;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 		createInfo.RTVClearValue = { 0, 0, 0, 0 };
 		createInfo.DSVClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mTransparencyTexture));
@@ -339,13 +339,13 @@ void Example_024::SetupCommon()
 
 	// Pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = swapChain.GetWidth();
 		createInfo.height = swapChain.GetHeight();
 		createInfo.renderTargetCount = 1;
 		createInfo.pRenderTargetImages[0] = mTransparencyTexture->GetImage();
 		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
-		createInfo.depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mTransparencyPass));
@@ -357,27 +357,27 @@ void Example_024::SetupCommon()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mCompositeDescriptorSetLayout));
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mCompositeDescriptorSetLayout, &mCompositeDescriptorSet));
 
-		std::array<WriteDescriptor, 3> writes = {};
+		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_SAMPLER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 		writes[0].pSampler = mNearestSampler;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[1].pImageView = mOpaquePass->GetRenderTargetTexture(0)->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_TEXTURE_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[2].pImageView = mTransparencyTexture->GetSampledImageView();
 
 		CHECKED_CALL(mCompositeDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -385,27 +385,27 @@ void Example_024::SetupCommon()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mCompositeDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mCompositePipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(device.CreateShader("basic/shaders/oit_demo", "Composite.vs", &VS));
 		CHECKED_CALL(device.CreateShader("basic/shaders/oit_demo", "Composite.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 0;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = swapChain.GetDepthFormat();
@@ -422,7 +422,7 @@ Example_024::Algorithm Example_024::GetSelectedAlgorithm() const
 	return mSupportedAlgorithmIds[mGuiParameters.algorithmDataIndex];
 }
 
-MeshPtr Example_024::GetTransparentMesh() const
+vkr::MeshPtr Example_024::GetTransparentMesh() const
 {
 	return mTransparentMeshes[mGuiParameters.mesh.type];
 }
@@ -580,11 +580,11 @@ void Example_024::RecordOpaque()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mOpaquePass,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-	mCommandBuffer->BeginRenderPass(mOpaquePass, DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+	mCommandBuffer->BeginRenderPass(mOpaquePass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 	mCommandBuffer->SetScissors(mOpaquePass->GetScissor());
 	mCommandBuffer->SetViewports(mOpaquePass->GetViewport());
@@ -600,10 +600,10 @@ void Example_024::RecordOpaque()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mOpaquePass,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE);
 }
 
 void Example_024::RecordTransparency()
@@ -623,13 +623,13 @@ void Example_024::RecordTransparency()
 	(this->*recordFuncs[algorithm])();
 }
 
-void Example_024::RecordComposite(RenderPassPtr renderPass)
+void Example_024::RecordComposite(vkr::RenderPassPtr renderPass)
 {
 	ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 
-	RenderPassBeginInfo beginInfo = {};
+	vkr::RenderPassBeginInfo beginInfo = {};
 	beginInfo.pRenderPass = renderPass;
 	beginInfo.renderArea = renderPass->GetRenderArea();
 	beginInfo.RTVClearCount = 1;
@@ -647,7 +647,7 @@ void Example_024::RecordComposite(RenderPassPtr renderPass)
 	GetRender().DrawImGui(mCommandBuffer);
 
 	mCommandBuffer->EndRenderPass();
-	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 }
 
 //=============================================================================
@@ -660,44 +660,44 @@ void Example_024::SetupBufferBuckets()
 
 	// Count texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = FORMAT_R32_UINT;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.imageFormat = vkr::FORMAT_R32_UINT;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.buckets.countTexture));
 	}
 
 	// Fragment texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight() * BUFFER_BUCKETS_SIZE_PER_PIXEL;
 		createInfo.depth = 1;
-		createInfo.imageFormat = FORMAT_R32G32_UINT;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.imageFormat = vkr::FORMAT_R32G32_UINT;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.buckets.fragmentTexture));
 	}
 
 	// Clear pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight();
 		createInfo.renderTargetCount = 1;
@@ -709,7 +709,7 @@ void Example_024::SetupBufferBuckets()
 
 	// Gather pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight();
 		createInfo.renderTargetCount = 0;
@@ -723,36 +723,36 @@ void Example_024::SetupBufferBuckets()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_0_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_1_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.buckets.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.buckets.gatherDescriptorSetLayout, &mBuffer.buckets.gatherDescriptorSet));
 
-		std::array<WriteDescriptor, 4> writes = {};
+		std::array<vkr::WriteDescriptor, 4> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
 		writes[0].pBuffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[1].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_UAV_0_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[2].pImageView = mBuffer.buckets.countTexture->GetStorageImageView();
 
 		writes[3].binding = CUSTOM_UAV_1_REGISTER;
 		writes[3].arrayIndex = 0;
-		writes[3].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[3].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[3].pImageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
 
 		CHECKED_CALL(mBuffer.buckets.gatherDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -760,28 +760,28 @@ void Example_024::SetupBufferBuckets()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mBuffer.buckets.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.buckets.gatherPipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferBucketsGather.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferBucketsGather.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
 		gpCreateInfo.pPipelineInterface = mBuffer.buckets.gatherPipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.buckets.gatherPipeline));
@@ -796,30 +796,30 @@ void Example_024::SetupBufferBuckets()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_0_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_1_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.buckets.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.buckets.combineDescriptorSetLayout, &mBuffer.buckets.combineDescriptorSet));
 
-		std::array<WriteDescriptor, 3> writes = {};
+		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
 		writes[0].pBuffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_UAV_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[1].pImageView = mBuffer.buckets.countTexture->GetStorageImageView();
 
 		writes[2].binding = CUSTOM_UAV_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[2].pImageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
 
 		CHECKED_CALL(mBuffer.buckets.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -827,27 +827,27 @@ void Example_024::SetupBufferBuckets()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mBuffer.buckets.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.buckets.combinePipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferBucketsCombine.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferBucketsCombine.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 0;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
@@ -865,19 +865,19 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Linked list head texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = FORMAT_R32_UINT;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.imageFormat = vkr::FORMAT_R32_UINT;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.lists.linkedListHeadTexture));
 	}
@@ -888,23 +888,23 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Fragment buffer
 	{
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = fragmentBufferSize;
 		bufferCreateInfo.structuredElementStride = fragmentBufferElementSize;
 		bufferCreateInfo.usageFlags.bits.rwStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		bufferCreateInfo.initialState = RESOURCE_STATE_GENERAL;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mBuffer.lists.fragmentBuffer));
 	}
 
 	// Atomic counter
 	{
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = std::max(sizeof(uint), static_cast<size_t>(MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.structuredElementStride = sizeof(uint);
 		bufferCreateInfo.usageFlags.bits.rwStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		bufferCreateInfo.initialState = RESOURCE_STATE_GENERAL;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mBuffer.lists.atomicCounter));
 	}
 
@@ -912,7 +912,7 @@ void Example_024::SetupBufferLinkedLists()
 	{
 		constexpr uint            clearValueUint = BUFFER_LISTS_INVALID_INDEX;
 		const float               clearValueFloat = *reinterpret_cast<const float*>(&clearValueUint);
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mBuffer.lists.linkedListHeadTexture->GetWidth();
 		createInfo.height = mBuffer.lists.linkedListHeadTexture->GetHeight();
 		createInfo.renderTargetCount = 1;
@@ -924,7 +924,7 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Gather pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mBuffer.lists.linkedListHeadTexture->GetWidth();
 		createInfo.height = mBuffer.lists.linkedListHeadTexture->GetHeight();
 		createInfo.renderTargetCount = 0;
@@ -939,43 +939,43 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_0_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_1_REGISTER, DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_2_REGISTER, DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.lists.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.lists.gatherDescriptorSetLayout, &mBuffer.lists.gatherDescriptorSet));
 
-		std::array<WriteDescriptor, 5> writes = {};
+		std::array<vkr::WriteDescriptor, 5> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
 		writes[0].pBuffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[1].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_UAV_0_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[2].pImageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
 
 		writes[3].binding = CUSTOM_UAV_1_REGISTER;
-		writes[3].type = DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[3].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
 		writes[3].bufferOffset = 0;
 		writes[3].bufferRange = WHOLE_SIZE;
 		writes[3].structuredElementCount = fragmentBufferElementCount;
 		writes[3].pBuffer = mBuffer.lists.fragmentBuffer;
 
 		writes[4].binding = CUSTOM_UAV_2_REGISTER;
-		writes[4].type = DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[4].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
 		writes[4].bufferOffset = 0;
 		writes[4].bufferRange = WHOLE_SIZE;
 		writes[4].structuredElementCount = 1;
@@ -986,28 +986,28 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mBuffer.lists.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.lists.gatherPipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferLinkedListsGather.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferLinkedListsGather.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
 		gpCreateInfo.pPipelineInterface = mBuffer.lists.gatherPipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.lists.gatherPipeline));
@@ -1022,37 +1022,37 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_0_REGISTER, DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_1_REGISTER, DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_UAV_2_REGISTER, DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.lists.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.lists.combineDescriptorSetLayout, &mBuffer.lists.combineDescriptorSet));
 
-		std::array<WriteDescriptor, 4> writes = {};
+		std::array<vkr::WriteDescriptor, 4> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
 		writes[0].pBuffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_UAV_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		writes[1].pImageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
 
 		writes[2].binding = CUSTOM_UAV_1_REGISTER;
-		writes[2].type = DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
 		writes[2].bufferOffset = 0;
 		writes[2].bufferRange = WHOLE_SIZE;
 		writes[2].structuredElementCount = fragmentBufferElementCount;
 		writes[2].pBuffer = mBuffer.lists.fragmentBuffer;
 
 		writes[3].binding = CUSTOM_UAV_2_REGISTER;
-		writes[3].type = DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[3].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
 		writes[3].bufferOffset = 0;
 		writes[3].bufferRange = WHOLE_SIZE;
 		writes[3].structuredElementCount = 1;
@@ -1063,27 +1063,27 @@ void Example_024::SetupBufferLinkedLists()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mBuffer.lists.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.lists.combinePipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferLinkedListsCombine.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "BufferLinkedListsCombine.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 0;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
@@ -1106,11 +1106,11 @@ void Example_024::RecordBufferBuckets()
 	if (mBuffer.buckets.countTextureNeedClear) {
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.buckets.clearPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->BeginRenderPass(mBuffer.buckets.clearPass, DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->BeginRenderPass(mBuffer.buckets.clearPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(mBuffer.buckets.clearPass->GetScissor());
 		mCommandBuffer->SetViewports(mBuffer.buckets.clearPass->GetViewport());
@@ -1118,17 +1118,17 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.buckets.clearPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 
 		mBuffer.buckets.countTextureNeedClear = false;
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
 		mCommandBuffer->BeginRenderPass(mBuffer.buckets.gatherPass, 0);
 
 		mCommandBuffer->SetScissors(mBuffer.buckets.gatherPass->GetScissor());
@@ -1141,20 +1141,20 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->DrawIndexed(GetTransparentMesh()->GetIndexCount());
 
 		mCommandBuffer->EndRenderPass();
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 		mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -1166,12 +1166,12 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 }
 
@@ -1180,11 +1180,11 @@ void Example_024::RecordBufferLinkedLists()
 	if (mBuffer.lists.linkedListHeadTextureNeedClear) {
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.lists.clearPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->BeginRenderPass(mBuffer.lists.clearPass, DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->BeginRenderPass(mBuffer.lists.clearPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(mBuffer.lists.clearPass->GetScissor());
 		mCommandBuffer->SetViewports(mBuffer.lists.clearPass->GetViewport());
@@ -1192,16 +1192,16 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.lists.clearPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 
 		mBuffer.lists.linkedListHeadTextureNeedClear = false;
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
 		mCommandBuffer->BeginRenderPass(mBuffer.lists.gatherPass, 0);
 
 		mCommandBuffer->SetScissors(mBuffer.lists.gatherPass->GetScissor());
@@ -1214,18 +1214,18 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->DrawIndexed(GetTransparentMesh()->GetIndexCount());
 
 		mCommandBuffer->EndRenderPass();
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 		mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -1237,11 +1237,11 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 }
 
@@ -1266,19 +1266,19 @@ void Example_024::SetupDepthPeeling()
 {
 	// Layer texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = FORMAT_B8G8R8A8_UNORM;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.imageFormat = vkr::FORMAT_B8G8R8A8_UNORM;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
 			CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mDepthPeeling.layerTextures[i]));
@@ -1287,20 +1287,20 @@ void Example_024::SetupDepthPeeling()
 
 	// Depth texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mDepthPeeling.layerTextures[0]->GetWidth();
 		createInfo.height = mDepthPeeling.layerTextures[0]->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = mOpaquePass->GetDepthStencilTexture()->GetDepthStencilViewFormat();
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.usageFlags.bits.depthStencilAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_DEPTH_TEXTURES_COUNT; ++i) {
 			CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mDepthPeeling.depthTextures[i]));
@@ -1309,11 +1309,11 @@ void Example_024::SetupDepthPeeling()
 
 	// Pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mDepthPeeling.layerTextures[0]->GetWidth();
 		createInfo.height = mDepthPeeling.layerTextures[0]->GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 
@@ -1330,36 +1330,36 @@ void Example_024::SetupDepthPeeling()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDepthPeeling.layerDescriptorSetLayout));
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_DEPTH_TEXTURES_COUNT; ++i) {
 			CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDepthPeeling.layerDescriptorSetLayout, &mDepthPeeling.layerDescriptorSets[i]));
 
-			std::array<WriteDescriptor, 4> writes = {};
+			std::array<vkr::WriteDescriptor, 4> writes = {};
 
 			writes[0].binding = SHADER_GLOBALS_REGISTER;
-			writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			writes[0].bufferOffset = 0;
 			writes[0].bufferRange = WHOLE_SIZE;
 			writes[0].pBuffer = mShaderGlobalsBuffer;
 
 			writes[1].binding = CUSTOM_SAMPLER_0_REGISTER;
-			writes[1].type = DESCRIPTOR_TYPE_SAMPLER;
+			writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			writes[1].pSampler = mNearestSampler;
 
 			writes[2].binding = CUSTOM_TEXTURE_0_REGISTER;
 			writes[2].arrayIndex = 0;
-			writes[2].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			writes[2].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 			writes[3].binding = CUSTOM_TEXTURE_1_REGISTER;
 			writes[3].arrayIndex = 0;
-			writes[3].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[3].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			writes[3].pImageView = mDepthPeeling.depthTextures[(i + 1) % DEPTH_PEELING_DEPTH_TEXTURES_COUNT]->GetSampledImageView();
 
 			CHECKED_CALL(mDepthPeeling.layerDescriptorSets[i]->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -1368,28 +1368,28 @@ void Example_024::SetupDepthPeeling()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mDepthPeeling.layerDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mDepthPeeling.layerPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mDepthPeeling.layerTextures[0]->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mDepthPeeling.depthTextures[0]->GetImageFormat();
 		gpCreateInfo.pPipelineInterface = mDepthPeeling.layerPipelineInterface;
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "DepthPeelingLayer_First.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "DepthPeelingLayer_First.ps", &PS));
@@ -1414,30 +1414,30 @@ void Example_024::SetupDepthPeeling()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, DEPTH_PEELING_LAYERS_COUNT, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, DEPTH_PEELING_LAYERS_COUNT, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDepthPeeling.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDepthPeeling.combineDescriptorSetLayout, &mDepthPeeling.combineDescriptorSet));
 
-		std::array<WriteDescriptor, 2 + DEPTH_PEELING_LAYERS_COUNT> writes = {};
+		std::array<vkr::WriteDescriptor, 2 + DEPTH_PEELING_LAYERS_COUNT> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
 		writes[0].pBuffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[1].type = DESCRIPTOR_TYPE_SAMPLER;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 		writes[1].pSampler = mNearestSampler;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
 			writes[2 + i].binding = CUSTOM_TEXTURE_0_REGISTER;
 			writes[2 + i].arrayIndex = i;
-			writes[2 + i].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[2 + i].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			writes[2 + i].pImageView = mDepthPeeling.layerTextures[i]->GetSampledImageView();
 		}
 
@@ -1446,27 +1446,27 @@ void Example_024::SetupDepthPeeling()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mDepthPeeling.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mDepthPeeling.combinePipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "DepthPeelingCombine.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "DepthPeelingCombine.ps", &PS));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 0;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyTexture->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
@@ -1482,14 +1482,14 @@ void Example_024::RecordDepthPeeling()
 {
 	// Layer passes: extract all layers
 	for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
-		DrawPassPtr layerPass = mDepthPeeling.layerPasses[i];
+		vkr::DrawPassPtr layerPass = mDepthPeeling.layerPasses[i];
 		mCommandBuffer->TransitionImageLayout(
 			layerPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(layerPass, DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(layerPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(layerPass->GetScissor());
 		mCommandBuffer->SetViewports(layerPass->GetViewport());
@@ -1503,21 +1503,21 @@ void Example_024::RecordDepthPeeling()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			layerPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 
 	// Transparency pass: combine the results for each pixels
 	{
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 		mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -1529,10 +1529,10 @@ void Example_024::RecordDepthPeeling()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 }
 
@@ -1544,15 +1544,15 @@ void Example_024::SetupUnsortedOver()
 {
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mUnsortedOver.descriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mUnsortedOver.descriptorSetLayout, &mUnsortedOver.descriptorSet));
 
-		WriteDescriptor write = {};
+		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
 		write.pBuffer = mShaderGlobalsBuffer;
@@ -1561,48 +1561,48 @@ void Example_024::SetupUnsortedOver()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mUnsortedOver.descriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mUnsortedOver.pipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "UnsortedOver.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "UnsortedOver.ps", &PS));
 
-		GraphicsPipelineCreateInfo gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.inputAssemblyState.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.rasterState.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.rasterState.frontFace = FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = SAMPLE_COUNT_1;
+		gpCreateInfo.inputAssemblyState.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 		gpCreateInfo.colorBlendState.blendAttachmentCount = 1;
 		gpCreateInfo.colorBlendState.blendAttachments[0].blendEnable = true;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = ColorComponentFlags::RGBA();
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = vkr::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = vkr::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = vkr::ColorComponentFlags::RGBA();
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
 		gpCreateInfo.pPipelineInterface = mUnsortedOver.pipelineInterface;
 
-		gpCreateInfo.rasterState.cullMode = CULL_MODE_NONE;
+		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mUnsortedOver.meshAllFacesPipeline));
 
-		gpCreateInfo.rasterState.cullMode = CULL_MODE_FRONT;
+		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_FRONT;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mUnsortedOver.meshBackFacesPipeline));
 
-		gpCreateInfo.rasterState.cullMode = CULL_MODE_BACK;
+		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_BACK;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mUnsortedOver.meshFrontFacesPipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -1614,11 +1614,11 @@ void Example_024::RecordUnsortedOver()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-	mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+	mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 	mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 	mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -1658,10 +1658,10 @@ void Example_024::RecordUnsortedOver()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE);
 }
 
 //=============================================================================
@@ -1676,23 +1676,23 @@ void Example_024::SetupWeightedAverage()
 
 	// Texture
 	{
-		TextureCreateInfo createInfo = {};
-		createInfo.imageType = IMAGE_TYPE_2D;
+		vkr::TextureCreateInfo createInfo = {};
+		createInfo.imageType = vkr::IMAGE_TYPE_2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.sampleCount = SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
 
-		createInfo.imageFormat = FORMAT_R16G16B16A16_FLOAT;
+		createInfo.imageFormat = vkr::FORMAT_R16G16B16A16_FLOAT;
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mWeightedAverage.colorTexture));
 
-		createInfo.imageFormat = FORMAT_R16_FLOAT;
+		createInfo.imageFormat = vkr::FORMAT_R16_FLOAT;
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mWeightedAverage.extraTexture));
 	}
 
@@ -1702,14 +1702,14 @@ void Example_024::SetupWeightedAverage()
 
 	// Pass
 	{
-		DrawPassCreateInfo2 createInfo = {};
+		vkr::DrawPassCreateInfo2 createInfo = {};
 		createInfo.width = mWeightedAverage.colorTexture->GetWidth();
 		createInfo.height = mWeightedAverage.colorTexture->GetHeight();
 		createInfo.renderTargetCount = 2;
 		createInfo.pRenderTargetImages[0] = mWeightedAverage.colorTexture->GetImage();
 		createInfo.pRenderTargetImages[1] = mWeightedAverage.extraTexture->GetImage();
 		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
-		createInfo.depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 
@@ -1724,15 +1724,15 @@ void Example_024::SetupWeightedAverage()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedAverage.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedAverage.gatherDescriptorSetLayout, &mWeightedAverage.gatherDescriptorSet));
 
-		WriteDescriptor write = {};
+		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
 		write.pBuffer = mShaderGlobalsBuffer;
@@ -1741,41 +1741,41 @@ void Example_024::SetupWeightedAverage()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mWeightedAverage.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedAverage.gatherPipelineInterface));
 
-		ShaderModulePtr            VS, PS;
-		GraphicsPipelineCreateInfo gpCreateInfo = {};
+		vkr::ShaderModulePtr            VS, PS;
+		vkr::GraphicsPipelineCreateInfo gpCreateInfo = {};
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.inputAssemblyState.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.rasterState.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.rasterState.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.rasterState.frontFace = FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = SAMPLE_COUNT_1;
+		gpCreateInfo.inputAssemblyState.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 
 		gpCreateInfo.colorBlendState.blendAttachmentCount = 2;
 
 		gpCreateInfo.colorBlendState.blendAttachments[0].blendEnable = true;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = ColorComponentFlags::RGBA();
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = vkr::ColorComponentFlags::RGBA();
 
 		gpCreateInfo.colorBlendState.blendAttachments[1].blendEnable = true;
-		gpCreateInfo.colorBlendState.blendAttachments[1].colorBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[1].srcAlphaBlendFactor = BLEND_FACTOR_ZERO;
-		gpCreateInfo.colorBlendState.blendAttachments[1].dstAlphaBlendFactor = BLEND_FACTOR_ZERO;
-		gpCreateInfo.colorBlendState.blendAttachments[1].alphaBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[1].colorWriteMask = ColorComponentFlags::RGBA();
+		gpCreateInfo.colorBlendState.blendAttachments[1].colorBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[1].srcAlphaBlendFactor = vkr::BLEND_FACTOR_ZERO;
+		gpCreateInfo.colorBlendState.blendAttachments[1].dstAlphaBlendFactor = vkr::BLEND_FACTOR_ZERO;
+		gpCreateInfo.colorBlendState.blendAttachments[1].alphaBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[1].colorWriteMask = vkr::ColorComponentFlags::RGBA();
 
 		gpCreateInfo.outputState.renderTargetCount = 2;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mWeightedAverage.colorTexture->GetImageFormat();
@@ -1788,8 +1788,8 @@ void Example_024::SetupWeightedAverage()
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedAverageFragmentCountGather.ps", &PS));
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
-		gpCreateInfo.colorBlendState.blendAttachments[1].srcColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[1].dstColorBlendFactor = BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[1].srcColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[1].dstColorBlendFactor = vkr::BLEND_FACTOR_ONE;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mWeightedAverage.count.gatherPipeline));
 		GetRenderDevice().DestroyShaderModule(VS);
 		GetRenderDevice().DestroyShaderModule(PS);
@@ -1799,8 +1799,8 @@ void Example_024::SetupWeightedAverage()
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedAverageExactCoverageGather.ps", &PS));
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
-		gpCreateInfo.colorBlendState.blendAttachments[1].srcColorBlendFactor = BLEND_FACTOR_ZERO;
-		gpCreateInfo.colorBlendState.blendAttachments[1].dstColorBlendFactor = BLEND_FACTOR_SRC_COLOR;
+		gpCreateInfo.colorBlendState.blendAttachments[1].srcColorBlendFactor = vkr::BLEND_FACTOR_ZERO;
+		gpCreateInfo.colorBlendState.blendAttachments[1].dstColorBlendFactor = vkr::BLEND_FACTOR_SRC_COLOR;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mWeightedAverage.coverage.gatherPipeline));
 		GetRenderDevice().DestroyShaderModule(VS);
 		GetRenderDevice().DestroyShaderModule(PS);
@@ -1812,28 +1812,28 @@ void Example_024::SetupWeightedAverage()
 
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedAverage.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedAverage.combineDescriptorSetLayout, &mWeightedAverage.combineDescriptorSet));
 
-		std::array<WriteDescriptor, 3> writes = {};
+		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[0].type = DESCRIPTOR_TYPE_SAMPLER;
+		writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 		writes[0].pSampler = mNearestSampler;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[1].pImageView = mWeightedAverage.colorTexture->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_TEXTURE_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		writes[2].pImageView = mWeightedAverage.extraTexture->GetSampledImageView();
 
 		CHECKED_CALL(mWeightedAverage.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -1841,22 +1841,22 @@ void Example_024::SetupWeightedAverage()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mWeightedAverage.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedAverage.combinePipelineInterface));
 
-		ShaderModulePtr             VS, PS;
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::ShaderModulePtr             VS, PS;
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.vertexInputState.bindingCount = 0;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyTexture->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
@@ -1884,9 +1884,9 @@ void Example_024::SetupWeightedAverage()
 
 void Example_024::RecordWeightedAverage()
 {
-	DrawPassPtr         gatherPass;
-	GraphicsPipelinePtr gatherPipeline;
-	GraphicsPipelinePtr combinePipeline;
+	vkr::DrawPassPtr         gatherPass;
+	vkr::GraphicsPipelinePtr gatherPipeline;
+	vkr::GraphicsPipelinePtr combinePipeline;
 	switch (mGuiParameters.weightedAverage.type) {
 	case WEIGHTED_AVERAGE_TYPE_FRAGMENT_COUNT: {
 		gatherPass = mWeightedAverage.count.gatherPass;
@@ -1910,11 +1910,11 @@ void Example_024::RecordWeightedAverage()
 	{
 		mCommandBuffer->TransitionImageLayout(
 			gatherPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(gatherPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(gatherPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(gatherPass->GetScissor());
 		mCommandBuffer->SetViewports(gatherPass->GetViewport());
@@ -1928,21 +1928,21 @@ void Example_024::RecordWeightedAverage()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			gatherPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 
 	// Transparency pass: combine the results for each pixels
 	{
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-		mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 		mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -1954,10 +1954,10 @@ void Example_024::RecordWeightedAverage()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			RESOURCE_STATE_RENDER_TARGET,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::RESOURCE_STATE_RENDER_TARGET,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE,
+			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+			vkr::RESOURCE_STATE_SHADER_RESOURCE);
 	}
 }
 
@@ -1969,15 +1969,15 @@ void Example_024::SetupWeightedSum()
 {
 	// Descriptor
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ SHADER_GLOBALS_REGISTER, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedSum.descriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedSum.descriptorSetLayout, &mWeightedSum.descriptorSet));
 
-		WriteDescriptor write = {};
+		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
 		write.pBuffer = mShaderGlobalsBuffer;
@@ -1986,37 +1986,37 @@ void Example_024::SetupWeightedSum()
 
 	// Pipeline
 	{
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mWeightedSum.descriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedSum.pipelineInterface));
 
-		ShaderModulePtr VS, PS;
+		vkr::ShaderModulePtr VS, PS;
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedSum.vs", &VS));
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedSum.ps", &PS));
 
-		GraphicsPipelineCreateInfo gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo gpCreateInfo = {};
 		gpCreateInfo.VS = { VS, "vsmain" };
 		gpCreateInfo.PS = { PS, "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = GetTransparentMesh()->GetDerivedVertexBindings()[0];
-		gpCreateInfo.inputAssemblyState.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.rasterState.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.rasterState.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.rasterState.frontFace = FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = SAMPLE_COUNT_1;
+		gpCreateInfo.inputAssemblyState.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 		gpCreateInfo.colorBlendState.blendAttachmentCount = 1;
 		gpCreateInfo.colorBlendState.blendAttachments[0].blendEnable = true;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = BLEND_FACTOR_ONE;
-		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = BLEND_OP_ADD;
-		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = ColorComponentFlags::RGBA();
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstColorBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].srcAlphaBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].dstAlphaBlendFactor = vkr::BLEND_FACTOR_ONE;
+		gpCreateInfo.colorBlendState.blendAttachments[0].alphaBlendOp = vkr::BLEND_OP_ADD;
+		gpCreateInfo.colorBlendState.blendAttachments[0].colorWriteMask = vkr::ColorComponentFlags::RGBA();
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
@@ -2032,11 +2032,11 @@ void Example_024::RecordWeightedSum()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE);
-	mCommandBuffer->BeginRenderPass(mTransparencyPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+	mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 	mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
 	mCommandBuffer->SetViewports(mTransparencyPass->GetViewport());
@@ -2050,8 +2050,8 @@ void Example_024::RecordWeightedSum()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		RESOURCE_STATE_RENDER_TARGET,
-		RESOURCE_STATE_SHADER_RESOURCE,
-		RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::RESOURCE_STATE_RENDER_TARGET,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE,
+		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
+		vkr::RESOURCE_STATE_SHADER_RESOURCE);
 }

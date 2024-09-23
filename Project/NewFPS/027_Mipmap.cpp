@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_027::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -15,10 +15,10 @@ bool Example_027::Setup()
 
 	// Uniform buffer
 	for (uint32_t i = 0; i < 2; ++i) {
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mUniformBuffer[i]));
 	}
@@ -27,10 +27,10 @@ bool Example_027::Setup()
 	{
 		// std::vector<std::string> textureFiles = {"box_panel.jpg", "statue.jpg"};
 		for (uint32_t i = 0; i < 2; ++i) {
-			grfx_util::ImageOptions options = grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-			CHECKED_CALL(grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImage[i], options, i == 1));
+			vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
+			CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImage[i], options, i == 1));
 
-			SampledImageViewCreateInfo viewCreateInfo = SampledImageViewCreateInfo::GuessFromImage(mImage[i]);
+			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImage[i]);
 			CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mSampledImageView[i]));
 		}
 
@@ -42,10 +42,10 @@ bool Example_027::Setup()
 		mLeftInGpu = false;
 		mRightInGpu = true;
 		// To better perceive the MipMap we disable the interpolation between them
-		SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.magFilter = FILTER_NEAREST;
-		samplerCreateInfo.minFilter = FILTER_NEAREST;
-		samplerCreateInfo.mipmapMode = SAMPLER_MIPMAP_MODE_NEAREST;
+		vkr::SamplerCreateInfo samplerCreateInfo = {};
+		samplerCreateInfo.magFilter = vkr::FILTER_NEAREST;
+		samplerCreateInfo.minFilter = vkr::FILTER_NEAREST;
+		samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_NEAREST;
 		samplerCreateInfo.minLod = 0;
 		samplerCreateInfo.maxLod = FLT_MAX;
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mSampler));
@@ -53,24 +53,24 @@ bool Example_027::Setup()
 
 	// Descriptor
 	{
-		DescriptorPoolCreateInfo poolCreateInfo = {};
+		vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
 		poolCreateInfo.uniformBuffer = 2;
 		poolCreateInfo.sampledImage = 2;
 		poolCreateInfo.sampler = 2;
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DESCRIPTOR_TYPE_SAMPLER));
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 
 		for (uint32_t i = 0; i < 2; ++i) {
 			CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &mDescriptorSet[i]));
 
-			WriteDescriptor write = {};
+			vkr::WriteDescriptor write = {};
 			write.binding = 0;
-			write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			write.bufferOffset = 0;
 			write.bufferRange = WHOLE_SIZE;
 			write.pBuffer = mUniformBuffer[i];
@@ -78,13 +78,13 @@ bool Example_027::Setup()
 
 			write = {};
 			write.binding = 1;
-			write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			write.pImageView = mSampledImageView[i];
 			CHECKED_CALL(mDescriptorSet[i]->UpdateDescriptors(1, &write));
 
 			write = {};
 			write.binding = 2;
-			write.type = DESCRIPTOR_TYPE_SAMPLER;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			write.pSampler = mSampler;
 			CHECKED_CALL(mDescriptorSet[i]->UpdateDescriptors(1, &write));
 		}
@@ -95,27 +95,27 @@ bool Example_027::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "TextureMip.vs", &mVS));
 		CHECKED_CALL(device.CreateShader("basic/shaders", "TextureMip.ps", &mPS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		mVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
 		gpCreateInfo.PS = { mPS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mVertexBinding;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_NONE;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
@@ -129,10 +129,10 @@ bool Example_027::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -159,10 +159,10 @@ bool Example_027::Setup()
 		// clang-format on
 		uint32_t dataSize = SizeInBytesU32(vertexData);
 
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = dataSize;
 		bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mVertexBuffer));
 
@@ -236,17 +236,17 @@ void Example_027::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 		beginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -295,11 +295,11 @@ void Example_027::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;

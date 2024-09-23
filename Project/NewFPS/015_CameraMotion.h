@@ -63,25 +63,25 @@ private:
 		bool       IsFloor() const { return Kind() == EntityKind::FLOOR; }
 		bool       IsObject() const { return Kind() == EntityKind::OBJECT; }
 
-		DescriptorSet** DescriptorSetPtr() { return &descriptorSet; }
-		const ::DescriptorSetPtr DescriptorSet() const { return descriptorSet; }
+		vkr::DescriptorSet** DescriptorSetPtr() { return &descriptorSet; }
+		const vkr::DescriptorSetPtr DescriptorSet() const { return descriptorSet; }
 
-		const GraphicsPipelinePtr Pipeline() const { return pipeline; }
-		GraphicsPipeline** PipelinePtr() { return &pipeline; }
+		const vkr::GraphicsPipelinePtr Pipeline() const { return pipeline; }
+		vkr::GraphicsPipeline** PipelinePtr() { return &pipeline; }
 
-		const MeshPtr& Mesh() const { return mesh; }
-		::Mesh** MeshPtr() { return &mesh; }
+		const vkr::MeshPtr& Mesh() const { return mesh; }
+		vkr::Mesh** MeshPtr() { return &mesh; }
 
-		const BufferPtr& UniformBuffer() const { return uniformBuffer; }
-		Buffer** UniformBufferPtr() { return &uniformBuffer; }
+		const vkr::BufferPtr& UniformBuffer() const { return uniformBuffer; }
+		vkr::Buffer** UniformBufferPtr() { return &uniformBuffer; }
 
 		const float3& Location() const { return location; }
 
 	private:
-		::MeshPtr             mesh;
-		::DescriptorSetPtr    descriptorSet;
-		BufferPtr           uniformBuffer;
-		GraphicsPipelinePtr pipeline;
+		vkr::MeshPtr             mesh;
+		vkr::DescriptorSetPtr    descriptorSet;
+		vkr::BufferPtr           uniformBuffer;
+		vkr::GraphicsPipelinePtr pipeline;
 		float3                    location;
 		float3                    dimension;
 		EntityKind                kind;
@@ -148,19 +148,19 @@ private:
 
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>  mPerFrame;
-	ShaderModulePtr        mVS;
-	ShaderModulePtr        mPS;
-	PipelineInterfacePtr   mPipelineInterface;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDescriptorSetLayout;
+	vkr::ShaderModulePtr        mVS;
+	vkr::ShaderModulePtr        mPS;
+	vkr::PipelineInterfacePtr   mPipelineInterface;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
 	std::vector<Entity>    mEntities;
 	PerspCamera            mPerspCamera;
 	ArcballCamera          mArcballCamera;
@@ -174,8 +174,8 @@ private:
 	void setupCamera();
 	void updateCamera(PerspCamera* camera);
 	void setupEntities();
-	void setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
-	void setupEntity(const WireMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
 	void processInput();
 	void drawCameraInfo();
 	void drawInstructions();

@@ -16,16 +16,16 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>         mPerFrame;
-	std::vector<CommandBufferPtr> mPreRecordedCmds;
-	PipelineInterfacePtr          mPipelineInterface;
-	GraphicsPipelinePtr           mPipeline;
-	MeshPtr                       mSphereMesh;
+	std::vector<vkr::CommandBufferPtr> mPreRecordedCmds;
+	vkr::PipelineInterfacePtr          mPipelineInterface;
+	vkr::GraphicsPipelinePtr           mPipeline;
+	vkr::MeshPtr                       mSphereMesh;
 };

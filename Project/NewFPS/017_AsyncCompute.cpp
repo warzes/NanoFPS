@@ -25,7 +25,7 @@ bool Example_017::Setup()
 	for (uint32_t i = 0; i < mNumFramesInFlight; ++i)
 	{
 		PerFrame                  frame = {};
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 
 		for (uint32_t d = 0; d < frame.renderData.size(); ++d) {
 			CHECKED_CALL(mGraphicsQueue->CreateCommandBuffer(&frame.renderData[d].cmd));
@@ -40,7 +40,7 @@ bool Example_017::Setup()
 		// Use the graphics queue for drawing to the swapchain.
 		CHECKED_CALL(mGraphicsQueue->CreateCommandBuffer(&frame.drawToSwapchainData.cmd));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 		fenceCreateInfo = { true }; // Create signaled
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.renderCompleteFence));
@@ -53,7 +53,7 @@ bool Example_017::Setup()
 
 	// Descriptor pool
 	{
-		DescriptorPoolCreateInfo createInfo = {};
+		vkr::DescriptorPoolCreateInfo createInfo = {};
 		createInfo.sampler = 200;
 		createInfo.sampledImage = 200;
 		createInfo.uniformBuffer = 200;
@@ -62,74 +62,74 @@ bool Example_017::Setup()
 		CHECKED_CALL(device.CreateDescriptorPool(createInfo, &mDescriptorPool));
 	}
 
-	// Descriptor layout for graphics pipeline (Texture.hlsl)
+	// Descriptor layout for graphics pipeline (vkr::Texture.hlsl)
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DESCRIPTOR_TYPE_SAMPLER));
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mRenderLayout));
 	}
 
-	// Mesh
+	// vkr::Mesh
 	{
-		Geometry geo;
-		TriMesh  mesh = TriMesh::CreateFromOBJ("basic/models/altimeter/altimeter.obj", TriMeshOptions().Indices().TexCoords().Scale(float3(1.5f)));
-		CHECKED_CALL(Geometry::Create(mesh, &geo));
-		CHECKED_CALL(grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mModelMesh));
+		vkr::Geometry geo;
+		vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("basic/models/altimeter/altimeter.obj", vkr::TriMeshOptions().Indices().TexCoords().Scale(float3(1.5f)));
+		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
+		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mModelMesh));
 	}
 
-	// Texture.
+	// vkr::Texture.
 	{
-		grfx_util::TextureOptions options = grfx_util::TextureOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(grfx_util::CreateTextureFromFile(device.GetGraphicsQueue(), "materials/textures/altimeter/albedo.jpg", &mModelTexture, options));
+		vkr::grfx_util::TextureOptions options = vkr::grfx_util::TextureOptions().MipLevelCount(REMAINING_MIP_LEVELS);
+		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(device.GetGraphicsQueue(), "materials/textures/altimeter/albedo.jpg", &mModelTexture, options));
 	}
 
 	// Samplers.
 	{
-		SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.magFilter = FILTER_LINEAR;
-		samplerCreateInfo.minFilter = FILTER_LINEAR;
-		samplerCreateInfo.mipmapMode = SAMPLER_MIPMAP_MODE_LINEAR;
+		vkr::SamplerCreateInfo samplerCreateInfo = {};
+		samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
+		samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
+		samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
 		samplerCreateInfo.minLod = 0.0f;
 		samplerCreateInfo.maxLod = FLT_MAX;
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mLinearSampler));
 
-		samplerCreateInfo.magFilter = FILTER_NEAREST;
-		samplerCreateInfo.minFilter = FILTER_NEAREST;
-		samplerCreateInfo.mipmapMode = SAMPLER_MIPMAP_MODE_NEAREST;
+		samplerCreateInfo.magFilter = vkr::FILTER_NEAREST;
+		samplerCreateInfo.minFilter = vkr::FILTER_NEAREST;
+		samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_NEAREST;
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mNearestSampler));
 	}
 
 	// Pipeline for graphics rendering.
 	{
-		ShaderModulePtr VS;
-		CHECKED_CALL(device.CreateShader("basic/shaders", "Texture.vs", &VS));
-		ShaderModulePtr PS;
-		CHECKED_CALL(device.CreateShader("basic/shaders", "Texture.ps", &PS));
+		vkr::ShaderModulePtr VS;
+		CHECKED_CALL(device.CreateShader("basic/shaders", "vkr::Texture.vs", &VS));
+		vkr::ShaderModulePtr PS;
+		CHECKED_CALL(device.CreateShader("basic/shaders", "vkr::Texture.ps", &PS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mRenderLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mRenderPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
 		gpCreateInfo.PS = { PS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 2;
 		gpCreateInfo.vertexInputState.bindings[0] = mModelMesh->GetDerivedVertexBindings()[0];
 		gpCreateInfo.vertexInputState.bindings[1] = mModelMesh->GetDerivedVertexBindings()[1];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = FORMAT_D32_FLOAT;
+		gpCreateInfo.outputState.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 		gpCreateInfo.pPipelineInterface = mRenderPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mRenderPipeline));
 
@@ -146,10 +146,10 @@ bool Example_017::Setup()
 				CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mRenderLayout, &renderData.descriptorSet));
 			}
 			{
-				WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = 1;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				write.pImageView = mModelTexture->GetSampledImageView();
 
 				CHECKED_CALL(renderData.descriptorSet->UpdateDescriptors(1, &write));
@@ -157,10 +157,10 @@ bool Example_017::Setup()
 
 			// Sampler.
 			{
-				WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = 2;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_SAMPLER;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 				write.pSampler = mLinearSampler;
 
 				CHECKED_CALL(renderData.descriptorSet->UpdateDescriptors(1, &write));
@@ -168,17 +168,17 @@ bool Example_017::Setup()
 
 			// Uniform buffer (contains transformation matrix).
 			{
-				BufferCreateInfo bufferCreateInfo = {};
+				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-				bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &renderData.constants));
 
-				WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = 0;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				write.bufferOffset = 0;
 				write.bufferRange = WHOLE_SIZE;
 				write.pBuffer = renderData.constants;
@@ -188,17 +188,17 @@ bool Example_017::Setup()
 
 			// Graphics render pass
 			{
-				DrawPassCreateInfo dpCreateInfo = {};
+				vkr::DrawPassCreateInfo dpCreateInfo = {};
 				dpCreateInfo.width = GetRender().GetSwapChain().GetWidth();
 				dpCreateInfo.height = GetRender().GetSwapChain().GetHeight();
-				dpCreateInfo.depthStencilFormat = FORMAT_D32_FLOAT;
+				dpCreateInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 				dpCreateInfo.depthStencilClearValue = { 1.0f, 0 };
-				dpCreateInfo.depthStencilInitialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+				dpCreateInfo.depthStencilInitialState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 				dpCreateInfo.renderTargetCount = 1;
 				dpCreateInfo.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 				dpCreateInfo.renderTargetClearValues[0] = { 100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f };
-				dpCreateInfo.renderTargetInitialStates[0] = RESOURCE_STATE_SHADER_RESOURCE;
-				dpCreateInfo.renderTargetUsageFlags[0] = IMAGE_USAGE_SAMPLED;
+				dpCreateInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+				dpCreateInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 
 				CHECKED_CALL(device.CreateDrawPass(dpCreateInfo, &renderData.drawPass));
 			}
@@ -262,44 +262,44 @@ void Example_017::setupComposition()
 	// Descriptor set layout
 	{
 		// Descriptor set layout
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_SAMPLER));
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLER));
 
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mComposeLayout));
 	}
 
 	// Pipeline
 	{
-		ShaderModulePtr VS;
+		vkr::ShaderModulePtr VS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticTexture.vs", &VS));
-		ShaderModulePtr PS;
+		vkr::ShaderModulePtr PS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "StaticTexture.ps", &PS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mComposeLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComposePipelineInterface));
 
-		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, vkr::FORMAT_R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
 		gpCreateInfo.PS = { PS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mComposeVertexBinding;
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = false;
 		gpCreateInfo.depthWriteEnable = false;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = FORMAT_D32_FLOAT;
+		gpCreateInfo.outputState.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 		gpCreateInfo.pPipelineInterface = mComposePipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mComposePipeline));
 
@@ -310,15 +310,15 @@ void Example_017::setupComposition()
 	for (auto& frameData : mPerFrame) {
 		// Graphics render pass
 		{
-			DrawPassCreateInfo dpCreateInfo = {};
+			vkr::DrawPassCreateInfo dpCreateInfo = {};
 			dpCreateInfo.width = GetRender().GetSwapChain().GetWidth();
 			dpCreateInfo.height = GetRender().GetSwapChain().GetHeight();
-			dpCreateInfo.depthStencilFormat = FORMAT_D32_FLOAT;
+			dpCreateInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 			dpCreateInfo.renderTargetCount = 1;
 			dpCreateInfo.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 			dpCreateInfo.renderTargetClearValues[0] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			dpCreateInfo.renderTargetInitialStates[0] = RESOURCE_STATE_RENDER_TARGET;
-			dpCreateInfo.renderTargetUsageFlags[0] = IMAGE_USAGE_SAMPLED;
+			dpCreateInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_RENDER_TARGET;
+			dpCreateInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 
 			CHECKED_CALL(device.CreateDrawPass(dpCreateInfo, &frameData.composeDrawPass));
 		}
@@ -340,7 +340,7 @@ void Example_017::setupComposition()
 
 				// clang-format off
 				std::vector<float> vertexData = {
-					// Position.                                    // Texture coordinates.
+					// Position.                                    // vkr::Texture coordinates.
 					offsetX + 0.0f,  offsetY + 1.0f, 0.0f, 1.0f,   1.0f, 0.0f,
 					offsetX + -1.0f,  offsetY + 1.0f, 0.0f, 1.0f,   0.0f, 0.0f,
 					offsetX + -1.0f,  offsetY + 0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
@@ -353,10 +353,10 @@ void Example_017::setupComposition()
 
 				uint32_t dataSize = SizeInBytesU32(vertexData);
 
-				BufferCreateInfo bufferCreateInfo = {};
+				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = dataSize;
 				bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-				bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &composeData.quadVertexBuffer));
 
@@ -368,13 +368,13 @@ void Example_017::setupComposition()
 
 			// Descriptors.
 			{
-				WriteDescriptor writes[2] = {};
+				vkr::WriteDescriptor writes[2] = {};
 				writes[0].binding = 0;
 				writes[0].arrayIndex = 0;
-				writes[0].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 
 				writes[1].binding = 1;
-				writes[1].type = DESCRIPTOR_TYPE_SAMPLER;
+				writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 				writes[1].pSampler = mLinearSampler;
 
 				writes[0].pImageView = computeData.outputImageSampledView;
@@ -390,26 +390,26 @@ void Example_017::setupCompute()
 
 	// Descriptor layout for compute pipeline (ImageFilter.hlsl)
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_STORAGE_IMAGE));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DESCRIPTOR_TYPE_SAMPLER));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(3, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(3, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mComputeLayout));
 	}
 
 	// Compute pipeline
 	{
-		ShaderModulePtr CS;
+		vkr::ShaderModulePtr CS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "ImageFilter.cs", &CS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mComputeLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComputePipelineInterface));
 
-		ComputePipelineCreateInfo cpCreateInfo = {};
+		vkr::ComputePipelineCreateInfo cpCreateInfo = {};
 		cpCreateInfo.CS = { CS.Get(), "csmain" };
 		cpCreateInfo.pPipelineInterface = mComputePipelineInterface;
 
@@ -421,7 +421,7 @@ void Example_017::setupCompute()
 	for (auto& frameData : mPerFrame) {
 		for (size_t i = 0; i < frameData.computeData.size(); ++i) {
 			PerFrame::ComputeData& computeData = frameData.computeData[i];
-			Texture* sourceTexture = frameData.renderData[i].drawPass->GetRenderTargetTexture(0);
+			vkr::Texture* sourceTexture = frameData.renderData[i].drawPass->GetRenderTargetTexture(0);
 
 			// Descriptor set.
 			{
@@ -430,32 +430,32 @@ void Example_017::setupCompute()
 
 			// Output image and views.
 			{
-				ImageCreateInfo ci = {};
-				ci.type = IMAGE_TYPE_2D;
+				vkr::ImageCreateInfo ci = {};
+				ci.type = vkr::IMAGE_TYPE_2D;
 				ci.width = sourceTexture->GetWidth();
 				ci.height = sourceTexture->GetHeight();
 				ci.depth = 1;
 				ci.format = GetRender().GetSwapChain().GetColorFormat();
 				ci.usageFlags.bits.sampled = true;
 				ci.usageFlags.bits.storage = true;
-				ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-				ci.initialState = RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+				ci.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+				ci.initialState = vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 
 				CHECKED_CALL(device.CreateImage(ci, &computeData.outputImage));
 
-				SampledImageViewCreateInfo sampledViewCreateInfo = SampledImageViewCreateInfo::GuessFromImage(computeData.outputImage);
+				vkr::SampledImageViewCreateInfo sampledViewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(computeData.outputImage);
 				CHECKED_CALL(device.CreateSampledImageView(sampledViewCreateInfo, &computeData.outputImageSampledView));
 
-				StorageImageViewCreateInfo storageViewCreateInfo = StorageImageViewCreateInfo::GuessFromImage(computeData.outputImage);
+				vkr::StorageImageViewCreateInfo storageViewCreateInfo = vkr::StorageImageViewCreateInfo::GuessFromImage(computeData.outputImage);
 				CHECKED_CALL(device.CreateStorageImageView(storageViewCreateInfo, &computeData.outputImageStorageView));
 			}
 
 			// Uniform buffer (contains filter selection flag).
 			{
-				BufferCreateInfo bufferCreateInfo = {};
+				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-				bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &computeData.constants));
 
@@ -478,17 +478,17 @@ void Example_017::setupCompute()
 
 			// Descriptors.
 			{
-				WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = 0;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
 				write.pImageView = computeData.outputImageStorageView;
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 1;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				write.bufferOffset = 0;
 				write.bufferRange = WHOLE_SIZE;
 				write.pBuffer = computeData.constants;
@@ -498,14 +498,14 @@ void Example_017::setupCompute()
 				write = {};
 				write.binding = 2;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_SAMPLER;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 				write.pSampler = mNearestSampler;
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 3;
 				write.arrayIndex = 0;
-				write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				write.pImageView = sourceTexture->GetSampledImageView();
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 			}
@@ -520,20 +520,20 @@ void Example_017::setupDrawToSwapchain()
 	// Descriptor set layout
 	{
 		// Descriptor set layout
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_SAMPLER));
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLER));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDrawToSwapchainLayout));
 	}
 
 	// Pipeline
 	{
-		ShaderModulePtr VS;
+		vkr::ShaderModulePtr VS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "FullScreenTriangle.vs", &VS));
-		ShaderModulePtr PS;
+		vkr::ShaderModulePtr PS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "FullScreenTriangle.ps", &PS));
 
-		FullscreenQuadCreateInfo createInfo = {};
+		vkr::FullscreenQuadCreateInfo createInfo = {};
 		createInfo.VS = VS;
 		createInfo.PS = PS;
 		createInfo.setCount = 1;
@@ -553,14 +553,14 @@ void Example_017::setupDrawToSwapchain()
 
 		// Write descriptors
 		{
-			WriteDescriptor writes[2] = {};
+			vkr::WriteDescriptor writes[2] = {};
 			writes[0].binding = 0;
 			writes[0].arrayIndex = 0;
-			writes[0].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			writes[0].pImageView = frameData.composeDrawPass->GetRenderTargetTexture(0)->GetSampledImageView();
 
 			writes[1].binding = 1;
-			writes[1].type = DESCRIPTOR_TYPE_SAMPLER;
+			writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			writes[1].pSampler = mLinearSampler;
 
 			CHECKED_CALL(drawData.descriptorSet->UpdateDescriptors(2, writes));
@@ -571,7 +571,7 @@ void Example_017::setupDrawToSwapchain()
 void Example_017::updateTransforms(PerFrame& frame)
 {
 	for (PerFrame::RenderData& renderData : frame.renderData) {
-		BufferPtr buf = renderData.constants;
+		vkr::BufferPtr buf = renderData.constants;
 
 		mModelRotation += (mModelTargetRotation - mModelRotation) * 0.1f;
 
@@ -603,17 +603,17 @@ uint32_t Example_017::acquireFrame(PerFrame& frame)
 
 void Example_017::blitAndPresent(PerFrame& frame, uint32_t swapchainImageIndex)
 {
-	RenderPassPtr renderPass = GetRender().GetSwapChain().GetRenderPass(swapchainImageIndex);
+	vkr::RenderPassPtr renderPass = GetRender().GetSwapChain().GetRenderPass(swapchainImageIndex);
 	ASSERT_MSG(!renderPass.IsNull(), "swapchain render pass object is null");
 
-	CommandBufferPtr cmd = frame.drawToSwapchainData.cmd;
+	vkr::CommandBufferPtr cmd = frame.drawToSwapchainData.cmd;
 
 	CHECKED_CALL(cmd->Begin());
 	{
 		cmd->SetScissors(renderPass->GetScissor());
 		cmd->SetViewports(renderPass->GetViewport());
-		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
-		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd->BeginRenderPass(renderPass);
 		{
 			// Draw composed image to swapchain.
@@ -627,19 +627,19 @@ void Example_017::blitAndPresent(PerFrame& frame, uint32_t swapchainImageIndex)
 			GetRender().DrawImGui(cmd);
 		}
 		cmd->EndRenderPass();
-		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET);
-		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_RENDER_TARGET);
+		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(cmd->End());
 
-	const Semaphore* ppWaitSemaphores[] = {
+	const vkr::Semaphore* ppWaitSemaphores[] = {
 		frame.composeData[0].completeSemaphore,
 		frame.composeData[1].completeSemaphore,
 		frame.composeData[2].completeSemaphore,
 		frame.composeData[3].completeSemaphore,
 		frame.imageAcquiredSemaphore };
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &cmd;
 	submitInfo.waitSemaphoreCount = sizeof(ppWaitSemaphores) / sizeof(ppWaitSemaphores[0]);
@@ -662,12 +662,12 @@ void Example_017::runCompute(PerFrame& frame, size_t quadIndex)
 	{
 		// Acquire from graphics queue to compute queue.
 		if (mUseQueueFamilyTransfers) {
-			computeData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
+			computeData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
 		}
 
-		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS);
+		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_UNORDERED_ACCESS);
 		{
-			DescriptorSet* sets[1] = { nullptr };
+			vkr::DescriptorSet* sets[1] = { nullptr };
 			sets[0] = computeData.descriptorSet;
 			computeData.cmd->BindComputeDescriptorSets(mComputePipelineInterface, 1, sets);
 			computeData.cmd->BindComputePipeline(mComputePipeline);
@@ -676,16 +676,16 @@ void Example_017::runCompute(PerFrame& frame, size_t quadIndex)
 			for (int i = 0; i < mComputeLoad; ++i)
 				computeData.cmd->Dispatch(dispatchX, dispatchY, 1);
 		}
-		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_UNORDERED_ACCESS, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
 		// Release from compute queue to graphics queue.
 		if (mUseQueueFamilyTransfers) {
-			computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
+			computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
 		}
 	}
 	CHECKED_CALL(computeData.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &computeData.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -708,19 +708,19 @@ void Example_017::compose(PerFrame& frame, size_t quadIndex)
 
 	CHECKED_CALL(composeData.cmd->Begin());
 	{
-		DrawPassPtr renderPass = frame.composeDrawPass;
+		vkr::DrawPassPtr renderPass = frame.composeDrawPass;
 
 		composeData.cmd->SetScissors(renderPass->GetScissor());
 		composeData.cmd->SetViewports(renderPass->GetViewport());
 
 		// Acquire from compute queue to graphics queue.
 		if (mUseQueueFamilyTransfers) {
-			composeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
+			composeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
 		}
 
 		composeData.cmd->BeginRenderPass(renderPass, 0 /* do not clear render target */);
 		{
-			DescriptorSet* sets[1] = { nullptr };
+			vkr::DescriptorSet* sets[1] = { nullptr };
 			sets[0] = composeData.descriptorSet;
 			composeData.cmd->BindGraphicsDescriptorSets(mComposePipelineInterface, 1, sets);
 
@@ -733,7 +733,7 @@ void Example_017::compose(PerFrame& frame, size_t quadIndex)
 	}
 	CHECKED_CALL(composeData.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &composeData.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -753,10 +753,10 @@ void Example_017::drawScene(PerFrame& frame, size_t quadIndex)
 		renderData.cmd->SetViewports(renderData.drawPass->GetViewport());
 
 		// Draw model.
-		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET);
-		renderData.cmd->BeginRenderPass(renderData.drawPass, DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS | DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH);
+		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_RENDER_TARGET);
+		renderData.cmd->BeginRenderPass(renderData.drawPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS | vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH);
 		{
-			DescriptorSet* sets[1] = { nullptr };
+			vkr::DescriptorSet* sets[1] = { nullptr };
 			sets[0] = renderData.descriptorSet;
 			renderData.cmd->BindGraphicsDescriptorSets(mRenderPipelineInterface, 1, sets);
 
@@ -767,16 +767,16 @@ void Example_017::drawScene(PerFrame& frame, size_t quadIndex)
 			renderData.cmd->DrawIndexed(mModelMesh->GetIndexCount(), mGraphicsLoad);
 		}
 		renderData.cmd->EndRenderPass();
-		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE);
+		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_SHADER_RESOURCE);
 
 		// Release from graphics queue to compute queue.
 		if (mUseQueueFamilyTransfers) {
-			renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
+			renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
 		}
 	}
 	CHECKED_CALL(renderData.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &renderData.cmd;
 	submitInfo.signalSemaphoreCount = 1;

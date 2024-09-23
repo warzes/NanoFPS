@@ -11,31 +11,31 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>      mPerFrame;
-	ShaderModulePtr            mCS;
-	ShaderModulePtr            mVS;
-	ShaderModulePtr            mPS;
-	PipelineInterfacePtr       mComputePipelineInterface;
-	ComputePipelinePtr         mComputePipeline;
-	PipelineInterfacePtr       mGraphicsPipelineInterface;
-	GraphicsPipelinePtr        mGraphicsPipeline;
-	BufferPtr                  mVertexBuffer;
-	DescriptorPoolPtr          mDescriptorPool;
-	DescriptorSetLayoutPtr     mComputeDescriptorSetLayout;
-	DescriptorSetPtr           mComputeDescriptorSet;
-	DescriptorSetLayoutPtr     mGraphicsDescriptorSetLayout;
-	DescriptorSetPtr           mGraphicsDescriptorSet;
-	BufferPtr                  mUniformBuffer;
-	ImagePtr                   mImage;
-	SamplerPtr                 mSampler;
-	SampledImageViewPtr        mSampledImageView;
-	StorageImageViewPtr        mStorageImageView;
-	VertexBinding              mVertexBinding;
+	vkr::ShaderModulePtr            mCS;
+	vkr::ShaderModulePtr            mVS;
+	vkr::ShaderModulePtr            mPS;
+	vkr::PipelineInterfacePtr       mComputePipelineInterface;
+	vkr::ComputePipelinePtr         mComputePipeline;
+	vkr::PipelineInterfacePtr       mGraphicsPipelineInterface;
+	vkr::GraphicsPipelinePtr        mGraphicsPipeline;
+	vkr::BufferPtr                  mVertexBuffer;
+	vkr::DescriptorPoolPtr          mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr     mComputeDescriptorSetLayout;
+	vkr::DescriptorSetPtr           mComputeDescriptorSet;
+	vkr::DescriptorSetLayoutPtr     mGraphicsDescriptorSetLayout;
+	vkr::DescriptorSetPtr           mGraphicsDescriptorSet;
+	vkr::BufferPtr                  mUniformBuffer;
+	vkr::ImagePtr                   mImage;
+	vkr::SamplerPtr                 mSampler;
+	vkr::SampledImageViewPtr        mSampledImageView;
+	vkr::StorageImageViewPtr        mStorageImageView;
+	vkr::VertexBinding              mVertexBinding;
 };

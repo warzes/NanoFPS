@@ -56,35 +56,35 @@ namespace e020
 		Material() {}
 		virtual ~Material() {}
 
-		Result Create(RenderDevice& device, Queue* pQueue, DescriptorPool* pPool, const MaterialCreateInfo* pCreateInfo);
+		Result Create(vkr::RenderDevice& device, vkr::Queue* pQueue, vkr::DescriptorPool* pPool, const MaterialCreateInfo* pCreateInfo);
 		void        Destroy();
 
-		static Result CreateMaterials(RenderDevice& device, Queue* pQueue, DescriptorPool* pPool);
+		static Result CreateMaterials(vkr::RenderDevice& device, vkr::Queue* pQueue, vkr::DescriptorPool* pPool);
 		static void        DestroyMaterials();
 
 		static Material* GetMaterialWood() { return &sWood; }
 		static Material* GetMaterialTiles() { return &sTiles; }
 
-		static DescriptorSetLayout* GetMaterialResourcesLayout() { return sMaterialResourcesLayout.Get(); }
-		static DescriptorSetLayout* GetMaterialDataLayout() { return sMaterialDataLayout.Get(); }
+		static vkr::DescriptorSetLayout* GetMaterialResourcesLayout() { return sMaterialResourcesLayout.Get(); }
+		static vkr::DescriptorSetLayout* GetMaterialDataLayout() { return sMaterialDataLayout.Get(); }
 
-		DescriptorSet* GetMaterialResourceSet() const { return mMaterialResourcesSet.Get(); }
-		DescriptorSet* GetMaterialDataSet() const { return mMaterialDataSet.Get(); }
+		vkr::DescriptorSet* GetMaterialResourceSet() const { return mMaterialResourcesSet.Get(); }
+		vkr::DescriptorSet* GetMaterialDataSet() const { return mMaterialDataSet.Get(); }
 
 	private:
-		BufferPtr        mMaterialConstants;
-		TexturePtr       mAlbedoTexture;
-		TexturePtr       mRoughnessTexture;
-		TexturePtr       mMetalnessTexture;
-		TexturePtr       mNormalMapTexture;
-		DescriptorSetPtr mMaterialResourcesSet;
-		DescriptorSetPtr mMaterialDataSet;
+		vkr::BufferPtr        mMaterialConstants;
+		vkr::TexturePtr       mAlbedoTexture;
+		vkr::TexturePtr       mRoughnessTexture;
+		vkr::TexturePtr       mMetalnessTexture;
+		vkr::TexturePtr       mNormalMapTexture;
+		vkr::DescriptorSetPtr mMaterialResourcesSet;
+		vkr::DescriptorSetPtr mMaterialDataSet;
 
-		static TexturePtr             s1x1BlackTexture;
-		static TexturePtr             s1x1WhiteTexture;
-		static SamplerPtr             sClampedSampler;
-		static DescriptorSetLayoutPtr sMaterialResourcesLayout;
-		static DescriptorSetLayoutPtr sMaterialDataLayout;
+		static vkr::TexturePtr             s1x1BlackTexture;
+		static vkr::TexturePtr             s1x1WhiteTexture;
+		static vkr::SamplerPtr             sClampedSampler;
+		static vkr::DescriptorSetLayoutPtr sMaterialResourcesLayout;
+		static vkr::DescriptorSetLayoutPtr sMaterialDataLayout;
 
 		static Material sWood;
 		static Material sTiles;
@@ -92,7 +92,7 @@ namespace e020
 
 	struct EntityCreateInfo
 	{
-		Mesh* pMesh = nullptr;
+		vkr::Mesh* pMesh = nullptr;
 		const Material* pMaterial = nullptr;
 	};
 
@@ -102,30 +102,30 @@ namespace e020
 		Entity() {}
 		~Entity() {}
 
-		Result Create(RenderDevice& device, Queue* pQueue, DescriptorPool* pPool, const EntityCreateInfo* pCreateInfo);
+		Result Create(vkr::RenderDevice& device, vkr::Queue* pQueue, vkr::DescriptorPool* pPool, const EntityCreateInfo* pCreateInfo);
 		void        Destroy();
 
-		static Result CreatePipelines(RenderDevice& device, DescriptorSetLayout* pSceneDataLayout, DrawPass* pDrawPass);
+		static Result CreatePipelines(vkr::RenderDevice& device, vkr::DescriptorSetLayout* pSceneDataLayout, vkr::DrawPass* pDrawPass);
 		static void        DestroyPipelines();
 
 		Transform& GetTransform() { return mTransform; }
 		const Transform& GetTransform() const { return mTransform; }
 
-		void UpdateConstants(Queue* pQueue);
-		void Draw(DescriptorSet* pSceneDataSet, CommandBuffer* pCmd);
+		void UpdateConstants(vkr::Queue* pQueue);
+		void Draw(vkr::DescriptorSet* pSceneDataSet, vkr::CommandBuffer* pCmd);
 
 	private:
 		Transform              mTransform;
-		MeshPtr          mMesh;
+		vkr::MeshPtr          mMesh;
 		const Material* mMaterial = nullptr;
-		BufferPtr        mCpuModelConstants;
-		BufferPtr        mGpuModelConstants;
-		DescriptorSetPtr mModelDataSet;
+		vkr::BufferPtr        mCpuModelConstants;
+		vkr::BufferPtr        mGpuModelConstants;
+		vkr::DescriptorSetPtr mModelDataSet;
 
-		static DescriptorSetLayoutPtr sModelDataLayout;
-		static VertexDescription      sVertexDescription;
-		static PipelineInterfacePtr   sPipelineInterface;
-		static GraphicsPipelinePtr    sPipeline;
+		static vkr::DescriptorSetLayoutPtr sModelDataLayout;
+		static vkr::VertexDescription      sVertexDescription;
+		static vkr::PipelineInterfacePtr   sPipelineInterface;
+		static vkr::GraphicsPipelinePtr    sPipeline;
 	};
 
 	// b#
@@ -188,52 +188,52 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 #ifdef ENABLE_GPU_QUERIES
-		QueryPtr timestampQuery;
-		QueryPtr pipelineStatsQuery;
+		vkr::QueryPtr timestampQuery;
+		vkr::QueryPtr pipelineStatsQuery;
 #endif
 	};
 
-	PipelineStatistics mPipelineStatistics = {};
+	vkr::PipelineStatistics mPipelineStatistics = {};
 	uint64_t                 mTotalGpuFrameTime = 0;
 
 	std::vector<PerFrame>        mPerFrame;
-	DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
 	PerspCamera                  mCamera;
-	DescriptorSetLayoutPtr mSceneDataLayout;
-	DescriptorSetPtr       mSceneDataSet;
-	BufferPtr              mCpuSceneConstants;
-	BufferPtr              mGpuSceneConstants;
-	BufferPtr              mCpuLightConstants;
-	BufferPtr              mGpuLightConstants;
+	vkr::DescriptorSetLayoutPtr mSceneDataLayout;
+	vkr::DescriptorSetPtr       mSceneDataSet;
+	vkr::BufferPtr              mCpuSceneConstants;
+	vkr::BufferPtr              mGpuSceneConstants;
+	vkr::BufferPtr              mCpuLightConstants;
+	vkr::BufferPtr              mGpuLightConstants;
 
-	SamplerPtr mSampler;
+	vkr::SamplerPtr mSampler;
 
-	DrawPassPtr            mGBufferRenderPass;
-	TexturePtr             mGBufferLightRenderTarget;
-	DrawPassPtr            mGBufferLightPass;
-	DescriptorSetLayoutPtr mGBufferReadLayout;
-	DescriptorSetPtr       mGBufferReadSet;
-	BufferPtr              mGBufferDrawAttrConstants;
+	vkr::DrawPassPtr            mGBufferRenderPass;
+	vkr::TexturePtr             mGBufferLightRenderTarget;
+	vkr::DrawPassPtr            mGBufferLightPass;
+	vkr::DescriptorSetLayoutPtr mGBufferReadLayout;
+	vkr::DescriptorSetPtr       mGBufferReadSet;
+	vkr::BufferPtr              mGBufferDrawAttrConstants;
 	bool                         mEnableIBL = false;
 	bool                         mEnableEnv = false;
-	FullscreenQuadPtr      mGBufferLightQuad;
-	FullscreenQuadPtr      mDebugDrawQuad;
+	vkr::FullscreenQuadPtr      mGBufferLightQuad;
+	vkr::FullscreenQuadPtr      mDebugDrawQuad;
 
-	DescriptorSetLayoutPtr mDrawToSwapchainLayout;
-	DescriptorSetPtr       mDrawToSwapchainSet;
-	FullscreenQuadPtr      mDrawToSwapchain;
+	vkr::DescriptorSetLayoutPtr mDrawToSwapchainLayout;
+	vkr::DescriptorSetPtr       mDrawToSwapchainSet;
+	vkr::FullscreenQuadPtr      mDrawToSwapchain;
 
-	MeshPtr       mSphere;
-	MeshPtr       mBox;
+	vkr::MeshPtr       mSphere;
+	vkr::MeshPtr       mBox;
 	std::vector<e020::Entity> mEntities;
 
-	TexturePtr m1x1WhiteTexture;
+	vkr::TexturePtr m1x1WhiteTexture;
 
 	float mCamSwing = 0;
 	float mTargetCamSwing = 0;

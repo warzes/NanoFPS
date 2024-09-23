@@ -4,6 +4,8 @@
 #include "RenderResources.h" // TODO: убрать
 #include "RenderDevice.h" // TODO: убрать
 
+namespace vkr {
+
 #pragma region Generate mip shader VK
 
 #if 0
@@ -5008,7 +5010,7 @@ GeometryCreateInfo GeometryCreateInfo::PositionPlanar()
 	return ci;
 }
 
-GeometryCreateInfo& GeometryCreateInfo::IndexType(::IndexType indexType_)
+GeometryCreateInfo& GeometryCreateInfo::IndexType(vkr::IndexType indexType_)
 {
 	indexType = indexType_;
 	return *this;
@@ -7448,3 +7450,5 @@ namespace grfx_util
 } // namespace grfx_util
 
 #pragma endregion
+
+} // namespace vkr

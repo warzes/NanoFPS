@@ -3,6 +3,8 @@
 #include "RenderResources.h"
 #include "RenderDevice.h"
 
+namespace vkr {
+
 #define REQUIRES_TIMELINE_MSG "invalid semaphore type: operation requires timeline semaphore"
 
 #pragma region VulkanFence
@@ -1434,7 +1436,7 @@ void RenderPassCreateInfo3::SetAllRenderTargetToClear()
 namespace internal
 {
 
-	RenderPassCreateInfo::RenderPassCreateInfo(const ::RenderPassCreateInfo& obj)
+	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo& obj)
 	{
 		this->version = CREATE_INFO_VERSION_1;
 		this->width = obj.width;
@@ -1457,7 +1459,7 @@ namespace internal
 		this->depthStencilClearValue = obj.depthStencilClearValue;
 	}
 
-	RenderPassCreateInfo::RenderPassCreateInfo(const ::RenderPassCreateInfo2& obj)
+	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo2& obj)
 	{
 		this->version = CREATE_INFO_VERSION_2;
 		this->width = obj.width;
@@ -1507,7 +1509,7 @@ namespace internal
 		this->multiViewState = obj.multiViewState;
 	}
 
-	RenderPassCreateInfo::RenderPassCreateInfo(const ::RenderPassCreateInfo3& obj)
+	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo3& obj)
 	{
 		this->version = CREATE_INFO_VERSION_3;
 		this->width = obj.width;
@@ -2415,7 +2417,7 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 namespace internal {
 
-	DrawPassCreateInfo::DrawPassCreateInfo(const ::DrawPassCreateInfo& obj)
+	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo& obj)
 	{
 		this->version = CREATE_INFO_VERSION_1;
 		this->width = obj.width;
@@ -2453,7 +2455,7 @@ namespace internal {
 		this->V1.imageCreateFlags = obj.imageCreateFlags;
 	}
 
-	DrawPassCreateInfo::DrawPassCreateInfo(const ::DrawPassCreateInfo2& obj)
+	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo2& obj)
 	{
 		this->version = CREATE_INFO_VERSION_2;
 		this->width = obj.width;
@@ -2475,7 +2477,7 @@ namespace internal {
 		this->depthStencilClearValue = obj.depthStencilClearValue;
 	}
 
-	DrawPassCreateInfo::DrawPassCreateInfo(const ::DrawPassCreateInfo3& obj)
+	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo3& obj)
 	{
 		this->version = CREATE_INFO_VERSION_3;
 		this->width = obj.width;
@@ -8661,3 +8663,5 @@ void VulkanImage::UnmapMemory()
 }
 
 #pragma endregion
+
+} // namespace vkr

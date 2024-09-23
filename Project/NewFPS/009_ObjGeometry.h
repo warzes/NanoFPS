@@ -4,9 +4,9 @@ class Example_009 final : public EngineApplication
 {
 	struct Entity
 	{
-		MeshPtr          mesh;
-		DescriptorSetPtr descriptorSet;
-		BufferPtr        uniformBuffer;
+		vkr::MeshPtr          mesh;
+		vkr::DescriptorSetPtr descriptorSet;
+		vkr::BufferPtr        uniformBuffer;
 	};
 public:
 	EngineApplicationCreateInfo Config() const final;
@@ -16,27 +16,27 @@ public:
 	void Render() final;
 
 private:
-	void setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
 
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>  mPerFrame;
-	ShaderModulePtr        mVS;
-	ShaderModulePtr        mPS;
-	PipelineInterfacePtr   mPipelineInterface;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDescriptorSetLayout;
-	GraphicsPipelinePtr    mInterleavedPipeline;
+	vkr::ShaderModulePtr        mVS;
+	vkr::ShaderModulePtr        mPS;
+	vkr::PipelineInterfacePtr   mPipelineInterface;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
+	vkr::GraphicsPipelinePtr    mInterleavedPipeline;
 	Entity                 mInterleavedU32;
 	Entity                 mInterleaved;
-	GraphicsPipelinePtr    mPlanarPipeline;
+	vkr::GraphicsPipelinePtr    mPlanarPipeline;
 	Entity                 mPlanarU32;
 	Entity                 mPlanar;
 };

@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_016::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -19,10 +19,10 @@ bool Example_016::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -64,16 +64,16 @@ void Example_016::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			// Draw ImGui
@@ -130,11 +130,11 @@ void Example_016::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;

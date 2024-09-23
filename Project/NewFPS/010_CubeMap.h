@@ -4,9 +4,9 @@ class Example_010 final : public EngineApplication
 {
 	struct Entity
 	{
-		MeshPtr          mesh;
-		DescriptorSetPtr descriptorSet;
-		BufferPtr        uniformBuffer;
+		vkr::MeshPtr          mesh;
+		vkr::DescriptorSetPtr descriptorSet;
+		vkr::BufferPtr        uniformBuffer;
 	};
 public:
 	EngineApplicationCreateInfo Config() const final;
@@ -18,31 +18,31 @@ public:
 	void MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons) final;
 
 private:
-	void setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
 
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
-		QueryPtr         timestampQuery;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
+		vkr::QueryPtr         timestampQuery;
 	};
 
 	std::vector<PerFrame>  mPerFrame;
-	ShaderModulePtr        mVS;
-	ShaderModulePtr        mPS;
-	PipelineInterfacePtr   mPipelineInterface;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDescriptorSetLayout;
-	GraphicsPipelinePtr    mSkyBoxPipeline;
+	vkr::ShaderModulePtr        mVS;
+	vkr::ShaderModulePtr        mPS;
+	vkr::PipelineInterfacePtr   mPipelineInterface;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
+	vkr::GraphicsPipelinePtr    mSkyBoxPipeline;
 	Entity                 mSkyBox;
-	GraphicsPipelinePtr    mReflectorPipeline;
+	vkr::GraphicsPipelinePtr    mReflectorPipeline;
 	Entity                 mReflector;
-	ImagePtr               mCubeMapImage;
-	SampledImageViewPtr    mCubeMapImageView;
-	SamplerPtr             mCubeMapSampler;
+	vkr::ImagePtr               mCubeMapImage;
+	vkr::SampledImageViewPtr    mCubeMapImageView;
+	vkr::SamplerPtr             mCubeMapSampler;
 	int32_t                mPrevX = 0;
 	int32_t                mPrevY = 0;
 	float                  mRotY = 0;

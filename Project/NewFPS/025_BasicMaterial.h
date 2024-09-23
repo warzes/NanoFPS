@@ -58,52 +58,52 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 #ifdef ENABLE_GPU_QUERIES
-		QueryPtr timestampQuery;
-		QueryPtr pipelineStatsQuery;
+		vkr::QueryPtr timestampQuery;
+		vkr::QueryPtr pipelineStatsQuery;
 #endif
 	};
 
-	PipelineStatistics mPipelineStatistics = {};
+	vkr::PipelineStatistics mPipelineStatistics = {};
 	uint64_t                 mTotalGpuFrameTime = 0;
 
-	TexturePtr m1x1BlackTexture;
-	TexturePtr m1x1WhiteTexture;
+	vkr::TexturePtr m1x1BlackTexture;
+	vkr::TexturePtr m1x1WhiteTexture;
 
 	std::vector<PerFrame>      mPerFrame;
 	PerspCamera                mCamera;
-	DescriptorPoolPtr    mDescriptorPool;
-	std::vector<MeshPtr> mMeshes;
-	MeshPtr              mEnvDrawMesh;
+	vkr::DescriptorPoolPtr    mDescriptorPool;
+	std::vector<vkr::MeshPtr> mMeshes;
+	vkr::MeshPtr              mEnvDrawMesh;
 
 	// Descriptor Set 0 - Scene Data
-	DescriptorSetLayoutPtr mSceneDataLayout;
-	DescriptorSetPtr       mSceneDataSet;
-	BufferPtr              mCpuSceneConstants;
-	BufferPtr              mGpuSceneConstants;
-	BufferPtr              mCpuLightConstants;
-	BufferPtr              mGpuLightConstants;
+	vkr::DescriptorSetLayoutPtr mSceneDataLayout;
+	vkr::DescriptorSetPtr       mSceneDataSet;
+	vkr::BufferPtr              mCpuSceneConstants;
+	vkr::BufferPtr              mGpuSceneConstants;
+	vkr::BufferPtr              mCpuLightConstants;
+	vkr::BufferPtr              mGpuLightConstants;
 
 	// Descriptor Set 1 - MaterialData Resources
-	DescriptorSetLayoutPtr mMaterialResourcesLayout;
-	BufferPtr              mCpuEnvDrawConstants;
-	BufferPtr              mGpuEnvDrawConstants;
+	vkr::DescriptorSetLayoutPtr mMaterialResourcesLayout;
+	vkr::BufferPtr              mCpuEnvDrawConstants;
+	vkr::BufferPtr              mGpuEnvDrawConstants;
 
 	struct MaterialResources
 	{
-		DescriptorSetPtr set;
-		TexturePtr       albedoTexture;
-		TexturePtr       roughnessTexture;
-		TexturePtr       metalnessTexture;
-		TexturePtr       normalMapTexture;
+		vkr::DescriptorSetPtr set;
+		vkr::TexturePtr       albedoTexture;
+		vkr::TexturePtr       roughnessTexture;
+		vkr::TexturePtr       metalnessTexture;
+		vkr::TexturePtr       normalMapTexture;
 	};
 
-	SamplerPtr                  mSampler;
+	vkr::SamplerPtr                  mSampler;
 	MaterialResources                 mMetalMaterial;
 	MaterialResources                 mWoodMaterial;
 	MaterialResources                 mTilesMaterial;
@@ -112,41 +112,41 @@ private:
 	MaterialResources                 mKiwiMaterial;
 	MaterialResources                 mHandPlaneMaterial;
 	MaterialResources                 mHorseStatueMaterial;
-	std::vector<DescriptorSet*> mMaterialResourcesSets;
+	std::vector<vkr::DescriptorSet*> mMaterialResourcesSets;
 
 	struct IBLResources
 	{
-		TexturePtr irradianceTexture;
-		TexturePtr environmentTexture;
+		vkr::TexturePtr irradianceTexture;
+		vkr::TexturePtr environmentTexture;
 	};
 	std::vector<IBLResources> mIBLResources;
-	TexturePtr          mBRDFLUTTexture;
+	vkr::TexturePtr          mBRDFLUTTexture;
 
 	// Descriptor Set 2 - MaterialData Data
-	DescriptorSetLayoutPtr mMaterialDataLayout;
-	DescriptorSetPtr       mMaterialDataSet;
-	BufferPtr              mCpuMaterialConstants;
-	BufferPtr              mGpuMaterialConstants;
+	vkr::DescriptorSetLayoutPtr mMaterialDataLayout;
+	vkr::DescriptorSetPtr       mMaterialDataSet;
+	vkr::BufferPtr              mCpuMaterialConstants;
+	vkr::BufferPtr              mGpuMaterialConstants;
 
 	// Descriptor Set 3 - Model Data
-	DescriptorSetLayoutPtr mModelDataLayout;
-	DescriptorSetPtr       mModelDataSet;
-	BufferPtr              mCpuModelConstants;
-	BufferPtr              mGpuModelConstants;
+	vkr::DescriptorSetLayoutPtr mModelDataLayout;
+	vkr::DescriptorSetPtr       mModelDataSet;
+	vkr::BufferPtr              mCpuModelConstants;
+	vkr::BufferPtr              mGpuModelConstants;
 
 	// Descriptor Set 4 - Env Draw Data
-	DescriptorSetLayoutPtr mEnvDrawLayout;
-	DescriptorSetPtr       mEnvDrawSet;
+	vkr::DescriptorSetLayoutPtr mEnvDrawLayout;
+	vkr::DescriptorSetPtr       mEnvDrawSet;
 
-	PipelineInterfacePtr           mPipelineInterface;
-	GraphicsPipelinePtr            mGouraudPipeline;
-	GraphicsPipelinePtr            mPhongPipeline;
-	GraphicsPipelinePtr            mBlinnPhongPipeline;
-	GraphicsPipelinePtr            mPBRPipeline;
-	std::vector<GraphicsPipeline*> mShaderPipelines;
+	vkr::PipelineInterfacePtr           mPipelineInterface;
+	vkr::GraphicsPipelinePtr            mGouraudPipeline;
+	vkr::GraphicsPipelinePtr            mPhongPipeline;
+	vkr::GraphicsPipelinePtr            mBlinnPhongPipeline;
+	vkr::GraphicsPipelinePtr            mPBRPipeline;
+	std::vector<vkr::GraphicsPipeline*> mShaderPipelines;
 
-	PipelineInterfacePtr mEnvDrawPipelineInterface;
-	GraphicsPipelinePtr  mEnvDrawPipeline;
+	vkr::PipelineInterfacePtr mEnvDrawPipelineInterface;
+	vkr::GraphicsPipelinePtr  mEnvDrawPipeline;
 
 	struct MaterialData
 	{

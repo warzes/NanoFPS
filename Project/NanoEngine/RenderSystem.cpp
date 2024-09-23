@@ -8,6 +8,8 @@
 
 #include "font_inconsolata.h"
 
+namespace vkr {
+
 #pragma region VulkanInstance
 
 VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -1781,3 +1783,5 @@ void RenderSystem::resize()
 }
 
 #pragma endregion
+
+} // namespace vkr

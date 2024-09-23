@@ -12,23 +12,23 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>      mPerFrame;
-	std::vector<RenderPassPtr> mRenderPasses;
-	ShaderModulePtr            mVS;
-	ShaderModulePtr            mPS;
-	PipelineInterfacePtr       mPipelineInterface;
-	GraphicsPipelinePtr        mPipeline;
-	BufferPtr                  mVertexBuffer;
-	DescriptorPoolPtr          mDescriptorPool;
-	DescriptorSetLayoutPtr     mDescriptorSetLayout;
-	DescriptorSetPtr           mDescriptorSet;
-	BufferPtr                  mUniformBuffer;
-	VertexBinding              mVertexBinding;
+	std::vector<vkr::RenderPassPtr> mRenderPasses;
+	vkr::ShaderModulePtr            mVS;
+	vkr::ShaderModulePtr            mPS;
+	vkr::PipelineInterfacePtr       mPipelineInterface;
+	vkr::GraphicsPipelinePtr        mPipeline;
+	vkr::BufferPtr                  mVertexBuffer;
+	vkr::DescriptorPoolPtr          mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr     mDescriptorSetLayout;
+	vkr::DescriptorSetPtr           mDescriptorSet;
+	vkr::BufferPtr                  mUniformBuffer;
+	vkr::VertexBinding              mVertexBinding;
 };

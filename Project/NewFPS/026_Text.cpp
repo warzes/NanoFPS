@@ -19,10 +19,10 @@ bool Example_026::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -35,25 +35,25 @@ bool Example_026::Setup()
 
 	// Texture font
 	{
-		Font font;
-		CHECKED_CALL(Font::CreateFromFile("basic/fonts/Roboto/Roboto-Regular.ttf", &font));
+		vkr::Font font;
+		CHECKED_CALL(vkr::Font::CreateFromFile("basic/fonts/Roboto/Roboto-Regular.ttf", &font));
 
-		TextureFontCreateInfo createInfo = {};
+		vkr::TextureFontCreateInfo createInfo = {};
 		createInfo.font = font;
 		createInfo.size = 48.0f;
-		createInfo.characters = TextureFont::GetDefaultCharacters();
+		createInfo.characters = vkr::TextureFont::GetDefaultCharacters();
 
 		CHECKED_CALL(device.CreateTextureFont(createInfo, &mRoboto));
 	}
 
 	// Text draw
 	{
-		ShaderModulePtr VS;
+		vkr::ShaderModulePtr VS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "TextDraw.vs", &VS));
-		ShaderModulePtr PS;
+		vkr::ShaderModulePtr PS;
 		CHECKED_CALL(device.CreateShader("basic/shaders", "TextDraw.ps", &PS));
 
-		TextDrawCreateInfo createInfo = {};
+		vkr::TextDrawCreateInfo createInfo = {};
 		createInfo.pFont = mRoboto;
 		createInfo.maxTextLength = 4096;
 		createInfo.VS = { VS.Get(), "vsmain" };
@@ -125,20 +125,20 @@ void Example_026::Render()
 		mStaticText->PrepareDraw(mCamera.GetViewProjectionMatrix(), frame.cmd);
 		mDynamicText->PrepareDraw(mCamera.GetViewProjectionMatrix(), frame.cmd);
 
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0.25f, 0.3f, 0.33f, 1} };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
-			Rect     scissorRect = renderPass->GetScissor();
-			Viewport viewport = renderPass->GetViewport();
+			vkr::Rect     scissorRect = renderPass->GetScissor();
+			vkr::Viewport viewport = renderPass->GetViewport();
 			frame.cmd->SetScissors(1, &scissorRect);
 			frame.cmd->SetViewports(1, &viewport);
 
@@ -146,11 +146,11 @@ void Example_026::Render()
 			mDynamicText->Draw(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;

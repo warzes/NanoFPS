@@ -12,11 +12,11 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	struct Entity
@@ -24,21 +24,21 @@ private:
 		float3           translate = float3(0, 0, 0);
 		float3           rotate = float3(0, 0, 0);
 		float3           scale = float3(1, 1, 1);
-		MeshPtr          mesh;
-		DescriptorSetPtr drawDescriptorSet;
-		BufferPtr        drawUniformBuffer;
+		vkr::MeshPtr          mesh;
+		vkr::DescriptorSetPtr drawDescriptorSet;
+		vkr::BufferPtr        drawUniformBuffer;
 	};
 
 	std::vector<PerFrame>  mPerFrame;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDrawObjectSetLayout;
-	PipelineInterfacePtr   mDrawObjectPipelineInterface;
-	GraphicsPipelinePtr    mDrawObjectPipeline;
-	ImagePtr               mAlbedoTexture;
-	ImagePtr               mNormalMap;
-	SampledImageViewPtr    mAlbedoTextureView;
-	SampledImageViewPtr    mNormalMapView;
-	SamplerPtr             mSampler;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDrawObjectSetLayout;
+	vkr::PipelineInterfacePtr   mDrawObjectPipelineInterface;
+	vkr::GraphicsPipelinePtr    mDrawObjectPipeline;
+	vkr::ImagePtr               mAlbedoTexture;
+	vkr::ImagePtr               mNormalMap;
+	vkr::SampledImageViewPtr    mAlbedoTextureView;
+	vkr::SampledImageViewPtr    mNormalMapView;
+	vkr::SamplerPtr             mSampler;
 	Entity                 mCube;
 	Entity                 mSphere;
 	std::vector<Entity*>   mEntities;
@@ -50,16 +50,16 @@ private:
 		"Sphere",
 	};
 
-	DescriptorSetLayoutPtr mLightSetLayout;
-	PipelineInterfacePtr   mLightPipelineInterface;
-	GraphicsPipelinePtr    mLightPipeline;
+	vkr::DescriptorSetLayoutPtr mLightSetLayout;
+	vkr::PipelineInterfacePtr   mLightPipelineInterface;
+	vkr::GraphicsPipelinePtr    mLightPipeline;
 	Entity                 mLight;
 	float3                 mLightPosition = float3(0, 5, 5);
 
 	void setupEntity(
-		const TriMesh& mesh,
-		DescriptorPool* pDescriptorPool,
-		const DescriptorSetLayout* pDrawSetLayout,
-		const DescriptorSetLayout* pShadowSetLayout,
+		const vkr::TriMesh& mesh,
+		vkr::DescriptorPool* pDescriptorPool,
+		const vkr::DescriptorSetLayout* pDrawSetLayout,
+		const vkr::DescriptorSetLayout* pShadowSetLayout,
 		Entity* pEntity);
 };

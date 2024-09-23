@@ -45,11 +45,11 @@ namespace scene
 	const uint32_t kVertexAttributeTangentLocation = 3;
 	const uint32_t kVertexAttributeColorLocation = 4;
 
-	const Format kVertexPositionFormat = FORMAT_R32G32B32_FLOAT;
-	const Format kVertexAttributeTexCoordFormat = FORMAT_R32G32_FLOAT;
-	const Format kVertexAttributeNormalFormat = FORMAT_R32G32B32_FLOAT;
-	const Format kVertexAttributeTagentFormat = FORMAT_R32G32B32A32_FLOAT;
-	const Format kVertexAttributeColorFormat = FORMAT_R32G32B32_FLOAT;
+	const vkr::Format kVertexPositionFormat = vkr::FORMAT_R32G32B32_FLOAT;
+	const vkr::Format kVertexAttributeTexCoordFormat = vkr::FORMAT_R32G32_FLOAT;
+	const vkr::Format kVertexAttributeNormalFormat = vkr::FORMAT_R32G32B32_FLOAT;
+	const vkr::Format kVertexAttributeTagentFormat = vkr::FORMAT_R32G32B32A32_FLOAT;
+	const vkr::Format kVertexAttributeColorFormat = vkr::FORMAT_R32G32B32_FLOAT;
 
 	template <
 		typename ObjectT,
@@ -133,29 +133,29 @@ namespace scene
 			return *this;
 		}
 
-		VertexBinding GetVertexBinding() const
+		vkr::VertexBinding GetVertexBinding() const
 		{
-			VertexBinding binding = VertexBinding(1, VERTEX_INPUT_RATE_VERTEX);
+			vkr::VertexBinding binding = vkr::VertexBinding(1, vkr::VERTEX_INPUT_RATE_VERTEX);
 
 			uint32_t offset = 0;
 			if (this->bits.texCoords)
 			{
-				binding.AppendAttribute(VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, FORMAT_R32G32_FLOAT, kVertexAttributeBinding, offset, VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, vkr::FORMAT_R32G32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 8;
 			}
 			if (this->bits.normals)
 			{
-				binding.AppendAttribute(VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, vkr::FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 12;
 			}
 			if (this->bits.tangents)
 			{
-				binding.AppendAttribute(VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, FORMAT_R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, vkr::FORMAT_R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 16;
 			}
 			if (this->bits.colors)
 			{
-				binding.AppendAttribute(VertexAttribute{ "COLOR", kVertexAttributeColorLocation, FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "COLOR", kVertexAttributeColorLocation, vkr::FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 			}
 
 			return binding;
@@ -194,7 +194,7 @@ namespace scene
 	// This is the base class for scene graph nodes. It contains transform, parent, children, and visbility properties. scene::Node is instantiable and can be used as a locator/empty/group node that just contains children nodes.
 	// This node objects can also be used as standalone objects outside of a scene. Standalone nodes will have neither a parent or children. Loader implementations must not populate a standalone node's parent or children if loading a standalone node.
 	// When used as a standalone node, scene::Node stores only transform information.
-	class Node : public Transform, public NamedObjectTrait
+	class Node : public Transform, public vkr::NamedObjectTrait
 	{
 	public:
 		Node(scene::Scene* pScene);
@@ -340,20 +340,20 @@ namespace scene
 	// This class owns mImage and mImageView and destroys them in the destructor.
 	// scene::Image objects can be shared between different scene::Texture objects.
 	// Corresponds to GLTF's image object.
-	class Image : public NamedObjectTrait
+	class Image : public vkr::NamedObjectTrait
 	{
 	public:
 		Image(
-			::Image* pImage,
-			::SampledImageView* pImageView);
+			vkr::Image* pImage,
+			vkr::SampledImageView* pImageView);
 		virtual ~Image();
 
-		::Image* GetImage() const { return mImage.Get(); }
-		::SampledImageView* GetImageView() const { return mImageView.Get(); }
+		vkr::Image* GetImage() const { return mImage.Get(); }
+		vkr::SampledImageView* GetImageView() const { return mImageView.Get(); }
 
 	private:
-		::ImagePtr            mImage = nullptr;
-		::SampledImageViewPtr mImageView = nullptr;
+		vkr::ImagePtr            mImage = nullptr;
+		vkr::SampledImageViewPtr mImageView = nullptr;
 	};
 
 	// Sampler
@@ -361,23 +361,23 @@ namespace scene
 	// This class owns mSampler and destroys it in the destructor.
 	// scene::Sampler objects can be shared between different scene::Texture objects.
 	// Corresponds to GLTF's sampler object.
-	class Sampler : public NamedObjectTrait
+	class Sampler : public vkr::NamedObjectTrait
 	{
 	public:
-		Sampler(::Sampler* pSampler);
+		Sampler(vkr::Sampler* pSampler);
 		virtual ~Sampler();
 
-		::Sampler* GetSampler() const { return mSampler.Get(); }
+		vkr::Sampler* GetSampler() const { return mSampler.Get(); }
 
 	private:
-		::SamplerPtr mSampler;
+		vkr::SamplerPtr mSampler;
 	};
 
 	// Texture
 	// This class is container for references to a scene::Image and a scene::Sampler objects.
 	// scene::Texture objects can be shared between different scene::Material objects via the scene::TextureView struct.
 	// Corresponds to GLTF's texture objects
-	class Texture : public NamedObjectTrait
+	class Texture : public vkr::NamedObjectTrait
 	{
 	public:
 		Texture() = default;
@@ -429,7 +429,7 @@ namespace scene
 	// All materials deriving from this class must have a uniquely identifiable Material Ident String that's returned by GetIdentString().
 	// Materials must also provide a mask of all the vertex attributes it requires for rendering.
 	// scene::Material derivative objects can be shared beween different scene::Mesh objects via scene::PrimitiveBatch.
-	class Material : public NamedObjectTrait
+	class Material : public vkr::NamedObjectTrait
 	{
 	public:
 		Material() = default;
@@ -700,11 +700,11 @@ namespace scene
 		MaterialPipelineArgs();
 		virtual ~MaterialPipelineArgs();
 
-		static Result Create(RenderDevice* pDevice, scene::MaterialPipelineArgs** ppTargetPipelineArgs);
+		static Result Create(vkr::RenderDevice* pDevice, scene::MaterialPipelineArgs** ppTargetPipelineArgs);
 
-		::DescriptorPool* GetDescriptorPool() const { return mDescriptorPool.Get(); }
-		::DescriptorSetLayout* GetDescriptorSetLayout() const { return mDescriptorSetLayout.Get(); }
-		::DescriptorSet* GetDescriptorSet() const { return mDescriptorSet.Get(); }
+		vkr::DescriptorPool* GetDescriptorPool() const { return mDescriptorPool.Get(); }
+		vkr::DescriptorSetLayout* GetDescriptorSetLayout() const { return mDescriptorSetLayout.Get(); }
+		vkr::DescriptorSet* GetDescriptorSet() const { return mDescriptorSet.Get(); }
 
 		scene::FrameParams* GetFrameParams() { return mFrameParamsAddress; }
 		scene::CameraParams* GetCameraParams() { return mCameraParamsAddress; }
@@ -715,32 +715,32 @@ namespace scene
 
 		void SetIBLTextures(
 			uint32_t                index,
-			::SampledImageView* pIrradiance,
-			::SampledImageView* pEnvironment);
+			vkr::SampledImageView* pIrradiance,
+			vkr::SampledImageView* pEnvironment);
 
 		void SetMaterialSampler(uint32_t index, const scene::Sampler* pSampler);
 		void SetMaterialTexture(uint32_t index, const scene::Image* pImage);
 
-		void CopyBuffers(::CommandBuffer* pCmd);
+		void CopyBuffers(vkr::CommandBuffer* pCmd);
 
 	private:
-		Result InitializeDefaultObjects(RenderDevice* pDevice);
-		Result InitializeDescriptorSet(RenderDevice* pDevice);
-		Result InitializeBuffers(RenderDevice* pDevice);
-		Result SetDescriptors(RenderDevice* pDevice);
-		Result InitializeResource(RenderDevice* pDevice);
+		Result InitializeDefaultObjects(vkr::RenderDevice* pDevice);
+		Result InitializeDescriptorSet(vkr::RenderDevice* pDevice);
+		Result InitializeBuffers(vkr::RenderDevice* pDevice);
+		Result SetDescriptors(vkr::RenderDevice* pDevice);
+		Result InitializeResource(vkr::RenderDevice* pDevice);
 
 	protected:
-		::DescriptorPoolPtr      mDescriptorPool;
-		::DescriptorSetLayoutPtr mDescriptorSetLayout;
-		::DescriptorSetPtr       mDescriptorSet;
+		vkr::DescriptorPoolPtr      mDescriptorPool;
+		vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
+		vkr::DescriptorSetPtr       mDescriptorSet;
 
-		::BufferPtr mCpuConstantParamsBuffer;
-		::BufferPtr mGpuConstantParamsBuffer;
-		::BufferPtr mCpuInstanceParamsBuffer;
-		::BufferPtr mGpuInstanceParamsBuffer;
-		::BufferPtr mCpuMateriaParamsBuffer;
-		::BufferPtr mGpuMateriaParamsBuffer;
+		vkr::BufferPtr mCpuConstantParamsBuffer;
+		vkr::BufferPtr mGpuConstantParamsBuffer;
+		vkr::BufferPtr mCpuInstanceParamsBuffer;
+		vkr::BufferPtr mGpuInstanceParamsBuffer;
+		vkr::BufferPtr mCpuMateriaParamsBuffer;
+		vkr::BufferPtr mGpuMateriaParamsBuffer;
 
 		uint32_t mFrameParamsPaddedSize = 0;
 		uint32_t mCameraParamsPaddedSize = 0;
@@ -758,16 +758,16 @@ namespace scene
 		char* mInstanceParamsMappedAddress = nullptr;
 		char* mMaterialParamsMappedAddress = nullptr;
 
-		::SamplerPtr mDefaultSampler; // Nearest, repeats
-		::TexturePtr mDefaultTexture; // Purple texture
+		vkr::SamplerPtr mDefaultSampler; // Nearest, repeats
+		vkr::TexturePtr mDefaultTexture; // Purple texture
 
-		::SamplerPtr mDefaultBRDFLUTSampler; // Linear, clamps to edge
-		::TexturePtr mDefaultBRDFLUTTexture;
+		vkr::SamplerPtr mDefaultBRDFLUTSampler; // Linear, clamps to edge
+		vkr::TexturePtr mDefaultBRDFLUTTexture;
 
 		// Make samplers useable for most cases
-		::SamplerPtr mDefaultIBLIrradianceSampler;  // Linear, U repeats, V clamps to edge, mip 0 only
-		::SamplerPtr mDefaultIBLEnvironmentSampler; // Linear, U repeats, V clamps to edge
-		::TexturePtr mDefaultIBLTexture;            // White texture
+		vkr::SamplerPtr mDefaultIBLIrradianceSampler;  // Linear, U repeats, V clamps to edge, mip 0 only
+		vkr::SamplerPtr mDefaultIBLEnvironmentSampler; // Linear, U repeats, V clamps to edge
+		vkr::TexturePtr mDefaultIBLTexture;            // White texture
 	};
 
 	void CopyMaterialTextureParams(
@@ -909,23 +909,22 @@ namespace scene {
 	// data but a different set of scene::PrimitiveBatch descriptions.
 	//
 	//
-	class MeshData
-		: public ::NamedObjectTrait
+	class MeshData : public vkr::NamedObjectTrait
 	{
 	public:
 		MeshData(
 			const scene::VertexAttributeFlags& availableVertexAttributes,
-			::Buffer* pGpuBuffer);
+			vkr::Buffer* pGpuBuffer);
 		virtual ~MeshData();
 
 		const scene::VertexAttributeFlags& GetAvailableVertexAttributes() const { return mAvailableVertexAttributes; }
-		const std::vector<::VertexBinding>& GetAvailableVertexBindings() const { return mVertexBindings; }
-		::Buffer* GetGpuBuffer() const { return mGpuBuffer.Get(); }
+		const std::vector<vkr::VertexBinding>& GetAvailableVertexBindings() const { return mVertexBindings; }
+		vkr::Buffer* GetGpuBuffer() const { return mGpuBuffer.Get(); }
 
 	private:
 		scene::VertexAttributeFlags      mAvailableVertexAttributes = {};
-		std::vector<::VertexBinding> mVertexBindings;
-		::BufferPtr                  mGpuBuffer;
+		std::vector<vkr::VertexBinding> mVertexBindings;
+		vkr::BufferPtr                  mGpuBuffer;
 	};
 
 	// Primitive Batch
@@ -942,9 +941,9 @@ namespace scene {
 
 		PrimitiveBatch(
 			const scene::MaterialRef& material,
-			const ::IndexBufferView& indexBufferView,
-			const ::VertexBufferView& positionBufferView,
-			const ::VertexBufferView& attributeBufferView,
+			const vkr::IndexBufferView& indexBufferView,
+			const vkr::VertexBufferView& positionBufferView,
+			const vkr::VertexBufferView& attributeBufferView,
 			uint32_t                      indexCount,
 			uint32_t                      vertexCount,
 			const AABB& boundingBox);
@@ -952,18 +951,18 @@ namespace scene {
 		~PrimitiveBatch() = default;
 
 		const scene::Material* GetMaterial() const { return mMaterial.get(); }
-		const ::IndexBufferView& GetIndexBufferView() const { return mIndexBufferView; }
-		const ::VertexBufferView& GetPositionBufferView() const { return mPositionBufferView; }
-		const ::VertexBufferView& GetAttributeBufferView() const { return mAttributeBufferView; }
+		const vkr::IndexBufferView& GetIndexBufferView() const { return mIndexBufferView; }
+		const vkr::VertexBufferView& GetPositionBufferView() const { return mPositionBufferView; }
+		const vkr::VertexBufferView& GetAttributeBufferView() const { return mAttributeBufferView; }
 		AABB                     GetBoundingBox() const { return mBoundingBox; }
 		uint32_t                      GetIndexCount() const { return mIndexCount; }
 		uint32_t                      GetVertexCount() const { return mVertexCount; }
 
 	private:
 		scene::MaterialRef     mMaterial = nullptr;
-		::IndexBufferView  mIndexBufferView = {};
-		::VertexBufferView mPositionBufferView = {};
-		::VertexBufferView mAttributeBufferView = {};
+		vkr::IndexBufferView  mIndexBufferView = {};
+		vkr::VertexBufferView mPositionBufferView = {};
+		vkr::VertexBufferView mAttributeBufferView = {};
 		uint32_t               mIndexCount = 0;
 		uint32_t               mVertexCount = 0;
 		AABB              mBoundingBox = {};
@@ -982,8 +981,7 @@ namespace scene {
 	// If a mesh is loaded as part of a scene, the scene's resource
 	// manager will be used instead.
 	//
-	class Mesh
-		: public ::NamedObjectTrait
+	class Mesh : public vkr::NamedObjectTrait
 	{
 	public:
 		Mesh(
@@ -998,7 +996,7 @@ namespace scene {
 		bool HasResourceManager() const { return mResourceManager ? true : false; }
 
 		scene::VertexAttributeFlags      GetAvailableVertexAttributes() const;
-		std::vector<::VertexBinding> GetAvailableVertexBindings() const;
+		std::vector<vkr::VertexBinding> GetAvailableVertexBindings() const;
 
 		scene::MeshData* GetMeshData() const { return mMeshData.get(); }
 		const std::vector<scene::PrimitiveBatch>& GetBatches() const { return mBatches; }
@@ -1038,8 +1036,7 @@ namespace scene {
 	// See scene::ResourceManager for details on object sharing among the various
 	// elements of the scene.
 	//
-	class Scene
-		: public ::NamedObjectTrait
+	class Scene : public vkr::NamedObjectTrait
 	{
 	public:
 		Scene(std::unique_ptr<scene::ResourceManager>&& resourceManager);
@@ -1275,43 +1272,43 @@ namespace scene {
 		//
 		// ---------------------------------------------------------------------------------------------
 		Result LoadSampler(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t         samplerIndex,
 			scene::Sampler** ppTargetSampler);
 
 		Result LoadSampler(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& samplerName,
 			scene::Sampler** ppTargetSampler);
 
 		Result LoadImage(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t       imageIndex,
 			scene::Image** ppTargetImage);
 
 		Result LoadImage(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& imageName,
 			scene::Image** ppTargetImage);
 
 		Result LoadTexture(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t         textureIndex,
 			scene::Texture** ppTargetTexture);
 
 		Result LoadTexture(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& textureName,
 			scene::Texture** ppTargetTexture);
 
 		Result LoadMaterial(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t                  materialIndex,
 			scene::Material** ppTargetMaterial,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
 
 		Result LoadMaterial(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& materialName,
 			scene::Material** ppTargetMaterial,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
@@ -1340,13 +1337,13 @@ namespace scene {
 		//
 		// ---------------------------------------------------------------------------------------------
 		Result LoadMesh(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t                  meshIndex,
 			scene::Mesh** ppTargetMesh,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
 
 		Result LoadMesh(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& meshName,
 			scene::Mesh** ppTargetMesh,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
@@ -1355,13 +1352,13 @@ namespace scene {
 		// Loads a GLTF node
 		// ---------------------------------------------------------------------------------------------
 		Result LoadNode(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t                  nodeIndex,
 			scene::Node** ppTargetNode,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
 
 		Result LoadNode(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& nodeName,
 			scene::Node** ppTargetNode,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
@@ -1382,13 +1379,13 @@ namespace scene {
 		//
 		// ---------------------------------------------------------------------------------------------
 		Result LoadScene(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			uint32_t                  sceneIndex, // Use 0 if unsure
 			scene::Scene** ppTargetScene,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
 
 		Result LoadScene(
-			RenderDevice* pDevice,
+			vkr::RenderDevice* pDevice,
 			const std::string& sceneName,
 			scene::Scene** ppTargetScene,
 			const scene::LoadOptions& loadOptions = scene::LoadOptions());
@@ -1421,7 +1418,7 @@ namespace scene {
 
 		struct InternalLoadParams
 		{
-			RenderDevice* pDevice = nullptr;
+			vkr::RenderDevice* pDevice = nullptr;
 			scene::MaterialFactory* pMaterialFactory = nullptr;
 			scene::VertexAttributeFlags       requiredVertexAttributes = scene::VertexAttributeFlags::None();
 			scene::ResourceManager* pResourceManager = nullptr;

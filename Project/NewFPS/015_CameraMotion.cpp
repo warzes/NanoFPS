@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_015::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -62,17 +62,17 @@ void Example_015::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 		beginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -93,11 +93,11 @@ void Example_015::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -132,42 +132,42 @@ void Example_015::KeyUp(KeyCode key)
 	mPressedKeys.erase(key);
 }
 
-void Example_015::setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)
+void Example_015::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(grfx_util::CreateMeshFromTriMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
+	CHECKED_CALL(vkr::grfx_util::CreateMeshFromTriMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
 
-	BufferCreateInfo bufferCreateInfo = {};
+	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, pEntity->UniformBufferPtr()));
 
 	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, pEntity->DescriptorSetPtr()));
 
-	WriteDescriptor write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.pBuffer = pEntity->UniformBuffer();
 	CHECKED_CALL(pEntity->DescriptorSet()->UpdateDescriptors(1, &write));
 }
 
-void Example_015::setupEntity(const WireMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)
+void Example_015::setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(grfx_util::CreateMeshFromWireMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
+	CHECKED_CALL(vkr::grfx_util::CreateMeshFromWireMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
 
-	BufferCreateInfo bufferCreateInfo = {};
+	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, pEntity->UniformBufferPtr()));
 
 	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, pEntity->DescriptorSetPtr()));
 
-	WriteDescriptor write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.pBuffer = pEntity->UniformBuffer();
@@ -198,7 +198,7 @@ void Example_015::Entity::Place(int32_t subGridIx, Random& random, const int2& g
 
 void Example_015::setupEntities()
 {
-	GeometryCreateInfo geometryCreateInfo = GeometryCreateInfo::Planar().AddColor();
+	vkr::GeometryCreateInfo geometryCreateInfo = vkr::GeometryCreateInfo::Planar().AddColor();
 
 	// Each object will live in a square region on the grid.  The size of each grid depends on how many objects we need to place.  Note that since the first entity is the grid itself, we ignore it here.
 	int numObstacles = (kNumEntities > 1) ? kNumEntities - 1 : 0;
@@ -232,31 +232,31 @@ void Example_015::setupEntities()
 
 		if (i == 0) {
 			// The first object is the mesh plane where all the other entities are placed.
-			WireMeshOptions wireMeshOptions = WireMeshOptions().Indices().VertexColors();
-			WireMesh        wireMesh = WireMesh::CreatePlane(WIRE_MESH_PLANE_POSITIVE_Y, float2(kGridWidth, kGridDepth), 100, 100, wireMeshOptions);
+			vkr::WireMeshOptions wireMeshOptions = vkr::WireMeshOptions().Indices().VertexColors();
+			vkr::WireMesh        wireMesh = vkr::WireMesh::CreatePlane(vkr::WIRE_MESH_PLANE_POSITIVE_Y, float2(kGridWidth, kGridDepth), 100, 100, wireMeshOptions);
 			dimension = float3(kGridWidth, 0, kGridDepth);
 			location = float3(0, 0, 0);
 			auto& entity = mEntities.emplace_back(location, dimension, Entity::EntityKind::FLOOR);
 			setupEntity(wireMesh, geometryCreateInfo, &entity);
 		}
 		else {
-			TriMesh            triMesh;
+			vkr::TriMesh            triMesh;
 			uint32_t           distribution = random.UInt32() % 100;
 			Entity::EntityKind kind = Entity::EntityKind::INVALID;
 
-			// NOTE: TriMeshOptions added here must match the number of bindings when creating this entity's pipeline.
+			// NOTE: vkr::TriMeshOptions added here must match the number of bindings when creating this entity's pipeline.
 			// See the handling of different entities in ProjApp::SetupPipelines.
 			if (distribution <= 60) {
 				dimension = float3(2, 2, 2);
-				TriMeshOptions options = TriMeshOptions().Indices().VertexColors();
-				triMesh = (distribution <= 30) ? TriMesh::CreateCube(dimension, options) : TriMesh::CreateSphere(dimension[0] / 2, 100, 100, options);
+				vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices().VertexColors();
+				triMesh = (distribution <= 30) ? vkr::TriMesh::CreateCube(dimension, options) : vkr::TriMesh::CreateSphere(dimension[0] / 2, 100, 100, options);
 				kind = Entity::EntityKind::TRI_MESH;
 			}
 			else {
 				float3         lb = { 0, 0, 0 };
 				float3         ub = { 1, 1, 1 };
-				TriMeshOptions options = TriMeshOptions().Indices().ObjectColor(random.Float3(lb, ub));
-				triMesh = TriMesh::CreateFromOBJ("basic/models/monkey.obj", options);
+				vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices().ObjectColor(random.Float3(lb, ub));
+				triMesh = vkr::TriMesh::CreateFromOBJ("basic/models/monkey.obj", options);
 				kind = Entity::EntityKind::OBJECT;
 				dimension = triMesh.GetBoundingBoxMax();
 				Print("Object dimension: (" + std::to_string(dimension[0]) + ", " + std::to_string(dimension[1]) + ", " + std::to_string(dimension[2]) + ")");
@@ -272,12 +272,12 @@ void Example_015::setupEntities()
 
 void Example_015::setupDescriptors()
 {
-	DescriptorPoolCreateInfo poolCreateInfo = {};
+	vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
 	poolCreateInfo.uniformBuffer = kNumEntities;
 	CHECKED_CALL(GetRenderDevice().CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
-	DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-	layoutCreateInfo.bindings.push_back(DescriptorBinding{ 0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+	vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+	layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 	CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 }
 
@@ -286,21 +286,21 @@ void Example_015::setupPipelines()
 	CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders", "VertexColors.vs", &mVS));
 	CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders", "VertexColors.ps", &mPS));
 
-	PipelineInterfaceCreateInfo piCreateInfo = {};
+	vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 	piCreateInfo.setCount = 1;
 	piCreateInfo.sets[0].set = 0;
 	piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
 	CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-	GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+	vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 	gpCreateInfo.VS = { mVS.Get(), "vsmain" };
 	gpCreateInfo.PS = { mPS.Get(), "psmain" };
-	gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-	gpCreateInfo.cullMode = CULL_MODE_BACK;
-	gpCreateInfo.frontFace = FRONT_FACE_CCW;
+	gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+	gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+	gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 	gpCreateInfo.depthReadEnable = true;
 	gpCreateInfo.depthWriteEnable = true;
-	gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+	gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 	gpCreateInfo.outputState.renderTargetCount = 1;
 	gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 	gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
@@ -309,13 +309,13 @@ void Example_015::setupPipelines()
 	for (auto& entity : mEntities) {
 		// NOTE: Number of vertex input bindings here must match the number of options added to each entity in ProjApp::SetupEntities.
 		if (entity.IsFloor() || entity.IsMesh()) {
-			gpCreateInfo.topology = (entity.IsFloor()) ? PRIMITIVE_TOPOLOGY_LINE_LIST : PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			gpCreateInfo.topology = (entity.IsFloor()) ? vkr::PRIMITIVE_TOPOLOGY_LINE_LIST : vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 			gpCreateInfo.vertexInputState.bindingCount = 2;
 			gpCreateInfo.vertexInputState.bindings[0] = entity.Mesh()->GetDerivedVertexBindings()[0];
 			gpCreateInfo.vertexInputState.bindings[1] = entity.Mesh()->GetDerivedVertexBindings()[1];
 		}
 		else if (entity.IsObject()) {
-			gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+			gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 			gpCreateInfo.vertexInputState.bindingCount = 2;
 			gpCreateInfo.vertexInputState.bindings[0] = entity.Mesh()->GetDerivedVertexBindings()[0];
 			gpCreateInfo.vertexInputState.bindings[1] = entity.Mesh()->GetDerivedVertexBindings()[1];
@@ -333,10 +333,10 @@ void Example_015::setupPerFrameData()
 
 	CHECKED_CALL(GetRender().GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-	SemaphoreCreateInfo semaCreateInfo = {};
+	vkr::SemaphoreCreateInfo semaCreateInfo = {};
 	CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-	FenceCreateInfo fenceCreateInfo = {};
+	vkr::FenceCreateInfo fenceCreateInfo = {};
 	CHECKED_CALL(GetRenderDevice().CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 	CHECKED_CALL(GetRenderDevice().CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));

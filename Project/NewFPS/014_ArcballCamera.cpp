@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_014::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	return createInfo;
 }
 
@@ -14,25 +14,25 @@ bool Example_014::Setup()
 
 	// Descriptor stuff
 	{
-		DescriptorPoolCreateInfo poolCreateInfo = {};
+		vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
 		poolCreateInfo.uniformBuffer = 6;
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ 0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 	}
 
 	// Entities
 	{
-		GeometryCreateInfo geometryCreateInfo = GeometryCreateInfo::Planar().AddColor();
-		TriMeshOptions     triMeshOptions     = TriMeshOptions().Indices().VertexColors();
-		WireMeshOptions    wireMeshOptions    = WireMeshOptions().Indices().VertexColors();
+		vkr::GeometryCreateInfo geometryCreateInfo = vkr::GeometryCreateInfo::Planar().AddColor();
+		vkr::TriMeshOptions     triMeshOptions     = vkr::TriMeshOptions().Indices().VertexColors();
+		vkr::WireMeshOptions    wireMeshOptions    = vkr::WireMeshOptions().Indices().VertexColors();
 
-		TriMesh triMesh = TriMesh::CreateCube(float3(2, 2, 2), triMeshOptions);
+		vkr::TriMesh triMesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), triMeshOptions);
 		setupEntity(triMesh, geometryCreateInfo, &mCube);
 
-		WireMesh wireMesh = WireMesh::CreatePlane(WIRE_MESH_PLANE_POSITIVE_Y, float2(10, 10), 10, 10, wireMeshOptions);
+		vkr::WireMesh wireMesh = vkr::WireMesh::CreatePlane(vkr::WIRE_MESH_PLANE_POSITIVE_Y, float2(10, 10), 10, 10, wireMeshOptions);
 		setupEntity(wireMesh, geometryCreateInfo, &mWirePlane);
 	}
 
@@ -41,25 +41,25 @@ bool Example_014::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "VertexColors.vs", &mVS));
 		CHECKED_CALL(device.CreateShader("basic/shaders", "VertexColors.ps", &mPS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount                    = 1;
 		piCreateInfo.sets[0].set                 = 0;
 		piCreateInfo.sets[0].pLayout             = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo        = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo        = {};
 		gpCreateInfo.VS                                 = { mVS.Get(), "vsmain" };
 		gpCreateInfo.PS                                 = { mPS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount      = 2;
 		gpCreateInfo.vertexInputState.bindings[0]       = mCube.mesh->GetDerivedVertexBindings()[0];
 		gpCreateInfo.vertexInputState.bindings[1]       = mCube.mesh->GetDerivedVertexBindings()[1];
-		gpCreateInfo.topology                           = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode                        = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode                           = CULL_MODE_NONE;
-		gpCreateInfo.frontFace                          = FRONT_FACE_CCW;
+		gpCreateInfo.topology                           = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode                        = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode                           = vkr::CULL_MODE_NONE;
+		gpCreateInfo.frontFace                          = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable                    = true;
 		gpCreateInfo.depthWriteEnable                   = true;
-		gpCreateInfo.blendModes[0]                      = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0]                      = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount      = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat     = GetRender().GetSwapChain().GetDepthFormat();
@@ -69,7 +69,7 @@ bool Example_014::Setup()
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mTrianglePipeline));
 
 		// Wire pipeline
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_LINE_LIST;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_LINE_LIST;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mWirePipeline));
 	}
 
@@ -79,10 +79,10 @@ bool Example_014::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -148,17 +148,17 @@ void Example_014::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 		beginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -189,11 +189,11 @@ void Example_014::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -246,42 +246,42 @@ void Example_014::KeyDown(KeyCode key)
 	}
 }
 
-void Example_014::setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)
+void Example_014::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(grfx_util::CreateMeshFromTriMesh(GetRenderDevice().GetGraphicsQueue(), &mesh, &pEntity->mesh));
+	CHECKED_CALL(vkr::grfx_util::CreateMeshFromTriMesh(GetRenderDevice().GetGraphicsQueue(), &mesh, &pEntity->mesh));
 
-	BufferCreateInfo bufferCreateInfo = {};
+	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->uniformBuffer));
 
 	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &pEntity->descriptorSet));
 
-	WriteDescriptor write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.pBuffer = pEntity->uniformBuffer;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 }
 
-void Example_014::setupEntity(const WireMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)
+void Example_014::setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(grfx_util::CreateMeshFromWireMesh(GetRenderDevice().GetGraphicsQueue(), &mesh, &pEntity->mesh));
+	CHECKED_CALL(vkr::grfx_util::CreateMeshFromWireMesh(GetRenderDevice().GetGraphicsQueue(), &mesh, &pEntity->mesh));
 
-	BufferCreateInfo bufferCreateInfo = {};
+	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->uniformBuffer));
 
 	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &pEntity->descriptorSet));
 
-	WriteDescriptor write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.pBuffer = pEntity->uniformBuffer;

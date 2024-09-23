@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "019_gltf.h"
 
-Bitmap ColorToBitmap(const float3& color)
+vkr::Bitmap ColorToBitmap(const float3& color)
 {
-	Bitmap bitmap;
-	CHECKED_CALL(Bitmap::Create(1, 1, Bitmap::Format::FORMAT_RGBA_FLOAT, &bitmap));
+	vkr::Bitmap bitmap;
+	CHECKED_CALL(vkr::Bitmap::Create(1, 1, vkr::Bitmap::Format::FORMAT_RGBA_FLOAT, &bitmap));
 	float* ptr = bitmap.GetPixel32f(0, 0);
 	ptr[0] = color.r;
 	ptr[1] = color.g;
@@ -79,7 +79,7 @@ float4x4 ComputeObjectMatrix(const cgltf_node* node)
 EngineApplicationCreateInfo Example_019::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -95,7 +95,7 @@ bool Example_019::Setup()
 
 	// Create descriptor pool large enough for this project
 	{
-		DescriptorPoolCreateInfo poolCreateInfo = {};
+		vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
 		poolCreateInfo.uniformBuffer = 1024;
 		poolCreateInfo.sampledImage = 1024;
 		poolCreateInfo.sampler = 1024;
@@ -107,48 +107,48 @@ bool Example_019::Setup()
 	CHECKED_CALL(device.CreateShader("basic/shaders", "Unlit.ps", &mUnlitPixelShader));
 
 	{
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 0,
-			/* type= */ DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			/* type= */ vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_ALL_GRAPHICS });
+			/* shader_visibility= */ vkr::SHADER_STAGE_ALL_GRAPHICS });
 
 		// Albedo
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 1,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 2,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
 		// Normal
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 3,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 4,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
 		// Metallic/Roughness
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 5,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 6,
-			/* type= */ DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
 			/* array_count= */ 1,
-			/* shader_visibility= */ SHADER_STAGE_PS });
+			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mSetLayout));
 	}
@@ -168,10 +168,10 @@ bool Example_019::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -243,7 +243,7 @@ void Example_019::Render()
 		// FIXME: this assumes we have only PBR, and with 3 textures per materials. Needs to be revisited.
 		constexpr size_t                                    TEXTURE_COUNT = 3;
 		constexpr size_t                                    DESCRIPTOR_COUNT = 1 + TEXTURE_COUNT * 2 /* uniform + 3 * (sampler + texture) */;
-		std::array<WriteDescriptor, DESCRIPTOR_COUNT> write;
+		std::array<vkr::WriteDescriptor, DESCRIPTOR_COUNT> write;
 		for (auto& object : mObjects) {
 			for (auto& renderable : object.renderables) {
 				auto* pPrimitive = renderable.pPrimitive;
@@ -251,17 +251,17 @@ void Example_019::Render()
 				auto* pDescriptorSet = renderable.pDescriptorSet;
 
 				write[0].binding = 0;
-				write[0].type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 				write[0].bufferOffset = 0;
 				write[0].bufferRange = WHOLE_SIZE;
 				write[0].pBuffer = object.pUniformBuffer;
 
 				for (size_t i = 0; i < TEXTURE_COUNT; i++) {
 					write[1 + i * 2 + 0].binding = static_cast<uint32_t>(1 + i * 2 + 0);
-					write[1 + i * 2 + 0].type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					write[1 + i * 2 + 0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 					write[1 + i * 2 + 0].pImageView = pMaterial->textures[i].pTexture;
 					write[1 + i * 2 + 1].binding = static_cast<uint32_t>(1 + i * 2 + 1);
-					write[1 + i * 2 + 1].type = DESCRIPTOR_TYPE_SAMPLER;
+					write[1 + i * 2 + 1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 					write[1 + i * 2 + 1].pSampler = pMaterial->textures[i].pSampler;
 				}
 				CHECKED_CALL(pDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(write.size()), write.data()));
@@ -272,13 +272,13 @@ void Example_019::Render()
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		RenderPassPtr renderPass = GetRender().GetSwapChain().GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = GetRender().GetSwapChain().GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
 		// =====================================================================
 		//  Render scene
 		// =====================================================================
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(renderPass);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -299,11 +299,11 @@ void Example_019::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -320,66 +320,66 @@ void Example_019::Render()
 void Example_019::loadTexture(
 	const std::filesystem::path& gltfFolder,
 	const cgltf_texture_view& textureView,
-	Queue* pQueue,
+	vkr::Queue* pQueue,
 	TextureCache* pTextureCache,
 	Texture* pOutput)
 {
 	auto& device = GetRenderDevice();
 
 	const auto& texture = *textureView.texture;
-	ASSERT_MSG(textureView.texture != nullptr, "Texture with no image are not supported.");
-	ASSERT_MSG(textureView.has_transform == false, "Texture transforms are not supported yet.");
+	ASSERT_MSG(textureView.texture != nullptr, "vkr::Texture with no image are not supported.");
+	ASSERT_MSG(textureView.has_transform == false, "vkr::Texture transforms are not supported yet.");
 	ASSERT_MSG(texture.image != nullptr, "image pointer is null.");
 	ASSERT_MSG(texture.image->uri != nullptr, "image uri is null.");
 
 	auto it = pTextureCache->find(texture.image->uri);
 	if (it == pTextureCache->end()) {
-		grfx_util::ImageOptions options = grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(grfx_util::CreateImageFromFile(pQueue, gltfFolder / texture.image->uri, &pOutput->pImage, options, false));
+		vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
+		CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(pQueue, gltfFolder / texture.image->uri, &pOutput->pImage, options, false));
 		pTextureCache->emplace(texture.image->uri, pOutput->pImage);
 	}
 	else {
 		pOutput->pImage = it->second;
 	}
 
-	SampledImageViewCreateInfo sivCreateInfo = SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
+	vkr::SampledImageViewCreateInfo sivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
 	CHECKED_CALL(device.CreateSampledImageView(sivCreateInfo, &pOutput->pTexture));
 
 	// FIXME: read sampler info from GLTF.
-	SamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.magFilter = FILTER_LINEAR;
-	samplerCreateInfo.minFilter = FILTER_LINEAR;
+	vkr::SamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
+	samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
 	samplerCreateInfo.anisotropyEnable = true;
 	samplerCreateInfo.maxAnisotropy = 16;
-	samplerCreateInfo.mipmapMode = SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerCreateInfo.minLod = 0.f;
 	samplerCreateInfo.maxLod = FLT_MAX;
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &pOutput->pSampler));
 }
 
-void Example_019::loadTexture(const Bitmap& bitmap, Queue* pQueue, Texture* pOutput)
+void Example_019::loadTexture(const vkr::Bitmap& bitmap, vkr::Queue* pQueue, Texture* pOutput)
 {
 	auto& device = GetRenderDevice();
 
-	grfx_util::ImageOptions options = grfx_util::ImageOptions().MipLevelCount(1);
-	CHECKED_CALL(grfx_util::CreateImageFromBitmap(pQueue, &bitmap, &pOutput->pImage, options));
+	vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(1);
+	CHECKED_CALL(vkr::grfx_util::CreateImageFromBitmap(pQueue, &bitmap, &pOutput->pImage, options));
 
-	SampledImageViewCreateInfo sivCreateInfo = SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
+	vkr::SampledImageViewCreateInfo sivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
 	CHECKED_CALL(device.CreateSampledImageView(sivCreateInfo, &pOutput->pTexture));
-	SamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.magFilter = FILTER_LINEAR;
-	samplerCreateInfo.minFilter = FILTER_LINEAR;
+	vkr::SamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
+	samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
 	samplerCreateInfo.anisotropyEnable = true;
 	samplerCreateInfo.maxAnisotropy = 1.f;
-	samplerCreateInfo.mipmapMode = SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &pOutput->pSampler));
 }
 
 void Example_019::loadMaterial(
 	const std::filesystem::path& gltfFolder,
 	const cgltf_material& material,
-	Queue* pQueue,
-	DescriptorPool* pDescriptorPool,
+	vkr::Queue* pQueue,
+	vkr::DescriptorPool* pDescriptorPool,
 	Example_019::TextureCache* pTextureCache,
 	Example_019::Material* pOutput)
 {
@@ -391,15 +391,15 @@ void Example_019::loadMaterial(
 	// This is to simplify the pipeline creation for now. Need to revisit later.
 	ASSERT_MSG(material.has_pbr_metallic_roughness, "Only PBR metallic roughness supported for now.");
 
-	PipelineInterfaceCreateInfo piCreateInfo = {};
+	vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 	piCreateInfo.setCount = 1;
 	piCreateInfo.sets[0].set = 0;
 	piCreateInfo.sets[0].pLayout = mSetLayout;
 	CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &pOutput->pInterface));
 
-	GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+	vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 	gpCreateInfo.VS = { mVertexShader.Get(), "vsmain" };
-	ShaderModule* psModule = material.unlit ? mUnlitPixelShader.Get() : mPbrPixelShader.Get();
+	vkr::ShaderModule* psModule = material.unlit ? mUnlitPixelShader.Get() : mPbrPixelShader.Get();
 	gpCreateInfo.PS = { psModule, "psmain" };
 	// FIXME: assuming all primitives provides POSITION, UV, NORMAL and TANGENT. Might not be the case.
 	gpCreateInfo.vertexInputState.bindingCount = 4;
@@ -407,13 +407,13 @@ void Example_019::loadMaterial(
 	gpCreateInfo.vertexInputState.bindings[1] = mPrimitives[0].mesh->GetDerivedVertexBindings()[1];
 	gpCreateInfo.vertexInputState.bindings[2] = mPrimitives[0].mesh->GetDerivedVertexBindings()[2];
 	gpCreateInfo.vertexInputState.bindings[3] = mPrimitives[0].mesh->GetDerivedVertexBindings()[3];
-	gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-	gpCreateInfo.cullMode = CULL_MODE_BACK;
-	gpCreateInfo.frontFace = FRONT_FACE_CCW;
+	gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+	gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+	gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 	gpCreateInfo.depthReadEnable = true;
 	gpCreateInfo.depthWriteEnable = true;
-	gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+	gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 	gpCreateInfo.outputState.renderTargetCount = 1;
 	gpCreateInfo.outputState.renderTargetFormats[0] = render.GetSwapChain().GetColorFormat();
 	gpCreateInfo.outputState.depthStencilFormat = render.GetSwapChain().GetDepthFormat();
@@ -449,11 +449,11 @@ void Example_019::loadMaterial(
 	}
 }
 
-void Example_019::loadPrimitive(const cgltf_primitive& primitive, BufferPtr pStagingBuffer, Queue* pQueue, Primitive* pOutput)
+void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr pStagingBuffer, vkr::Queue* pQueue, Primitive* pOutput)
 {
 	auto& device = GetRenderDevice();
 
-	ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+	vkr::ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
 	ASSERT_MSG(primitive.type == cgltf_primitive_type_triangles, "only supporting tri primitives for now.");
 	ASSERT_MSG(!primitive.has_draco_mesh_compression, "draco compression not supported yet.");
 	ASSERT_MSG(primitive.indices != nullptr, "only primitives with indices are supported for now.");
@@ -470,20 +470,20 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, BufferPtr pSta
 	const cgltf_accessor& indices = *primitive.indices;
 	const cgltf_component_type indicesTypes = indices.component_type;
 
-	MeshPtr targetMesh;
+	vkr::MeshPtr targetMesh;
 	{
 		// Indices.
 		ASSERT_MSG(indicesTypes == cgltf_component_type_r_16u || indicesTypes == cgltf_component_type_r_32u, "only 32u or 16u are supported for indices.");
 
 		// Create mesh.
-		MeshCreateInfo ci;
+		vkr::MeshCreateInfo ci;
 
 		ci.indexType = indicesTypes == cgltf_component_type_r_16u
-			? IndexType::INDEX_TYPE_UINT16
-			: IndexType::INDEX_TYPE_UINT32;
+			? vkr::IndexType::INDEX_TYPE_UINT16
+			: vkr::IndexType::INDEX_TYPE_UINT32;
 		ci.indexCount = static_cast<uint32_t>(indices.count);
 		ci.vertexCount = static_cast<uint32_t>(accessors[POSITION_INDEX]->count);
-		ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+		ci.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
 		ci.vertexBufferCount = 4;
 
 		for (size_t i = 0; i < accessors.size(); i++) {
@@ -493,17 +493,17 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, BufferPtr pSta
 			ASSERT_MSG(a.component_type == cgltf_component_type_r_32f, "only float for POS, NORM, TEX are supported.");
 
 			ci.vertexBuffers[i].attributeCount = 1;
-			ci.vertexBuffers[i].vertexInputRate = VERTEX_INPUT_RATE_VERTEX;
-			ci.vertexBuffers[i].attributes[0].format = a.type == cgltf_type_vec2 ? FORMAT_R32G32_FLOAT
-				: a.type == cgltf_type_vec3 ? FORMAT_R32G32B32_FLOAT
-				: FORMAT_R32G32B32A32_FLOAT;
+			ci.vertexBuffers[i].vertexInputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+			ci.vertexBuffers[i].attributes[0].format = a.type == cgltf_type_vec2 ? vkr::FORMAT_R32G32_FLOAT
+				: a.type == cgltf_type_vec3 ? vkr::FORMAT_R32G32B32_FLOAT
+				: vkr::FORMAT_R32G32B32A32_FLOAT;
 			ci.vertexBuffers[i].attributes[0].stride = static_cast<uint32_t>(bv.stride == 0 ? a.stride : bv.stride);
 
-			constexpr std::array<VertexSemantic, ATTRIBUTE_COUNT> semantics = {
-			VERTEX_SEMANTIC_POSITION,
-			VERTEX_SEMANTIC_TEXCOORD,
-			VERTEX_SEMANTIC_NORMAL,
-			VERTEX_SEMANTIC_TANGENT };
+			constexpr std::array<vkr::VertexSemantic, ATTRIBUTE_COUNT> semantics = {
+			vkr::VERTEX_SEMANTIC_POSITION,
+			vkr::VERTEX_SEMANTIC_TEXCOORD,
+			vkr::VERTEX_SEMANTIC_NORMAL,
+			vkr::VERTEX_SEMANTIC_TANGENT };
 			ci.vertexBuffers[i].attributes[0].vertexSemantic = semantics[i];
 		}
 		CHECKED_CALL(device.CreateMesh(ci, &targetMesh));
@@ -516,31 +516,31 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, BufferPtr pSta
 		ASSERT_MSG(indicesTypes == cgltf_component_type_r_16u || indicesTypes == cgltf_component_type_r_32u, "only 32u or 16u are supported for indices.");
 		ASSERT_MSG(bufferView.data == nullptr, "Doesn't support extra data");
 
-		BufferToBufferCopyInfo copyInfo = {};
+		vkr::BufferToBufferCopyInfo copyInfo = {};
 		copyInfo.size = targetMesh->GetIndexBuffer()->GetSize();
 		copyInfo.srcBuffer.offset = indices.offset + bufferView.offset;
 		copyInfo.dstBuffer.offset = 0;
-		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, targetMesh->GetIndexBuffer(), RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_INDEX_BUFFER));
+		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, targetMesh->GetIndexBuffer(), vkr::RESOURCE_STATE_INDEX_BUFFER, vkr::RESOURCE_STATE_INDEX_BUFFER));
 		for (size_t i = 0; i < accessors.size(); i++) {
 			const auto& bufferView = *accessors[i]->buffer_view;
 
 			const auto& vertexBuffer = targetMesh->GetVertexBuffer(static_cast<uint32_t>(i));
-			BufferToBufferCopyInfo copyInfo = {};
+			vkr::BufferToBufferCopyInfo copyInfo = {};
 			copyInfo.size = vertexBuffer->GetSize();
 			copyInfo.srcBuffer.offset = accessors[i]->offset + bufferView.offset;
 			copyInfo.dstBuffer.offset = 0;
-			CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, vertexBuffer, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_VERTEX_BUFFER));
+			CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, vertexBuffer, vkr::RESOURCE_STATE_VERTEX_BUFFER, vkr::RESOURCE_STATE_VERTEX_BUFFER));
 		}
 	}
 
-	targetMesh->SetOwnership(OWNERSHIP_REFERENCE);
+	targetMesh->SetOwnership(vkr::OWNERSHIP_REFERENCE);
 	pOutput->mesh = targetMesh;
 }
 
 void Example_019::loadScene(
 	const std::filesystem::path& filename,
-	Queue* pQueue,
-	DescriptorPool* pDescriptorPool,
+	vkr::Queue* pQueue,
+	vkr::DescriptorPool* pDescriptorPool,
 	TextureCache* pTextureCache,
 	std::vector<Object>* pObjects,
 	std::vector<Primitive>* pPrimitives,
@@ -573,14 +573,14 @@ void Example_019::loadScene(
 
 	//Timer timerStagingBufferLoading;
 	//timerStagingBufferLoading.Start();
-	ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
+	vkr::ScopeDestroyer SCOPED_DESTROYER(pQueue->GetDevice());
 	// Copy main buffer data to staging buffer.
-	BufferPtr stagingBuffer;
+	vkr::BufferPtr stagingBuffer;
 	{
-		BufferCreateInfo ci = {};
+		vkr::BufferCreateInfo ci = {};
 		ci.size = data->buffers[0].size;
 		ci.usageFlags.bits.transferSrc = true;
-		ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		ci.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
 		CHECKED_CALL(device.CreateBuffer(ci, &stagingBuffer));
 		SCOPED_DESTROYER.AddObject(stagingBuffer);
@@ -632,8 +632,8 @@ void Example_019::loadScene(
 
 void Example_019::loadNodes(
 	const cgltf_data* data,
-	Queue* pQueue,
-	DescriptorPool* pDescriptorPool,
+	vkr::Queue* pQueue,
+	vkr::DescriptorPool* pDescriptorPool,
 	std::vector<Object>* objects,
 	const std::unordered_map<const cgltf_primitive*, size_t>& primitiveToIndex,
 	std::vector<Primitive>* pPrimitives,
@@ -665,16 +665,16 @@ void Example_019::loadNodes(
 			Primitive* pPrimitive = &(*pPrimitives)[primitive_index];
 			Material* pMaterial = &(*pMaterials)[material_index];
 
-			DescriptorSet* pDescriptorSet = nullptr;
+			vkr::DescriptorSet* pDescriptorSet = nullptr;
 			CHECKED_CALL(device.AllocateDescriptorSet(pDescriptorPool, mSetLayout, &pDescriptorSet));
 			item.renderables.emplace_back(pMaterial, pPrimitive, pDescriptorSet);
 		}
 
 		// Create uniform buffer.
-		BufferCreateInfo bufferCreateInfo = {};
+		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &item.pUniformBuffer));
 
 		objects->emplace_back(std::move(item));

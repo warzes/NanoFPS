@@ -5,6 +5,8 @@
 #include "RenderDevice.h"
 #include "RenderSystem.h"
 
+namespace vkr {
+
 #pragma region RenderDevice
 
 RenderDevice::RenderDevice(EngineApplication& engine, RenderSystem& render)
@@ -1042,4 +1044,4 @@ VulkanSemaphorePtr RenderDevice::CreateSemaphore(const SemaphoreCreateInfo& crea
 
 #pragma endregion
 
-
+} // namespace vkr

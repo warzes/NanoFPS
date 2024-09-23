@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-// TODO: возможно рендер также загнать в пространство имен как сцена (и возможно графика)
+namespace vkr {
 
 #pragma region Decl Class
 
@@ -117,7 +117,7 @@ using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
 #define DEFAULT_RESOURCE_DESCRIPTOR_COUNT   8192
 #define DEFAULT_SAMPLE_DESCRIPTOR_COUNT     MAX_SAMPLER_DESCRIPTORS
 
-#define MAX_RENDER_TARGETS                  8
+constexpr uint32_t MAX_RENDER_TARGETS = 8;
 
 #define REMAINING_MIP_LEVELS                UINT32_MAX
 #define REMAINING_ARRAY_LAYERS              UINT32_MAX
@@ -1395,16 +1395,7 @@ std::string ToString(const gli::format& format);
 
 #pragma region Core Struct
 
-struct RangeU32 final
-{
-	uint32_t start;
-	uint32_t end;
-};
 
-inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
-{
-	return HasOverlapHalfOpen(r0.start, r0.end, r1.start, r1.end);
-}
 
 struct Extent2D final
 {
@@ -2300,7 +2291,7 @@ struct GeometryCreateInfo
 	static GeometryCreateInfo Planar();
 	static GeometryCreateInfo PositionPlanar();
 
-	GeometryCreateInfo& IndexType(::IndexType indexType_);
+	GeometryCreateInfo& IndexType(vkr::IndexType indexType_);
 	GeometryCreateInfo& IndexTypeU8();
 	GeometryCreateInfo& IndexTypeU16();
 	GeometryCreateInfo& IndexTypeU32();
@@ -2643,7 +2634,7 @@ namespace grfx_util
 		ImageUsageFlags         mAdditionalUsage = ImageUsageFlags();
 		ResourceState           mInitialState = ResourceState::RESOURCE_STATE_SHADER_RESOURCE;
 		uint32_t                      mMipLevelCount = 1;
-		::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
+		vkr::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
 
 		friend Result CreateTextureFromBitmap(
 			Queue* pQueue,
@@ -2910,3 +2901,5 @@ namespace grfx_util
 }
 
 #pragma endregion
+
+} // namespace vkr

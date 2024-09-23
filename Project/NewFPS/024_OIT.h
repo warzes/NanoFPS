@@ -115,13 +115,13 @@ private:
 	void ParseCommandLineOptions();
 
 	Algorithm     GetSelectedAlgorithm() const;
-	MeshPtr GetTransparentMesh() const;
+	vkr::MeshPtr GetTransparentMesh() const;
 
 	void UpdateGUI();
 
 	void RecordOpaque();
 	void RecordTransparency();
-	void RecordComposite(RenderPassPtr renderPass);
+	void RecordComposite(vkr::RenderPassPtr renderPass);
 
 	void RecordUnsortedOver();
 	void RecordWeightedSum();
@@ -137,142 +137,142 @@ private:
 	float mPreviousElapsedSeconds;
 	float mMeshAnimationSeconds;
 
-	SemaphorePtr mImageAcquiredSemaphore;
-	FencePtr     mImageAcquiredFence;
-	SemaphorePtr mRenderCompleteSemaphore;
-	FencePtr     mRenderCompleteFence;
+	vkr::SemaphorePtr mImageAcquiredSemaphore;
+	vkr::FencePtr     mImageAcquiredFence;
+	vkr::SemaphorePtr mRenderCompleteSemaphore;
+	vkr::FencePtr     mRenderCompleteFence;
 
-	CommandBufferPtr  mCommandBuffer;
-	DescriptorPoolPtr mDescriptorPool;
+	vkr::CommandBufferPtr  mCommandBuffer;
+	vkr::DescriptorPoolPtr mDescriptorPool;
 
-	SamplerPtr mNearestSampler;
+	vkr::SamplerPtr mNearestSampler;
 
-	MeshPtr mBackgroundMesh;
-	MeshPtr mTransparentMeshes[MESH_TYPES_COUNT];
+	vkr::MeshPtr mBackgroundMesh;
+	vkr::MeshPtr mTransparentMeshes[MESH_TYPES_COUNT];
 
-	BufferPtr mShaderGlobalsBuffer;
+	vkr::BufferPtr mShaderGlobalsBuffer;
 
-	DrawPassPtr            mOpaquePass;
-	DescriptorSetLayoutPtr mOpaqueDescriptorSetLayout;
-	DescriptorSetPtr       mOpaqueDescriptorSet;
-	PipelineInterfacePtr   mOpaquePipelineInterface;
-	GraphicsPipelinePtr    mOpaquePipeline;
+	vkr::DrawPassPtr            mOpaquePass;
+	vkr::DescriptorSetLayoutPtr mOpaqueDescriptorSetLayout;
+	vkr::DescriptorSetPtr       mOpaqueDescriptorSet;
+	vkr::PipelineInterfacePtr   mOpaquePipelineInterface;
+	vkr::GraphicsPipelinePtr    mOpaquePipeline;
 
-	TexturePtr  mTransparencyTexture;
-	DrawPassPtr mTransparencyPass;
+	vkr::TexturePtr  mTransparencyTexture;
+	vkr::DrawPassPtr mTransparencyPass;
 
-	DescriptorSetLayoutPtr mCompositeDescriptorSetLayout;
-	DescriptorSetPtr       mCompositeDescriptorSet;
-	PipelineInterfacePtr   mCompositePipelineInterface;
-	GraphicsPipelinePtr    mCompositePipeline;
+	vkr::DescriptorSetLayoutPtr mCompositeDescriptorSetLayout;
+	vkr::DescriptorSetPtr       mCompositeDescriptorSet;
+	vkr::PipelineInterfacePtr   mCompositePipelineInterface;
+	vkr::GraphicsPipelinePtr    mCompositePipeline;
 
 	struct
 	{
-		DescriptorSetLayoutPtr descriptorSetLayout;
-		DescriptorSetPtr       descriptorSet;
+		vkr::DescriptorSetLayoutPtr descriptorSetLayout;
+		vkr::DescriptorSetPtr       descriptorSet;
 
-		PipelineInterfacePtr pipelineInterface;
-		GraphicsPipelinePtr  meshAllFacesPipeline;
-		GraphicsPipelinePtr  meshBackFacesPipeline;
-		GraphicsPipelinePtr  meshFrontFacesPipeline;
+		vkr::PipelineInterfacePtr pipelineInterface;
+		vkr::GraphicsPipelinePtr  meshAllFacesPipeline;
+		vkr::GraphicsPipelinePtr  meshBackFacesPipeline;
+		vkr::GraphicsPipelinePtr  meshFrontFacesPipeline;
 	} mUnsortedOver;
 
 	struct
 	{
-		DescriptorSetLayoutPtr descriptorSetLayout;
-		DescriptorSetPtr       descriptorSet;
+		vkr::DescriptorSetLayoutPtr descriptorSetLayout;
+		vkr::DescriptorSetPtr       descriptorSet;
 
-		PipelineInterfacePtr pipelineInterface;
-		GraphicsPipelinePtr  pipeline;
+		vkr::PipelineInterfacePtr pipelineInterface;
+		vkr::GraphicsPipelinePtr  pipeline;
 	} mWeightedSum;
 
 	struct
 	{
-		TexturePtr colorTexture;
-		TexturePtr extraTexture;
+		vkr::TexturePtr colorTexture;
+		vkr::TexturePtr extraTexture;
 
-		DescriptorSetLayoutPtr gatherDescriptorSetLayout;
-		DescriptorSetPtr       gatherDescriptorSet;
-		PipelineInterfacePtr   gatherPipelineInterface;
+		vkr::DescriptorSetLayoutPtr gatherDescriptorSetLayout;
+		vkr::DescriptorSetPtr       gatherDescriptorSet;
+		vkr::PipelineInterfacePtr   gatherPipelineInterface;
 
-		DescriptorSetLayoutPtr combineDescriptorSetLayout;
-		DescriptorSetPtr       combineDescriptorSet;
-		PipelineInterfacePtr   combinePipelineInterface;
+		vkr::DescriptorSetLayoutPtr combineDescriptorSetLayout;
+		vkr::DescriptorSetPtr       combineDescriptorSet;
+		vkr::PipelineInterfacePtr   combinePipelineInterface;
 
 		struct
 		{
-			DrawPassPtr         gatherPass;
-			GraphicsPipelinePtr gatherPipeline;
+			vkr::DrawPassPtr         gatherPass;
+			vkr::GraphicsPipelinePtr gatherPipeline;
 
-			GraphicsPipelinePtr combinePipeline;
+			vkr::GraphicsPipelinePtr combinePipeline;
 		} count;
 
 		struct
 		{
-			DrawPassPtr         gatherPass;
-			GraphicsPipelinePtr gatherPipeline;
+			vkr::DrawPassPtr         gatherPass;
+			vkr::GraphicsPipelinePtr gatherPipeline;
 
-			GraphicsPipelinePtr combinePipeline;
+			vkr::GraphicsPipelinePtr combinePipeline;
 		} coverage;
 	} mWeightedAverage;
 
 	struct
 	{
-		TexturePtr  layerTextures[DEPTH_PEELING_LAYERS_COUNT];
-		TexturePtr  depthTextures[DEPTH_PEELING_DEPTH_TEXTURES_COUNT];
-		DrawPassPtr layerPasses[DEPTH_PEELING_LAYERS_COUNT];
+		vkr::TexturePtr  layerTextures[DEPTH_PEELING_LAYERS_COUNT];
+		vkr::TexturePtr  depthTextures[DEPTH_PEELING_DEPTH_TEXTURES_COUNT];
+		vkr::DrawPassPtr layerPasses[DEPTH_PEELING_LAYERS_COUNT];
 
-		DescriptorSetLayoutPtr layerDescriptorSetLayout;
-		DescriptorSetPtr       layerDescriptorSets[DEPTH_PEELING_DEPTH_TEXTURES_COUNT];
-		PipelineInterfacePtr   layerPipelineInterface;
-		GraphicsPipelinePtr    layerPipeline_OtherLayers;
-		GraphicsPipelinePtr    layerPipeline_FirstLayer;
+		vkr::DescriptorSetLayoutPtr layerDescriptorSetLayout;
+		vkr::DescriptorSetPtr       layerDescriptorSets[DEPTH_PEELING_DEPTH_TEXTURES_COUNT];
+		vkr::PipelineInterfacePtr   layerPipelineInterface;
+		vkr::GraphicsPipelinePtr    layerPipeline_OtherLayers;
+		vkr::GraphicsPipelinePtr    layerPipeline_FirstLayer;
 
-		DescriptorSetLayoutPtr combineDescriptorSetLayout;
-		DescriptorSetPtr       combineDescriptorSet;
-		PipelineInterfacePtr   combinePipelineInterface;
-		GraphicsPipelinePtr    combinePipeline;
+		vkr::DescriptorSetLayoutPtr combineDescriptorSetLayout;
+		vkr::DescriptorSetPtr       combineDescriptorSet;
+		vkr::PipelineInterfacePtr   combinePipelineInterface;
+		vkr::GraphicsPipelinePtr    combinePipeline;
 	} mDepthPeeling;
 
 	struct
 	{
 		struct
 		{
-			TexturePtr  countTexture;
-			TexturePtr  fragmentTexture;
-			DrawPassPtr clearPass;
-			DrawPassPtr gatherPass;
+			vkr::TexturePtr  countTexture;
+			vkr::TexturePtr  fragmentTexture;
+			vkr::DrawPassPtr clearPass;
+			vkr::DrawPassPtr gatherPass;
 
-			DescriptorSetLayoutPtr gatherDescriptorSetLayout;
-			DescriptorSetPtr       gatherDescriptorSet;
-			PipelineInterfacePtr   gatherPipelineInterface;
-			GraphicsPipelinePtr    gatherPipeline;
+			vkr::DescriptorSetLayoutPtr gatherDescriptorSetLayout;
+			vkr::DescriptorSetPtr       gatherDescriptorSet;
+			vkr::PipelineInterfacePtr   gatherPipelineInterface;
+			vkr::GraphicsPipelinePtr    gatherPipeline;
 
-			DescriptorSetLayoutPtr combineDescriptorSetLayout;
-			DescriptorSetPtr       combineDescriptorSet;
-			PipelineInterfacePtr   combinePipelineInterface;
-			GraphicsPipelinePtr    combinePipeline;
+			vkr::DescriptorSetLayoutPtr combineDescriptorSetLayout;
+			vkr::DescriptorSetPtr       combineDescriptorSet;
+			vkr::PipelineInterfacePtr   combinePipelineInterface;
+			vkr::GraphicsPipelinePtr    combinePipeline;
 
 			bool countTextureNeedClear;
 		} buckets;
 
 		struct
 		{
-			TexturePtr  linkedListHeadTexture;
-			BufferPtr   fragmentBuffer;
-			BufferPtr   atomicCounter;
-			DrawPassPtr clearPass;
-			DrawPassPtr gatherPass;
+			vkr::TexturePtr  linkedListHeadTexture;
+			vkr::BufferPtr   fragmentBuffer;
+			vkr::BufferPtr   atomicCounter;
+			vkr::DrawPassPtr clearPass;
+			vkr::DrawPassPtr gatherPass;
 
-			DescriptorSetLayoutPtr gatherDescriptorSetLayout;
-			DescriptorSetPtr       gatherDescriptorSet;
-			PipelineInterfacePtr   gatherPipelineInterface;
-			GraphicsPipelinePtr    gatherPipeline;
+			vkr::DescriptorSetLayoutPtr gatherDescriptorSetLayout;
+			vkr::DescriptorSetPtr       gatherDescriptorSet;
+			vkr::PipelineInterfacePtr   gatherPipelineInterface;
+			vkr::GraphicsPipelinePtr    gatherPipeline;
 
-			DescriptorSetLayoutPtr combineDescriptorSetLayout;
-			DescriptorSetPtr       combineDescriptorSet;
-			PipelineInterfacePtr   combinePipelineInterface;
-			GraphicsPipelinePtr    combinePipeline;
+			vkr::DescriptorSetLayoutPtr combineDescriptorSetLayout;
+			vkr::DescriptorSetPtr       combineDescriptorSet;
+			vkr::PipelineInterfacePtr   combinePipelineInterface;
+			vkr::GraphicsPipelinePtr    combinePipeline;
 
 			bool linkedListHeadTextureNeedClear;
 		} lists;

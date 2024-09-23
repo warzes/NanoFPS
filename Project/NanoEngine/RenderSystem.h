@@ -3,6 +3,10 @@
 #include "RenderDevice.h"
 
 class EngineApplication;
+
+namespace vkr {
+
+
 class RenderSystem;
 
 #pragma region VulkanInstance
@@ -300,7 +304,7 @@ struct RenderCreateInfo final
 class RenderSystem final
 {
 	friend class RenderDevice;
-	friend class EngineApplication;
+	friend EngineApplication;
 public:
 	RenderSystem(EngineApplication& engine);
 
@@ -364,3 +368,5 @@ private:
 };
 
 #pragma endregion
+
+} // namespace vkr

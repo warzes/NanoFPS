@@ -12,26 +12,26 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	std::vector<PerFrame>             mPerFrame;
-	ShaderModulePtr        mVS;
-	ShaderModulePtr        mPS;
-	PipelineInterfacePtr   mPipelineInterface;
-	GraphicsPipelinePtr    mPipeline;
-	BufferPtr              mVertexBuffer;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDescriptorSetLayout;
-	DescriptorSetLayoutPtr mDescriptorSetLayoutBuffers;
-	DescriptorSetPtr       mDescriptorSet;
-	BufferPtr              mUniformBuffers[3];
-	ImagePtr               mImages[3];
-	SamplerPtr             mSampler;
-	SampledImageViewPtr    mSampledImageViews[3];
-	VertexBinding               mVertexBinding;
+	vkr::ShaderModulePtr        mVS;
+	vkr::ShaderModulePtr        mPS;
+	vkr::PipelineInterfacePtr   mPipelineInterface;
+	vkr::GraphicsPipelinePtr    mPipeline;
+	vkr::BufferPtr              mVertexBuffer;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayoutBuffers;
+	vkr::DescriptorSetPtr       mDescriptorSet;
+	vkr::BufferPtr              mUniformBuffers[3];
+	vkr::ImagePtr               mImages[3];
+	vkr::SamplerPtr             mSampler;
+	vkr::SampledImageViewPtr    mSampledImageViews[3];
+	vkr::VertexBinding               mVertexBinding;
 };

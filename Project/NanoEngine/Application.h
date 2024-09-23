@@ -10,7 +10,7 @@ struct EngineApplicationCreateInfo final
 	std::string_view logFilePath = "Log.txt";
 
 	WindowCreateInfo window{};
-	RenderCreateInfo render{};
+	vkr::RenderCreateInfo render{};
 };
 
 #pragma endregion
@@ -71,8 +71,8 @@ public:
 
 	Window& GetWindow() { return m_window; }
 	Input& GetInput() { return m_input; }
-	RenderSystem& GetRender() { return m_render; }
-	RenderDevice& GetRenderDevice() { return m_render.GetRenderDevice(); }
+	vkr::RenderSystem& GetRender() { return m_render; }
+	vkr::RenderDevice& GetRenderDevice() { return m_render.GetRenderDevice(); }
 
 	const KeyState& GetKeyState(KeyCode code) const;
 
@@ -102,7 +102,7 @@ private:
 	std::ofstream m_logFile;
 	Window        m_window;
 	Input         m_input;
-	RenderSystem  m_render;
+	vkr::RenderSystem  m_render;
 
 	StatusApp     m_status = StatusApp::NonInit;
 	int32_t       m_previousMouseX = INT32_MAX;

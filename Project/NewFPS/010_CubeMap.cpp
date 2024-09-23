@@ -6,7 +6,7 @@
 EngineApplicationCreateInfo Example_010::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
 	return createInfo;
 }
 
@@ -14,48 +14,48 @@ bool Example_010::Setup()
 {
 	auto& device = GetRenderDevice();
 
-	// Texture image, view,  and sampler
+	// vkr::Texture image, view,  and sampler
 	{
-		grfx_util::CubeMapCreateInfo createInfo = {};
-		createInfo.layout = grfx_util::CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
-		createInfo.posX = ENCODE_CUBE_FACE(3, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negX = ENCODE_CUBE_FACE(1, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.posY = ENCODE_CUBE_FACE(0, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negY = ENCODE_CUBE_FACE(5, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.posZ = ENCODE_CUBE_FACE(2, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negZ = ENCODE_CUBE_FACE(4, grfx_util::CUBE_FACE_OP_NONE, grfx_util::CUBE_FACE_OP_NONE);
+		vkr::grfx_util::CubeMapCreateInfo createInfo = {};
+		createInfo.layout = vkr::grfx_util::CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
+		createInfo.posX = ENCODE_CUBE_FACE(3, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		createInfo.negX = ENCODE_CUBE_FACE(1, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		createInfo.posY = ENCODE_CUBE_FACE(0, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		createInfo.negY = ENCODE_CUBE_FACE(5, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		createInfo.posZ = ENCODE_CUBE_FACE(2, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		createInfo.negZ = ENCODE_CUBE_FACE(4, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
 
-		CHECKED_CALL(grfx_util::CreateCubeMapFromFile(device.GetGraphicsQueue(), "basic/textures/hilly_terrain.png", &createInfo, &mCubeMapImage));
+		CHECKED_CALL(vkr::grfx_util::CreateCubeMapFromFile(device.GetGraphicsQueue(), "basic/textures/hilly_terrain.png", &createInfo, &mCubeMapImage));
 
-		SampledImageViewCreateInfo viewCreateInfo = SampledImageViewCreateInfo::GuessFromImage(mCubeMapImage);
+		vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mCubeMapImage);
 		CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mCubeMapImageView));
 
-		SamplerCreateInfo samplerCreateInfo = {};
+		vkr::SamplerCreateInfo samplerCreateInfo = {};
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mCubeMapSampler));
 	}
 
 	// Descriptor stuff
 	{
-		DescriptorPoolCreateInfo poolCreateInfo = {};
+		vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
 		poolCreateInfo.uniformBuffer = 2;
 		poolCreateInfo.sampledImage = 2;
 		poolCreateInfo.sampler = 2;
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
-		DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ 0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ 1, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(DescriptorBinding{ 2, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS });
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 	}
 
 	// Entities
 	{
-		TriMesh mesh = TriMesh::CreateCube(float3(8, 8, 8));
-		setupEntity(mesh, GeometryCreateInfo::InterleavedU16().AddColor(), &mSkyBox);
+		vkr::TriMesh mesh = vkr::TriMesh::CreateCube(float3(8, 8, 8));
+		setupEntity(mesh, vkr::GeometryCreateInfo::InterleavedU16().AddColor(), &mSkyBox);
 
-		mesh = TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", TriMeshOptions().Normals());
-		setupEntity(mesh, GeometryCreateInfo::InterleavedU16().AddNormal(), &mReflector);
+		mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions().Normals());
+		setupEntity(mesh, vkr::GeometryCreateInfo::InterleavedU16().AddNormal(), &mReflector);
 	}
 
 	// Sky box pipeline
@@ -63,24 +63,24 @@ bool Example_010::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "SkyBox.vs", &mVS));
 		CHECKED_CALL(device.CreateShader("basic/shaders", "SkyBox.ps", &mPS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
 		gpCreateInfo.PS = { mPS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mReflector.mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_FRONT;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_FRONT;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
@@ -94,24 +94,24 @@ bool Example_010::Setup()
 		CHECKED_CALL(device.CreateShader("basic/shaders", "CubeMap.vs", &mVS));
 		CHECKED_CALL(device.CreateShader("basic/shaders", "CubeMap.ps", &mPS));
 
-		PipelineInterfaceCreateInfo piCreateInfo = {};
+		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
 		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		GraphicsPipelineCreateInfo2 gpCreateInfo = {};
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
 		gpCreateInfo.PS = { mPS.Get(), "psmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
 		gpCreateInfo.vertexInputState.bindings[0] = mReflector.mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = CULL_MODE_BACK;
-		gpCreateInfo.frontFace = FRONT_FACE_CCW;
+		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 		gpCreateInfo.depthReadEnable = true;
 		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = BLEND_MODE_NONE;
+		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
@@ -126,10 +126,10 @@ bool Example_010::Setup()
 
 		CHECKED_CALL(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
 
-		SemaphoreCreateInfo semaCreateInfo = {};
+		vkr::SemaphoreCreateInfo semaCreateInfo = {};
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
 
-		FenceCreateInfo fenceCreateInfo = {};
+		vkr::FenceCreateInfo fenceCreateInfo = {};
 		CHECKED_CALL(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
 
 		CHECKED_CALL(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
@@ -139,8 +139,8 @@ bool Example_010::Setup()
 
 #if defined(ENABLE_GPU_QUERIES)
 		// Timestamp query
-		QueryCreateInfo queryCreateInfo = {};
-		queryCreateInfo.type = QUERY_TYPE_TIMESTAMP;
+		vkr::QueryCreateInfo queryCreateInfo = {};
+		queryCreateInfo.type = vkr::QUERY_TYPE_TIMESTAMP;
 		queryCreateInfo.count = 2;
 		CHECKED_CALL(device.CreateQuery(queryCreateInfo, &frame.timestampQuery));
 #endif // defined(ENABLE_GPU_QUERIES)
@@ -246,20 +246,20 @@ void Example_010::Render()
 	{
 #if defined(ENABLE_GPU_QUERIES)
 		// Write start timestamp
-		frame.cmd->WriteTimestamp(frame.timestampQuery, PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+		frame.cmd->WriteTimestamp(frame.timestampQuery, vkr::PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
 #endif // defined(ENABLE_GPU_QUERIES)
 
-		RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
 		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-		RenderPassBeginInfo beginInfo = {};
+		vkr::RenderPassBeginInfo beginInfo = {};
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 		beginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -284,11 +284,11 @@ void Example_010::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
 
 #if defined(ENABLE_GPU_QUERIES)
 		// Write end timestamp
-		frame.cmd->WriteTimestamp(frame.timestampQuery, PIPELINE_STAGE_TOP_OF_PIPE_BIT, 1);
+		frame.cmd->WriteTimestamp(frame.timestampQuery, vkr::PIPELINE_STAGE_TOP_OF_PIPE_BIT, 1);
 
 		// Resolve queries
 		frame.cmd->ResolveQueryData(frame.timestampQuery, 0, 2);
@@ -296,7 +296,7 @@ void Example_010::Render()
 	}
 	CHECKED_CALL(frame.cmd->End());
 
-	SubmitInfo submitInfo = {};
+	vkr::SubmitInfo submitInfo = {};
 	submitInfo.commandBufferCount = 1;
 	submitInfo.ppCommandBuffers = &frame.cmd;
 	submitInfo.waitSemaphoreCount = 1;
@@ -318,23 +318,23 @@ void Example_010::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseB
 	}
 }
 
-void Example_010::setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity)
+void Example_010::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	Geometry geo;
-	CHECKED_CALL(Geometry::Create(createInfo, mesh, &geo));
-	CHECKED_CALL(grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
+	vkr::Geometry geo;
+	CHECKED_CALL(vkr::Geometry::Create(createInfo, mesh, &geo));
+	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
 
-	BufferCreateInfo bufferCreateInfo = {};
+	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->uniformBuffer));
 
 	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &pEntity->descriptorSet));
 
-	WriteDescriptor write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.pBuffer = pEntity->uniformBuffer;
@@ -342,13 +342,13 @@ void Example_010::setupEntity(const TriMesh& mesh, const GeometryCreateInfo& cre
 
 	write = {};
 	write.binding = 1;
-	write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	write.pImageView = mCubeMapImageView;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 
 	write = {};
 	write.binding = 2;
-	write.type = DESCRIPTOR_TYPE_SAMPLER;
+	write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 	write.pSampler = mCubeMapSampler;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 }

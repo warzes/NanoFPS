@@ -237,8 +237,8 @@ namespace scene
 namespace scene
 {
 	Image::Image(
-		::Image* pImage,
-		::SampledImageView* pImageView)
+		vkr::Image* pImage,
+		vkr::SampledImageView* pImageView)
 		: mImage(pImage),
 		mImageView(pImageView)
 	{
@@ -258,7 +258,7 @@ namespace scene
 	}
 
 	Sampler::Sampler(
-		::Sampler* pSampler)
+		vkr::Sampler* pSampler)
 		: mSampler(pSampler)
 	{
 	}
@@ -522,7 +522,7 @@ namespace scene {
 		}
 	}
 
-	Result MaterialPipelineArgs::InitializeDefaultObjects(RenderDevice* pDevice)
+	Result MaterialPipelineArgs::InitializeDefaultObjects(vkr::RenderDevice* pDevice)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -530,7 +530,7 @@ namespace scene {
 
 		// Default sampler
 		{
-			::SamplerCreateInfo createInfo = {};
+			vkr::SamplerCreateInfo createInfo = {};
 
 			auto ppxres = pDevice->CreateSampler(createInfo, &mDefaultSampler);
 			if (Failed(ppxres)) {
@@ -540,8 +540,8 @@ namespace scene {
 
 		// Default texture
 		{
-			Bitmap bitmap;
-			auto        ppxres = Bitmap::Create(1, 1, Bitmap::FORMAT_RGBA_UINT8, &bitmap);
+			vkr::Bitmap bitmap;
+			auto        ppxres = vkr::Bitmap::Create(1, 1, vkr::Bitmap::FORMAT_RGBA_UINT8, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -549,7 +549,7 @@ namespace scene {
 			// Fill purple
 			bitmap.Fill<uint8_t>(0xFF, 0, 0xFF, 0xFF);
 
-			ppxres = grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultTexture);
+			ppxres = vkr::grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultTexture);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -557,13 +557,13 @@ namespace scene {
 
 		// Default BRDF LUT sampler
 		{
-			::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = ::FILTER_LINEAR;
-			createInfo.minFilter = ::FILTER_LINEAR;
-			createInfo.mipmapMode = ::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeV = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			vkr::SamplerCreateInfo createInfo = {};
+			createInfo.magFilter = vkr::FILTER_LINEAR;
+			createInfo.minFilter = vkr::FILTER_LINEAR;
+			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
 			auto ppxres = pDevice->CreateSampler(createInfo, &mDefaultBRDFLUTSampler);
 			if (Failed(ppxres)) {
@@ -574,7 +574,7 @@ namespace scene {
 		// Default BRD LUT texture
 		{
 			// Favor speed, so use the PNG instad of the HDR
-			auto ppxres = grfx_util::CreateTextureFromFile(
+			auto ppxres = vkr::grfx_util::CreateTextureFromFile(
 				pDevice->GetGraphicsQueue(),
 				"Data/Common/Textures/brdf_lut.png",
 				&mDefaultBRDFLUTTexture);
@@ -585,13 +585,13 @@ namespace scene {
 
 		// Default IBL irradiance sampler
 		{
-			::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = ::FILTER_LINEAR;
-			createInfo.minFilter = ::FILTER_LINEAR;
-			createInfo.mipmapMode = ::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = ::SAMPLER_ADDRESS_MODE_REPEAT;
-			createInfo.addressModeV = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			vkr::SamplerCreateInfo createInfo = {};
+			createInfo.magFilter = vkr::FILTER_LINEAR;
+			createInfo.minFilter = vkr::FILTER_LINEAR;
+			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
+			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
 			auto ppxres = pDevice->CreateSampler(createInfo, &mDefaultIBLIrradianceSampler);
 			if (Failed(ppxres)) {
@@ -601,13 +601,13 @@ namespace scene {
 
 		// Default IBL environment sampler
 		{
-			::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = ::FILTER_LINEAR;
-			createInfo.minFilter = ::FILTER_LINEAR;
-			createInfo.mipmapMode = ::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = ::SAMPLER_ADDRESS_MODE_REPEAT;
-			createInfo.addressModeV = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			vkr::SamplerCreateInfo createInfo = {};
+			createInfo.magFilter = vkr::FILTER_LINEAR;
+			createInfo.minFilter = vkr::FILTER_LINEAR;
+			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
+			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			createInfo.mipLodBias = 0.65f;
 			createInfo.minLod = 0.0f;
 			createInfo.maxLod = 1000.0f;
@@ -620,8 +620,8 @@ namespace scene {
 
 		// Default IBL texture
 		{
-			Bitmap bitmap;
-			auto        ppxres = Bitmap::Create(1, 1, Bitmap::FORMAT_RGBA_UINT8, &bitmap);
+			vkr::Bitmap bitmap;
+			auto        ppxres = vkr::Bitmap::Create(1, 1, vkr::Bitmap::FORMAT_RGBA_UINT8, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -629,7 +629,7 @@ namespace scene {
 			// Fill white
 			bitmap.Fill<uint8_t>(0xFF, 0xFF, 0xFF, 0xFF);
 
-			ppxres = grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultIBLTexture);
+			ppxres = vkr::grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultIBLTexture);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -638,7 +638,7 @@ namespace scene {
 		return SUCCESS;
 	}
 
-	Result MaterialPipelineArgs::InitializeDescriptorSet(RenderDevice* pDevice)
+	Result MaterialPipelineArgs::InitializeDescriptorSet(vkr::RenderDevice* pDevice)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -647,33 +647,33 @@ namespace scene {
 		// Descriptor bindings
 		//
 		// clang-format off
-		std::vector<::DescriptorBinding> bindings = {
-		::DescriptorBinding{FRAME_PARAMS_REGISTER,            ::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{CAMERA_PARAMS_REGISTER,           ::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{INSTANCE_PARAMS_REGISTER,         ::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{MATERIAL_PARAMS_REGISTER,         ::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{BRDF_LUT_SAMPLER_REGISTER,        ::DESCRIPTOR_TYPE_SAMPLER,              1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER,        ::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{IBL_IRRADIANCE_SAMPLER_REGISTER,  ::DESCRIPTOR_TYPE_SAMPLER,              1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{IBL_ENVIRONMENT_SAMPLER_REGISTER, ::DESCRIPTOR_TYPE_SAMPLER,              1, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{IBL_IRRADIANCE_MAP_REGISTER,      ::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{IBL_ENVIRONMENT_MAP_REGISTER,     ::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{MATERIAL_SAMPLERS_REGISTER,       ::DESCRIPTOR_TYPE_SAMPLER,              MAX_MATERIAL_SAMPLERS, ::SHADER_STAGE_ALL},
-		::DescriptorBinding{MATERIAL_TEXTURES_REGISTER,       ::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_MATERIAL_TEXTURES, ::SHADER_STAGE_ALL},
+		std::vector<vkr::DescriptorBinding> bindings = {
+		vkr::DescriptorBinding{FRAME_PARAMS_REGISTER,            vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{CAMERA_PARAMS_REGISTER,           vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{INSTANCE_PARAMS_REGISTER,         vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_PARAMS_REGISTER,         vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{BRDF_LUT_SAMPLER_REGISTER,        vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER,        vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_IRRADIANCE_SAMPLER_REGISTER,  vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_ENVIRONMENT_SAMPLER_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_IRRADIANCE_MAP_REGISTER,      vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_ENVIRONMENT_MAP_REGISTER,     vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_SAMPLERS_REGISTER,       vkr::DESCRIPTOR_TYPE_SAMPLER,              MAX_MATERIAL_SAMPLERS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_TEXTURES_REGISTER,       vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_MATERIAL_TEXTURES, vkr::SHADER_STAGE_ALL},
 		};
 		// clang-format on
 
 		// Create descriptor pool
 		{
-			::DescriptorPoolCreateInfo createInfo = {};
+			vkr::DescriptorPoolCreateInfo createInfo = {};
 			//
 			for (const auto& binding : bindings) {
 				// clang-format off
 				switch (binding.type) {
-				case ::DESCRIPTOR_TYPE_UNIFORM_BUFFER: createInfo.uniformBuffer += binding.arrayCount; break;
-				case ::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER: createInfo.structuredBuffer += binding.arrayCount; break;
-				case ::DESCRIPTOR_TYPE_SAMPLER: createInfo.sampler += binding.arrayCount; break;
-				case ::DESCRIPTOR_TYPE_SAMPLED_IMAGE: createInfo.sampledImage += binding.arrayCount; break;
+				case vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER: createInfo.uniformBuffer += binding.arrayCount; break;
+				case vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER: createInfo.structuredBuffer += binding.arrayCount; break;
+				case vkr::DESCRIPTOR_TYPE_SAMPLER: createInfo.sampler += binding.arrayCount; break;
+				case vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE: createInfo.sampledImage += binding.arrayCount; break;
 				default:
 					Warning("Found a descriptor binding with unsupported "
 						"type " + std::to_string(binding.type) + "; ignoring");
@@ -690,7 +690,7 @@ namespace scene {
 
 		// Create descriptor set layout
 		{
-			::DescriptorSetLayoutCreateInfo createInfo = {};
+			vkr::DescriptorSetLayoutCreateInfo createInfo = {};
 			createInfo.bindings = bindings;
 
 			auto ppxres = pDevice->CreateDescriptorSetLayout(createInfo, &mDescriptorSetLayout);
@@ -710,7 +710,7 @@ namespace scene {
 		return SUCCESS;
 	}
 
-	Result MaterialPipelineArgs::InitializeBuffers(RenderDevice* pDevice)
+	Result MaterialPipelineArgs::InitializeBuffers(vkr::RenderDevice* pDevice)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -731,12 +731,12 @@ namespace scene {
 
 			mTotalConstantParamsPaddedSize = mFrameParamsPaddedSize + mCameraParamsPaddedSize;
 
-			::BufferCreateInfo createInfo = {};
+			vkr::BufferCreateInfo createInfo = {};
 			createInfo.size = mTotalConstantParamsPaddedSize;
 			createInfo.usageFlags.bits.uniformBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -746,7 +746,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -760,13 +760,13 @@ namespace scene {
 		{
 			mTotalInstanceParamsPaddedSize = RoundUp<uint32_t>(MAX_DRAWABLE_INSTANCES * INSTANCE_PARAMS_STRUCT_SIZE, 16);
 
-			::BufferCreateInfo createInfo = {};
+			vkr::BufferCreateInfo createInfo = {};
 			createInfo.structuredElementStride = INSTANCE_PARAMS_STRUCT_SIZE;
 			createInfo.size = mTotalInstanceParamsPaddedSize;
 			createInfo.usageFlags.bits.roStructuredBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -776,7 +776,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -790,13 +790,13 @@ namespace scene {
 		{
 			mTotalMaterialParamsPaddedSize = RoundUp<uint32_t>(MAX_UNIQUE_MATERIALS * MATERIAL_PARAMS_STRUCT_SIZE, 16);
 
-			::BufferCreateInfo createInfo = {};
+			vkr::BufferCreateInfo createInfo = {};
 			createInfo.structuredElementStride = MATERIAL_PARAMS_STRUCT_SIZE;
 			createInfo.size = mTotalMaterialParamsPaddedSize;
 			createInfo.usageFlags.bits.roStructuredBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -806,7 +806,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = ::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -819,7 +819,7 @@ namespace scene {
 		return SUCCESS;
 	}
 
-	Result MaterialPipelineArgs::SetDescriptors(RenderDevice* pDevice)
+	Result MaterialPipelineArgs::SetDescriptors(vkr::RenderDevice* pDevice)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -832,13 +832,13 @@ namespace scene {
 		// MATERIAL_PARAMS_REGISTER
 		//
 		{
-			std::vector<::WriteDescriptor> writes;
+			std::vector<vkr::WriteDescriptor> writes;
 
 			// Frame
-			::WriteDescriptor write = {};
+			vkr::WriteDescriptor write = {};
 			write.binding = FRAME_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			write.bufferOffset = mFrameParamsOffset;
 			write.bufferRange = mFrameParamsPaddedSize;
 			write.pBuffer = mGpuConstantParamsBuffer;
@@ -848,7 +848,7 @@ namespace scene {
 			write = {};
 			write.binding = CAMERA_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			write.bufferOffset = mCameraParamsOffset;
 			write.bufferRange = mCameraParamsPaddedSize;
 			write.pBuffer = mGpuConstantParamsBuffer;
@@ -858,7 +858,7 @@ namespace scene {
 			write = {};
 			write.binding = INSTANCE_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
+			write.type = vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
 			write.bufferOffset = 0;
 			write.bufferRange = mTotalInstanceParamsPaddedSize;
 			write.structuredElementCount = MAX_DRAWABLE_INSTANCES;
@@ -869,7 +869,7 @@ namespace scene {
 			write = {};
 			write.binding = MATERIAL_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
+			write.type = vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
 			write.bufferOffset = 0;
 			write.bufferRange = mTotalMaterialParamsPaddedSize;
 			write.structuredElementCount = MAX_UNIQUE_MATERIALS;
@@ -887,13 +887,13 @@ namespace scene {
 		// BRDF_LUT_TEXTURE_REGISTER
 		//
 		{
-			std::vector<::WriteDescriptor> writes;
+			std::vector<vkr::WriteDescriptor> writes;
 
 			// BRDFLUTSampler
-			::WriteDescriptor write = {};
+			vkr::WriteDescriptor write = {};
 			write.binding = BRDF_LUT_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_SAMPLER;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			write.pSampler = mDefaultBRDFLUTSampler;
 			writes.push_back(write);
 
@@ -901,7 +901,7 @@ namespace scene {
 			write = {};
 			write.binding = BRDF_LUT_TEXTURE_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 			write.pImageView = mDefaultBRDFLUTTexture->GetSampledImageView();
 			writes.push_back(write);
 
@@ -918,13 +918,13 @@ namespace scene {
 		// IBL_ENVIRONMENT_MAP_REGISTER
 		//
 		{
-			std::vector<::WriteDescriptor> writes;
+			std::vector<vkr::WriteDescriptor> writes;
 
 			// IBLIrradianceSampler
-			::WriteDescriptor write = {};
+			vkr::WriteDescriptor write = {};
 			write.binding = IBL_IRRADIANCE_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_SAMPLER;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			write.pSampler = mDefaultIBLIrradianceSampler;
 			writes.push_back(write);
 
@@ -932,7 +932,7 @@ namespace scene {
 			write = {};
 			write.binding = IBL_ENVIRONMENT_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = ::DESCRIPTOR_TYPE_SAMPLER;
+			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 			write.pSampler = mDefaultIBLEnvironmentSampler;
 			writes.push_back(write);
 
@@ -941,7 +941,7 @@ namespace scene {
 				write = {};
 				write.binding = IBL_IRRADIANCE_MAP_REGISTER;
 				write.arrayIndex = i;
-				write.type = ::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				write.pImageView = mDefaultIBLTexture->GetSampledImageView();
 				writes.push_back(write);
 
@@ -949,7 +949,7 @@ namespace scene {
 				write = {};
 				write.binding = IBL_ENVIRONMENT_MAP_REGISTER;
 				write.arrayIndex = i;
-				write.type = ::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				write.pImageView = mDefaultIBLTexture->GetSampledImageView();
 				writes.push_back(write);
 			}
@@ -965,24 +965,24 @@ namespace scene {
 		// MATERIAL_TEXTURES_REGISTER
 		//
 		{
-			std::vector<::WriteDescriptor> writes;
+			std::vector<vkr::WriteDescriptor> writes;
 
 			// MaterialSamplers
 			for (uint32_t i = 0; i < MAX_MATERIAL_SAMPLERS; ++i) {
-				::WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = MATERIAL_SAMPLERS_REGISTER;
 				write.arrayIndex = i;
-				write.type = ::DESCRIPTOR_TYPE_SAMPLER;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
 				write.pSampler = mDefaultSampler;
 				writes.push_back(write);
 			}
 
 			// MaterialTextures
 			for (uint32_t i = 0; i < MAX_MATERIAL_TEXTURES; ++i) {
-				::WriteDescriptor write = {};
+				vkr::WriteDescriptor write = {};
 				write.binding = MATERIAL_TEXTURES_REGISTER;
 				write.arrayIndex = i;
-				write.type = ::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 				write.pImageView = mDefaultTexture->GetSampledImageView();
 				writes.push_back(write);
 			}
@@ -996,7 +996,7 @@ namespace scene {
 		return SUCCESS;
 	}
 
-	Result MaterialPipelineArgs::InitializeResource(RenderDevice* pDevice)
+	Result MaterialPipelineArgs::InitializeResource(vkr::RenderDevice* pDevice)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -1047,7 +1047,7 @@ namespace scene {
 		return SUCCESS;
 	}
 
-	Result MaterialPipelineArgs::Create(RenderDevice* pDevice, scene::MaterialPipelineArgs** ppTargetPipelineArgs)
+	Result MaterialPipelineArgs::Create(vkr::RenderDevice* pDevice, scene::MaterialPipelineArgs** ppTargetPipelineArgs)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -1106,8 +1106,8 @@ namespace scene {
 
 	void MaterialPipelineArgs::SetIBLTextures(
 		uint32_t                index,
-		::SampledImageView* pIrradiance,
-		::SampledImageView* pEnvironment)
+		vkr::SampledImageView* pIrradiance,
+		vkr::SampledImageView* pEnvironment)
 	{
 		ASSERT_NULL_ARG(pIrradiance);
 		ASSERT_NULL_ARG(pEnvironment);
@@ -1130,13 +1130,13 @@ namespace scene {
 		mDescriptorSet->UpdateSampledImage(MATERIAL_TEXTURES_REGISTER, index, pImage->GetImageView());
 	}
 
-	void MaterialPipelineArgs::CopyBuffers(::CommandBuffer* pCmd)
+	void MaterialPipelineArgs::CopyBuffers(vkr::CommandBuffer* pCmd)
 	{
 		ASSERT_NULL_ARG(pCmd);
 
 		// Constant params buffer
 		{
-			::BufferToBufferCopyInfo copyInfo = {};
+			vkr::BufferToBufferCopyInfo copyInfo = {};
 			copyInfo.srcBuffer.offset = 0;
 			copyInfo.dstBuffer.offset = 0;
 			copyInfo.size = mTotalConstantParamsPaddedSize;
@@ -1149,7 +1149,7 @@ namespace scene {
 
 		// Instance params buffer
 		{
-			::BufferToBufferCopyInfo copyInfo = {};
+			vkr::BufferToBufferCopyInfo copyInfo = {};
 			copyInfo.srcBuffer.offset = 0;
 			copyInfo.dstBuffer.offset = 0;
 			copyInfo.size = mTotalInstanceParamsPaddedSize;
@@ -1162,7 +1162,7 @@ namespace scene {
 
 		// Material params buffer
 		{
-			::BufferToBufferCopyInfo copyInfo = {};
+			vkr::BufferToBufferCopyInfo copyInfo = {};
 			copyInfo.srcBuffer.offset = 0;
 			copyInfo.dstBuffer.offset = 0;
 			copyInfo.size = mTotalMaterialParamsPaddedSize;
@@ -1192,12 +1192,12 @@ namespace scene {
 
 	bool ResourceManager::Find(uint64_t objectId, scene::SamplerRef& outObject) const
 	{
-		return FindObject<::Sampler>(objectId, mSamplers, outObject);
+		return FindObject<vkr::Sampler>(objectId, mSamplers, outObject);
 	}
 
 	bool ResourceManager::Find(uint64_t objectId, scene::ImageRef& outObject) const
 	{
-		return FindObject<::Image>(objectId, mImages, outObject);
+		return FindObject<vkr::Image>(objectId, mImages, outObject);
 	}
 
 	bool ResourceManager::Find(uint64_t objectId, scene::TextureRef& outObject) const
@@ -1222,12 +1222,12 @@ namespace scene {
 
 	Result ResourceManager::Cache(uint64_t objectId, const scene::SamplerRef& object)
 	{
-		return CacheObject<::Image>(objectId, object, mSamplers);
+		return CacheObject<vkr::Image>(objectId, object, mSamplers);
 	}
 
 	Result ResourceManager::Cache(uint64_t objectId, const scene::ImageRef& object)
 	{
-		return CacheObject<::Image>(objectId, object, mImages);
+		return CacheObject<vkr::Image>(objectId, object, mImages);
 	}
 
 	Result ResourceManager::Cache(uint64_t objectId, const scene::TextureRef& object)
@@ -1290,21 +1290,21 @@ namespace scene {
 
 	MeshData::MeshData(
 		const scene::VertexAttributeFlags& availableVertexAttributes,
-		::Buffer* pGpuBuffer)
+		vkr::Buffer* pGpuBuffer)
 		: mAvailableVertexAttributes(availableVertexAttributes),
 		mGpuBuffer(pGpuBuffer)
 	{
 		// Position
-		auto positionBinding = ::VertexBinding(0, ::VERTEX_INPUT_RATE_VERTEX);
+		auto positionBinding = vkr::VertexBinding(0, vkr::VERTEX_INPUT_RATE_VERTEX);
 		{
-			::VertexAttribute attr = {};
+			vkr::VertexAttribute attr = {};
 			attr.semanticName = "POSITION";
 			attr.location = scene::kVertexPositionLocation;
 			attr.format = scene::kVertexPositionFormat;
 			attr.binding = scene::kVertexPositionBinding;
 			attr.offset = APPEND_OFFSET_ALIGNED;
-			attr.inputRate = ::VERTEX_INPUT_RATE_VERTEX;
-			attr.semantic = ::VERTEX_SEMANTIC_POSITION;
+			attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+			attr.semantic = vkr::VERTEX_SEMANTIC_POSITION;
 			positionBinding.AppendAttribute(attr);
 		}
 		mVertexBindings.push_back(positionBinding);
@@ -1314,57 +1314,57 @@ namespace scene {
 			return;
 		}
 
-		auto attributeBinding = ::VertexBinding(kVertexAttributeBinding, ::VERTEX_INPUT_RATE_VERTEX);
+		auto attributeBinding = vkr::VertexBinding(kVertexAttributeBinding, vkr::VERTEX_INPUT_RATE_VERTEX);
 		{
 			// TexCoord
 			if (availableVertexAttributes.bits.texCoords) {
-				::VertexAttribute attr = {};
+				vkr::VertexAttribute attr = {};
 				attr.semanticName = "TEXCOORD";
 				attr.location = scene::kVertexAttributeTexCoordLocation;
 				attr.format = scene::kVertexAttributeTexCoordFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = ::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = ::VERTEX_SEMANTIC_TEXCOORD;
+				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+				attr.semantic = vkr::VERTEX_SEMANTIC_TEXCOORD;
 				attributeBinding.AppendAttribute(attr);
 			}
 
 			// Normal
 			if (availableVertexAttributes.bits.normals) {
-				::VertexAttribute attr = {};
+				vkr::VertexAttribute attr = {};
 				attr.semanticName = "NORMAL";
 				attr.location = scene::kVertexAttributeNormalLocation;
 				attr.format = scene::kVertexAttributeNormalFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = ::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = ::VERTEX_SEMANTIC_NORMAL;
+				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+				attr.semantic = vkr::VERTEX_SEMANTIC_NORMAL;
 				attributeBinding.AppendAttribute(attr);
 			}
 
 			// Tangent
 			if (availableVertexAttributes.bits.tangents) {
-				::VertexAttribute attr = {};
+				vkr::VertexAttribute attr = {};
 				attr.semanticName = "TANGENT";
 				attr.location = scene::kVertexAttributeTangentLocation;
 				attr.format = scene::kVertexAttributeTagentFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = ::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = ::VERTEX_SEMANTIC_TANGENT;
+				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+				attr.semantic = vkr::VERTEX_SEMANTIC_TANGENT;
 				attributeBinding.AppendAttribute(attr);
 			}
 
 			// Color
 			if (availableVertexAttributes.bits.colors) {
-				::VertexAttribute attr = {};
+				vkr::VertexAttribute attr = {};
 				attr.semanticName = "COLOR";
 				attr.location = scene::kVertexAttributeColorLocation;
 				attr.format = scene::kVertexAttributeColorFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = ::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = ::VERTEX_SEMANTIC_COLOR;
+				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+				attr.semantic = vkr::VERTEX_SEMANTIC_COLOR;
 				attributeBinding.AppendAttribute(attr);
 			}
 		}
@@ -1381,9 +1381,9 @@ namespace scene {
 
 	PrimitiveBatch::PrimitiveBatch(
 		const scene::MaterialRef& material,
-		const ::IndexBufferView& indexBufferView,
-		const ::VertexBufferView& positionBufferView,
-		const ::VertexBufferView& attributeBufferView,
+		const vkr::IndexBufferView& indexBufferView,
+		const vkr::VertexBufferView& positionBufferView,
+		const vkr::VertexBufferView& attributeBufferView,
 		uint32_t                      indexCount,
 		uint32_t                      vertexCount,
 		const AABB& boundingBox)
@@ -1430,9 +1430,9 @@ namespace scene {
 		return mMeshData ? mMeshData->GetAvailableVertexAttributes() : scene::VertexAttributeFlags::None();
 	}
 
-	std::vector<::VertexBinding> Mesh::GetAvailableVertexBindings() const
+	std::vector<vkr::VertexBinding> Mesh::GetAvailableVertexBindings() const
 	{
-		std::vector<::VertexBinding> bindings;
+		std::vector<vkr::VertexBinding> bindings;
 		if (mMeshData) {
 			bindings = mMeshData->GetAvailableVertexBindings();
 		}
@@ -1718,10 +1718,10 @@ namespace scene {
 		return IsNull(pGltfObject->name) ? "" : std::string(pGltfObject->name);
 	}
 
-	static ::Format GetFormat(const cgltf_accessor* pGltfAccessor)
+	static vkr::Format GetFormat(const cgltf_accessor* pGltfAccessor)
 	{
 		if (IsNull(pGltfAccessor)) {
-			return ::FORMAT_UNDEFINED;
+			return vkr::FORMAT_UNDEFINED;
 		}
 
 		// clang-format off
@@ -1730,55 +1730,55 @@ namespace scene {
 
 		case cgltf_type_scalar: {
 			switch (pGltfAccessor->component_type) {
-			default: return ::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return ::FORMAT_R8_SINT;
-			case cgltf_component_type_r_8u: return ::FORMAT_R8_UINT;
-			case cgltf_component_type_r_16: return ::FORMAT_R16_SINT;
-			case cgltf_component_type_r_16u: return ::FORMAT_R16_UINT;
-			case cgltf_component_type_r_32u: return ::FORMAT_R32_UINT;
-			case cgltf_component_type_r_32f: return ::FORMAT_R32_FLOAT;
+			default: return vkr::FORMAT_UNDEFINED;
+			case cgltf_component_type_r_8: return vkr::FORMAT_R8_SINT;
+			case cgltf_component_type_r_8u: return vkr::FORMAT_R8_UINT;
+			case cgltf_component_type_r_16: return vkr::FORMAT_R16_SINT;
+			case cgltf_component_type_r_16u: return vkr::FORMAT_R16_UINT;
+			case cgltf_component_type_r_32u: return vkr::FORMAT_R32_UINT;
+			case cgltf_component_type_r_32f: return vkr::FORMAT_R32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec2: {
 			switch (pGltfAccessor->component_type) {
-			default: return ::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return ::FORMAT_R8G8_SINT;
-			case cgltf_component_type_r_8u: return ::FORMAT_R8G8_UINT;
-			case cgltf_component_type_r_16: return ::FORMAT_R16G16_SINT;
-			case cgltf_component_type_r_16u: return ::FORMAT_R16G16_UINT;
-			case cgltf_component_type_r_32u: return ::FORMAT_R32G32_UINT;
-			case cgltf_component_type_r_32f: return ::FORMAT_R32G32_FLOAT;
+			default: return vkr::FORMAT_UNDEFINED;
+			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8_SINT;
+			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8_UINT;
+			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16_SINT;
+			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16_UINT;
+			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32_UINT;
+			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec3: {
 			switch (pGltfAccessor->component_type) {
-			default: return ::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return ::FORMAT_R8G8B8_SINT;
-			case cgltf_component_type_r_8u: return ::FORMAT_R8G8B8_UINT;
-			case cgltf_component_type_r_16: return ::FORMAT_R16G16B16_SINT;
-			case cgltf_component_type_r_16u: return ::FORMAT_R16G16B16_UINT;
-			case cgltf_component_type_r_32u: return ::FORMAT_R32G32B32_UINT;
-			case cgltf_component_type_r_32f: return ::FORMAT_R32G32B32_FLOAT;
+			default: return vkr::FORMAT_UNDEFINED;
+			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8B8_SINT;
+			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8B8_UINT;
+			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16B16_SINT;
+			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16B16_UINT;
+			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32B32_UINT;
+			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32B32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec4: {
 			switch (pGltfAccessor->component_type) {
-			default: return ::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return ::FORMAT_R8G8B8A8_SINT;
-			case cgltf_component_type_r_8u: return ::FORMAT_R8G8B8A8_UINT;
-			case cgltf_component_type_r_16: return ::FORMAT_R16G16B16A16_SINT;
-			case cgltf_component_type_r_16u: return ::FORMAT_R16G16B16A16_UINT;
-			case cgltf_component_type_r_32u: return ::FORMAT_R32G32B32A32_UINT;
-			case cgltf_component_type_r_32f: return ::FORMAT_R32G32B32A32_FLOAT;
+			default: return vkr::FORMAT_UNDEFINED;
+			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8B8A8_SINT;
+			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8B8A8_UINT;
+			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16B16A16_SINT;
+			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16B16A16_UINT;
+			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32B32A32_UINT;
+			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32B32A32_FLOAT;
 			}
 		} break;
 		}
 		// clang-format on
 
-		return ::FORMAT_UNDEFINED;
+		return vkr::FORMAT_UNDEFINED;
 	}
 
 	static scene::NodeType GetNodeType(const cgltf_node* pGltfNode)
@@ -1803,14 +1803,14 @@ namespace scene {
 		return scene::NODE_TYPE_TRANSFORM;
 	}
 
-	static ::SamplerAddressMode ToSamplerAddressMode(cgltf_int mode)
+	static vkr::SamplerAddressMode ToSamplerAddressMode(cgltf_int mode)
 	{
 		switch (mode) {
 		default: break;
-		case GLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return ::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		case GLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return ::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case GLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case GLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return vkr::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 		}
-		return ::SAMPLER_ADDRESS_MODE_REPEAT;
+		return vkr::SAMPLER_ADDRESS_MODE_REPEAT;
 	}
 
 	template <typename GltfObjectT>
@@ -1833,38 +1833,38 @@ namespace scene {
 	}
 
 	// Returns the widest index type used by a mesh
-	::IndexType GetIndexType(
+	vkr::IndexType GetIndexType(
 		const cgltf_mesh* pGltfMesh)
 	{
 		if (IsNull(pGltfMesh)) {
-			return ::INDEX_TYPE_UNDEFINED;
+			return vkr::INDEX_TYPE_UNDEFINED;
 		}
 
 		uint32_t finalBitCount = 0;
 		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx) {
 			const cgltf_primitive* pGltfPrimitive = &pGltfMesh->primitives[primIdx];
-			// Convert to ::Format
+			// Convert to vkr::Format
 			auto format = GetFormat(pGltfPrimitive->indices);
 
 			uint32_t bitCount = 0;
 			switch (format) {
 				// Bail if we don't recognize the format
-			default: return ::INDEX_TYPE_UNDEFINED;
-			case ::FORMAT_R16_UINT: bitCount = 16; break;
-			case ::FORMAT_R32_UINT: bitCount = 32; break;
+			default: return vkr::INDEX_TYPE_UNDEFINED;
+			case vkr::FORMAT_R16_UINT: bitCount = 16; break;
+			case vkr::FORMAT_R32_UINT: bitCount = 32; break;
 			}
 
 			finalBitCount = std::max(bitCount, finalBitCount);
 		}
 
 		if (finalBitCount == 32) {
-			return ::INDEX_TYPE_UINT32;
+			return vkr::INDEX_TYPE_UINT32;
 		}
 		else if (finalBitCount == 16) {
-			return ::INDEX_TYPE_UINT16;
+			return vkr::INDEX_TYPE_UINT16;
 		}
 
-		return ::INDEX_TYPE_UNDEFINED;
+		return vkr::INDEX_TYPE_UNDEFINED;
 	}
 
 	// Calcualte a unique hash based a meshes primitive accessors
@@ -2211,24 +2211,24 @@ namespace scene {
 		Print("Loading GLTF sampler[" + std::to_string(gltfObjectIndex) + "]: " + gltfObjectName);
 
 		// Load sampler
-		::Sampler* pGrfxSampler = nullptr;
+		vkr::Sampler* pGrfxSampler = nullptr;
 		//
 		{
-			::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? ::FILTER_LINEAR : ::FILTER_NEAREST;
-			createInfo.minFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? ::FILTER_LINEAR : ::FILTER_NEAREST;
-			createInfo.mipmapMode = ::SAMPLER_MIPMAP_MODE_LINEAR; // @TODO: add option to control this
+			vkr::SamplerCreateInfo createInfo = {};
+			createInfo.magFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::FILTER_LINEAR : vkr::FILTER_NEAREST;
+			createInfo.minFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::FILTER_LINEAR : vkr::FILTER_NEAREST;
+			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR; // @TODO: add option to control this
 			createInfo.addressModeU = ToSamplerAddressMode(pGltfSampler->wrap_s);
 			createInfo.addressModeV = ToSamplerAddressMode(pGltfSampler->wrap_t);
-			createInfo.addressModeW = ::SAMPLER_ADDRESS_MODE_REPEAT;
+			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
 			createInfo.mipLodBias = 0.0f;
 			createInfo.anisotropyEnable = false;
 			createInfo.maxAnisotropy = 0.0f;
 			createInfo.compareEnable = false;
-			createInfo.compareOp = ::COMPARE_OP_NEVER;
+			createInfo.compareOp = vkr::COMPARE_OP_NEVER;
 			createInfo.minLod = 0.0f;
 			createInfo.maxLod = GLTF_LOD_CLAMP_NONE;
-			createInfo.borderColor = ::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+			createInfo.borderColor = vkr::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 
 			auto ppxres = loadParams.pDevice->CreateSampler(createInfo, &pGrfxSampler);
 			if (Failed(ppxres)) {
@@ -2316,7 +2316,7 @@ namespace scene {
 		Print("Loading GLTF image[" + std::to_string(gltfObjectIndex) + "]: " + gltfObjectName);
 
 		// Load image
-		::Image* pGrfxImage = nullptr;
+		vkr::Image* pGrfxImage = nullptr;
 		//
 		if (!IsNull(pGltfImage->uri)) {
 			std::filesystem::path filePath = mGltfTextureDir / ToStringSafe(pGltfImage->uri);
@@ -2325,7 +2325,7 @@ namespace scene {
 				return ERROR_PATH_DOES_NOT_EXIST;
 			}
 
-			auto ppxres = grfx_util::CreateImageFromFile(
+			auto ppxres = vkr::grfx_util::CreateImageFromFile(
 				loadParams.pDevice->GetGraphicsQueue(),
 				filePath,
 				&pGrfxImage);
@@ -2340,13 +2340,13 @@ namespace scene {
 				return ERROR_BAD_DATA_SOURCE;
 			}
 
-			Bitmap bitmap;
-			auto        ppxres = Bitmap::LoadFromMemory(dataSize, pData, &bitmap);
+			vkr::Bitmap bitmap;
+			auto        ppxres = vkr::Bitmap::LoadFromMemory(dataSize, pData, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
 
-			ppxres = grfx_util::CreateImageFromBitmap(
+			ppxres = vkr::grfx_util::CreateImageFromBitmap(
 				loadParams.pDevice->GetGraphicsQueue(),
 				&bitmap,
 				&pGrfxImage);
@@ -2359,14 +2359,14 @@ namespace scene {
 		}
 
 		// Create image view
-		::SampledImageView* pGrfxImageView = nullptr;
+		vkr::SampledImageView* pGrfxImageView = nullptr;
 		//
 		{
-			::SampledImageViewCreateInfo createInfo = {};
+			vkr::SampledImageViewCreateInfo createInfo = {};
 			createInfo.pImage = pGrfxImage;
-			createInfo.imageViewType = ::IMAGE_VIEW_TYPE_2D;
+			createInfo.imageViewType = vkr::IMAGE_VIEW_TYPE_2D;
 			createInfo.format = pGrfxImage->GetFormat();
-			createInfo.sampleCount = ::SAMPLE_COUNT_1;
+			createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 			createInfo.mipLevel = 0;
 			createInfo.mipLevelCount = pGrfxImage->GetMipLevelCount();
 			createInfo.arrayLayer = 0;
@@ -2874,17 +2874,17 @@ namespace scene {
 
 		// Target vertex formats
 		auto targetPositionFormat = scene::kVertexPositionFormat;
-		auto targetTexCoordFormat = loadParams.requiredVertexAttributes.bits.texCoords ? scene::kVertexAttributeTexCoordFormat : ::FORMAT_UNDEFINED;
-		auto targetNormalFormat = loadParams.requiredVertexAttributes.bits.normals ? scene::kVertexAttributeNormalFormat : ::FORMAT_UNDEFINED;
-		auto targetTangentFormat = loadParams.requiredVertexAttributes.bits.tangents ? scene::kVertexAttributeTagentFormat : ::FORMAT_UNDEFINED;
-		auto targetColorFormat = loadParams.requiredVertexAttributes.bits.colors ? scene::kVertexAttributeColorFormat : ::FORMAT_UNDEFINED;
+		auto targetTexCoordFormat = loadParams.requiredVertexAttributes.bits.texCoords ? scene::kVertexAttributeTexCoordFormat : vkr::FORMAT_UNDEFINED;
+		auto targetNormalFormat = loadParams.requiredVertexAttributes.bits.normals ? scene::kVertexAttributeNormalFormat : vkr::FORMAT_UNDEFINED;
+		auto targetTangentFormat = loadParams.requiredVertexAttributes.bits.tangents ? scene::kVertexAttributeTagentFormat : vkr::FORMAT_UNDEFINED;
+		auto targetColorFormat = loadParams.requiredVertexAttributes.bits.colors ? scene::kVertexAttributeColorFormat : vkr::FORMAT_UNDEFINED;
 
-		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != ::FORMAT_UNDEFINED) ? ::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0;
-		const uint32_t targetNormalElementSize = (targetNormalFormat != ::FORMAT_UNDEFINED) ? ::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0;
-		const uint32_t targetTangentElementSize = (targetTangentFormat != ::FORMAT_UNDEFINED) ? ::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0;
-		const uint32_t targetColorElementSize = (targetColorFormat != ::FORMAT_UNDEFINED) ? ::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0;
+		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0;
+		const uint32_t targetNormalElementSize = (targetNormalFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0;
+		const uint32_t targetTangentElementSize = (targetTangentFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0;
+		const uint32_t targetColorElementSize = (targetColorFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0;
 
-		const uint32_t targetPositionElementSize = ::GetFormatDescription(targetPositionFormat)->bytesPerTexel;
+		const uint32_t targetPositionElementSize = vkr::GetFormatDescription(targetPositionFormat)->bytesPerTexel;
 		const uint32_t targetAttributesElementSize = targetTexCoordElementSize + targetNormalElementSize + targetTangentElementSize + targetColorElementSize;
 
 		struct BatchInfo
@@ -2896,7 +2896,7 @@ namespace scene {
 			uint32_t           positionDataSize = 0;
 			uint32_t           attributeDataOffset = 0; // Must have 4 byte alignment
 			uint32_t           attributeDataSize = 0;
-			::Format       indexFormat = ::FORMAT_UNDEFINED;
+			vkr::Format       indexFormat = vkr::FORMAT_UNDEFINED;
 			uint32_t           indexCount = 0;
 			uint32_t           vertexCount = 0;
 			AABB          boundingBox = {};
@@ -2928,14 +2928,14 @@ namespace scene {
 			// However, if it's not UNDEFINED, UINT16, or UINT32 then it's a format we can't handle.
 			//
 			auto indexFormat = GetFormat(pGltfPrimitive->indices);
-			if ((indexFormat != ::FORMAT_UNDEFINED) && (indexFormat != ::FORMAT_R16_UINT) && (indexFormat != ::FORMAT_R32_UINT)) {
+			if ((indexFormat != vkr::FORMAT_UNDEFINED) && (indexFormat != vkr::FORMAT_R16_UINT) && (indexFormat != vkr::FORMAT_R32_UINT)) {
 				ASSERT_MSG(false, "GLTF mesh primitive has unrecognized index format");
 				return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_TYPE;
 			}
 
 			// Index data size
 			const uint32_t indexCount = !IsNull(pGltfPrimitive->indices) ? static_cast<uint32_t>(pGltfPrimitive->indices->count) : 0;
-			const uint32_t indexElementSize = ::GetFormatDescription(indexFormat)->bytesPerTexel;
+			const uint32_t indexElementSize = vkr::GetFormatDescription(indexFormat)->bytesPerTexel;
 			const uint32_t indexDataSize = indexCount * indexElementSize;
 
 			// Get position accessor
@@ -3003,18 +3003,18 @@ namespace scene {
 		}
 
 		// Create GPU buffer and copy geometry data to it
-		::BufferPtr targetGpuBuffer = outMeshData ? outMeshData->GetGpuBuffer() : nullptr;
+		vkr::BufferPtr targetGpuBuffer = outMeshData ? outMeshData->GetGpuBuffer() : nullptr;
 		//
 		if (!targetGpuBuffer) {
-			::BufferCreateInfo bufferCreateInfo = {};
+			vkr::BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = totalDataSize;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
-			bufferCreateInfo.memoryUsage = ::MEMORY_USAGE_CPU_TO_GPU;
-			bufferCreateInfo.initialState = ::RESOURCE_STATE_COPY_SRC;
+			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			bufferCreateInfo.initialState = vkr::RESOURCE_STATE_COPY_SRC;
 
 			// Create staging buffer
 			//
-			::BufferPtr stagingBuffer;
+			vkr::BufferPtr stagingBuffer;
 			auto            ppxres = loadParams.pDevice->CreateBuffer(bufferCreateInfo, &stagingBuffer);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "staging buffer creation failed");
@@ -3022,15 +3022,15 @@ namespace scene {
 			}
 
 			// Scoped destory buffers if there's an early exit
-			::ScopeDestroyer SCOPED_DESTROYER = ::ScopeDestroyer(loadParams.pDevice);
+			vkr::ScopeDestroyer SCOPED_DESTROYER = vkr::ScopeDestroyer(loadParams.pDevice);
 			SCOPED_DESTROYER.AddObject(stagingBuffer);
 
 			// Create GPU buffer
 			bufferCreateInfo.usageFlags.bits.indexBuffer = true;
 			bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
 			bufferCreateInfo.usageFlags.bits.transferDst = true;
-			bufferCreateInfo.memoryUsage = ::MEMORY_USAGE_GPU_ONLY;
-			bufferCreateInfo.initialState = ::RESOURCE_STATE_GENERAL;
+			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
 			//
 			ppxres = loadParams.pDevice->CreateBuffer(bufferCreateInfo, &targetGpuBuffer);
 			if (Failed(ppxres)) {
@@ -3058,28 +3058,26 @@ namespace scene {
 				//
 				//
 				bool genTopologyIndices = false;
-				if (batch.indexFormat == ::FORMAT_UNDEFINED) {
+				if (batch.indexFormat == vkr::FORMAT_UNDEFINED) {
 					genTopologyIndices = true;
-					batch.indexFormat = (batch.vertexCount < 65536) ? ::FORMAT_R16_UINT : ::FORMAT_R32_UINT;
+					batch.indexFormat = (batch.vertexCount < 65536) ? vkr::FORMAT_R16_UINT : vkr::FORMAT_R32_UINT;
 				}
 
 				// Create genTopologyIndices so we can repack gemetry data into position planar + packed vertex attributes.
-				Geometry   targetGeometry = {};
+				vkr::Geometry   targetGeometry = {};
 				const bool hasAttributes = (loadParams.requiredVertexAttributes.mask != 0);
 				//
 				{
-					auto createInfo = hasAttributes ? GeometryCreateInfo::PositionPlanarU16() : GeometryCreateInfo::PlanarU16();
-					if (batch.indexFormat == ::FORMAT_R32_UINT) {
-						createInfo = hasAttributes ? GeometryCreateInfo::PositionPlanarU32() : GeometryCreateInfo::PlanarU32();
+					auto createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU16() : vkr::GeometryCreateInfo::PlanarU16();
+					if (batch.indexFormat == vkr::FORMAT_R32_UINT) {
+						createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU32() : vkr::GeometryCreateInfo::PlanarU32();
 					}
-					// clang-format off
 					if (loadParams.requiredVertexAttributes.bits.texCoords) createInfo.AddTexCoord(targetTexCoordFormat);
 					if (loadParams.requiredVertexAttributes.bits.normals) createInfo.AddNormal(targetNormalFormat);
 					if (loadParams.requiredVertexAttributes.bits.tangents) createInfo.AddTangent(targetTangentFormat);
 					if (loadParams.requiredVertexAttributes.bits.colors) createInfo.AddColor(targetColorFormat);
-					// clang-format on
 
-					auto ppxres = Geometry::Create(createInfo, &targetGeometry);
+					auto ppxres = vkr::Geometry::Create(createInfo, &targetGeometry);
 					if (Failed(ppxres)) {
 						return ppxres;
 					}
@@ -3090,7 +3088,6 @@ namespace scene {
 					// Process indices
 					//
 					// REMINDER: It's possible for a primitive to not have index data
-					//
 					if (!IsNull(pGltfPrimitive->indices)) {
 						// Get start of index data
 						auto pGltfAccessor = pGltfPrimitive->indices;
@@ -3098,14 +3095,14 @@ namespace scene {
 						ASSERT_MSG(!IsNull(pGltfIndices), "GLTF: indices data start is NULL");
 
 						// UINT32
-						if (batch.indexFormat == ::FORMAT_R32_UINT) {
+						if (batch.indexFormat == vkr::FORMAT_R32_UINT) {
 							const uint32_t* pGltfIndex = static_cast<const uint32_t*>(pGltfIndices);
 							for (cgltf_size i = 0; i < pGltfAccessor->count; ++i, ++pGltfIndex) {
 								targetGeometry.AppendIndex(*pGltfIndex);
 							}
 						}
 						// UINT16
-						else if (batch.indexFormat == ::FORMAT_R16_UINT) {
+						else if (batch.indexFormat == vkr::FORMAT_R16_UINT) {
 							const uint16_t* pGltfIndex = static_cast<const uint16_t*>(pGltfIndices);
 							for (cgltf_size i = 0; i < pGltfAccessor->count; ++i, ++pGltfIndex) {
 								targetGeometry.AppendIndex(*pGltfIndex);
@@ -3175,7 +3172,7 @@ namespace scene {
 
 					// Process vertex data
 					for (cgltf_size i = 0; i < gltflAccessors.pPositions->count; ++i) {
-						TriMeshVertexData vertexData = {};
+						vkr::TriMeshVertexData vertexData = {};
 
 						// Position
 						vertexData.position = *pGltflPositions;
@@ -3263,7 +3260,7 @@ namespace scene {
 			}
 
 			// Copy staging buffer to GPU buffer
-			::BufferToBufferCopyInfo copyInfo = {};
+			vkr::BufferToBufferCopyInfo copyInfo = {};
 			copyInfo.srcBuffer.offset = 0;
 			copyInfo.dstBuffer.offset = 0;
 			copyInfo.size = stagingBuffer->GetSize();
@@ -3272,8 +3269,8 @@ namespace scene {
 				&copyInfo,
 				stagingBuffer,
 				targetGpuBuffer,
-				::RESOURCE_STATE_GENERAL,
-				::RESOURCE_STATE_GENERAL);
+				vkr::RESOURCE_STATE_GENERAL,
+				vkr::RESOURCE_STATE_GENERAL);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "staging buffer to GPU buffer copy failed");
 				return ppxres;
@@ -3290,11 +3287,11 @@ namespace scene {
 		for (uint32_t batchIdx = 0; batchIdx < CountU32(batchInfos); ++batchIdx) {
 			const auto& batch = batchInfos[batchIdx];
 
-			const ::IndexType indexType = (batch.indexFormat == ::FORMAT_R32_UINT) ? ::INDEX_TYPE_UINT32 : ::INDEX_TYPE_UINT16;
-			::IndexBufferView indexBufferView = ::IndexBufferView(targetGpuBuffer, indexType, batch.indexDataOffset, batch.indexDataSize);
+			const vkr::IndexType indexType = (batch.indexFormat == vkr::FORMAT_R32_UINT) ? vkr::INDEX_TYPE_UINT32 : vkr::INDEX_TYPE_UINT16;
+			vkr::IndexBufferView indexBufferView = vkr::IndexBufferView(targetGpuBuffer, indexType, batch.indexDataOffset, batch.indexDataSize);
 
-			::VertexBufferView positionBufferView = ::VertexBufferView(targetGpuBuffer, targetPositionElementSize, batch.positionDataOffset, batch.positionDataSize);
-			::VertexBufferView attributeBufferView = ::VertexBufferView((batch.attributeDataSize != 0) ? targetGpuBuffer : nullptr, targetAttributesElementSize, batch.attributeDataOffset, batch.attributeDataSize);
+			vkr::VertexBufferView positionBufferView = vkr::VertexBufferView(targetGpuBuffer, targetPositionElementSize, batch.positionDataOffset, batch.positionDataSize);
+			vkr::VertexBufferView attributeBufferView = vkr::VertexBufferView((batch.attributeDataSize != 0) ? targetGpuBuffer : nullptr, targetAttributesElementSize, batch.attributeDataOffset, batch.attributeDataSize);
 
 			scene::PrimitiveBatch targetBatch = scene::PrimitiveBatch(
 				batch.material,
@@ -4024,7 +4021,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadSampler(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t         samplerIndex,
 		scene::Sampler** ppTargetSampler)
 	{
@@ -4060,7 +4057,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadSampler(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& samplerName,
 		scene::Sampler** ppTargetSampler)
 	{
@@ -4080,7 +4077,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadImage(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t       imageIndex,
 		scene::Image** ppTargetImage)
 	{
@@ -4116,7 +4113,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadImage(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& imageName,
 		scene::Image** ppTargetImage)
 	{
@@ -4136,7 +4133,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadTexture(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t         textureIndex,
 		scene::Texture** ppTargetTexture)
 	{
@@ -4172,7 +4169,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadTexture(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& textureName,
 		scene::Texture** ppTargetTexture)
 	{
@@ -4192,7 +4189,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadMaterial(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t                  materialIndex,
 		scene::Material** ppTargetMaterial,
 		const scene::LoadOptions& loadOptions)
@@ -4229,7 +4226,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadMaterial(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& materialName,
 		scene::Material** ppTargetMaterial,
 		const scene::LoadOptions& loadOptions)
@@ -4251,7 +4248,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadMesh(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t                  meshIndex,
 		scene::Mesh** ppTargetMesh,
 		const scene::LoadOptions& loadOptions)
@@ -4295,7 +4292,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadMesh(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& meshName,
 		scene::Mesh** ppTargetMesh,
 		const scene::LoadOptions& loadOptions)
@@ -4317,7 +4314,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadNode(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t                  nodeIndex,
 		scene::Node** ppTargetNode,
 		const scene::LoadOptions& loadOptions)
@@ -4361,7 +4358,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadNode(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& nodeName,
 		scene::Node** ppTargetNode,
 		const scene::LoadOptions& loadOptions)
@@ -4428,7 +4425,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadScene(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		uint32_t                  sceneIndex,
 		scene::Scene** ppTargetScene,
 		const scene::LoadOptions& loadOptions)
@@ -4506,7 +4503,7 @@ namespace scene {
 	}
 
 	Result GltfLoader::LoadScene(
-		RenderDevice* pDevice,
+		vkr::RenderDevice* pDevice,
 		const std::string& sceneName,
 		scene::Scene** ppTargetScene,
 		const scene::LoadOptions& loadOptions)

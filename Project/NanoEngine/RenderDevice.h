@@ -3,6 +3,9 @@
 #include "RenderResources.h"
 
 class EngineApplication;
+
+namespace vkr {
+
 class RenderSystem;
 class DeviceQueue;
 
@@ -245,3 +248,5 @@ private:
 };
 
 #pragma endregion
+
+} // namespace vkr

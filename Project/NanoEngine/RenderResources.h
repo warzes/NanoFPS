@@ -2,6 +2,8 @@
 
 #include "RenderCore.h"
 
+namespace vkr {
+
 #pragma region VulkanFence
 
 struct FenceCreateInfo final
@@ -755,9 +757,9 @@ namespace internal
 		AttachmentStoreOp stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
 
 		RenderPassCreateInfo() {}
-		RenderPassCreateInfo(const ::RenderPassCreateInfo& obj);
-		RenderPassCreateInfo(const ::RenderPassCreateInfo2& obj);
-		RenderPassCreateInfo(const ::RenderPassCreateInfo3& obj);
+		RenderPassCreateInfo(const vkr::RenderPassCreateInfo& obj);
+		RenderPassCreateInfo(const vkr::RenderPassCreateInfo2& obj);
+		RenderPassCreateInfo(const vkr::RenderPassCreateInfo3& obj);
 	};
 
 }
@@ -942,9 +944,9 @@ namespace internal
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		DrawPassCreateInfo() {}
-		DrawPassCreateInfo(const ::DrawPassCreateInfo& obj);
-		DrawPassCreateInfo(const ::DrawPassCreateInfo2& obj);
-		DrawPassCreateInfo(const ::DrawPassCreateInfo3& obj);
+		DrawPassCreateInfo(const vkr::DrawPassCreateInfo& obj);
+		DrawPassCreateInfo(const vkr::DrawPassCreateInfo2& obj);
+		DrawPassCreateInfo(const vkr::DrawPassCreateInfo3& obj);
 	};
 
 }
@@ -2899,3 +2901,4 @@ using VulkanCommandBufferPtr = std::shared_ptr<VulkanCommandBuffer>;
 
 #pragma endregion
 
+} // namespace vkr

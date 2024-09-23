@@ -16,33 +16,33 @@ public:
 private:
 	struct PerFrame
 	{
-		CommandBufferPtr cmd;
-		SemaphorePtr     imageAcquiredSemaphore;
-		FencePtr         imageAcquiredFence;
-		SemaphorePtr     renderCompleteSemaphore;
-		FencePtr         renderCompleteFence;
+		vkr::CommandBufferPtr cmd;
+		vkr::SemaphorePtr     imageAcquiredSemaphore;
+		vkr::FencePtr         imageAcquiredFence;
+		vkr::SemaphorePtr     renderCompleteSemaphore;
+		vkr::FencePtr         renderCompleteFence;
 	};
 
 	struct Entity
 	{
-		MeshPtr          mesh;
-		DescriptorSetPtr descriptorSet;
-		BufferPtr        uniformBuffer;
+		vkr::MeshPtr          mesh;
+		vkr::DescriptorSetPtr descriptorSet;
+		vkr::BufferPtr        uniformBuffer;
 	};
 
 	std::vector<PerFrame>  mPerFrame;
-	ShaderModulePtr        mVS;
-	ShaderModulePtr        mPS;
-	PipelineInterfacePtr   mPipelineInterface;
-	DescriptorPoolPtr      mDescriptorPool;
-	DescriptorSetLayoutPtr mDescriptorSetLayout;
-	GraphicsPipelinePtr    mTrianglePipeline;
+	vkr::ShaderModulePtr        mVS;
+	vkr::ShaderModulePtr        mPS;
+	vkr::PipelineInterfacePtr   mPipelineInterface;
+	vkr::DescriptorPoolPtr      mDescriptorPool;
+	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
+	vkr::GraphicsPipelinePtr    mTrianglePipeline;
 	Entity                 mCube;
-	GraphicsPipelinePtr    mWirePipeline;
+	vkr::GraphicsPipelinePtr    mWirePipeline;
 	Entity                 mWirePlane;
 
 	ArcballCamera          mArcballCamera;
 
-	void setupEntity(const TriMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
-	void setupEntity(const WireMesh& mesh, const GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
+	void setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
 };
