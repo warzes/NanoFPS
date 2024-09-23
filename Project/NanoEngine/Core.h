@@ -362,7 +362,7 @@ bool IsNull(const T* ptr)
 }
 
 // Returns true if [a,b) overlaps with [c, d)
-inline bool HasOverlapHalfOpen(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+inline bool HasOverlapHalfOpen(uint32_t a, [[maybe_unused]] uint32_t b, uint32_t c, uint32_t d)
 {
 	bool overlap = std::max<uint32_t>(a, c) < std::min<uint32_t>(c, d); // TODO: возможно тут ошибка
 	return overlap;
@@ -748,9 +748,6 @@ enum Result
 	ERROR_REQUIRED_FEATURE_UNAVAILABLE = -17,
 	ERROR_BAD_DATA_SOURCE = -18,
 
-	ERROR_GLFW_INIT_FAILED = -200,
-	ERROR_GLFW_CREATE_WINDOW_FAILED = -201,
-
 	ERROR_INVALID_CREATE_ARGUMENT = -300,
 	ERROR_RANGE_ALIASING_NOT_ALLOWED = -301,
 
@@ -787,7 +784,7 @@ enum Result
 	ERROR_IMAGE_FILE_SAVE_FAILED = -2001,
 	ERROR_IMAGE_CANNOT_RESIZE_EXTERNAL_STORAGE = -2002,
 	ERROR_IMAGE_INVALID_FORMAT = -2003,
-	ERROR_IMAGE_RESIZE_FAILED = -2004,
+	ERROR_IMAGE_RESIZE_FAILED = -2004,	
 	ERROR_BITMAP_CREATE_FAILED = -2005,
 	ERROR_BITMAP_BAD_COPY_SOURCE = -2006,
 	ERROR_BITMAP_FOOTPRINT_MISMATCH = -2007,
@@ -797,7 +794,6 @@ enum Result
 	ERROR_GEOMETRY_FILE_NO_DATA = -2501,
 	ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC = -2502,
 
-	ERROR_WINDOW_EVENTS_ALREADY_REGISTERED = -3000,
 	ERROR_IMGUI_INITIALIZATION_FAILED = -3001,
 
 	ERROR_FONT_PARSE_FAILED = -4000,
@@ -852,9 +848,6 @@ inline const char* ToString(Result value)// TODO: удалить
 	case Result::ERROR_REQUIRED_FEATURE_UNAVAILABLE: return "ERROR_REQUIRED_FEATURE_UNAVAILABLE";
 	case Result::ERROR_BAD_DATA_SOURCE: return "ERROR_BAD_DATA_SOURCE";
 
-	case Result::ERROR_GLFW_INIT_FAILED: return "ERROR_GLFW_INIT_FAILED";
-	case Result::ERROR_GLFW_CREATE_WINDOW_FAILED: return "ERROR_GLFW_CREATE_WINDOW_FAILED";
-
 	case Result::ERROR_INVALID_CREATE_ARGUMENT: return "ERROR_INVALID_CREATE_ARGUMENT";
 	case Result::ERROR_RANGE_ALIASING_NOT_ALLOWED: return "ERROR_RANGE_ALIASING_NOT_ALLOWED";
 
@@ -885,6 +878,7 @@ inline const char* ToString(Result value)// TODO: удалить
 	case Result::ERROR_GRFX_INVALID_BINDING_NUMBER: return "ERROR_GRFX_INVALID_BINDING_NUMBER";
 	case Result::ERROR_GRFX_INVALID_SET_NUMBER: return "ERROR_GRFX_INVALID_SET_NUMBER";
 	case Result::ERROR_GRFX_OPERATION_NOT_PERMITTED: return "ERROR_GRFX_OPERATION_NOT_PERMITTED";
+	case Result::ERROR_GRFX_INVALID_SEMAPHORE_TYPE: return "ERROR_GRFX_INVALID_SEMAPHORE_TYPE";
 
 	case Result::ERROR_IMAGE_FILE_LOAD_FAILED: return "ERROR_IMAGE_FILE_LOAD_FAILED";
 	case Result::ERROR_IMAGE_FILE_SAVE_FAILED: return "ERROR_IMAGE_FILE_SAVE_FAILED";
@@ -898,12 +892,36 @@ inline const char* ToString(Result value)// TODO: удалить
 	case Result::ERROR_GEOMETRY_NO_INDEX_DATA: return "ERROR_GEOMETRY_NO_INDEX_DATA";
 	case Result::ERROR_GEOMETRY_FILE_LOAD_FAILED: return "ERROR_GEOMETRY_FILE_LOAD_FAILED";
 	case Result::ERROR_GEOMETRY_FILE_NO_DATA: return "ERROR_GEOMETRY_FILE_NO_DATA";
+	case Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC: return "ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC";
 
-	case Result::ERROR_WINDOW_EVENTS_ALREADY_REGISTERED: return "ERROR_WINDOW_EVENTS_ALREADY_REGISTERED";
 	case Result::ERROR_IMGUI_INITIALIZATION_FAILED: return "ERROR_IMGUI_INITIALIZATION_FAILED";
 
 	case Result::ERROR_FONT_PARSE_FAILED: return "ERROR_FONT_PARSE_FAILED";
 	case Result::ERROR_INVALID_UTF8_STRING: return "ERROR_INVALID_UTF8_STRING";
+
+	case Result::ERROR_PPM_EXPORT_FORMAT_NOT_SUPPORTED: return "ERROR_PPM_EXPORT_FORMAT_NOT_SUPPORTED";
+	case Result::ERROR_PPM_EXPORT_INVALID_SIZE: return "ERROR_PPM_EXPORT_INVALID_SIZE";
+	
+	case Result::ERROR_SCENE_UNSUPPORTED_FILE_TYPE: return "ERROR_SCENE_UNSUPPORTED_FILE_TYPE";
+	case Result::ERROR_SCENE_UNSUPPORTED_NODE_TYPE: return "ERROR_SCENE_UNSUPPORTED_NODE_TYPE";
+	case Result::ERROR_SCENE_UNSUPPORTED_CAMERA_TYPE: return "ERROR_SCENE_UNSUPPORTED_CAMERA_TYPE";
+	case Result::ERROR_SCENE_UNSUPPORTED_TOPOLOGY_TYPE: return "ERROR_SCENE_UNSUPPORTED_TOPOLOGY_TYPE";
+	case Result::ERROR_SCENE_SOURCE_FILE_LOAD_FAILED: return "ERROR_SCENE_SOURCE_FILE_LOAD_FAILED";
+	case Result::ERROR_SCENE_NO_SOURCE_DATA: return "ERROR_SCENE_NO_SOURCE_DATA";
+	case Result::ERROR_SCENE_INVALID_SOURCE_SCENE: return "ERROR_SCENE_INVALID_SOURCE_SCENE";
+	case Result::ERROR_SCENE_INVALID_SOURCE_NODE: return "ERROR_SCENE_INVALID_SOURCE_NODE";
+	case Result::ERROR_SCENE_INVALID_SOURCE_CAMERA: return "ERROR_SCENE_INVALID_SOURCE_CAMERA";
+	case Result::ERROR_SCENE_INVALID_SOURCE_LIGHT: return "ERROR_SCENE_INVALID_SOURCE_LIGHT";
+	case Result::ERROR_SCENE_INVALID_SOURCE_MESH: return "ERROR_SCENE_INVALID_SOURCE_MESH";
+	case Result::ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_TYPE: return "ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_TYPE";
+	case Result::ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA: return "ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA";
+	case Result::ERROR_SCENE_INVALID_SOURCE_GEOMETRY_VERTEX_DATA: return "ERROR_SCENE_INVALID_SOURCE_GEOMETRY_VERTEX_DATA";
+	case Result::ERROR_SCENE_INVALID_SOURCE_MATERIAL: return "ERROR_SCENE_INVALID_SOURCE_MATERIAL";
+	case Result::ERROR_SCENE_INVALID_SOURCE_TEXTURE: return "ERROR_SCENE_INVALID_SOURCE_TEXTURE";
+	case Result::ERROR_SCENE_INVALID_SOURCE_IMAGE: return "ERROR_SCENE_INVALID_SOURCE_IMAGE";
+	case Result::ERROR_SCENE_INVALID_NODE_HIERARCHY: return "ERROR_SCENE_INVALID_NODE_HIERARCHY";
+	case Result::ERROR_SCENE_INVALID_STANDALONE_OPERATION: return "ERROR_SCENE_INVALID_STANDALONE_OPERATION";
+	case Result::ERROR_SCENE_NODE_ALREADY_HAS_PARENT: return "ERROR_SCENE_NODE_ALREADY_HAS_PARENT";
 	}
 	return "<unknown ppx::Result value>";
 }
@@ -1011,7 +1029,7 @@ inline float3 SphericalToCartesian(float theta, float phi)
 	);
 }
 
-inline float3 SphericalTangent(float theta, float phi)
+inline float3 SphericalTangent(float theta, [[maybe_unused]] float phi)
 {
 	return float3(
 		sin(theta), // x
@@ -1349,22 +1367,22 @@ public:
 
 	uint32_t ToPackedARGB() const
 	{
-		return (a << 24) | (r << 16) | (g << 8) | (b << 0);
+		return static_cast<uint32_t>((a << 24) | (r << 16) | (g << 8) | (b << 0));
 	}
 
 	uint32_t ToPackedABGR() const
 	{
-		return (a << 24) | (b << 16) | (g << 8) | (r << 0);
+		return static_cast<uint32_t>((a << 24) | (b << 16) | (g << 8) | (r << 0));
 	}
 
 	uint32_t ToPackedRGBA() const
 	{
-		return (r << 24) | (g << 16) | (b << 8) | (a << 0);
+		return static_cast<uint32_t>((r << 24) | (g << 16) | (b << 8) | (a << 0));
 	}
 
 	uint32_t ToPackedBGRA() const
 	{
-		return (b << 24) | (g << 16) | (r << 8) | (a << 0);
+		return static_cast<uint32_t>((b << 24) | (g << 16) | (r << 8) | (a << 0));
 	}
 
 	LinearColor FromRGBE() const;
@@ -1643,6 +1661,10 @@ public:
 	const glm::mat4x4& GetConcatenatedMatrix() const;
 
 protected:
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable : 4201)
+#endif
 	mutable struct
 	{
 		union
@@ -1657,6 +1679,9 @@ protected:
 			uint32_t mask = 0xF;
 		};
 	} m_dirty;
+#if defined(_MSC_VER)
+#	pragma warning(pop)
+#endif
 
 	glm::vec3           m_translation = glm::vec3(0, 0, 0);
 	glm::vec3           m_rotation = glm::vec3(0, 0, 0);
@@ -1682,12 +1707,12 @@ public:
 
 	Random(uint64_t initialState, uint64_t initialSequence)
 	{
-		Seed(initialSequence, initialSequence);
+		Seed(initialState, initialSequence);
 	}
 
 	void Seed(uint64_t initialState, uint64_t initialSequence)
 	{
-		mRng.seed(initialSequence, initialSequence);
+		mRng.seed(initialState, initialSequence);
 	}
 
 	uint32_t UInt32()

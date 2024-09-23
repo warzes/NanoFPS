@@ -347,10 +347,10 @@ Color LinearColor::ToRGBE() const
 	{
 		int32_t exponent;
 		const float scale = frexp(Primary, &exponent) / Primary * 255.f;
-		result.r = glm::clamp((int32_t)(r * scale), 0, 255);
-		result.g = glm::clamp((int32_t)(g * scale), 0, 255);
-		result.b = glm::clamp((int32_t)(b * scale), 0, 255);
-		result.a = glm::clamp((int32_t)((float)exponent), -128, 127) + 128;
+		result.r = static_cast<uint8_t>(glm::clamp((int32_t)(r * scale), 0, 255));
+		result.g = static_cast<uint8_t>(glm::clamp((int32_t)(g * scale), 0, 255));
+		result.b = static_cast<uint8_t>(glm::clamp((int32_t)(b * scale), 0, 255));
+		result.a = static_cast<uint8_t>(glm::clamp((int32_t)((float)exponent), -128, 127) + 128);
 	}
 
 	return result;
@@ -404,7 +404,11 @@ LinearColor LinearColor::GetHSV(uint8_t h, uint8_t s, uint8_t v)
 	float brightness = v * 1.4f / 255.f;
 	brightness *= 0.7f / (0.01f + sqrtf(brightness));
 	brightness = glm::clamp(brightness, 0.f, 1.f);
-	const glm::vec3 hue = (h < 86) ? glm::vec3((85 - h) / 85.f, (h - 0) / 85.f, 0) : (h < 171) ? glm::vec3(0, (170 - h) / 85.f, (h - 85) / 85.f) : glm::vec3((h - 170) / 85.f, 0, (255 - h) / 84.f);
+	const glm::vec3 hue = (h < 86) 
+		? glm::vec3((85.f - (float)h) / 85.f, ((float)h - 0) / 85.f, 0)
+		: (h < 171) 
+			? glm::vec3(0, (170.f - (float)h) / 85.f, ((float)h - 85.f) / 85.f)
+			: glm::vec3(((float)h - 170.f) / 85.f, 0, (255.f - (float)h) / 84.f);
 	const glm::vec3 colorVector = (hue + s / 255.f * (glm::vec3(1, 1, 1) - hue)) * brightness;
 	return LinearColor(colorVector.x, colorVector.y, colorVector.z, 1);
 }
@@ -530,7 +534,7 @@ Color Color::MakeRedToGreenColorFromScalar(float Scalar)
 	int32_t r = int32_t(255 * redSclr);
 	int32_t g = int32_t(255 * greenSclr);
 	int32_t b = 0;
-	return Color(r, g, b);
+	return Color((uint8_t)r, (uint8_t)g, (uint8_t)b);
 }
 
 #pragma endregion
