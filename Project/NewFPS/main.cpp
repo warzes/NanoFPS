@@ -37,7 +37,7 @@ int main(
 	[[maybe_unused]] int   argc,
 	[[maybe_unused]] char* argv[])
 {
-	//GameApplication app;
+	GameApplication app;
 
 	//Example_001 app;
 	//Example_002 app;
@@ -50,7 +50,7 @@ int main(
 	//Example_009 app;
 	//Example_010 app;
 	//Example_011 app;
-	Example_012 app;
+	//Example_012 app;
 	//Example_013 app;
 	//Example_014 app;
 	//Example_015 app;
