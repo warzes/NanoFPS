@@ -722,6 +722,19 @@ void Fatal(const std::string& msg);
         }                                                                  \
     }
 
+#define CHECKED_CALL_AND_RETURN_FALSE(EXPR)                                \
+    {                                                                      \
+        Result checkedResult = EXPR;                                       \
+        if (checkedResult != SUCCESS) {                                    \
+            ::Fatal(std::string("*** Call Failed ***\n")                   \
+                + std::string("Return     : ") + ToString(checkedResult)   \
+                + std::string("Expression : ") + #EXPR + "\n"              \
+                + std::string("Function   : ") + __FUNCTION__ + "\n"       \
+                + std::string("Location   : ") + __FILE__ + " : " + LINE); \
+            return false;                                                  \
+        }                                                                  \
+    }
+
 // TODO: удалить
 enum Result
 {

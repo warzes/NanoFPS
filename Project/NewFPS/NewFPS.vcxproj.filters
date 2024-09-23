@@ -175,5 +175,8 @@
     <Filter Include="examples">
       <UniqueIdentifier>{31337459-cc5f-4be3-a818-ad5eff566ffd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="game">
+      <UniqueIdentifier>{c6d647a1-c52c-43b7-9e12-36a141c56c8f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
