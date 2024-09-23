@@ -16,16 +16,16 @@ bool Example_010::Setup()
 
 	// vkr::Texture image, view,  and sampler
 	{
-		vkr::grfx_util::CubeMapCreateInfo createInfo = {};
-		createInfo.layout = vkr::grfx_util::CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
-		createInfo.posX = ENCODE_CUBE_FACE(3, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negX = ENCODE_CUBE_FACE(1, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.posY = ENCODE_CUBE_FACE(0, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negY = ENCODE_CUBE_FACE(5, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.posZ = ENCODE_CUBE_FACE(2, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
-		createInfo.negZ = ENCODE_CUBE_FACE(4, vkr::grfx_util::CUBE_FACE_OP_NONE, vkr::grfx_util::CUBE_FACE_OP_NONE);
+		vkr::vkrUtil::CubeMapCreateInfo createInfo = {};
+		createInfo.layout = vkr::vkrUtil::CUBE_IMAGE_LAYOUT_CROSS_HORIZONTAL;
+		createInfo.posX = ENCODE_CUBE_FACE(3, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
+		createInfo.negX = ENCODE_CUBE_FACE(1, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
+		createInfo.posY = ENCODE_CUBE_FACE(0, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
+		createInfo.negY = ENCODE_CUBE_FACE(5, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
+		createInfo.posZ = ENCODE_CUBE_FACE(2, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
+		createInfo.negZ = ENCODE_CUBE_FACE(4, vkr::vkrUtil::CUBE_FACE_OP_NONE, vkr::vkrUtil::CUBE_FACE_OP_NONE);
 
-		CHECKED_CALL(vkr::grfx_util::CreateCubeMapFromFile(device.GetGraphicsQueue(), "basic/textures/hilly_terrain.png", &createInfo, &mCubeMapImage));
+		CHECKED_CALL(vkr::vkrUtil::CreateCubeMapFromFile(device.GetGraphicsQueue(), "basic/textures/hilly_terrain.png", &createInfo, &mCubeMapImage));
 
 		vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mCubeMapImage);
 		CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mCubeMapImageView));
@@ -223,7 +223,7 @@ void Example_010::Render()
 		M = T * R * S;
 		float3x3 N = glm::inverseTranspose(float3x3(M));
 
-		char constantData[MINIMUM_CONSTANT_BUFFER_SIZE] = { 0 };
+		char constantData[vkr::MINIMUM_CONSTANT_BUFFER_SIZE] = { 0 };
 		// Get offsets to memeber vars
 		float4x4* pMVPMatrix = reinterpret_cast<float4x4*>(constantData + 0);
 		float4x4* pModelMatrix = reinterpret_cast<float4x4*>(constantData + 64);
@@ -322,10 +322,10 @@ void Example_010::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreat
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(createInfo, mesh, &geo));
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
 
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->uniformBuffer));

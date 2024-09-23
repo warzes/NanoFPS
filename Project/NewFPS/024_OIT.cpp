@@ -225,17 +225,17 @@ void Example_024::SetupCommon()
 	{
 		vkr::QueuePtr queue = GetRenderDevice().GetGraphicsQueue();
 		vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices();
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/cube.obj", &mBackgroundMesh, options));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/monkey.obj", &mTransparentMeshes[MESH_TYPE_MONKEY], options));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/horse.obj", &mTransparentMeshes[MESH_TYPE_HORSE], options));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/megaphone.obj", &mTransparentMeshes[MESH_TYPE_MEGAPHONE], options));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromFile(queue, "basic/models/cannon.obj", &mTransparentMeshes[MESH_TYPE_CANNON], options));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromFile(queue, "basic/models/cube.obj", &mBackgroundMesh, options));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromFile(queue, "basic/models/monkey.obj", &mTransparentMeshes[MESH_TYPE_MONKEY], options));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromFile(queue, "basic/models/horse.obj", &mTransparentMeshes[MESH_TYPE_HORSE], options));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromFile(queue, "basic/models/megaphone.obj", &mTransparentMeshes[MESH_TYPE_MEGAPHONE], options));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromFile(queue, "basic/models/cannon.obj", &mTransparentMeshes[MESH_TYPE_CANNON], options));
 	}
 
 	// Shader globals
 	{
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = std::max(sizeof(ShaderGlobals), static_cast<size_t>(MINIMUM_UNIFORM_BUFFER_SIZE));
+		bufferCreateInfo.size = std::max(sizeof(ShaderGlobals), static_cast<size_t>(vkr::MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mShaderGlobalsBuffer));
@@ -900,7 +900,7 @@ void Example_024::SetupBufferLinkedLists()
 	// Atomic counter
 	{
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = std::max(sizeof(uint), static_cast<size_t>(MINIMUM_UNIFORM_BUFFER_SIZE));
+		bufferCreateInfo.size = std::max(sizeof(uint), static_cast<size_t>(vkr::MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.structuredElementStride = sizeof(uint);
 		bufferCreateInfo.usageFlags.bits.rwStructuredBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;

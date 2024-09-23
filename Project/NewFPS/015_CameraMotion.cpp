@@ -134,10 +134,10 @@ void Example_015::KeyUp(KeyCode key)
 
 void Example_015::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromTriMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromTriMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
 
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
+	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, pEntity->UniformBufferPtr()));
@@ -155,10 +155,10 @@ void Example_015::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreat
 
 void Example_015::setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity)
 {
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromWireMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromWireMesh(GetRender().GetGraphicsQueue(), &mesh, pEntity->MeshPtr()));
 
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, pEntity->UniformBufferPtr()));

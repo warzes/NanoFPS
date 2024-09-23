@@ -334,8 +334,8 @@ void Example_019::loadTexture(
 
 	auto it = pTextureCache->find(texture.image->uri);
 	if (it == pTextureCache->end()) {
-		vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(pQueue, gltfFolder / texture.image->uri, &pOutput->pImage, options, false));
+		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(pQueue, gltfFolder / texture.image->uri, &pOutput->pImage, options, false));
 		pTextureCache->emplace(texture.image->uri, pOutput->pImage);
 	}
 	else {
@@ -361,8 +361,8 @@ void Example_019::loadTexture(const vkr::Bitmap& bitmap, vkr::Queue* pQueue, Tex
 {
 	auto& device = GetRenderDevice();
 
-	vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(1);
-	CHECKED_CALL(vkr::grfx_util::CreateImageFromBitmap(pQueue, &bitmap, &pOutput->pImage, options));
+	vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(1);
+	CHECKED_CALL(vkr::vkrUtil::CreateImageFromBitmap(pQueue, &bitmap, &pOutput->pImage, options));
 
 	vkr::SampledImageViewCreateInfo sivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
 	CHECKED_CALL(device.CreateSampledImageView(sivCreateInfo, &pOutput->pTexture));
@@ -672,7 +672,7 @@ void Example_019::loadNodes(
 
 		// Create uniform buffer.
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
+		bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &item.pUniformBuffer));

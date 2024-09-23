@@ -2902,7 +2902,7 @@ Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& pCreateI
 
 	VkDescriptorPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
 	vkci.flags = flags;
-	vkci.maxSets = MAX_SETS_PER_POOL;
+	vkci.maxSets = MaxSetsPerPool;
 	vkci.poolSizeCount = CountU32(poolSizes);
 	vkci.pPoolSizes = DataPtr(poolSizes);
 
@@ -3462,7 +3462,7 @@ std::unique_ptr<Bitmap> ShadingRatePattern::CreateBitmap() const
 
 Result ShadingRatePattern::LoadFromBitmap(Bitmap* bitmap)
 {
-	return grfx_util::CopyBitmapToImage(GetDevice()->GetGraphicsQueue(), bitmap, mAttachmentImage, 0, 0, mAttachmentImage->GetInitialState(), mAttachmentImage->GetInitialState());
+	return vkrUtil::CopyBitmapToImage(GetDevice()->GetGraphicsQueue(), bitmap, mAttachmentImage, 0, 0, mAttachmentImage->GetInitialState(), mAttachmentImage->GetInitialState());
 }
 
 Bitmap::Format ShadingRatePattern::GetBitmapFormat() const
@@ -3888,7 +3888,7 @@ MeshCreateInfo::MeshCreateInfo(const Geometry& geometry)
 	this->vertexCount = geometry.GetVertexCount();
 	this->vertexBufferCount = geometry.GetVertexBufferCount();
 	this->memoryUsage = MEMORY_USAGE_GPU_ONLY;
-	std::memset(&this->vertexBuffers, 0, MAX_VERTEX_BINDINGS * sizeof(MeshVertexBufferDescription));
+	std::memset(&this->vertexBuffers, 0, MaxVertexBindings * sizeof(MeshVertexBufferDescription));
 
 	const uint32_t bindingCount = geometry.GetVertexBindingCount();
 	for (uint32_t bindingIdx = 0; bindingIdx < bindingCount; ++bindingIdx) {
@@ -4902,7 +4902,7 @@ void GraphicsPipeline::destroyApiObjects()
 
 Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 {
-	if (pCreateInfo.setCount > MAX_BOUND_DESCRIPTOR_SETS) {
+	if (pCreateInfo.setCount > MaxBoundDescriptorSets) {
 		ASSERT_MSG(false, "set count exceeds MAX_BOUND_DESCRIPTOR_SETS");
 		return ERROR_LIMIT_EXCEEDED;
 	}
@@ -4949,8 +4949,8 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 	// with an existing binding in the set layouts.
 	//
 	if (pCreateInfo.pushConstants.count > 0) {
-		if (pCreateInfo.pushConstants.count > MAX_PUSH_CONSTANTS) {
-			ASSERT_MSG(false, "push constants count (" + std::to_string(pCreateInfo.pushConstants.count) + ") exceeds MAX_PUSH_CONSTANTS (" + std::to_string(MAX_PUSH_CONSTANTS) + ")");
+		if (pCreateInfo.pushConstants.count > MaxPushConstants) {
+			ASSERT_MSG(false, "push constants count (" + std::to_string(pCreateInfo.pushConstants.count) + ") exceeds MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 			return ERROR_LIMIT_EXCEEDED;
 		}
 
@@ -4996,7 +4996,7 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 
 Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pCreateInfo)
 {
-	VkDescriptorSetLayout setLayouts[MAX_BOUND_DESCRIPTOR_SETS] = { VK_NULL_HANDLE };
+	VkDescriptorSetLayout setLayouts[MaxBoundDescriptorSets] = { VK_NULL_HANDLE };
 	for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
 		setLayouts[i] = pCreateInfo.sets[i].pLayout->GetVkDescriptorSetLayout();
 	}
@@ -5325,9 +5325,9 @@ void CommandBuffer::BindVertexBuffers(
 {
 	ASSERT_NULL_ARG(buffers);
 	ASSERT_NULL_ARG(pStrides);
-	ASSERT_MSG(bufferCount < MAX_VERTEX_BINDINGS, "bufferCount exceeds PPX_MAX_VERTEX_ATTRIBUTES");
+	ASSERT_MSG(bufferCount < MaxVertexBindings, "bufferCount exceeds PPX_MAX_VERTEX_ATTRIBUTES");
 
-	VertexBufferView views[MAX_VERTEX_BINDINGS] = {};
+	VertexBufferView views[MaxVertexBindings] = {};
 	for (uint32_t i = 0; i < bufferCount; ++i) {
 		views[i].pBuffer = buffers[i];
 		views[i].stride = pStrides[i];
@@ -5343,8 +5343,8 @@ void CommandBuffer::BindVertexBuffers(const Mesh* pMesh, const uint64_t* pOffset
 {
 	ASSERT_NULL_ARG(pMesh);
 
-	const Buffer* buffers[MAX_VERTEX_BINDINGS] = { nullptr };
-	uint32_t            strides[MAX_VERTEX_BINDINGS] = { 0 };
+	const Buffer* buffers[MaxVertexBindings] = { nullptr };
+	uint32_t            strides[MaxVertexBindings] = { 0 };
 
 	uint32_t bufferCount = pMesh->GetVertexBufferCount();
 	for (uint32_t i = 0; i < bufferCount; ++i) {
@@ -5659,7 +5659,7 @@ void CommandBuffer::BeginRenderPassImpl(const RenderPassBeginInfo* pBeginInfo)
 	rect.extent = { pBeginInfo->renderArea.width, pBeginInfo->renderArea.height };
 
 	uint32_t     clearValueCount = 0;
-	VkClearValue clearValues[MAX_RENDER_TARGETS + 1] = {};
+	VkClearValue clearValues[MaxRenderTargets + 1] = {};
 
 	for (uint32_t i = 0; i < pBeginInfo->RTVClearCount; ++i) {
 		clearValues[i].color = ToVkClearColorValue(pBeginInfo->RTVClearValues[i]);
@@ -6005,11 +6005,11 @@ void CommandBuffer::TransitionImageLayout(
 		return;
 	}
 
-	if (mipLevelCount == REMAINING_MIP_LEVELS) {
+	if (mipLevelCount == RemainingMipLevels) {
 		mipLevelCount = pImage->GetMipLevelCount();
 	}
 
-	if (arrayLayerCount == REMAINING_ARRAY_LAYERS) {
+	if (arrayLayerCount == RemainingArrayLayers) {
 		arrayLayerCount = pImage->GetArrayLayerCount();
 	}
 
@@ -6152,7 +6152,7 @@ void CommandBuffer::BufferResourceBarrier(
 
 void CommandBuffer::SetViewports(uint32_t viewportCount, const Viewport* pViewports)
 {
-	VkViewport viewports[MAX_VIEWPORTS] = {};
+	VkViewport viewports[MaxViewports] = {};
 	for (uint32_t i = 0; i < viewportCount; ++i) {
 		// clang-format off
 		viewports[i].x = pViewports[i].x;
@@ -6207,7 +6207,7 @@ void CommandBuffer::BindDescriptorSets(
 
 	if (setCount > 0) {
 		// Get Vulkan handles
-		VkDescriptorSet vkSets[MAX_BOUND_DESCRIPTOR_SETS] = { VK_NULL_HANDLE };
+		VkDescriptorSet vkSets[MaxBoundDescriptorSets] = { VK_NULL_HANDLE };
 		for (uint32_t i = 0; i < setCount; ++i) {
 			vkSets[i] = ppSets[i]->GetVkDescriptorSet();
 		}
@@ -6273,7 +6273,7 @@ void CommandBuffer::PushConstants(
 	ASSERT_NULL_ARG(pInterface);
 	ASSERT_NULL_ARG(pValues);
 
-	ASSERT_MSG(((dstOffset + count) <= MAX_PUSH_CONSTANTS), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MAX_PUSH_CONSTANTS) + ")");
+	ASSERT_MSG(((dstOffset + count) <= MaxPushConstants), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 
 	const uint32_t sizeInBytes = count * sizeof(uint32_t);
 	const uint32_t offsetInBytes = dstOffset * sizeof(uint32_t);
@@ -6293,7 +6293,7 @@ void CommandBuffer::PushGraphicsConstants(
 	const void* pValues,
 	uint32_t                       dstOffset)
 {
-	ASSERT_MSG(((dstOffset + count) <= MAX_PUSH_CONSTANTS), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MAX_PUSH_CONSTANTS) + ")");
+	ASSERT_MSG(((dstOffset + count) <= MaxPushConstants), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 
 	const VkShaderStageFlags shaderStageFlags = pInterface->GetPushConstantShaderStageFlags();
 	if ((shaderStageFlags & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
@@ -6327,7 +6327,7 @@ void CommandBuffer::PushComputeConstants(
 	const void* pValues,
 	uint32_t                       dstOffset)
 {
-	ASSERT_MSG(((dstOffset + count) <= MAX_PUSH_CONSTANTS), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MAX_PUSH_CONSTANTS) + ")");
+	ASSERT_MSG(((dstOffset + count) <= MaxPushConstants), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 
 	const VkShaderStageFlags shaderStageFlags = pInterface->GetPushConstantShaderStageFlags();
 	if ((shaderStageFlags & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
@@ -6362,10 +6362,10 @@ void CommandBuffer::BindIndexBuffer(const IndexBufferView* pView)
 void CommandBuffer::BindVertexBuffers(uint32_t viewCount, const VertexBufferView* pViews)
 {
 	ASSERT_NULL_ARG(pViews);
-	ASSERT_MSG(viewCount < MAX_VERTEX_BINDINGS, "viewCount exceeds PPX_MAX_VERTEX_ATTRIBUTES");
+	ASSERT_MSG(viewCount < MaxVertexBindings, "viewCount exceeds PPX_MAX_VERTEX_ATTRIBUTES");
 
-	VkBuffer     buffers[MAX_RENDER_TARGETS] = { VK_NULL_HANDLE };
-	VkDeviceSize offsets[MAX_RENDER_TARGETS] = { 0 };
+	VkBuffer     buffers[MaxRenderTargets] = { VK_NULL_HANDLE };
+	VkDeviceSize offsets[MaxRenderTargets] = { 0 };
 
 	for (uint32_t i = 0; i < viewCount; ++i) {
 		buffers[i] = pViews[i].pBuffer->GetVkBuffer();
@@ -7743,7 +7743,7 @@ Result TextureFont::createApiObjects(const TextureFontCreateInfo& pCreateInfo)
 		y += height;
 	}
 
-	Result ppxres = grfx_util::CreateTextureFromBitmap(GetDevice()->GetGraphicsQueue(), &bitmap, &mTexture);
+	Result ppxres = vkrUtil::CreateTextureFromBitmap(GetDevice()->GetGraphicsQueue(), &bitmap, &mTexture);
 	if (Failed(ppxres)) {
 		return ppxres;
 	}
@@ -7888,7 +7888,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 
 	// Constant buffer
 	{
-		uint64_t size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		uint64_t size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 
 		BufferCreateInfo createInfo = {};
 		createInfo.size = size;

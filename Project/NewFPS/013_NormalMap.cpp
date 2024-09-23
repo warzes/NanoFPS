@@ -39,9 +39,9 @@ bool Example_013::Setup()
 
 	// Textures, views, and samplers
 	{
-		vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/albedo.jpg", &mAlbedoTexture, options, false));
-		CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/normal.jpg", &mNormalMap, options, false));
+		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/albedo.jpg", &mAlbedoTexture, options, false));
+		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/normal.jpg", &mNormalMap, options, false));
 
 		vkr::SampledImageViewCreateInfo sivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mAlbedoTexture);
 		CHECKED_CALL(device.CreateSampledImageView(sivCreateInfo, &mAlbedoTextureView));
@@ -122,11 +122,11 @@ bool Example_013::Setup()
 
 		vkr::Geometry geo;
 		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mLight.mesh));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mLight.mesh));
 
 		// Uniform buffer
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mLight.drawUniformBuffer));
@@ -340,11 +340,11 @@ void Example_013::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool* pDe
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
 
 	// Draw uniform buffer
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
+	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->drawUniformBuffer));

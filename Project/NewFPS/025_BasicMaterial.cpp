@@ -13,8 +13,8 @@ bool Example_025::Setup()
 {
 	auto& device = GetRenderDevice();
 
-	CHECKED_CALL(vkr::grfx_util::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 0, 0, 0, 0 }, &m1x1BlackTexture));
-	CHECKED_CALL(vkr::grfx_util::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 255, 255, 255, 255 }, &m1x1WhiteTexture));
+	CHECKED_CALL(vkr::vkrUtil::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 0, 0, 0, 0 }, &m1x1BlackTexture));
+	CHECKED_CALL(vkr::vkrUtil::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 255, 255, 255, 255 }, &m1x1WhiteTexture));
 	mF0Index = static_cast<uint32_t>(mF0Names.size() - 1);
 
 	// IBL
@@ -45,7 +45,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", options);
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 
 			// Grab the vertex bindings
@@ -57,7 +57,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateSphere(0.75f, 128, 64, vkr::TriMeshOptions(options).TexCoordScale(float2(2)));
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -66,7 +66,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateCube(float3(1.0f), options);
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -75,7 +75,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("basic/models/monkey.obj", vkr::TriMeshOptions(options).Scale(float3(0.75f)));
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -84,7 +84,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("poly_haven/models/measuring_tape/measuring_tape_01.obj", vkr::TriMeshOptions(options).Translate(float3(0, -0.4f, 0)).InvertTexCoordsV());
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -93,7 +93,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("poly_haven/models/food_kiwi/food_kiwi_01.obj", vkr::TriMeshOptions(options).Translate(float3(0, -0.7f, 0)).InvertTexCoordsV());
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -102,7 +102,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("poly_haven/models/hand_plane/hand_plane_no4_1k.obj", vkr::TriMeshOptions(options).Translate(float3(0, -0.5f, 0)).InvertTexCoordsV());
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 
@@ -111,7 +111,7 @@ bool Example_025::Setup()
 			vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("poly_haven/models/horse_statue/horse_statue_01_1k.obj", vkr::TriMeshOptions(options).Translate(float3(0, -0.725f, 0)).InvertTexCoordsV());
 			CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 			vkr::MeshPtr gpuMesh;
-			CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
+			CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &gpuMesh));
 			mMeshes.push_back(gpuMesh);
 		}
 	}
@@ -121,7 +121,7 @@ bool Example_025::Setup()
 		vkr::Geometry geo;
 		vkr::TriMesh  mesh = vkr::TriMesh::CreateSphere(15.0f, 128, 64, vkr::TriMeshOptions().Indices().TexCoords());
 		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mEnvDrawMesh));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mEnvDrawMesh));
 	}
 
 	// Scene data
@@ -135,7 +135,7 @@ bool Example_025::Setup()
 
 		// Scene constants
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuSceneConstants));
@@ -147,7 +147,7 @@ bool Example_025::Setup()
 
 		// HlslLight constants
 		bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_STRUCTURED_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_STRUCTURED_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuLightConstants));
@@ -193,7 +193,7 @@ bool Example_025::Setup()
 
 		// Scene constants
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuEnvDrawConstants));
@@ -238,7 +238,7 @@ bool Example_025::Setup()
 
 		// MaterialData constants
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuMaterialConstants));
@@ -268,7 +268,7 @@ bool Example_025::Setup()
 
 		// Model constants
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuModelConstants));
@@ -972,7 +972,7 @@ void Example_025::SetupMaterialResources(
 
 	// Albedo
 	{
-		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), albedoPath, &materialResources.albedoTexture));
+		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), albedoPath, &materialResources.albedoTexture));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = ALBEDO_TEXTURE_REGISTER;
@@ -984,7 +984,7 @@ void Example_025::SetupMaterialResources(
 
 	// Roughness
 	{
-		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), roughnessPath, &materialResources.roughnessTexture));
+		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), roughnessPath, &materialResources.roughnessTexture));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = ROUGHNESS_TEXTURE_REGISTER;
@@ -996,7 +996,7 @@ void Example_025::SetupMaterialResources(
 
 	// Metalness
 	{
-		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), metalnessPath, &materialResources.metalnessTexture));
+		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), metalnessPath, &materialResources.metalnessTexture));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = METALNESS_TEXTURE_REGISTER;
@@ -1008,7 +1008,7 @@ void Example_025::SetupMaterialResources(
 
 	// Normal map
 	{
-		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), normalMapPath, &materialResources.normalMapTexture));
+		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(GetRenderDevice().GetGraphicsQueue(), normalMapPath, &materialResources.normalMapTexture));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = NORMAL_MAP_TEXTURE_REGISTER;
@@ -1165,7 +1165,7 @@ void Example_025::SetupMaterials()
 void Example_025::SetupIBL()
 {
 	// BRDF LUT
-	CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(
+	CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(
 		GetRenderDevice().GetGraphicsQueue(),
 		"basic/textures/ppx/brdf_lut.hdr",
 		&mBRDFLUTTexture));
@@ -1173,7 +1173,7 @@ void Example_025::SetupIBL()
 	// Old Depot - good mix of diffused over head and bright exterior lighting from windows
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/old_depot_4k.ibl",
 			&reses.irradianceTexture,
@@ -1184,7 +1184,7 @@ void Example_025::SetupIBL()
 	// Palermo Square - almost fully difuse exterior lighting
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/palermo_square_4k.ibl",
 			&reses.irradianceTexture,
@@ -1195,7 +1195,7 @@ void Example_025::SetupIBL()
 	// Venice Sunset - Golden Hour at beach
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/venice_sunset_4k.ibl",
 			&reses.irradianceTexture,
@@ -1206,7 +1206,7 @@ void Example_025::SetupIBL()
 	// Hilly Terrain - Clear blue sky on hills
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/hilly_terrain_01_4k.ibl",
 			&reses.irradianceTexture,
@@ -1217,7 +1217,7 @@ void Example_025::SetupIBL()
 	// Neon Photo Studio - interior artificial lighting
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/neon_photostudio_4k.ibl",
 			&reses.irradianceTexture,
@@ -1228,7 +1228,7 @@ void Example_025::SetupIBL()
 	// Sky Lit Garage - diffused overhead exterior lighting
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/skylit_garage_4k.ibl",
 			&reses.irradianceTexture,
@@ -1239,7 +1239,7 @@ void Example_025::SetupIBL()
 	// Noon Grass - harsh overhead exterior lighting
 	{
 		IBLResources reses = {};
-		CHECKED_CALL(vkr::grfx_util::CreateIBLTexturesFromFile(
+		CHECKED_CALL(vkr::vkrUtil::CreateIBLTexturesFromFile(
 			GetRenderDevice().GetGraphicsQueue(),
 			"poly_haven/ibl/noon_grass_4k.ibl",
 			&reses.irradianceTexture,

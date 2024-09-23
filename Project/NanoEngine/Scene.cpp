@@ -549,7 +549,7 @@ namespace scene {
 			// Fill purple
 			bitmap.Fill<uint8_t>(0xFF, 0, 0xFF, 0xFF);
 
-			ppxres = vkr::grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultTexture);
+			ppxres = vkr::vkrUtil::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultTexture);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -574,7 +574,7 @@ namespace scene {
 		// Default BRD LUT texture
 		{
 			// Favor speed, so use the PNG instad of the HDR
-			auto ppxres = vkr::grfx_util::CreateTextureFromFile(
+			auto ppxres = vkr::vkrUtil::CreateTextureFromFile(
 				pDevice->GetGraphicsQueue(),
 				"Data/Common/Textures/brdf_lut.png",
 				&mDefaultBRDFLUTTexture);
@@ -629,7 +629,7 @@ namespace scene {
 			// Fill white
 			bitmap.Fill<uint8_t>(0xFF, 0xFF, 0xFF, 0xFF);
 
-			ppxres = vkr::grfx_util::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultIBLTexture);
+			ppxres = vkr::vkrUtil::CreateTextureFromBitmap(pDevice->GetGraphicsQueue(), &bitmap, &mDefaultIBLTexture);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -2325,7 +2325,7 @@ namespace scene {
 				return ERROR_PATH_DOES_NOT_EXIST;
 			}
 
-			auto ppxres = vkr::grfx_util::CreateImageFromFile(
+			auto ppxres = vkr::vkrUtil::CreateImageFromFile(
 				loadParams.pDevice->GetGraphicsQueue(),
 				filePath,
 				&pGrfxImage);
@@ -2346,7 +2346,7 @@ namespace scene {
 				return ppxres;
 			}
 
-			ppxres = vkr::grfx_util::CreateImageFromBitmap(
+			ppxres = vkr::vkrUtil::CreateImageFromBitmap(
 				loadParams.pDevice->GetGraphicsQueue(),
 				&bitmap,
 				&pGrfxImage);

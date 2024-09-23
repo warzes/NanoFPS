@@ -8,7 +8,7 @@ bool Example_003::Setup()
 	// Uniform buffer
 	{
 		vkr::BufferCreateInfo bufferCreateInfo              = {};
-		bufferCreateInfo.size                          = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size                          = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage                   = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mUniformBuffer));
@@ -16,8 +16,8 @@ bool Example_003::Setup()
 
 	// vkr::Texture image, view, and sampler
 	{
-		vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &mImage, options, false));
+		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &mImage, options, false));
 
 		vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImage);
 		CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mSampledImageView));

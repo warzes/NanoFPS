@@ -140,8 +140,8 @@ public:
 	Result AllocateCommandBuffer(
 		const CommandPool* pPool,
 		CommandBuffer** ppCommandBuffer,
-		uint32_t                 resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT,
-		uint32_t                 samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT);
+		uint32_t                 resourceDescriptorCount = DefaultResourceDescriptorCount,
+		uint32_t                 samplerDescriptorCount = DefaultSampleDescriptorCount);
 	void FreeCommandBuffer(const CommandBuffer* pCommandBuffer);
 
 	Result AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet);
@@ -156,7 +156,7 @@ public:
 
 	VulkanCommandPoolPtr CreateCommandPool(const CommandPoolCreateInfo& createInfo) { return {}; }
 
-	bool AllocateCommandBuffer(VulkanCommandPoolPtr pool, VulkanCommandBufferPtr& commandBuffer, uint32_t resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT, uint32_t samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT) { return true; }
+	bool AllocateCommandBuffer(VulkanCommandPoolPtr pool, VulkanCommandBufferPtr& commandBuffer, uint32_t resourceDescriptorCount = DefaultResourceDescriptorCount, uint32_t samplerDescriptorCount = DefaultSampleDescriptorCount) { return true; }
 	void FreeCommandBuffer(VulkanCommandBufferPtr& commandBuffer) {}
 
 private:

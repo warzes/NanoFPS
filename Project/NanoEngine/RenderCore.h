@@ -109,56 +109,50 @@ using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
 
 #pragma endregion
 
-#pragma region Constants
+#pragma region Render Constants
 
-#define VALUE_IGNORED                       UINT32_MAX
-
-#define MAX_SAMPLER_DESCRIPTORS             2048
-#define DEFAULT_RESOURCE_DESCRIPTOR_COUNT   8192
-#define DEFAULT_SAMPLE_DESCRIPTOR_COUNT     MAX_SAMPLER_DESCRIPTORS
-
-constexpr uint32_t MAX_RENDER_TARGETS = 8;
-
-#define REMAINING_MIP_LEVELS                UINT32_MAX
-#define REMAINING_ARRAY_LAYERS              UINT32_MAX
-#define ALL_SUBRESOURCES                    0, REMAINING_MIP_LEVELS, 0, REMAINING_ARRAY_LAYERS
-
-#define MAX_VERTEX_BINDINGS                 16
-#define APPEND_OFFSET_ALIGNED               UINT32_MAX
-
-#define MAX_VIEWPORTS                       16
-#define MAX_SCISSORS                        16
-
-#define MAX_SETS_PER_POOL                   1024
-#define MAX_BOUND_DESCRIPTOR_SETS           32
-
-#define WHOLE_SIZE                          UINT64_MAX
+constexpr auto MaxRenderTargets = 8u;
+constexpr auto MaxViewports = 16u;
+constexpr auto MaxScissors = 16u;
+constexpr auto MaxVertexBindings = 16u;
 
 // This value is based on what the majority of the GPUs can support in Vulkan. While D3D12 generally allows about 64 DWORDs, a significant amount of Vulkan drivers have a limit of 128 bytes for VkPhysicalDeviceLimits::maxPushConstantsSize. This limits the numberof push constants to 32.
-#define MAX_PUSH_CONSTANTS                  32
+constexpr auto MaxPushConstants = 32u;
+
+constexpr auto MaxSamplerDescriptors = 2048u;
+constexpr auto DefaultResourceDescriptorCount = 8192u;
+constexpr auto DefaultSampleDescriptorCount = MaxSamplerDescriptors;
+
+constexpr auto MaxSetsPerPool = 1024u;
+constexpr auto MaxBoundDescriptorSets = 32u;
+
+constexpr auto RemainingMipLevels = UINT32_MAX;
+constexpr auto RemainingArrayLayers = UINT32_MAX;
+#define ALL_SUBRESOURCES 0, vkr::RemainingMipLevels, 0, vkr::RemainingArrayLayers
+
 
 // Vulkan dynamic uniform/storage buffers requires that offsets are aligned to VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment. Based on vulkan.gpuinfo.org, the range of this value [1, 256] Meaning that 256 should cover all offset cases.
 // D3D12 on most(all?) GPUs require that the minimum constant buffer size to be 256.
-#define CONSTANT_BUFFER_ALIGNMENT           256
-#define UNIFORM_BUFFER_ALIGNMENT            CONSTANT_BUFFER_ALIGNMENT
-#define STORAGE_BUFFER_ALIGNMENT            CONSTANT_BUFFER_ALIGNMENT
-#define STUCTURED_BUFFER_ALIGNMENT          CONSTANT_BUFFER_ALIGNMENT
+constexpr auto CONSTANT_BUFFER_ALIGNMENT = 256u;
+constexpr auto UNIFORM_BUFFER_ALIGNMENT = CONSTANT_BUFFER_ALIGNMENT;
+constexpr auto STORAGE_BUFFER_ALIGNMENT = CONSTANT_BUFFER_ALIGNMENT;
+constexpr auto STUCTURED_BUFFER_ALIGNMENT = CONSTANT_BUFFER_ALIGNMENT;
 
-#define MINIMUM_CONSTANT_BUFFER_SIZE        CONSTANT_BUFFER_ALIGNMENT
-#define MINIMUM_UNIFORM_BUFFER_SIZE         CONSTANT_BUFFER_ALIGNMENT
-#define MINIMUM_STORAGE_BUFFER_SIZE         CONSTANT_BUFFER_ALIGNMENT
-#define MINIMUM_STRUCTURED_BUFFER_SIZE      CONSTANT_BUFFER_ALIGNMENT
+constexpr auto MINIMUM_CONSTANT_BUFFER_SIZE = CONSTANT_BUFFER_ALIGNMENT;
+constexpr auto MINIMUM_UNIFORM_BUFFER_SIZE = CONSTANT_BUFFER_ALIGNMENT;
+constexpr auto MINIMUM_STORAGE_BUFFER_SIZE = CONSTANT_BUFFER_ALIGNMENT;
+constexpr auto MINIMUM_STRUCTURED_BUFFER_SIZE = CONSTANT_BUFFER_ALIGNMENT;
 
-#define MAX_MODEL_TEXTURES_IN_CREATE_INFO 16
+constexpr auto MAX_MODEL_TEXTURES_IN_CREATE_INFO = 16;
 
 // standard attribute semantic names
-#define SEMANTIC_NAME_POSITION  "POSITION"
-#define SEMANTIC_NAME_NORMAL    "NORMAL"
-#define SEMANTIC_NAME_COLOR     "COLOR"
-#define SEMANTIC_NAME_TEXCOORD  "TEXCOORD"
-#define SEMANTIC_NAME_TANGENT   "TANGENT"
-#define SEMANTIC_NAME_BITANGENT "BITANGENT"
-#define SEMANTIC_NAME_CUSTOM    "CUSTOM"
+constexpr auto SEMANTIC_NAME_POSITION = "POSITION";
+constexpr auto SEMANTIC_NAME_NORMAL = "NORMAL";
+constexpr auto SEMANTIC_NAME_COLOR = "COLOR";
+constexpr auto SEMANTIC_NAME_TEXCOORD = "TEXCOORD";
+constexpr auto SEMANTIC_NAME_TANGENT = "TANGENT";
+constexpr auto SEMANTIC_NAME_BITANGENT = "BITANGENT";
+constexpr auto SEMANTIC_NAME_CUSTOM = "CUSTOM";
 
 #pragma endregion
 
@@ -618,14 +612,6 @@ enum TransitionFlag
 	TRANSITION_FALG_API_OPTIONAL = 2, // Indicates a transition that can be optionally ignored by the API
 };
 
-enum VendorId
-{
-	VENDOR_ID_UNKNOWN = 0x0000,
-	VENDOR_ID_AMD = 0x1002,
-	VENDOR_ID_INTEL = 0x8086,
-	VENDOR_ID_NVIDIA = 0x10DE,
-};
-
 enum VertexInputRate
 {
 	VERTEX_INPUT_RATE_VERTEX = 0,
@@ -870,6 +856,10 @@ enum FormatLayout
 
 struct FormatComponentOffset final
 {
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable : 4201)
+#endif
 	union
 	{
 		struct
@@ -885,6 +875,9 @@ struct FormatComponentOffset final
 			int32_t stencil : 8;
 		};
 	};
+#if defined(_MSC_VER)
+#	pragma warning(pop)
+#endif
 };
 
 struct FormatDesc final
@@ -926,7 +919,7 @@ struct FormatDesc final
 // Gets a description of the given /b format.
 const FormatDesc* GetFormatDescription(Format format);
 
-const char* ToString(Format format);
+std::string ToString(Format format);
 
 #pragma endregion
 
@@ -1385,8 +1378,8 @@ std::string ToString(DescriptorType value);
 std::string ToString(VertexSemantic value);
 std::string ToString(IndexType value);
 
-uint32_t    IndexTypeSize(IndexType value);
-Format      VertexSemanticFormat(VertexSemantic value);
+uint32_t IndexTypeSize(IndexType value);
+Format VertexSemanticFormat(VertexSemantic value);
 
 std::string ToString(const gli::target& target);
 std::string ToString(const gli::format& format);
@@ -1394,8 +1387,6 @@ std::string ToString(const gli::format& format);
 #pragma endregion
 
 #pragma region Core Struct
-
-
 
 struct Extent2D final
 {
@@ -2271,7 +2262,7 @@ struct GeometryCreateInfo
 	IndexType               indexType = INDEX_TYPE_UNDEFINED;
 	GeometryVertexAttributeLayout vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
 	uint32_t                      vertexBindingCount = 0;
-	VertexBinding           vertexBindings[MAX_VERTEX_BINDINGS] = {};
+	VertexBinding           vertexBindings[MaxVertexBindings] = {};
 	PrimitiveTopology       primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 	// Creates a create info objects with UINT8, UINT16 or UINT32 index type and position vertex attribute.
@@ -2531,8 +2522,8 @@ public:
 	uint32_t GetHeight(uint32_t level) const;
 
 	static uint32_t CalculateLevelCount(uint32_t width, uint32_t height);
-	static Result   LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount = REMAINING_MIP_LEVELS);
-	static Result   SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount = REMAINING_MIP_LEVELS);
+	static Result   LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
+	static Result   SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
 
 private:
 	std::vector<char>   mData;
@@ -2547,11 +2538,10 @@ private:
 
 #pragma endregion
 
-#pragma region grfx util
+#pragma region vkr util
 
-namespace grfx_util
+namespace vkrUtil
 {
-
 	class ImageOptions
 	{
 	public:
@@ -2563,7 +2553,7 @@ namespace grfx_util
 
 	private:
 		ImageUsageFlags mAdditionalUsage = ImageUsageFlags();
-		uint32_t              mMipLevelCount = REMAINING_MIP_LEVELS;
+		uint32_t              mMipLevelCount = RemainingMipLevels;
 
 		friend Result CreateImageFromBitmap(
 			Queue* pQueue,

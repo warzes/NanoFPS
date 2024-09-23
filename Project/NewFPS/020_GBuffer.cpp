@@ -20,7 +20,7 @@ namespace e020
 		// Model constants
 		{
 			vkr::BufferCreateInfo bufferCreateInfo = {};
-			bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+			bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
 			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuModelConstants));
@@ -93,12 +93,12 @@ namespace e020
 			const vkr::VertexInputRate inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
 			vkr::VertexDescription     vertexDescription;
 			// clang-format off
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_POSITION , 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_COLOR    , 1, vkr::FORMAT_R32G32B32_FLOAT, 1, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_NORMAL   , 2, vkr::FORMAT_R32G32B32_FLOAT, 2, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_TEXCOORD , 3, vkr::FORMAT_R32G32_FLOAT,    3, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_TANGENT  , 4, vkr::FORMAT_R32G32B32_FLOAT, 4, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ SEMANTIC_NAME_BITANGENT, 5, vkr::FORMAT_R32G32B32_FLOAT, 5, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_POSITION , 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_COLOR    , 1, vkr::FORMAT_R32G32B32_FLOAT, 1, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_NORMAL   , 2, vkr::FORMAT_R32G32B32_FLOAT, 2, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TEXCOORD , 3, vkr::FORMAT_R32G32_FLOAT,    3, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TANGENT  , 4, vkr::FORMAT_R32G32B32_FLOAT, 4, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_BITANGENT, 5, vkr::FORMAT_R32G32B32_FLOAT, 5, APPEND_OFFSET_ALIGNED, inputRate });
 			// clang-format on
 
 			vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -220,8 +220,8 @@ namespace e020
 			*ppTexture = it->second;
 		}
 		else {
-			vkr::grfx_util::TextureOptions textureOptions = vkr::grfx_util::TextureOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-			CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(pQueue, path, ppTexture, textureOptions));
+			vkr::vkrUtil::TextureOptions textureOptions = vkr::vkrUtil::TextureOptions().MipLevelCount(vkr::RemainingMipLevels);
+			CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(pQueue, path, ppTexture, textureOptions));
 		}
 
 		return SUCCESS;
@@ -236,7 +236,7 @@ namespace e020
 		MaterialConstants* pMaterialConstants = nullptr;
 		{
 			vkr::BufferCreateInfo bufferCreateInfo = {};
-			bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+			bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
 			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &tmpCpuMaterialConstants));
@@ -354,8 +354,8 @@ namespace e020
 	{
 		// Create 1x1 black and white textures
 		{
-			CHECKED_CALL(vkr::grfx_util::CreateTexture1x1<uint8_t>(pQueue, { 0, 0, 0, 0 }, &s1x1BlackTexture));
-			CHECKED_CALL(vkr::grfx_util::CreateTexture1x1<uint8_t>(pQueue, { 255, 255, 255, 255 }, &s1x1WhiteTexture));
+			CHECKED_CALL(vkr::vkrUtil::CreateTexture1x1<uint8_t>(pQueue, { 0, 0, 0, 0 }, &s1x1BlackTexture));
+			CHECKED_CALL(vkr::vkrUtil::CreateTexture1x1<uint8_t>(pQueue, { 255, 255, 255, 255 }, &s1x1WhiteTexture));
 		}
 
 		// Create sampler
@@ -473,7 +473,7 @@ bool Example_020::Setup()
 	// GBuffer attribute selection buffer
 	{
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
@@ -519,7 +519,7 @@ bool Example_020::Setup()
 		writes[3].pImageView = mGBufferRenderPass->GetRenderTargetTexture(3)->GetSampledImageView();
 		// Environment map and IBL are not currently used.
 		// Create a 1x1 image for unused textures.
-		CHECKED_CALL(vkr::grfx_util::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 255, 255, 255, 255 }, &m1x1WhiteTexture));
+		CHECKED_CALL(vkr::vkrUtil::CreateTexture1x1<uint8_t>(device.GetGraphicsQueue(), { 255, 255, 255, 255 }, &m1x1WhiteTexture));
 		writes[4].binding = GBUFFER_ENV_REGISTER;
 		writes[4].arrayIndex = 0;
 		writes[4].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -547,7 +547,7 @@ bool Example_020::Setup()
 	{
 		// Scene constants
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_CONSTANT_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuSceneConstants));
@@ -559,7 +559,7 @@ bool Example_020::Setup()
 
 		// Light constants
 		bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_STRUCTURED_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_STRUCTURED_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		bufferCreateInfo.structuredElementStride = 32;
@@ -916,7 +916,7 @@ void Example_020::setupEntities()
 	vkr::TriMesh        mesh = vkr::TriMesh::CreateSphere(1.0f, 128, 64, options);
 	vkr::Geometry       geo;
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mSphere));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mSphere));
 
 	mEntities.resize(7);
 
@@ -948,7 +948,7 @@ void Example_020::setupEntities()
 
 		mesh = vkr::TriMesh::CreateCube(float3(10, 1, 10), vkr::TriMeshOptions(options).TexCoordScale(float2(5)));
 		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mBox));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mBox));
 
 		e020::EntityCreateInfo createInfo = {};
 		createInfo.pMesh = mBox;

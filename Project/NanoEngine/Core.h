@@ -10,6 +10,14 @@
 
 #pragma endregion
 
+#pragma region Constants
+
+constexpr auto WHOLE_SIZE = UINT64_MAX;
+constexpr auto VALUE_IGNORED = UINT32_MAX;
+constexpr auto APPEND_OFFSET_ALIGNED = UINT32_MAX;
+
+#pragma endregion
+
 #pragma region Base Types
 
 // Import GLM types as HLSL friendly names
@@ -380,8 +388,8 @@ inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
 class ObjPtrRefBase
 {
 public:
-	ObjPtrRefBase() {}
-	virtual ~ObjPtrRefBase() {}
+	ObjPtrRefBase() = default;
+	virtual ~ObjPtrRefBase() = default;
 
 private:
 	friend class ObjPtrBase;
@@ -391,8 +399,8 @@ private:
 class ObjPtrBase
 {
 public:
-	ObjPtrBase() {}
-	virtual ~ObjPtrBase() {}
+	ObjPtrBase() = default;
+	virtual ~ObjPtrBase() = default;
 
 protected:
 	void Set(void** ppObj, ObjPtrRefBase* pObjRef) const
@@ -402,7 +410,7 @@ protected:
 };
 
 template <typename ObjectT>
-class ObjPtrRef : public ObjPtrRefBase
+class ObjPtrRef final : public ObjPtrRefBase
 {
 public:
 	ObjPtrRef(ObjectT** ptrRef) : m_ptrRef(ptrRef) {}
@@ -413,13 +421,10 @@ public:
 		return addr;
 	}
 
-	operator ObjectT**()
-	{
-		return m_ptrRef;
-	}
+	operator ObjectT**() { return m_ptrRef; }
 
 private:
-	virtual void set(void** ppObj) override
+	void set(void** ppObj) final
 	{
 		*m_ptrRef = reinterpret_cast<ObjectT*>(*ppObj);
 	}
@@ -428,29 +433,22 @@ private:
 };
 
 template <typename ObjectT>
-class ObjPtr : public ObjPtrBase
+class ObjPtr final : public ObjPtrBase
 {
 public:
 	using object_type = ObjectT;
 
-	ObjPtr(ObjectT* ptr = nullptr)
-		: m_ptr(ptr)
-	{
-	}
+	ObjPtr(ObjectT* ptr = nullptr) : m_ptr(ptr) {}
 
 	ObjPtr& operator=(const ObjPtr& rhs)
 	{
-		if (&rhs != this) {
-			m_ptr = rhs.m_ptr;
-		}
+		if (&rhs != this) m_ptr = rhs.m_ptr;
 		return *this;
 	}
 
 	ObjPtr& operator=(const ObjectT* rhs)
 	{
-		if (rhs != m_ptr)
-			m_ptr = const_cast<ObjectT*>(rhs);
-
+		if (rhs != m_ptr) m_ptr = const_cast<ObjectT*>(rhs);
 		return *this;
 	}
 
@@ -499,11 +497,10 @@ private:
 };
 
 template <typename VkHandleT>
-class VkHandlePtrRef
+class VkHandlePtrRef final
 {
 public:
 	VkHandlePtrRef(VkHandleT* handle) : m_handlePtr(handle) {}
-
 	operator VkHandleT*()
 	{
 		return m_handlePtr;
@@ -514,7 +511,7 @@ private:
 };
 
 template <typename VkHandleT>
-class VkHandlePtr
+class VkHandlePtr final
 {
 public:
 	VkHandlePtr(const VkHandleT& handle = VK_NULL_HANDLE) : m_handle(handle) {}

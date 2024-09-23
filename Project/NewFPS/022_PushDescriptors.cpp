@@ -36,8 +36,8 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 0;
 
-			vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-			CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &mImages[textureIndex], options, true));
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);
 			CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mSampledImageViews[textureIndex]));
@@ -46,8 +46,8 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 1;
 
-			vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-			CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/chinatown.jpg", &mImages[textureIndex], options, true));
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/chinatown.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);
 			CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mSampledImageViews[textureIndex]));
@@ -56,8 +56,8 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 2;
 
-			vkr::grfx_util::ImageOptions options = vkr::grfx_util::ImageOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-			CHECKED_CALL(vkr::grfx_util::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImages[textureIndex], options, true));
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);
 			CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &mSampledImageViews[textureIndex]));

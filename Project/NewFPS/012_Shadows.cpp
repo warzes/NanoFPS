@@ -197,11 +197,11 @@ bool Example_012::Setup()
 
 		vkr::Geometry geo;
 		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &mLight.mesh));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &mLight.mesh));
 
 		// Uniform buffer
 		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mLight.drawUniformBuffer));
@@ -452,18 +452,18 @@ void Example_012::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool* pDe
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
 
 	// Draw uniform buffer
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = RoundUp(512, CONSTANT_BUFFER_ALIGNMENT);
+	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->drawUniformBuffer));
 
 	// Shadow uniform buffer
 	bufferCreateInfo = {};
-	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->shadowUniformBuffer));

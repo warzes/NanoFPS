@@ -76,13 +76,13 @@ bool Example_017::Setup()
 		vkr::Geometry geo;
 		vkr::TriMesh  mesh = vkr::TriMesh::CreateFromOBJ("basic/models/altimeter/altimeter.obj", vkr::TriMeshOptions().Indices().TexCoords().Scale(float3(1.5f)));
 		CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mModelMesh));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &mModelMesh));
 	}
 
 	// vkr::Texture.
 	{
-		vkr::grfx_util::TextureOptions options = vkr::grfx_util::TextureOptions().MipLevelCount(REMAINING_MIP_LEVELS);
-		CHECKED_CALL(vkr::grfx_util::CreateTextureFromFile(device.GetGraphicsQueue(), "materials/textures/altimeter/albedo.jpg", &mModelTexture, options));
+		vkr::vkrUtil::TextureOptions options = vkr::vkrUtil::TextureOptions().MipLevelCount(vkr::RemainingMipLevels);
+		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(device.GetGraphicsQueue(), "materials/textures/altimeter/albedo.jpg", &mModelTexture, options));
 	}
 
 	// Samplers.
@@ -169,7 +169,7 @@ bool Example_017::Setup()
 			// Uniform buffer (contains transformation matrix).
 			{
 				vkr::BufferCreateInfo bufferCreateInfo = {};
-				bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+				bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
@@ -453,7 +453,7 @@ void Example_017::setupCompute()
 			// Uniform buffer (contains filter selection flag).
 			{
 				vkr::BufferCreateInfo bufferCreateInfo = {};
-				bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+				bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 

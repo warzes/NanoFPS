@@ -224,10 +224,10 @@ void Example_009::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreat
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(createInfo, mesh, &geo));
-	CHECKED_CALL(vkr::grfx_util::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
+	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
 
 	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
+	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->uniformBuffer));

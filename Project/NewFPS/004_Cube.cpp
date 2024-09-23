@@ -15,7 +15,7 @@ bool Example_004::Setup()
 	// Uniform buffer
 	{
 		vkr::BufferCreateInfo bufferCreateInfo              = {};
-		bufferCreateInfo.size                          = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size                          = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage                   = vkr::MEMORY_USAGE_CPU_TO_GPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mUniformBuffer));

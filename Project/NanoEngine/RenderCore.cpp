@@ -341,7 +341,7 @@ const FormatDesc* GetFormatDescription(Format format)
 	return &formatDescs[formatIndex];
 }
 
-const char* ToString(Format format)
+std::string ToString(Format format)
 {
 	uint32_t formatIndex = static_cast<uint32_t>(format);
 	ASSERT_MSG(formatIndex < formatDescsSize, "invalid format");
@@ -5072,7 +5072,7 @@ GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Fo
 			vertexBindingCount = 1;
 			break;
 		case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR:
-			ASSERT_MSG(vertexBindingCount < MAX_VERTEX_BINDINGS, "max vertex bindings exceeded");
+			ASSERT_MSG(vertexBindingCount < MaxVertexBindings, "max vertex bindings exceeded");
 			vertexBindings[vertexBindingCount].AppendAttribute(attribute);
 			vertexBindings[vertexBindingCount].SetBinding(vertexBindingCount);
 			vertexBindingCount += 1;
@@ -5975,7 +5975,7 @@ Result Mipmap::SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap
 
 #pragma region grfx util
 
-namespace grfx_util
+namespace vkrUtil
 {
 
 	Format ToGrfxFormat(Bitmap::Format value)
@@ -7447,7 +7447,7 @@ namespace grfx_util
 		return SUCCESS;
 	}
 
-} // namespace grfx_util
+} // namespace vkrUtil
 
 #pragma endregion
 

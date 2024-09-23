@@ -613,10 +613,10 @@ struct RenderPassCreateInfo final
 	uint32_t               arrayLayerCount = 1;
 	uint32_t               renderTargetCount = 0;
 	MultiViewState         multiViewState = {};
-	RenderTargetView*      pRenderTargetViews[MAX_RENDER_TARGETS] = {};
+	RenderTargetView*      pRenderTargetViews[MaxRenderTargets] = {};
 	DepthStencilView*      pDepthStencilView = nullptr;
 	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
-	RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	Ownership              ownership = OWNERSHIP_REFERENCE;
 
@@ -638,19 +638,19 @@ struct RenderPassCreateInfo2 final
 	MultiViewState         multiViewState = {};
 	SampleCount            sampleCount = SAMPLE_COUNT_1;
 	uint32_t               renderTargetCount = 0;
-	Format                 renderTargetFormats[MAX_RENDER_TARGETS] = {};
+	Format                 renderTargetFormats[MaxRenderTargets] = {};
 	Format                 depthStencilFormat = FORMAT_UNDEFINED;
-	ImageUsageFlags        renderTargetUsageFlags[MAX_RENDER_TARGETS] = {};
+	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
-	RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	AttachmentLoadOp       renderTargetLoadOps[MAX_RENDER_TARGETS] = { ATTACHMENT_LOAD_OP_LOAD };
-	AttachmentStoreOp      renderTargetStoreOps[MAX_RENDER_TARGETS] = { ATTACHMENT_STORE_OP_STORE };
+	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
+	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
 	AttachmentLoadOp       depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
-	ResourceState          renderTargetInitialStates[MAX_RENDER_TARGETS] = { RESOURCE_STATE_UNDEFINED };
+	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_UNDEFINED };
 	ResourceState          depthStencilInitialState = RESOURCE_STATE_UNDEFINED;
 	Ownership              ownership = OWNERSHIP_REFERENCE;
 
@@ -673,13 +673,13 @@ struct RenderPassCreateInfo3 final
 	uint32_t               renderTargetCount = 0;
 	uint32_t               arrayLayerCount = 1;
 	MultiViewState         multiViewState = {};
-	Image*                 pRenderTargetImages[MAX_RENDER_TARGETS] = {};
+	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
 	Image*                 pDepthStencilImage = nullptr;
 	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
-	RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	AttachmentLoadOp       renderTargetLoadOps[MAX_RENDER_TARGETS] = { ATTACHMENT_LOAD_OP_LOAD };
-	AttachmentStoreOp      renderTargetStoreOps[MAX_RENDER_TARGETS] = { ATTACHMENT_STORE_OP_STORE };
+	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
+	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
 	AttachmentLoadOp       depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
@@ -721,7 +721,7 @@ namespace internal
 		// Data unique to RenderPassCreateInfo
 		struct
 		{
-			RenderTargetView* pRenderTargetViews[MAX_RENDER_TARGETS] = {};
+			RenderTargetView* pRenderTargetViews[MaxRenderTargets] = {};
 			DepthStencilView* pDepthStencilView = nullptr;
 		} V1;
 
@@ -729,28 +729,28 @@ namespace internal
 		struct
 		{
 			SampleCount     sampleCount = SAMPLE_COUNT_1;
-			Format          renderTargetFormats[MAX_RENDER_TARGETS] = {};
+			Format          renderTargetFormats[MaxRenderTargets] = {};
 			Format          depthStencilFormat = FORMAT_UNDEFINED;
-			ImageUsageFlags renderTargetUsageFlags[MAX_RENDER_TARGETS] = {};
+			ImageUsageFlags renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags depthStencilUsageFlags = {};
-			ResourceState   renderTargetInitialStates[MAX_RENDER_TARGETS] = { RESOURCE_STATE_UNDEFINED };
+			ResourceState   renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_UNDEFINED };
 			ResourceState   depthStencilInitialState = RESOURCE_STATE_UNDEFINED;
 		} V2;
 
 		// Data unique to RenderPassCreateInfo3
 		struct
 		{
-			Image* pRenderTargetImages[MAX_RENDER_TARGETS] = {};
+			Image* pRenderTargetImages[MaxRenderTargets] = {};
 			Image* pDepthStencilImage = nullptr;
 		} V3;
 
 		// Clear values
-		RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+		RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		// Load/store ops
-		AttachmentLoadOp  renderTargetLoadOps[MAX_RENDER_TARGETS] = { ATTACHMENT_LOAD_OP_LOAD };
-		AttachmentStoreOp renderTargetStoreOps[MAX_RENDER_TARGETS] = { ATTACHMENT_STORE_OP_STORE };
+		AttachmentLoadOp  renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
+		AttachmentStoreOp renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
 		AttachmentLoadOp  depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 		AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 		AttachmentLoadOp  stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
@@ -854,13 +854,13 @@ struct DrawPassCreateInfo
 	uint32_t               height = 0;
 	SampleCount            sampleCount = SAMPLE_COUNT_1;
 	uint32_t               renderTargetCount = 0;
-	Format                 renderTargetFormats[MAX_RENDER_TARGETS] = {};
+	Format                 renderTargetFormats[MaxRenderTargets] = {};
 	Format                 depthStencilFormat = FORMAT_UNDEFINED;
-	ImageUsageFlags        renderTargetUsageFlags[MAX_RENDER_TARGETS] = {};
+	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
-	ResourceState          renderTargetInitialStates[MAX_RENDER_TARGETS] = { RESOURCE_STATE_RENDER_TARGET };
+	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_RENDER_TARGET };
 	ResourceState          depthStencilInitialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
-	RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    pShadingRatePattern = nullptr;
 	ImageCreateFlags       imageCreateFlags = {};
@@ -872,10 +872,10 @@ struct DrawPassCreateInfo2
 	uint32_t               width = 0;
 	uint32_t               height = 0;
 	uint32_t               renderTargetCount = 0;
-	Image*                 pRenderTargetImages[MAX_RENDER_TARGETS] = {};
+	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
 	Image*                 pDepthStencilImage = nullptr;
 	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
-	RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    pShadingRatePattern = nullptr;
 };
@@ -886,7 +886,7 @@ struct DrawPassCreateInfo3
 	uint32_t            width = 0;
 	uint32_t            height = 0;
 	uint32_t            renderTargetCount = 0;
-	Texture*            pRenderTargetTextures[MAX_RENDER_TARGETS] = {};
+	Texture*            pRenderTargetTextures[MaxRenderTargets] = {};
 	Texture*            pDepthStencilTexture = nullptr;
 	ResourceState       depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 	ShadingRatePattern* pShadingRatePattern = nullptr;
@@ -916,11 +916,11 @@ namespace internal
 		struct
 		{
 			SampleCount      sampleCount = SAMPLE_COUNT_1;
-			Format           renderTargetFormats[MAX_RENDER_TARGETS] = {};
+			Format           renderTargetFormats[MaxRenderTargets] = {};
 			Format           depthStencilFormat = FORMAT_UNDEFINED;
-			ImageUsageFlags  renderTargetUsageFlags[MAX_RENDER_TARGETS] = {};
+			ImageUsageFlags  renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags  depthStencilUsageFlags = {};
-			ResourceState    renderTargetInitialStates[MAX_RENDER_TARGETS] = { RESOURCE_STATE_RENDER_TARGET };
+			ResourceState    renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_RENDER_TARGET };
 			ResourceState    depthStencilInitialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 			ImageCreateFlags imageCreateFlags = {};
 		} V1;
@@ -928,19 +928,19 @@ namespace internal
 		// Data unique to DrawPassCreateInfo2
 		struct
 		{
-			Image* pRenderTargetImages[MAX_RENDER_TARGETS] = {};
+			Image* pRenderTargetImages[MaxRenderTargets] = {};
 			Image* pDepthStencilImage = nullptr;
 		} V2;
 
 		// Data unique to DrawPassCreateInfo3
 		struct
 		{
-			Texture* pRenderTargetTextures[MAX_RENDER_TARGETS] = {};
+			Texture* pRenderTargetTextures[MaxRenderTargets] = {};
 			Texture* pDepthStencilTexture = nullptr;
 		} V3;
 
 		// Clear values
-		RenderTargetClearValue renderTargetClearValues[MAX_RENDER_TARGETS] = {};
+		RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		DrawPassCreateInfo() {}
@@ -1466,7 +1466,7 @@ struct MeshVertexAttribute
 struct MeshVertexBufferDescription
 {
 	uint32_t                  attributeCount = 0;
-	MeshVertexAttribute attributes[MAX_VERTEX_BINDINGS] = {};
+	MeshVertexAttribute attributes[MaxVertexBindings] = {};
 
 	// Use 0 to have stride calculated from attributes
 	uint32_t stride = 0;
@@ -1490,7 +1490,7 @@ struct MeshCreateInfo
 	uint32_t                          indexCount = 0;
 	uint32_t                          vertexCount = 0;
 	uint32_t                          vertexBufferCount = 0;
-	MeshVertexBufferDescription vertexBuffers[MAX_VERTEX_BINDINGS] = {};
+	MeshVertexBufferDescription vertexBuffers[MaxVertexBindings] = {};
 	MemoryUsage                 memoryUsage = MEMORY_USAGE_GPU_ONLY;
 
 	MeshCreateInfo() {}
@@ -1573,7 +1573,7 @@ private:
 struct VertexInputState
 {
 	uint32_t            bindingCount = 0;
-	VertexBinding bindings[MAX_VERTEX_BINDINGS] = {};
+	VertexBinding bindings[MaxVertexBindings] = {};
 };
 
 struct InputAssemblyState
@@ -1658,14 +1658,14 @@ struct ColorBlendState
 	bool                       logicOpEnable = false;
 	LogicOp              logicOp = LOGIC_OP_CLEAR;
 	uint32_t                   blendAttachmentCount = 0;
-	BlendAttachmentState blendAttachments[MAX_RENDER_TARGETS] = {};
+	BlendAttachmentState blendAttachments[MaxRenderTargets] = {};
 	float                      blendConstants[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
 struct OutputState
 {
 	uint32_t     renderTargetCount = 0;
-	Format renderTargetFormats[MAX_RENDER_TARGETS] = { FORMAT_UNDEFINED };
+	Format renderTargetFormats[MaxRenderTargets] = { FORMAT_UNDEFINED };
 	Format depthStencilFormat = FORMAT_UNDEFINED;
 };
 
@@ -1702,7 +1702,7 @@ struct GraphicsPipelineCreateInfo2
 	bool                           depthReadEnable = true;
 	bool                           depthWriteEnable = true;
 	CompareOp                depthCompareOp = COMPARE_OP_LESS;
-	BlendMode                blendModes[MAX_RENDER_TARGETS] = { BLEND_MODE_NONE };
+	BlendMode                blendModes[MaxRenderTargets] = { BLEND_MODE_NONE };
 	OutputState              outputState = {};
 	ShadingRateMode          shadingRateMode = SHADING_RATE_NONE;
 	MultiViewState           multiViewState = {};
@@ -1777,7 +1777,7 @@ struct PipelineInterfaceCreateInfo
 	{
 		uint32_t                         set = VALUE_IGNORED; // Set number
 		const DescriptorSetLayout* pLayout = nullptr;           // Set layout
-	} sets[MAX_BOUND_DESCRIPTOR_SETS] = {};
+	} sets[MaxBoundDescriptorSets] = {};
 
 	// VK: Push constants
 	// DX: Root constants
@@ -1962,7 +1962,7 @@ struct RenderPassBeginInfo
 	const RenderPass* pRenderPass = nullptr;
 	Rect                   renderArea = {};
 	uint32_t                     RTVClearCount = 0;
-	RenderTargetClearValue RTVClearValues[MAX_RENDER_TARGETS] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	RenderTargetClearValue RTVClearValues[MaxRenderTargets] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };
 };
 
@@ -1973,10 +1973,10 @@ struct RenderingInfo
 	Rect                renderArea = {};
 
 	uint32_t                renderTargetCount = 0;
-	RenderTargetView* pRenderTargetViews[MAX_RENDER_TARGETS] = {};
+	RenderTargetView* pRenderTargetViews[MaxRenderTargets] = {};
 	DepthStencilView* pDepthStencilView = nullptr;
 
-	RenderTargetClearValue RTVClearValues[MAX_RENDER_TARGETS] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	RenderTargetClearValue RTVClearValues[MaxRenderTargets] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };
 };
 
@@ -2025,8 +2025,8 @@ namespace internal {
 	struct CommandBufferCreateInfo
 	{
 		const CommandPool* pPool = nullptr;
-		uint32_t                 resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT;
-		uint32_t                 samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT;
+		uint32_t                 resourceDescriptorCount = DefaultResourceDescriptorCount;
+		uint32_t                 samplerDescriptorCount = DefaultSampleDescriptorCount;
 	};
 
 } // namespace internal
@@ -2443,8 +2443,8 @@ public:
 
 	Result CreateCommandBuffer(
 		CommandBuffer** ppCommandBuffer,
-		uint32_t              resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT,
-		uint32_t              samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT);
+		uint32_t              resourceDescriptorCount = DefaultResourceDescriptorCount,
+		uint32_t              samplerDescriptorCount = DefaultSampleDescriptorCount);
 	void DestroyCommandBuffer(const CommandBuffer* pCommandBuffer);
 
 	// In place copy of buffer to buffer
@@ -2549,10 +2549,10 @@ struct FullscreenQuadCreateInfo
 	{
 		uint32_t                   set = VALUE_IGNORED;
 		DescriptorSetLayout* pLayout;
-	} sets[MAX_BOUND_DESCRIPTOR_SETS] = {};
+	} sets[MaxBoundDescriptorSets] = {};
 
 	uint32_t     renderTargetCount = 0;
-	Format renderTargetFormats[MAX_RENDER_TARGETS] = { FORMAT_UNDEFINED };
+	Format renderTargetFormats[MaxRenderTargets] = { FORMAT_UNDEFINED };
 	Format depthStencilFormat = FORMAT_UNDEFINED;
 };
 
@@ -2888,8 +2888,8 @@ using VulkanCommandPoolPtr = std::shared_ptr<VulkanCommandPool>;
 struct CommandBufferCreateInfo final
 {
 	VulkanCommandPoolPtr pool = nullptr;
-	uint32_t resourceDescriptorCount = DEFAULT_RESOURCE_DESCRIPTOR_COUNT;
-	uint32_t samplerDescriptorCount = DEFAULT_SAMPLE_DESCRIPTOR_COUNT; // TODO: не используется - удалить
+	uint32_t resourceDescriptorCount = DefaultResourceDescriptorCount;
+	uint32_t samplerDescriptorCount = DefaultSampleDescriptorCount; // TODO: не используется - удалить
 };
 
 class VulkanCommandBuffer final

@@ -19,7 +19,7 @@ bool Example_018::Setup()
 		vkr::GeometryCreateInfo geometryCreateInfo = vkr::GeometryCreateInfo::Planar().AddColor();
 		vkr::TriMeshOptions     triMeshOptions = vkr::TriMeshOptions().Indices().VertexColors();
 		vkr::TriMesh            sphereTriMesh = vkr::TriMesh::CreateSphere(/* radius */ 1.0f, 16, 8, triMeshOptions);
-		CHECKED_CALL(vkr::grfx_util::CreateMeshFromTriMesh(device.GetGraphicsQueue(), &sphereTriMesh, &mSphereMesh));
+		CHECKED_CALL(vkr::vkrUtil::CreateMeshFromTriMesh(device.GetGraphicsQueue(), &sphereTriMesh, &mSphereMesh));
 	}
 
 	// Pipeline

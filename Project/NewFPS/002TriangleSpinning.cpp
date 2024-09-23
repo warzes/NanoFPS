@@ -9,7 +9,7 @@ bool Example_002::Setup()
 	// add new example
 	{
 		vkr::BufferCreateInfo bufferCreateInfo              = {};
-		bufferCreateInfo.size                          = MINIMUM_UNIFORM_BUFFER_SIZE;
+		bufferCreateInfo.size                          = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
 		bufferCreateInfo.memoryUsage                   = vkr::MEMORY_USAGE_CPU_TO_GPU;
 
