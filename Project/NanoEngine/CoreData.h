@@ -205,3 +205,131 @@ void Bitmap::Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataTy
 }
 
 #pragma endregion
+
+
+#pragma region Mipmap
+
+constexpr auto RemainingMipLevels = UINT32_MAX;
+
+// Stores a mipmap as a linear chunk of memory with each mip level accessible as a Bitmap.
+//! The expected disk format used by Mipmap::LoadFile is an vertically tailed mip map:
+//!   +---------------------+
+//!   | MIP 0               |
+//!   |                     |
+//!   +---------------------+
+//!   | MIP 1    |          |
+//!   +----------+----------+
+//!   | ... |               |
+//!   +-----+---------------+
+class Mipmap
+{
+public:
+	Mipmap() {}
+	// Using the static, shared-memory pool is currently only safe in single-threaded applications!
+	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
+	Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount, bool useStaticPool);
+	Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount);
+	// Using the static, shared-memory pool is currently only safe in single-threaded applications!
+	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
+	Mipmap(const Bitmap& bitmap, uint32_t levelCount, bool useStaticPool);
+	Mipmap(const Bitmap& bitmap, uint32_t levelCount);
+	~Mipmap() {}
+
+	// Returns true if there's at least one mip level, format is valid, and storage is valid
+	bool IsOk() const;
+
+	Bitmap::Format GetFormat() const;
+	uint32_t       GetLevelCount() const { return CountU32(mMips); }
+	Bitmap* GetMip(uint32_t level);
+	const Bitmap* GetMip(uint32_t level) const;
+
+	uint32_t GetWidth(uint32_t level) const;
+	uint32_t GetHeight(uint32_t level) const;
+
+	static uint32_t CalculateLevelCount(uint32_t width, uint32_t height);
+	static Result   LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
+	static Result   SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
+
+private:
+	std::vector<char>   mData;
+	std::vector<Bitmap> mMips;
+
+	// Static, shared-memory pool for temporary mipmap generation.
+	// NOTE: This is designed for single-threaded use ONLY as it's an unprotected memory block!
+	// This will need locks if the consuming paths ever become multi-threaded.
+	static std::vector<char> mStaticData;
+	bool                     mUseStaticPool = false;
+};
+
+#pragma endregion
+
+#pragma region Font
+
+struct FontMetrics
+{
+	float ascent = 0;
+	float descent = 0;
+	float lineGap = 0;
+};
+
+struct GlyphBox
+{
+	int32_t x0 = 0;
+	int32_t y0 = 0;
+	int32_t x1 = 0;
+	int32_t y1 = 0;
+};
+
+struct GlyphMetrics
+{
+	float    advance = 0;
+	float    leftBearing = 0;
+	GlyphBox box = {};
+};
+
+class Font
+{
+public:
+	Font();
+	virtual ~Font();
+
+	static Result CreateFromFile(const std::filesystem::path& path, Font* pFont);
+	static Result CreateFromMemory(size_t size, const char* pData, Font* pFont);
+
+	float GetScale(float fontSizeInPixels) const;
+
+	void GetFontMetrics(float fontSizeInPixels, FontMetrics* pMetrics) const;
+
+	void GetGlyphMetrics(
+		float         fontSizeInPixels,
+		uint32_t      codepoint,
+		float         subpixelShiftX,
+		float         subpixelShiftY,
+		GlyphMetrics* pMetrics) const;
+
+	void RenderGlyphBitmap(
+		float          fontSizeInPixels,
+		uint32_t       codepoint,
+		float          subpixelShiftX,
+		float          subpixelShiftY,
+		uint32_t       glyphWidth,
+		uint32_t       glyphHeight,
+		uint32_t       rowStride,
+		unsigned char* pOutput) const;
+
+private:
+	void AcquireFontMetrics();
+
+private:
+	struct Object
+	{
+		std::vector<unsigned char> fontData;
+		stbtt_fontinfo             fontInfo;
+		int                        ascent = 0;
+		int                        descent = 0;
+		int                        lineGap = 0;
+	};
+	std::shared_ptr<Object> mObject;
+};
+
+#pragma endregion

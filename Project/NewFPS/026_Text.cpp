@@ -35,8 +35,8 @@ bool Example_026::Setup()
 
 	// Texture font
 	{
-		vkr::Font font;
-		CHECKED_CALL(vkr::Font::CreateFromFile("basic/fonts/Roboto/Roboto-Regular.ttf", &font));
+		Font font;
+		CHECKED_CALL(Font::CreateFromFile("basic/fonts/Roboto/Roboto-Regular.ttf", &font));
 
 		vkr::TextureFontCreateInfo createInfo = {};
 		createInfo.font = font;
