@@ -558,12 +558,12 @@ namespace scene {
 		// Default BRDF LUT sampler
 		{
 			vkr::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = vkr::FILTER_LINEAR;
-			createInfo.minFilter = vkr::FILTER_LINEAR;
-			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.magFilter = vkr::Filter::Linear;
+			createInfo.minFilter = vkr::Filter::Linear;
+			createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
+			createInfo.addressModeU = vkr::SamplerAddressMode::ClampToEdge;
+			createInfo.addressModeV = vkr::SamplerAddressMode::ClampToEdge;
+			createInfo.addressModeW = vkr::SamplerAddressMode::ClampToEdge;
 
 			auto ppxres = pDevice->CreateSampler(createInfo, &mDefaultBRDFLUTSampler);
 			if (Failed(ppxres)) {
@@ -586,12 +586,12 @@ namespace scene {
 		// Default IBL irradiance sampler
 		{
 			vkr::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = vkr::FILTER_LINEAR;
-			createInfo.minFilter = vkr::FILTER_LINEAR;
-			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
-			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.magFilter = vkr::Filter::Linear;
+			createInfo.minFilter = vkr::Filter::Linear;
+			createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
+			createInfo.addressModeU = vkr::SamplerAddressMode::Repeat;
+			createInfo.addressModeV = vkr::SamplerAddressMode::ClampToEdge;
+			createInfo.addressModeW = vkr::SamplerAddressMode::ClampToEdge;
 
 			auto ppxres = pDevice->CreateSampler(createInfo, &mDefaultIBLIrradianceSampler);
 			if (Failed(ppxres)) {
@@ -602,12 +602,12 @@ namespace scene {
 		// Default IBL environment sampler
 		{
 			vkr::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = vkr::FILTER_LINEAR;
-			createInfo.minFilter = vkr::FILTER_LINEAR;
-			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
-			createInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
-			createInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			createInfo.magFilter = vkr::Filter::Linear;
+			createInfo.minFilter = vkr::Filter::Linear;
+			createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
+			createInfo.addressModeU = vkr::SamplerAddressMode::Repeat;
+			createInfo.addressModeV = vkr::SamplerAddressMode::ClampToEdge;
+			createInfo.addressModeW = vkr::SamplerAddressMode::ClampToEdge;
 			createInfo.mipLodBias = 0.65f;
 			createInfo.minLod = 0.0f;
 			createInfo.maxLod = 1000.0f;
@@ -1807,10 +1807,10 @@ namespace scene {
 	{
 		switch (mode) {
 		default: break;
-		case GLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		case GLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return vkr::SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		case GLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return vkr::SamplerAddressMode::ClampToEdge;
+		case GLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return vkr::SamplerAddressMode::MirrorRepeat;
 		}
-		return vkr::SAMPLER_ADDRESS_MODE_REPEAT;
+		return vkr::SamplerAddressMode::Repeat;
 	}
 
 	template <typename GltfObjectT>
@@ -2215,20 +2215,20 @@ namespace scene {
 		//
 		{
 			vkr::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::FILTER_LINEAR : vkr::FILTER_NEAREST;
-			createInfo.minFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::FILTER_LINEAR : vkr::FILTER_NEAREST;
-			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR; // @TODO: add option to control this
+			createInfo.magFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::Filter::Linear : vkr::Filter::Nearest;
+			createInfo.minFilter = (pGltfSampler->mag_filter == GLTF_TEXTURE_FILTER_LINEAR) ? vkr::Filter::Linear : vkr::Filter::Nearest;
+			createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear; // @TODO: add option to control this
 			createInfo.addressModeU = ToSamplerAddressMode(pGltfSampler->wrap_s);
 			createInfo.addressModeV = ToSamplerAddressMode(pGltfSampler->wrap_t);
-			createInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_REPEAT;
+			createInfo.addressModeW = vkr::SamplerAddressMode::Repeat;
 			createInfo.mipLodBias = 0.0f;
 			createInfo.anisotropyEnable = false;
 			createInfo.maxAnisotropy = 0.0f;
 			createInfo.compareEnable = false;
-			createInfo.compareOp = vkr::COMPARE_OP_NEVER;
+			createInfo.compareOp = vkr::CompareOp::Never;
 			createInfo.minLod = 0.0f;
 			createInfo.maxLod = GLTF_LOD_CLAMP_NONE;
-			createInfo.borderColor = vkr::BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+			createInfo.borderColor = vkr::BorderColor::FloatTransparentBlack;
 
 			auto ppxres = loadParams.pDevice->CreateSampler(createInfo, &pGrfxSampler);
 			if (Failed(ppxres)) {

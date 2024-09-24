@@ -361,9 +361,9 @@ namespace e020
 		// Create sampler
 		{
 			vkr::SamplerCreateInfo createInfo = {};
-			createInfo.magFilter = vkr::FILTER_LINEAR;
-			createInfo.minFilter = vkr::FILTER_LINEAR;
-			createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+			createInfo.magFilter = vkr::Filter::Linear;
+			createInfo.minFilter = vkr::Filter::Linear;
+			createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
 			CHECKED_CALL(device.CreateSampler(createInfo, &sClampedSampler));
 		}
 
@@ -459,9 +459,9 @@ bool Example_020::Setup()
 	// Sampler
 	{
 		vkr::SamplerCreateInfo createInfo = {};
-		createInfo.magFilter = vkr::FILTER_LINEAR;
-		createInfo.minFilter = vkr::FILTER_LINEAR;
-		createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+		createInfo.magFilter = vkr::Filter::Linear;
+		createInfo.minFilter = vkr::Filter::Linear;
+		createInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
 		createInfo.minLod = 0.0f;
 		createInfo.maxLod = FLT_MAX;
 		CHECKED_CALL(device.CreateSampler(createInfo, &mSampler));

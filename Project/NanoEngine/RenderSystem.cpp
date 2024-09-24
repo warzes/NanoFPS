@@ -819,7 +819,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 		for (uint32_t i = 0; i < m_createInfo.imageCount; ++i)
 		{
 			ImageCreateInfo rtCreateInfo = ImageCreateInfo::RenderTarget2D(m_createInfo.width, m_createInfo.height, m_createInfo.colorFormat);
-			rtCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			rtCreateInfo.ownership = Ownership::Restricted;
 			rtCreateInfo.RTVClearValue = { 0.0f, 0.0f, 0.0f, 0.0f };
 			rtCreateInfo.initialState = RESOURCE_STATE_PRESENT;
 			rtCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
@@ -1006,7 +1006,7 @@ Result VulkanSwapChain::createDepthImages()
 		for (uint32_t i = 0; i < m_createInfo.imageCount; ++i)
 		{
 			ImageCreateInfo dpCreateInfo = ImageCreateInfo::DepthStencilTarget(m_createInfo.width, m_createInfo.height, m_createInfo.depthFormat);
-			dpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			dpCreateInfo.ownership = Ownership::Restricted;
 			dpCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 			dpCreateInfo.DSVClearValue = { 1.0f, 0xFF };
 
@@ -1051,7 +1051,7 @@ Result VulkanSwapChain::createRenderPasses()
 		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_clearDepthStencilViews[i];
 		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
-		rpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rpCreateInfo.ownership = Ownership::Restricted;
 		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
 		rpCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
@@ -1076,7 +1076,7 @@ Result VulkanSwapChain::createRenderPasses()
 		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_loadDepthStencilViews[i];
 		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
-		rpCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rpCreateInfo.ownership = Ownership::Restricted;
 		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
 
 		RenderPassPtr renderPass;
@@ -1123,7 +1123,7 @@ Result VulkanSwapChain::createRenderTargets()
 		auto imagePtr = m_colorImages[i];
 		RenderTargetViewCreateInfo rtvCreateInfo = RenderTargetViewCreateInfo::GuessFromImage(imagePtr);
 		rtvCreateInfo.loadOp = ATTACHMENT_LOAD_OP_CLEAR;
-		rtvCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+		rtvCreateInfo.ownership = Ownership::Restricted;
 		rtvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
 		RenderTargetViewPtr rtv;
@@ -1150,7 +1150,7 @@ Result VulkanSwapChain::createRenderTargets()
 			DepthStencilViewCreateInfo dsvCreateInfo = DepthStencilViewCreateInfo::GuessFromImage(depthImage);
 			dsvCreateInfo.depthLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
 			dsvCreateInfo.stencilLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
-			dsvCreateInfo.ownership = OWNERSHIP_RESTRICTED;
+			dsvCreateInfo.ownership = Ownership::Restricted;
 			dsvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
 			DepthStencilViewPtr clearDsv;

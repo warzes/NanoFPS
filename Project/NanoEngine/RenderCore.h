@@ -4,6 +4,78 @@
 
 namespace vkr {
 
+#pragma region VkHandlePtr
+
+template <typename VkHandleT>
+class VkHandlePtrRef final
+{
+public:
+	VkHandlePtrRef(VkHandleT* handle) : m_handlePtr(handle) {}
+	operator VkHandleT*() { return m_handlePtr; }
+
+private:
+	VkHandleT* m_handlePtr = nullptr;
+};
+
+template <typename VkHandleT>
+class VkHandlePtr final
+{
+public:
+	VkHandlePtr(const VkHandleT& handle = VK_NULL_HANDLE) : m_handle(handle) {}
+
+	VkHandlePtr& operator=(const VkHandleT& rhs)
+	{
+		m_handle = rhs;
+		return *this;
+	}
+
+	operator bool() const
+	{
+		return m_handle != VK_NULL_HANDLE;
+	}
+
+	bool operator==(const VkHandlePtr& rhs) const
+	{
+		return m_handle == rhs.m_handle;
+	}
+
+	bool operator==(const VkHandleT& rhs) const
+	{
+		return m_handle == rhs;
+	}
+
+	VkHandleT Get() const
+	{
+		return m_handle;
+	}
+
+	void Reset()
+	{
+		m_handle = VK_NULL_HANDLE;
+	}
+
+	operator VkHandleT() const
+	{
+		return m_handle;
+	}
+
+	VkHandlePtrRef<VkHandleT> operator&()
+	{
+		return VkHandlePtrRef<VkHandleT>(&m_handle);
+	}
+
+	operator const VkHandleT*() const
+	{
+		const VkHandleT* ptr = &m_handle;
+		return ptr;
+	}
+
+private:
+	VkHandleT m_handle = VK_NULL_HANDLE;
+};
+
+#pragma endregion
+
 #pragma region Decl Class
 
 class RenderDevice;
@@ -267,14 +339,14 @@ enum BlendOp
 #endif // defined(VK_BLEND_OPERATION_ADVANCED)
 };
 
-enum BorderColor
+enum class BorderColor : uint8_t
 {
-	BORDER_COLOR_FLOAT_TRANSPARENT_BLACK = 0,
-	BORDER_COLOR_INT_TRANSPARENT_BLACK = 1,
-	BORDER_COLOR_FLOAT_OPAQUE_BLACK = 2,
-	BORDER_COLOR_INT_OPAQUE_BLACK = 3,
-	BORDER_COLOR_FLOAT_OPAQUE_WHITE = 4,
-	BORDER_COLOR_INT_OPAQUE_WHITE = 5,
+	FloatTransparentBlack,
+	IntTransparentBlack,
+	FloatOpaqueBlack,
+	IntOpaqueBlack,
+	FloatOpaqueWhite,
+	IntOpaqueWhite,
 };
 
 enum BufferUsageFlagBits
@@ -311,16 +383,16 @@ enum ColorComponentFlagBits
 	COLOR_COMPONENT_A = 0x00000008,
 };
 
-enum CompareOp
+enum class CompareOp : uint8_t
 {
-	COMPARE_OP_NEVER = 0,
-	COMPARE_OP_LESS = 1,
-	COMPARE_OP_EQUAL = 2,
-	COMPARE_OP_LESS_OR_EQUAL = 3,
-	COMPARE_OP_GREATER = 4,
-	COMPARE_OP_NOT_EQUAL = 5,
-	COMPARE_OP_GREATER_OR_EQUAL = 6,
-	COMPARE_OP_ALWAYS = 7,
+	Never,
+	Less,
+	Equal,
+	LessOrEqual,
+	Greater,
+	NotEqual,
+	GreaterOrEqual,
+	Always
 };
 
 enum CommandType
@@ -383,10 +455,10 @@ enum DrawPassClearFlagBits
 	DRAW_PASS_CLEAR_FLAG_CLEAR_ALL = DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS | DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH | DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL,
 };
 
-enum Filter
+enum class Filter : uint8_t
 {
-	FILTER_NEAREST = 0,
-	FILTER_LINEAR = 1,
+	Nearest,
+	Linear
 };
 
 enum ShadingRateMode
@@ -546,18 +618,18 @@ enum ResourceState
 	RESOURCE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT,
 };
 
-enum SamplerAddressMode
+enum class SamplerAddressMode : uint8_t
 {
-	SAMPLER_ADDRESS_MODE_REPEAT = 0,
-	SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT = 1,
-	SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE = 2,
-	SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER = 3,
+	Repeat,
+	MirrorRepeat,
+	ClampToEdge,
+	ClampToBorder,
 };
 
-enum SamplerMipmapMode
+enum class SamplerMipmapMode : uint8_t
 {
-	SAMPLER_MIPMAP_MODE_NEAREST = 0,
-	SAMPLER_MIPMAP_MODE_LINEAR = 1,
+	Nearest,
+	Linear
 };
 
 enum SampleCount
@@ -1239,6 +1311,32 @@ struct ImageCreateFlags final
 
 struct SamplerCreateFlags final
 {
+	SamplerCreateFlags() : flags(0) {}
+	SamplerCreateFlags(uint32_t flags_) : flags(flags_) {}
+
+	SamplerCreateFlags& operator=(uint32_t rhs)
+	{
+		flags = rhs;
+		return *this;
+	}
+
+	SamplerCreateFlags& operator|=(const SamplerCreateFlags& rhs)
+	{
+		flags |= rhs.flags;
+		return *this;
+	}
+
+	SamplerCreateFlags& operator|=(uint32_t rhs)
+	{
+		flags |= rhs;
+		return *this;
+	}
+
+	operator uint32_t() const
+	{
+		return flags;
+	}
+
 	union
 	{
 		struct
@@ -1247,35 +1345,6 @@ struct SamplerCreateFlags final
 		} bits;
 		uint32_t flags;
 	};
-
-	SamplerCreateFlags()
-		: flags(0) {}
-
-	SamplerCreateFlags(uint32_t flags_)
-		: flags(flags_) {}
-
-	SamplerCreateFlags& operator=(uint32_t rhs)
-	{
-		this->flags = rhs;
-		return *this;
-	}
-
-	SamplerCreateFlags& operator|=(const SamplerCreateFlags& rhs)
-	{
-		this->flags |= rhs.flags;
-		return *this;
-	}
-
-	SamplerCreateFlags& operator|=(uint32_t rhs)
-	{
-		this->flags |= rhs;
-		return *this;
-	}
-
-	operator uint32_t() const
-	{
-		return flags;
-	}
 };
 
 struct Range final
@@ -1464,63 +1533,33 @@ struct Viewport final
 	float maxDepth;
 };
 
-//! @enum Ownership
-//!
-//! The purpose of this enum is to help grfx objects manage the lifetime
-//! of their member objects. All grfx objects are created with ownership
-//! set to OWNERSHIP_REFERENCE. This means that the object lifetime is
-//! left up to either Device or Instance unless the application
-//! explicitly destroys it.
-//!
-//! If a member object's ownership is set to OWNERSHIP_EXCLUSIVE or
-//! OWNERSHIP_RESTRICTED, this means that the containing object must
-//! destroy it during the destruction process.
-//!
-//! If the containing object fails to destroy OWNERSHIP_EXCLUSIVE and
-//! OWNERSHIP_RESTRICTED objects, then either Device or Instance
-//! will destroy it in their destruction proces.
-//!
-//! If an object's ownership is set to OWNERSHIP_RESTRICTED then its
-//! ownership cannot be changed. Calling SetOwnership() will have no effect.
-//!
-//! Examples of objects with OWNERSHIP_EXCLUSIVE ownership:
-//!   - Draw passes and render passes have create infos where only the
-//!     format of the render target and/or depth stencil are known.
-//!     In these cases draw passes and render passes will create the
-//!     necessary backing images and views. These objects will be created
-//!     with ownership set to EXCLUSIVE. The render pass will destroy
-//!     these objects when it itself is destroyed.
-//!
-//!   - Model's buffers and textures typically have OWNERSHIP_REFERENCE
-//!     ownership. However, the application is free to change ownership
-//!     to EXCLUSIVE as it sees fit.
-enum Ownership
+// The purpose of this enum is to help vkr objects manage the lifetime of their member objects. All vkr objects are created with ownership set to Ownership::Reference. This means that the object lifetime is left up to either Device or Instance unless the application explicitly destroys it.
+// If a member object's ownership is set to Ownership::Exclusive or Ownership::Restricted, this means that the containing object must destroy it during the destruction process.
+// If the containing object fails to destroy Ownership::Exclusive and Ownership::Restricted objects, then either Device or Instance will destroy it in their destruction process.
+// If an object's ownership is set to Ownership::Restricted then its ownership cannot be changed. Calling SetOwnership() will have no effect.
+// Examples of objects with Ownership::Exclusive ownership:
+//   - Draw passes and render passes have create infos where only the format of the render target and/or depth stencil are known. In these cases draw passes and render passes will create the necessary backing images and views. These objects will be created with ownership set to Ownership::Exclusive. The render pass will destroy these objects when it itself is destroyed.
+//   - Model's buffers and textures typically have Ownership::Reference ownership. However, the application is free to change ownership to Ownership::Exclusive as it sees fit.
+enum class Ownership : uint8_t
 {
-	OWNERSHIP_REFERENCE = 0,
-	OWNERSHIP_EXCLUSIVE = 1,
-	OWNERSHIP_RESTRICTED = 2,
+	Reference,
+	Exclusive,
+	Restricted
 };
 
-class OwnershipTrait
+template <typename CreatInfoT>
+class CreateDestroyTraits
 {
+	friend class RenderDevice;
 public:
 	Ownership GetOwnership() const { return m_ownership; }
 
 	void SetOwnership(Ownership ownership)
 	{
-		// Cannot change to or from OWNERSHIP_RESTRICTED
-		if ((ownership == OWNERSHIP_RESTRICTED) || (m_ownership == OWNERSHIP_RESTRICTED)) return;
+		// Cannot change to or from Ownership::Restricted
+		if ((ownership == Ownership::Restricted) || (m_ownership == Ownership::Restricted)) return;
 		m_ownership = ownership;
 	}
-
-private:
-	Ownership m_ownership = OWNERSHIP_REFERENCE;
-};
-
-template <typename CreatInfoT>
-class CreateDestroyTraits : public OwnershipTrait
-{
-	friend class RenderDevice;
 protected:
 	virtual Result create(const CreatInfoT& createInfo)
 	{
@@ -1546,6 +1585,8 @@ protected:
 	virtual void   destroyApiObjects() = 0;
 
 	CreatInfoT m_createInfo = {};
+private:
+	Ownership m_ownership = Ownership::Reference;
 };
 
 class NamedObjectTrait
@@ -1604,19 +1645,19 @@ VkAttachmentLoadOp            ToVkAttachmentLoadOp(AttachmentLoadOp value);
 VkAttachmentStoreOp           ToVkAttachmentStoreOp(AttachmentStoreOp value);
 VkBlendFactor                 ToVkBlendFactor(BlendFactor value);
 VkBlendOp                     ToVkBlendOp(BlendOp value);
-VkBorderColor                 ToVkBorderColor(BorderColor value);
+VkBorderColor                 ToVkEnum(BorderColor value);
 VkBufferUsageFlags            ToVkBufferUsageFlags(const BufferUsageFlags& value);
 VkChromaLocation              ToVkChromaLocation(ChromaLocation value);
 VkClearColorValue             ToVkClearColorValue(const RenderTargetClearValue& value);
 VkClearDepthStencilValue      ToVkClearDepthStencilValue(const DepthStencilClearValue& value);
 VkColorComponentFlags         ToVkColorComponentFlags(const ColorComponentFlags& value);
-VkCompareOp                   ToVkCompareOp(CompareOp value);
+VkCompareOp                   ToVkEnum(CompareOp value);
 VkComponentSwizzle            ToVkComponentSwizzle(ComponentSwizzle value);
 VkComponentMapping            ToVkComponentMapping(const ComponentMapping& value);
 VkCullModeFlagBits            ToVkCullMode(CullMode value);
 VkDescriptorBindingFlags      ToVkDescriptorBindingFlags(const DescriptorBindingFlags& value);
 VkDescriptorType              ToVkDescriptorType(DescriptorType value);
-VkFilter                      ToVkFilter(Filter value);
+VkFilter                      ToVkEnum(Filter value);
 VkFormat                      ToVkFormat(Format value);
 VkFrontFace                   ToVkFrontFace(FrontFace value);
 VkImageType                   ToVkImageType(ImageType value);
@@ -1629,8 +1670,8 @@ VkPolygonMode                 ToVkPolygonMode(PolygonMode value);
 VkPresentModeKHR              ToVkPresentMode(PresentMode value);
 VkPrimitiveTopology           ToVkPrimitiveTopology(PrimitiveTopology value);
 VkQueryType                   ToVkQueryType(QueryType value);
-VkSamplerAddressMode          ToVkSamplerAddressMode(SamplerAddressMode value);
-VkSamplerMipmapMode           ToVkSamplerMipmapMode(SamplerMipmapMode value);
+VkSamplerAddressMode          ToVkEnum(SamplerAddressMode value);
+VkSamplerMipmapMode           ToVkEnum(SamplerMipmapMode value);
 VkSampleCountFlagBits         ToVkSampleCount(SampleCount value);
 VkShaderStageFlags            ToVkShaderStageFlags(const ShaderStageFlags& value);
 VkStencilOp                   ToVkStencilOp(StencilOp value);

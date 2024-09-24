@@ -43,9 +43,9 @@ bool Example_027::Setup()
 		mRightInGpu = true;
 		// To better perceive the MipMap we disable the interpolation between them
 		vkr::SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.magFilter = vkr::FILTER_NEAREST;
-		samplerCreateInfo.minFilter = vkr::FILTER_NEAREST;
-		samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_NEAREST;
+		samplerCreateInfo.magFilter = vkr::Filter::Nearest;
+		samplerCreateInfo.minFilter = vkr::Filter::Nearest;
+		samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Nearest;
 		samplerCreateInfo.minLod = 0;
 		samplerCreateInfo.maxLod = FLT_MAX;
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mSampler));

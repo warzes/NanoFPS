@@ -215,9 +215,9 @@ void Example_024::SetupCommon()
 	// Sampler
 	{
 		vkr::SamplerCreateInfo createInfo = {};
-		createInfo.magFilter = vkr::FILTER_NEAREST;
-		createInfo.minFilter = vkr::FILTER_NEAREST;
-		createInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_NEAREST;
+		createInfo.magFilter = vkr::Filter::Nearest;
+		createInfo.minFilter = vkr::Filter::Nearest;
+		createInfo.mipmapMode = vkr::SamplerMipmapMode::Nearest;
 		CHECKED_CALL(GetRenderDevice().CreateSampler(createInfo, &mNearestSampler));
 	}
 

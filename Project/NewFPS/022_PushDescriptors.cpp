@@ -65,9 +65,9 @@ bool Example_022::Setup()
 
 		// Sampler
 		vkr::SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
-		samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
-		samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerCreateInfo.magFilter = vkr::Filter::Linear;
+		samplerCreateInfo.minFilter = vkr::Filter::Linear;
+		samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
 		samplerCreateInfo.minLod = 0;
 		samplerCreateInfo.maxLod = FLT_MAX;
 		CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &mSampler));

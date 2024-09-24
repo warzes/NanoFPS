@@ -478,12 +478,12 @@ bool GameApplication::setupShadowInfo()
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSampledImageView(ivCreateInfo, &mShadowImageView));
 
 		vkr::SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.addressModeU = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeV = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		samplerCreateInfo.addressModeW = vkr::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerCreateInfo.addressModeU = vkr::SamplerAddressMode::ClampToEdge;
+		samplerCreateInfo.addressModeV = vkr::SamplerAddressMode::ClampToEdge;
+		samplerCreateInfo.addressModeW = vkr::SamplerAddressMode::ClampToEdge;
 		samplerCreateInfo.compareEnable = true;
-		samplerCreateInfo.compareOp = vkr::COMPARE_OP_LESS_OR_EQUAL;
-		samplerCreateInfo.borderColor = vkr::BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+		samplerCreateInfo.compareOp = vkr::CompareOp::LessOrEqual;
+		samplerCreateInfo.borderColor = vkr::BorderColor::FloatOpaqueWhite;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSampler(samplerCreateInfo, &mShadowSampler));
 
 		vkr::WriteDescriptor writes[2] = {};

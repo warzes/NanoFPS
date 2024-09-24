@@ -347,11 +347,11 @@ void Example_019::loadTexture(
 
 	// FIXME: read sampler info from GLTF.
 	vkr::SamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
-	samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
+	samplerCreateInfo.magFilter = vkr::Filter::Linear;
+	samplerCreateInfo.minFilter = vkr::Filter::Linear;
 	samplerCreateInfo.anisotropyEnable = true;
 	samplerCreateInfo.maxAnisotropy = 16;
-	samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
 	samplerCreateInfo.minLod = 0.f;
 	samplerCreateInfo.maxLod = FLT_MAX;
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &pOutput->pSampler));
@@ -367,11 +367,11 @@ void Example_019::loadTexture(const Bitmap& bitmap, vkr::Queue* pQueue, Texture*
 	vkr::SampledImageViewCreateInfo sivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(pOutput->pImage);
 	CHECKED_CALL(device.CreateSampledImageView(sivCreateInfo, &pOutput->pTexture));
 	vkr::SamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.magFilter = vkr::FILTER_LINEAR;
-	samplerCreateInfo.minFilter = vkr::FILTER_LINEAR;
+	samplerCreateInfo.magFilter = vkr::Filter::Linear;
+	samplerCreateInfo.minFilter = vkr::Filter::Linear;
 	samplerCreateInfo.anisotropyEnable = true;
 	samplerCreateInfo.maxAnisotropy = 1.f;
-	samplerCreateInfo.mipmapMode = vkr::SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &pOutput->pSampler));
 }
 
@@ -533,7 +533,7 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 		}
 	}
 
-	targetMesh->SetOwnership(vkr::OWNERSHIP_REFERENCE);
+	targetMesh->SetOwnership(vkr::Ownership::Reference);
 	pOutput->mesh = targetMesh;
 }
 

@@ -244,7 +244,7 @@ Result Query::createApiObjects(const QueryCreateInfo& pCreateInfo)
 	createInfo.usageFlags = BUFFER_USAGE_TRANSFER_DST;
 	createInfo.memoryUsage = MEMORY_USAGE_GPU_TO_CPU;
 	createInfo.initialState = RESOURCE_STATE_COPY_DST;
-	createInfo.ownership = OWNERSHIP_REFERENCE;
+	createInfo.ownership = Ownership::Reference;
 
 	// Create buffer
 	Result ppxres = GetDevice()->CreateBuffer(createInfo, &mBuffer);
@@ -780,41 +780,37 @@ ImageViewType Image::GuessImageViewType(bool isCube) const
 	return IMAGE_VIEW_TYPE_UNDEFINED;
 }
 
-Result Sampler::createApiObjects(const SamplerCreateInfo& pCreateInfo)
+Result Sampler::createApiObjects(const SamplerCreateInfo& createInfo)
 {
 	VkSamplerCreateInfo vkci = { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
 	vkci.flags = 0;
-	if (pCreateInfo.createFlags.bits.subsampledFormat) {
-		vkci.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
-	}
-	vkci.magFilter = ToVkFilter(pCreateInfo.magFilter);
-	vkci.minFilter = ToVkFilter(pCreateInfo.minFilter);
-	vkci.mipmapMode = ToVkSamplerMipmapMode(pCreateInfo.mipmapMode);
-	vkci.addressModeU = ToVkSamplerAddressMode(pCreateInfo.addressModeU);
-	vkci.addressModeV = ToVkSamplerAddressMode(pCreateInfo.addressModeV);
-	vkci.addressModeW = ToVkSamplerAddressMode(pCreateInfo.addressModeW);
-	vkci.mipLodBias = pCreateInfo.mipLodBias;
-	vkci.anisotropyEnable = pCreateInfo.anisotropyEnable ? VK_TRUE : VK_FALSE;
-	vkci.maxAnisotropy = pCreateInfo.maxAnisotropy;
-	vkci.compareEnable = pCreateInfo.compareEnable ? VK_TRUE : VK_FALSE;
-	vkci.compareOp = ToVkCompareOp(pCreateInfo.compareOp);
-	vkci.minLod = pCreateInfo.minLod;
-	vkci.maxLod = pCreateInfo.maxLod;
-	vkci.borderColor = ToVkBorderColor(pCreateInfo.borderColor);
+	if (createInfo.createFlags.bits.subsampledFormat) vkci.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
+	vkci.magFilter               = ToVkEnum(createInfo.magFilter);
+	vkci.minFilter               = ToVkEnum(createInfo.minFilter);
+	vkci.mipmapMode              = ToVkEnum(createInfo.mipmapMode);
+	vkci.addressModeU            = ToVkEnum(createInfo.addressModeU);
+	vkci.addressModeV            = ToVkEnum(createInfo.addressModeV);
+	vkci.addressModeW            = ToVkEnum(createInfo.addressModeW);
+	vkci.mipLodBias              = createInfo.mipLodBias;
+	vkci.anisotropyEnable        = createInfo.anisotropyEnable ? VK_TRUE : VK_FALSE;
+	vkci.maxAnisotropy           = createInfo.maxAnisotropy;
+	vkci.compareEnable           = createInfo.compareEnable ? VK_TRUE : VK_FALSE;
+	vkci.compareOp               = ToVkEnum(createInfo.compareOp);
+	vkci.minLod                  = createInfo.minLod;
+	vkci.maxLod                  = createInfo.maxLod;
+	vkci.borderColor             = ToVkEnum(createInfo.borderColor);
 	vkci.unnormalizedCoordinates = VK_FALSE;
 
 	VkSamplerYcbcrConversionInfo conversionInfo{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
-	if (pCreateInfo.pYcbcrConversion != nullptr) {
-		conversionInfo.conversion = pCreateInfo.pYcbcrConversion->GetVkSamplerYcbcrConversion().Get();
+	if (createInfo.YcbcrConversion != nullptr)
+	{
+		conversionInfo.conversion = createInfo.YcbcrConversion->GetVkSamplerYcbcrConversion().Get();
 		vkci.pNext = &conversionInfo;
 	}
 
-	VkResult vkres = vkCreateSampler(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mSampler);
-	if (vkres != VK_SUCCESS) {
+	VkResult vkres = vkCreateSampler(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_sampler);
+	if (vkres != VK_SUCCESS)
+	{
 		ASSERT_MSG(false, "vkCreateSampler failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
@@ -824,9 +820,10 @@ Result Sampler::createApiObjects(const SamplerCreateInfo& pCreateInfo)
 
 void Sampler::destroyApiObjects()
 {
-	if (mSampler) {
-		vkDestroySampler(GetDevice()->GetVkDevice(), mSampler, nullptr);
-		mSampler.Reset();
+	if (m_sampler)
+	{
+		vkDestroySampler(GetDevice()->GetVkDevice(), m_sampler, nullptr);
+		m_sampler.Reset();
 	}
 }
 
@@ -845,7 +842,7 @@ DepthStencilViewCreateInfo DepthStencilViewCreateInfo::GuessFromImage(Image* pIm
 	ci.depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	ci.stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	ci.stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
-	ci.ownership = OWNERSHIP_REFERENCE;
+	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
@@ -907,7 +904,7 @@ RenderTargetViewCreateInfo RenderTargetViewCreateInfo::GuessFromImage(Image* pIm
 	ci.components = {};
 	ci.loadOp = ATTACHMENT_LOAD_OP_LOAD;
 	ci.storeOp = ATTACHMENT_STORE_OP_STORE;
-	ci.ownership = OWNERSHIP_REFERENCE;
+	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
@@ -966,7 +963,7 @@ SampledImageViewCreateInfo SampledImageViewCreateInfo::GuessFromImage(Image* pIm
 	ci.arrayLayer = 0;
 	ci.arrayLayerCount = pImage->GetArrayLayerCount();
 	ci.components = {};
-	ci.ownership = OWNERSHIP_REFERENCE;
+	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
@@ -1031,7 +1028,7 @@ Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCrea
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
 	vkci.xChromaOffset = ToVkChromaLocation(pCreateInfo.xChromaOffset);
 	vkci.yChromaOffset = ToVkChromaLocation(pCreateInfo.yChromaOffset);
-	vkci.chromaFilter = ToVkFilter(pCreateInfo.filter);
+	vkci.chromaFilter = ToVkEnum(pCreateInfo.filter);
 	vkci.forceExplicitReconstruction = pCreateInfo.forceExplicitReconstruction ? VK_TRUE : VK_FALSE;
 
 	VkResult vkres = vkCreateSamplerYcbcrConversion(GetDevice()->GetVkDevice(), &vkci, nullptr, &mSamplerYcbcrConversion);
@@ -1065,7 +1062,7 @@ StorageImageViewCreateInfo StorageImageViewCreateInfo::GuessFromImage(Image* pIm
 	ci.arrayLayer = 0;
 	ci.arrayLayerCount = pImage->GetArrayLayerCount();
 	ci.components = {};
-	ci.ownership = OWNERSHIP_REFERENCE;
+	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
@@ -1262,31 +1259,31 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 
 void Texture::destroyApiObjects()
 {
-	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != OWNERSHIP_REFERENCE))
+	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != Ownership::Reference))
 	{
 		GetDevice()->DestroySampledImageView(m_sampledImageView);
 		m_sampledImageView.Reset();
 	}
 
-	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != OWNERSHIP_REFERENCE))
+	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != Ownership::Reference))
 	{
 		GetDevice()->DestroyRenderTargetView(m_renderTargetView);
 		m_renderTargetView.Reset();
 	}
 
-	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != OWNERSHIP_REFERENCE))
+	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != Ownership::Reference))
 	{
 		GetDevice()->DestroyDepthStencilView(m_depthStencilView);
 		m_depthStencilView.Reset();
 	}
 
-	if (m_storageImageView && (m_storageImageView->GetOwnership() != OWNERSHIP_REFERENCE))
+	if (m_storageImageView && (m_storageImageView->GetOwnership() != Ownership::Reference))
 	{
 		GetDevice()->DestroyStorageImageView(m_storageImageView);
 		m_storageImageView.Reset();
 	}
 
-	if (m_image && (m_image->GetOwnership() != OWNERSHIP_REFERENCE))
+	if (m_image && (m_image->GetOwnership() != Ownership::Reference))
 	{
 		GetDevice()->DestroyImage(m_image);
 		m_image.Reset();
@@ -2128,13 +2125,13 @@ void RenderPass::destroy()
 {
 	for (uint32_t i = 0; i < m_createInfo.renderTargetCount; ++i) {
 		RenderTargetViewPtr& rtv = mRenderTargetViews[i];
-		if (rtv && (rtv->GetOwnership() != OWNERSHIP_REFERENCE)) {
+		if (rtv && (rtv->GetOwnership() != Ownership::Reference)) {
 			GetDevice()->DestroyRenderTargetView(rtv);
 			rtv.Reset();
 		}
 
 		ImagePtr& image = mRenderTargetImages[i];
-		if (image && (image->GetOwnership() != OWNERSHIP_REFERENCE)) {
+		if (image && (image->GetOwnership() != Ownership::Reference)) {
 			GetDevice()->DestroyImage(image);
 			image.Reset();
 		}
@@ -2142,12 +2139,12 @@ void RenderPass::destroy()
 	mRenderTargetViews.clear();
 	mRenderTargetImages.clear();
 
-	if (mDepthStencilView && (mDepthStencilView->GetOwnership() != OWNERSHIP_REFERENCE)) {
+	if (mDepthStencilView && (mDepthStencilView->GetOwnership() != Ownership::Reference)) {
 		GetDevice()->DestroyDepthStencilView(mDepthStencilView);
 		mDepthStencilView.Reset();
 	}
 
-	if (mDepthStencilImage && (mDepthStencilImage->GetOwnership() != OWNERSHIP_REFERENCE)) {
+	if (mDepthStencilImage && (mDepthStencilImage->GetOwnership() != Ownership::Reference)) {
 		GetDevice()->DestroyImage(mDepthStencilImage);
 		mDepthStencilImage.Reset();
 	}
@@ -2236,11 +2233,11 @@ Result RenderPass::DisownRenderTargetView(uint32_t index, RenderTargetView** ppV
 	if (IsIndexInRange(index, mRenderTargetViews)) {
 		return ERROR_OUT_OF_RANGE;
 	}
-	if (mRenderTargetViews[index]->GetOwnership() == OWNERSHIP_RESTRICTED) {
+	if (mRenderTargetViews[index]->GetOwnership() == Ownership::Restricted) {
 		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 	}
 
-	mRenderTargetViews[index]->SetOwnership(OWNERSHIP_REFERENCE);
+	mRenderTargetViews[index]->SetOwnership(Ownership::Reference);
 
 	if (!IsNull(ppView)) {
 		*ppView = mRenderTargetViews[index];
@@ -2253,11 +2250,11 @@ Result RenderPass::DisownDepthStencilView(DepthStencilView** ppView)
 	if (!mDepthStencilView) {
 		return ERROR_ELEMENT_NOT_FOUND;
 	}
-	if (mDepthStencilView->GetOwnership() == OWNERSHIP_RESTRICTED) {
+	if (mDepthStencilView->GetOwnership() == Ownership::Restricted) {
 		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 	}
 
-	mDepthStencilView->SetOwnership(OWNERSHIP_REFERENCE);
+	mDepthStencilView->SetOwnership(Ownership::Reference);
 
 	if (!IsNull(ppView)) {
 		*ppView = mDepthStencilView;
@@ -2270,11 +2267,11 @@ Result RenderPass::DisownRenderTargetImage(uint32_t index, Image** ppImage)
 	if (IsIndexInRange(index, mRenderTargetImages)) {
 		return ERROR_OUT_OF_RANGE;
 	}
-	if (mRenderTargetImages[index]->GetOwnership() == OWNERSHIP_RESTRICTED) {
+	if (mRenderTargetImages[index]->GetOwnership() == Ownership::Restricted) {
 		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 	}
 
-	mRenderTargetImages[index]->SetOwnership(OWNERSHIP_REFERENCE);
+	mRenderTargetImages[index]->SetOwnership(Ownership::Reference);
 
 	if (!IsNull(ppImage)) {
 		*ppImage = mRenderTargetImages[index];
@@ -2287,11 +2284,11 @@ Result RenderPass::DisownDepthStencilImage(Image** ppImage)
 	if (!mDepthStencilImage) {
 		return ERROR_ELEMENT_NOT_FOUND;
 	}
-	if (mDepthStencilImage->GetOwnership() == OWNERSHIP_RESTRICTED) {
+	if (mDepthStencilImage->GetOwnership() == Ownership::Restricted) {
 		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 	}
 
-	mDepthStencilImage->SetOwnership(OWNERSHIP_REFERENCE);
+	mDepthStencilImage->SetOwnership(Ownership::Reference);
 
 	if (!IsNull(ppImage)) {
 		*ppImage = mDepthStencilImage;
@@ -2521,7 +2518,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
 			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
 			ci.storageImageViewFormat = FORMAT_UNDEFINED;
-			ci.ownership = OWNERSHIP_EXCLUSIVE;
+			ci.ownership = Ownership::Exclusive;
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
@@ -2555,7 +2552,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
 			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
 			ci.storageImageViewFormat = FORMAT_UNDEFINED;
-			ci.ownership = OWNERSHIP_EXCLUSIVE;
+			ci.ownership = Ownership::Exclusive;
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
@@ -2760,14 +2757,14 @@ void DrawPass::destroyApiObjects()
 	mPasses.clear();
 
 	for (size_t i = 0; i < mRenderTargetTextures.size(); ++i) {
-		if (mRenderTargetTextures[i] && (mRenderTargetTextures[i]->GetOwnership() == OWNERSHIP_EXCLUSIVE)) {
+		if (mRenderTargetTextures[i] && (mRenderTargetTextures[i]->GetOwnership() == Ownership::Exclusive)) {
 			GetDevice()->DestroyTexture(mRenderTargetTextures[i]);
 			mRenderTargetTextures[i].Reset();
 		}
 	}
 	mRenderTargetTextures.clear();
 
-	if (mDepthStencilTexture && (mDepthStencilTexture->GetOwnership() == OWNERSHIP_EXCLUSIVE)) {
+	if (mDepthStencilTexture && (mDepthStencilTexture->GetOwnership() == Ownership::Exclusive)) {
 		GetDevice()->DestroyTexture(mDepthStencilTexture);
 		mDepthStencilTexture.Reset();
 	}
@@ -3490,7 +3487,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 
 	ImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.usageFlags.bits.transferDst = true;
-	imageCreateInfo.ownership = OWNERSHIP_EXCLUSIVE;
+	imageCreateInfo.ownership = Ownership::Exclusive;
 	Extent2D minTexelSize, maxTexelSize;
 	switch (pCreateInfo.shadingRateMode)
 	{
@@ -3935,7 +3932,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.memoryUsage = pCreateInfo.memoryUsage;
 		createInfo.initialState = RESOURCE_STATE_GENERAL;
-		createInfo.ownership = OWNERSHIP_REFERENCE;
+		createInfo.ownership = Ownership::Reference;
 
 		auto ppxres = GetDevice()->CreateBuffer(createInfo, &mIndexBuffer);
 		if (Failed(ppxres)) {
@@ -3998,7 +3995,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 			createInfo.usageFlags.bits.transferDst = true;
 			createInfo.memoryUsage = pCreateInfo.memoryUsage;
 			createInfo.initialState = RESOURCE_STATE_GENERAL;
-			createInfo.ownership = OWNERSHIP_REFERENCE;
+			createInfo.ownership = Ownership::Reference;
 
 			auto ppxres = GetDevice()->CreateBuffer(createInfo, &mVertexBuffers[vbIdx].first);
 			if (Failed(ppxres)) {
@@ -4601,20 +4598,20 @@ Result GraphicsPipeline::initializeDepthStencil(
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.depthTestEnable = pCreateInfo.depthStencilState.depthTestEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.depthWriteEnable = pCreateInfo.depthStencilState.depthWriteEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.depthCompareOp = ToVkCompareOp(pCreateInfo.depthStencilState.depthCompareOp);
+	stateCreateInfo.depthCompareOp = ToVkEnum(pCreateInfo.depthStencilState.depthCompareOp);
 	stateCreateInfo.depthBoundsTestEnable = pCreateInfo.depthStencilState.depthBoundsTestEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.stencilTestEnable = pCreateInfo.depthStencilState.stencilTestEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.front.failOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.failOp);
 	stateCreateInfo.front.passOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.passOp);
 	stateCreateInfo.front.depthFailOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.depthFailOp);
-	stateCreateInfo.front.compareOp = ToVkCompareOp(pCreateInfo.depthStencilState.front.compareOp);
+	stateCreateInfo.front.compareOp = ToVkEnum(pCreateInfo.depthStencilState.front.compareOp);
 	stateCreateInfo.front.compareMask = pCreateInfo.depthStencilState.front.compareMask;
 	stateCreateInfo.front.writeMask = pCreateInfo.depthStencilState.front.writeMask;
 	stateCreateInfo.front.reference = pCreateInfo.depthStencilState.front.reference;
 	stateCreateInfo.back.failOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.failOp);
 	stateCreateInfo.back.passOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.passOp);
 	stateCreateInfo.back.depthFailOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.depthFailOp);
-	stateCreateInfo.back.compareOp = ToVkCompareOp(pCreateInfo.depthStencilState.back.compareOp);
+	stateCreateInfo.back.compareOp = ToVkEnum(pCreateInfo.depthStencilState.back.compareOp);
 	stateCreateInfo.back.compareMask = pCreateInfo.depthStencilState.back.compareMask;
 	stateCreateInfo.back.writeMask = pCreateInfo.depthStencilState.back.writeMask;
 	stateCreateInfo.back.reference = pCreateInfo.depthStencilState.back.reference;
@@ -6619,18 +6616,7 @@ void CommandBuffer::BlitImage(
 			static_cast<int32_t>(pCopyInfo->dstImage.offsets[i].z) };
 	}
 
-	VkFilter filter;
-	switch (pCopyInfo->filter) {
-	case FILTER_NEAREST:
-		filter = VK_FILTER_NEAREST;
-		break;
-	case FILTER_LINEAR:
-		filter = VK_FILTER_LINEAR;
-		break;
-	default:
-		ASSERT_MSG(false, "Invalid filter value: " + std::to_string((int)pCopyInfo->filter));
-		return;
-	}
+	VkFilter filter = ToVkEnum(pCopyInfo->filter);
 
 	vkCmdBlitImage(
 		mCommandBuffer,
@@ -7469,49 +7455,49 @@ ScopeDestroyer::ScopeDestroyer(RenderDevice* pDevice)
 ScopeDestroyer::~ScopeDestroyer()
 {
 	for (auto& object : mImages) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroyImage(object);
 		}
 	}
 	mImages.clear();
 
 	for (auto& object : mBuffers) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroyBuffer(object);
 		}
 	}
 	mBuffers.clear();
 
 	for (auto& object : mMeshes) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroyMesh(object);
 		}
 	}
 	mMeshes.clear();
 
 	for (auto& object : mTextures) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroyTexture(object);
 		}
 	}
 	mTextures.clear();
 
 	for (auto& object : mSamplers) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroySampler(object);
 		}
 	}
 	mSamplers.clear();
 
 	for (auto& object : mSampledImageViews) {
-		if (object->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object->GetOwnership() == Ownership::Exclusive) {
 			mDevice->DestroySampledImageView(object);
 		}
 	}
 	mSampledImageViews.clear();
 
 	for (auto& object : mTransientCommandBuffers) {
-		if (object.second->GetOwnership() == OWNERSHIP_EXCLUSIVE) {
+		if (object.second->GetOwnership() == Ownership::Exclusive) {
 			object.first->DestroyCommandBuffer(object.second);
 		}
 	}
@@ -7523,11 +7509,11 @@ Result ScopeDestroyer::AddObject(Image* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mImages.push_back(pObject);
 	return SUCCESS;
 }
@@ -7538,11 +7524,11 @@ Result ScopeDestroyer::AddObject(Buffer* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mBuffers.push_back(pObject);
 	return SUCCESS;
 }
@@ -7553,11 +7539,11 @@ Result ScopeDestroyer::AddObject(Mesh* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mMeshes.push_back(pObject);
 	return SUCCESS;
 }
@@ -7568,11 +7554,11 @@ Result ScopeDestroyer::AddObject(Texture* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mTextures.push_back(pObject);
 	return SUCCESS;
 }
@@ -7583,11 +7569,11 @@ Result ScopeDestroyer::AddObject(Sampler* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mSamplers.push_back(pObject);
 	return SUCCESS;
 }
@@ -7598,11 +7584,11 @@ Result ScopeDestroyer::AddObject(SampledImageView* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mSampledImageViews.push_back(pObject);
 	return SUCCESS;
 }
@@ -7613,11 +7599,11 @@ Result ScopeDestroyer::AddObject(Queue* pParent, CommandBuffer* pObject)
 		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != OWNERSHIP_REFERENCE) {
+	if (pObject->GetOwnership() != Ownership::Reference) {
 		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
-	pObject->SetOwnership(OWNERSHIP_EXCLUSIVE);
+	pObject->SetOwnership(Ownership::Exclusive);
 	mTransientCommandBuffers.push_back(std::make_pair(pParent, pObject));
 	return SUCCESS;
 }
@@ -7862,22 +7848,23 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		mVertexBufferView.offset = 0;
 	}
 
-	if (!sSampler) {
+	if (!sSampler)
+	{
 		SamplerCreateInfo createInfo = {};
-		createInfo.magFilter = FILTER_LINEAR;
-		createInfo.minFilter = FILTER_LINEAR;
-		createInfo.mipmapMode = SAMPLER_MIPMAP_MODE_LINEAR;
-		createInfo.addressModeU = SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		createInfo.addressModeV = SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		createInfo.addressModeW = SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		createInfo.magFilter = Filter::Linear;
+		createInfo.minFilter = Filter::Linear;
+		createInfo.mipmapMode = SamplerMipmapMode::Linear;
+		createInfo.addressModeU = SamplerAddressMode::ClampToEdge;
+		createInfo.addressModeV = SamplerAddressMode::ClampToEdge;
+		createInfo.addressModeW = SamplerAddressMode::ClampToEdge;
 		createInfo.mipLodBias = 0.0f;
 		createInfo.anisotropyEnable = false;
 		createInfo.maxAnisotropy = 0.0f;
 		createInfo.compareEnable = false;
-		createInfo.compareOp = COMPARE_OP_NEVER;
+		createInfo.compareOp = CompareOp::Never;
 		createInfo.minLod = 0.0f;
 		createInfo.maxLod = 1.0f;
-		createInfo.borderColor = BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+		createInfo.borderColor = BorderColor::FloatTransparentBlack;
 
 		Result ppxres = GetDevice()->CreateSampler(createInfo, &sSampler);
 		if (Failed(ppxres)) {

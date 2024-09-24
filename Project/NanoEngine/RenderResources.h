@@ -145,7 +145,7 @@ struct BufferCreateInfo final
 	BufferUsageFlags usageFlags = 0;
 	MemoryUsage      memoryUsage = MEMORY_USAGE_GPU_ONLY;
 	ResourceState    initialState = RESOURCE_STATE_GENERAL;
-	Ownership        ownership = OWNERSHIP_REFERENCE;
+	Ownership        ownership = Ownership::Reference;
 };
 
 class Buffer final : public DeviceObject<BufferCreateInfo>
@@ -215,7 +215,7 @@ struct ImageCreateInfo final
 	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
 	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
-	Ownership              ownership = OWNERSHIP_REFERENCE;
+	Ownership              ownership = Ownership::Reference;
 	bool                   concurrentMultiQueueUsage = false;
 	ImageCreateFlags       createFlags = {};
 
@@ -322,35 +322,35 @@ private:
 
 struct SamplerCreateInfo final
 {
-	Filter                  magFilter = FILTER_NEAREST;
-	Filter                  minFilter = FILTER_NEAREST;
-	SamplerMipmapMode       mipmapMode = SAMPLER_MIPMAP_MODE_NEAREST;
-	SamplerAddressMode      addressModeU = SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerAddressMode      addressModeV = SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerAddressMode      addressModeW = SAMPLER_ADDRESS_MODE_REPEAT;
+	Filter                  magFilter = Filter::Nearest;
+	Filter                  minFilter = Filter::Nearest;
+	SamplerMipmapMode       mipmapMode = SamplerMipmapMode::Nearest;
+	SamplerAddressMode      addressModeU = SamplerAddressMode::Repeat;
+	SamplerAddressMode      addressModeV = SamplerAddressMode::Repeat;
+	SamplerAddressMode      addressModeW = SamplerAddressMode::Repeat;
 	float                   mipLodBias = 0.0f;
 	bool                    anisotropyEnable = false;
 	float                   maxAnisotropy = 0.0f;
 	bool                    compareEnable = false;
-	CompareOp               compareOp = COMPARE_OP_NEVER;
+	CompareOp               compareOp = CompareOp::Never;
 	float                   minLod = 0.0f;
 	float                   maxLod = 1.0f;
-	BorderColor             borderColor = BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-	SamplerYcbcrConversion* pYcbcrConversion = nullptr; // Leave null if not required.
-	Ownership               ownership = OWNERSHIP_REFERENCE;
+	BorderColor             borderColor = BorderColor::FloatTransparentBlack;
+	SamplerYcbcrConversion* YcbcrConversion = nullptr; // Leave null if not required.
+	Ownership               ownership = Ownership::Reference;
 	SamplerCreateFlags      createFlags = {};
 };
 
 class Sampler final : public DeviceObject<SamplerCreateInfo>
 {
 public:
-	VkSamplerPtr GetVkSampler() const { return mSampler; }
+	VkSamplerPtr GetVkSampler() const { return m_sampler; }
 
 private:
-	Result createApiObjects(const SamplerCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const SamplerCreateInfo& createInfo) final;
 	void   destroyApiObjects() final;
 
-	VkSamplerPtr mSampler;
+	VkSamplerPtr m_sampler;
 };
 
 struct DepthStencilViewCreateInfo final
@@ -367,7 +367,7 @@ struct DepthStencilViewCreateInfo final
 	AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	AttachmentLoadOp  stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
-	Ownership         ownership = OWNERSHIP_REFERENCE;
+	Ownership         ownership = Ownership::Reference;
 
 	static DepthStencilViewCreateInfo GuessFromImage(Image* pImage);
 };
@@ -406,7 +406,7 @@ struct RenderTargetViewCreateInfo
 	ComponentMapping  components = {};
 	AttachmentLoadOp  loadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp storeOp = ATTACHMENT_STORE_OP_STORE;
-	Ownership         ownership = OWNERSHIP_REFERENCE;
+	Ownership         ownership = Ownership::Reference;
 
 	static RenderTargetViewCreateInfo GuessFromImage(Image* pImage);
 };
@@ -443,7 +443,7 @@ struct SampledImageViewCreateInfo
 	uint32_t                arrayLayerCount = 0;
 	ComponentMapping        components = {};
 	SamplerYcbcrConversion* pYcbcrConversion = nullptr; // Leave null if not required.
-	Ownership               ownership = OWNERSHIP_REFERENCE;
+	Ownership               ownership = Ownership::Reference;
 
 	static SampledImageViewCreateInfo GuessFromImage(Image* pImage);
 };
@@ -479,7 +479,7 @@ struct SamplerYcbcrConversionCreateInfo final
 	ComponentMapping     components = {};
 	ChromaLocation       xChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
 	ChromaLocation       yChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
-	Filter               filter = FILTER_LINEAR;
+	Filter               filter = Filter::Linear;
 	bool                 forceExplicitReconstruction = false;
 };
 
@@ -505,7 +505,7 @@ struct StorageImageViewCreateInfo
 	uint32_t         arrayLayer = 0;
 	uint32_t         arrayLayerCount = 0;
 	ComponentMapping components = {};
-	Ownership        ownership = OWNERSHIP_REFERENCE;
+	Ownership        ownership = Ownership::Reference;
 
 	static StorageImageViewCreateInfo GuessFromImage(Image* pImage);
 };
@@ -557,7 +557,7 @@ struct TextureCreateInfo final
 	Format                  renderTargetViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
 	Format                  depthStencilViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
 	Format                  storageImageViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
-	Ownership               ownership = OWNERSHIP_REFERENCE;
+	Ownership               ownership = Ownership::Reference;
 	bool                    concurrentMultiQueueUsage = false;
 	ImageCreateFlags        imageCreateFlags = {};
 };
@@ -618,7 +618,7 @@ struct RenderPassCreateInfo final
 	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	Ownership              ownership = OWNERSHIP_REFERENCE;
+	Ownership              ownership = Ownership::Reference;
 
 	// If `pShadingRatePattern` is not null, then the pipeline targeting this
 	// RenderPass must use the same shading rate mode
@@ -652,7 +652,7 @@ struct RenderPassCreateInfo2 final
 	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
 	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_UNDEFINED };
 	ResourceState          depthStencilInitialState = RESOURCE_STATE_UNDEFINED;
-	Ownership              ownership = OWNERSHIP_REFERENCE;
+	Ownership              ownership = Ownership::Reference;
 
 	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
 	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
@@ -684,7 +684,7 @@ struct RenderPassCreateInfo3 final
 	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
-	Ownership              ownership = OWNERSHIP_REFERENCE;
+	Ownership              ownership = Ownership::Reference;
 
 	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
 	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
@@ -708,7 +708,7 @@ namespace internal
 			CREATE_INFO_VERSION_3 = 3,
 		};
 
-		Ownership           ownership = OWNERSHIP_REFERENCE;
+		Ownership           ownership = Ownership::Reference;
 		CreateInfoVersion   version = CREATE_INFO_VERSION_UNDEFINED;
 		uint32_t            width = 0;
 		uint32_t            height = 0;
@@ -1613,7 +1613,7 @@ struct StencilOpState
 	StencilOp failOp = STENCIL_OP_KEEP;
 	StencilOp passOp = STENCIL_OP_KEEP;
 	StencilOp depthFailOp = STENCIL_OP_KEEP;
-	CompareOp compareOp = COMPARE_OP_NEVER;
+	CompareOp compareOp = CompareOp::Never;
 	uint32_t        compareMask = 0;
 	uint32_t        writeMask = 0;
 	uint32_t        reference = 0;
@@ -1623,7 +1623,7 @@ struct DepthStencilState
 {
 	bool                 depthTestEnable = true;
 	bool                 depthWriteEnable = true;
-	CompareOp      depthCompareOp = COMPARE_OP_LESS;
+	CompareOp      depthCompareOp = CompareOp::Less;
 	bool                 depthBoundsTestEnable = false;
 	float                minDepthBounds = 0.0f;
 	float                maxDepthBounds = 1.0f;
@@ -1701,7 +1701,7 @@ struct GraphicsPipelineCreateInfo2
 	FrontFace                frontFace = FRONT_FACE_CCW;
 	bool                           depthReadEnable = true;
 	bool                           depthWriteEnable = true;
-	CompareOp                depthCompareOp = COMPARE_OP_LESS;
+	CompareOp                depthCompareOp = CompareOp::Less;
 	BlendMode                blendModes[MaxRenderTargets] = { BLEND_MODE_NONE };
 	OutputState              outputState = {};
 	ShadingRateMode          shadingRateMode = SHADING_RATE_NONE;
@@ -1950,7 +1950,7 @@ struct ImageBlitInfo
 	ImgInfo srcImage;
 	ImgInfo dstImage;
 
-	Filter filter = FILTER_LINEAR;
+	Filter filter = Filter::Linear;
 };
 
 struct RenderPassBeginInfo

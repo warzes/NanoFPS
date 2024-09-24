@@ -1004,16 +1004,16 @@ VkBlendOp ToVkBlendOp(BlendOp value)
 	return InvalidValue<VkBlendOp>();
 }
 
-VkBorderColor ToVkBorderColor(BorderColor value)
+VkBorderColor ToVkEnum(BorderColor value)
 {
 	switch (value) {
 	default: break;
-	case BORDER_COLOR_FLOAT_TRANSPARENT_BLACK: return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK; break;
-	case BORDER_COLOR_INT_TRANSPARENT_BLACK: return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK; break;
-	case BORDER_COLOR_FLOAT_OPAQUE_BLACK: return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK; break;
-	case BORDER_COLOR_INT_OPAQUE_BLACK: return VK_BORDER_COLOR_INT_OPAQUE_BLACK; break;
-	case BORDER_COLOR_FLOAT_OPAQUE_WHITE: return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE; break;
-	case BORDER_COLOR_INT_OPAQUE_WHITE: return VK_BORDER_COLOR_INT_OPAQUE_WHITE; break;
+	case BorderColor::FloatTransparentBlack: return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+	case BorderColor::IntTransparentBlack:   return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+	case BorderColor::FloatOpaqueBlack:      return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+	case BorderColor::IntOpaqueBlack:        return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	case BorderColor::FloatOpaqueWhite:      return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	case BorderColor::IntOpaqueWhite:        return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
 	}
 	return InvalidValue<VkBorderColor>();
 }
@@ -1077,18 +1077,18 @@ VkColorComponentFlags ToVkColorComponentFlags(const ColorComponentFlags& value)
 	return flags;
 }
 
-VkCompareOp ToVkCompareOp(CompareOp value)
+VkCompareOp ToVkEnum(CompareOp value)
 {
 	switch (value) {
 	default: break;
-	case COMPARE_OP_NEVER: return VK_COMPARE_OP_NEVER; break;
-	case COMPARE_OP_LESS: return VK_COMPARE_OP_LESS; break;
-	case COMPARE_OP_EQUAL: return VK_COMPARE_OP_EQUAL; break;
-	case COMPARE_OP_LESS_OR_EQUAL: return VK_COMPARE_OP_LESS_OR_EQUAL; break;
-	case COMPARE_OP_GREATER: return VK_COMPARE_OP_GREATER; break;
-	case COMPARE_OP_NOT_EQUAL: return VK_COMPARE_OP_NOT_EQUAL; break;
-	case COMPARE_OP_GREATER_OR_EQUAL: return VK_COMPARE_OP_GREATER_OR_EQUAL; break;
-	case COMPARE_OP_ALWAYS: return VK_COMPARE_OP_ALWAYS; break;
+	case CompareOp::Never:          return VK_COMPARE_OP_NEVER;
+	case CompareOp::Less:           return VK_COMPARE_OP_LESS;
+	case CompareOp::Equal:          return VK_COMPARE_OP_EQUAL;
+	case CompareOp::LessOrEqual:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+	case CompareOp::Greater:        return VK_COMPARE_OP_GREATER;
+	case CompareOp::NotEqual:       return VK_COMPARE_OP_NOT_EQUAL;
+	case CompareOp::GreaterOrEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+	case CompareOp::Always:         return VK_COMPARE_OP_ALWAYS;
 	}
 	return InvalidValue<VkCompareOp>();
 }
@@ -1162,12 +1162,12 @@ VkDescriptorType ToVkDescriptorType(DescriptorType value)
 	return InvalidValue<VkDescriptorType>();
 }
 
-VkFilter ToVkFilter(Filter value)
+VkFilter ToVkEnum(Filter value)
 {
 	switch (value) {
 	default: break;
-	case FILTER_NEAREST: return VK_FILTER_NEAREST; break;
-	case FILTER_LINEAR: return VK_FILTER_LINEAR; break;
+	case Filter::Nearest: return VK_FILTER_NEAREST;
+	case Filter::Linear:  return VK_FILTER_LINEAR;
 	}
 	return InvalidValue<VkFilter>();
 }
@@ -1451,24 +1451,24 @@ VkQueryType ToVkQueryType(QueryType value)
 	return InvalidValue<VkQueryType>();
 }
 
-VkSamplerAddressMode ToVkSamplerAddressMode(SamplerAddressMode value)
+VkSamplerAddressMode ToVkEnum(SamplerAddressMode value)
 {
 	switch (value) {
 	default: break;
-	case SAMPLER_ADDRESS_MODE_REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT; break;
-	case SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT; break;
-	case SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; break;
-	case SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER; break;
+	case SamplerAddressMode::Repeat:        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	case SamplerAddressMode::MirrorRepeat:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	case SamplerAddressMode::ClampToEdge:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	case SamplerAddressMode::ClampToBorder: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 	}
 	return InvalidValue<VkSamplerAddressMode>();
 }
 
-VkSamplerMipmapMode ToVkSamplerMipmapMode(SamplerMipmapMode value)
+VkSamplerMipmapMode ToVkEnum(SamplerMipmapMode value)
 {
 	switch (value) {
 	default: break;
-	case SAMPLER_MIPMAP_MODE_NEAREST: return VK_SAMPLER_MIPMAP_MODE_NEAREST; break;
-	case SAMPLER_MIPMAP_MODE_LINEAR: return VK_SAMPLER_MIPMAP_MODE_LINEAR; break;
+	case SamplerMipmapMode::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	case SamplerMipmapMode::Linear:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	}
 	return InvalidValue<VkSamplerMipmapMode>();
 }
@@ -5493,7 +5493,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+		targetImage->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppImage = targetImage;
@@ -5787,7 +5787,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+		targetImage->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppImage = targetImage;
@@ -6008,7 +6008,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+		targetImage->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppImage = targetImage;
@@ -6147,7 +6147,7 @@ namespace vkrUtil
 			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
 			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
 			ci.storageImageViewFormat = FORMAT_UNDEFINED;
-			ci.ownership = OWNERSHIP_REFERENCE;
+			ci.ownership = Ownership::Reference;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
 
@@ -6183,7 +6183,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetTexture->SetOwnership(OWNERSHIP_REFERENCE);
+		targetTexture->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppTexture = targetTexture;
@@ -6234,7 +6234,7 @@ namespace vkrUtil
 			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
 			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
 			ci.storageImageViewFormat = FORMAT_UNDEFINED;
-			ci.ownership = OWNERSHIP_REFERENCE;
+			ci.ownership = Ownership::Reference;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
 
@@ -6264,7 +6264,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetTexture->SetOwnership(OWNERSHIP_REFERENCE);
+		targetTexture->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppTexture = targetTexture;
@@ -6555,7 +6555,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetImage->SetOwnership(OWNERSHIP_REFERENCE);
+		targetImage->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppImage = targetImage;
@@ -6660,7 +6660,7 @@ namespace vkrUtil
 		}
 
 		// Change ownership to reference so object doesn't get destroyed
-		targetMesh->SetOwnership(OWNERSHIP_REFERENCE);
+		targetMesh->SetOwnership(Ownership::Reference);
 
 		// Assign output
 		*ppMesh = targetMesh;
