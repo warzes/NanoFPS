@@ -5,6 +5,30 @@
 #include "RenderDevice.h"
 #include "RenderSystem.h"
 
+#if defined(_MSC_VER)
+#	if defined(_DEBUG)
+#		pragma comment( lib, "glslang-default-resource-limitsd.lib" )
+//#		pragma comment( lib, "SPVRemapperd.lib" )
+//#		pragma comment( lib, "MachineIndependentd.lib" )
+//#		pragma comment( lib, "OSDependentd.lib" )
+//#		pragma comment( lib, "SPIRVd.lib" )
+#		pragma comment( lib, "glslangd.lib" )
+#		pragma comment( lib, "SPIRV-Tools-optd.lib" )
+#		pragma comment( lib, "SPIRV-Toolsd.lib" )
+//#		pragma comment( lib, "GenericCodeGend.lib" )
+#	else
+#		pragma comment( lib, "glslang-default-resource-limits.lib" )
+//#		pragma comment( lib, "SPVRemapper.lib" )
+//#		pragma comment( lib, "MachineIndependent.lib" )
+//#		pragma comment( lib, "OSDependent.lib" )
+//#		pragma comment( lib, "SPIRV.lib" )
+#		pragma comment( lib, "glslang.lib" )
+#		pragma comment( lib, "SPIRV-Tools-opt.lib" )
+#		pragma comment( lib, "SPIRV-Tools.lib" )
+//#		pragma comment( lib, "GenericCodeGen.lib" )
+#	endif
+#endif
+
 namespace vkr {
 
 #pragma region RenderDevice
@@ -185,6 +209,267 @@ QueuePtr RenderDevice::GetComputeQueue() const
 QueuePtr RenderDevice::GetAnyAvailableQueue() const
 {
 	return GetGraphicsQueue(); // TODO: по идее сюда можно вставить любую очередь, не только графическую, а более свободную
+}
+
+CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, VkShaderStageFlagBits shaderStage, const CompilerOptions& options, std::vector<uint32_t>* pSPIRV, std::string* pErrorMsg)
+{
+	const glslang_stage_t                 k_invalid_stage = static_cast<glslang_stage_t>(~0);
+	const glslang_target_client_version_t k_client_version = GLSLANG_TARGET_VULKAN_1_3;
+
+	glslang_stage_t glslang_stage = k_invalid_stage;
+
+	switch (shaderStage)
+	{
+	default: break;
+	case VK_SHADER_STAGE_VERTEX_BIT: glslang_stage = GLSLANG_STAGE_VERTEX; break;
+	case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: glslang_stage = GLSLANG_STAGE_TESSCONTROL; break;
+	case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: glslang_stage = GLSLANG_STAGE_TESSEVALUATION; break;
+	case VK_SHADER_STAGE_GEOMETRY_BIT: glslang_stage = GLSLANG_STAGE_GEOMETRY; break;
+	case VK_SHADER_STAGE_FRAGMENT_BIT: glslang_stage = GLSLANG_STAGE_FRAGMENT; break;
+	case VK_SHADER_STAGE_COMPUTE_BIT: glslang_stage = GLSLANG_STAGE_COMPUTE; break;
+	case VK_SHADER_STAGE_RAYGEN_BIT_KHR: glslang_stage = GLSLANG_STAGE_RAYGEN_NV; break;
+	case VK_SHADER_STAGE_ANY_HIT_BIT_KHR: glslang_stage = GLSLANG_STAGE_ANYHIT_NV; break;
+	case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR: glslang_stage = GLSLANG_STAGE_CLOSESTHIT_NV; break;
+	case VK_SHADER_STAGE_MISS_BIT_KHR: glslang_stage = GLSLANG_STAGE_MISS_NV; break;
+	case VK_SHADER_STAGE_INTERSECTION_BIT_KHR: glslang_stage = GLSLANG_STAGE_INTERSECT_NV; break;
+	case VK_SHADER_STAGE_CALLABLE_BIT_KHR: glslang_stage = GLSLANG_STAGE_CALLABLE_NV; break;
+	case VK_SHADER_STAGE_TASK_BIT_EXT: glslang_stage = GLSLANG_STAGE_MESH_NV; break;
+	case VK_SHADER_STAGE_MESH_BIT_EXT: glslang_stage = GLSLANG_STAGE_TASK_NV; break;
+	}
+	if (glslang_stage == k_invalid_stage)
+	{
+		return COMPILE_ERROR_INVALID_SHADER_STAGE;
+	}
+
+	glslang_input_t input = {};
+	input.language = GLSLANG_SOURCE_GLSL;
+	input.stage = glslang_stage;
+	input.client = GLSLANG_CLIENT_VULKAN;
+	input.client_version = k_client_version;
+	input.target_language = GLSLANG_TARGET_SPV;
+	input.target_language_version = GLSLANG_TARGET_SPV_1_4;
+	input.code = shaderSource.c_str();
+	input.default_version = 100;
+	input.default_profile = GLSLANG_NO_PROFILE;
+	input.force_default_version_and_profile = false;
+	input.forward_compatible = false;
+	input.messages = GLSLANG_MSG_DEFAULT_BIT;
+	input.resource = glslang_default_resource();
+
+	int res = glslang_initialize_process();
+	if (res == 0)
+	{
+		return COMPILE_ERROR_INTERNAL_COMPILER_ERROR;
+	}
+
+	struct ScopedShader
+	{
+		glslang_shader_t* pObject = nullptr;
+
+		operator glslang_shader_t* () const
+		{
+			return pObject;
+		}
+
+		~ScopedShader()
+		{
+			if (!IsNull(pObject))
+			{
+				glslang_shader_delete(pObject);
+				pObject = nullptr;
+			}
+		}
+	};
+
+	struct ScopedProgram
+	{
+		glslang_program_t* pObject = nullptr;
+
+		operator glslang_program_t* () const
+		{
+			return pObject;
+		}
+
+		~ScopedProgram()
+		{
+			if (!IsNull(pObject))
+			{
+				glslang_program_delete(pObject);
+				pObject = nullptr;
+			}
+		}
+	};
+
+	ScopedShader shader = {};
+	{
+		glslang_shader_t* p_shader = glslang_shader_create(&input);
+
+		if (IsNull(p_shader))
+		{
+			return COMPILE_ERROR_INTERNAL_COMPILER_ERROR;
+		}
+		shader.pObject = p_shader;
+	}
+
+	//
+	// Shift registers
+	//
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_TEXTURE, options.BindingShiftTexture);
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_UBO, options.BindingShiftUBO);
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_IMAGE, options.BindingShiftImage);
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_SAMPLER, options.BindingShiftSampler);
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_SSBO, options.BindingShiftSSBO);
+	glslang_shader_shift_binding(shader, GLSLANG_RESOURCE_TYPE_UAV, options.BindingShiftUAV);
+
+	//
+	// glslang Options
+	//
+	int shader_options = GLSLANG_SHADER_AUTO_MAP_BINDINGS |
+		GLSLANG_SHADER_AUTO_MAP_LOCATIONS |
+		GLSLANG_SHADER_VULKAN_RULES_RELAXED;
+	glslang_shader_set_options(shader, shader_options);
+
+	//
+	// Preprocess
+	//
+	if (!glslang_shader_preprocess(shader, &input))
+	{
+		std::stringstream ss;
+
+		const char* infoLog = glslang_shader_get_info_log(shader);
+		if (infoLog != nullptr)
+		{
+			ss << "GLSL preprocess failed (info): " << infoLog;
+		}
+
+		const char* debugLog = glslang_shader_get_info_debug_log(shader);
+		if (debugLog != nullptr)
+		{
+			ss << "GLSL preprocess failed (debug): " << debugLog;
+		}
+
+		if (!IsNull(pErrorMsg))
+		{
+			*pErrorMsg = ss.str();
+		}
+
+		return COMPILE_ERROR_PREPROCESS_FAILED;
+	}
+
+	//
+	// Compile
+	//
+	if (!glslang_shader_parse(shader, &input))
+	{
+		std::stringstream ss;
+
+		const char* info_log = glslang_shader_get_info_log(shader);
+		if (info_log != nullptr)
+		{
+			ss << "GLSL compile failed (info): " << info_log;
+		}
+
+		const char* debug_log = glslang_shader_get_info_debug_log(shader);
+		if (debug_log != nullptr)
+		{
+			ss << "GLSL compile failed (debug): " << debug_log;
+		}
+
+		if (!IsNull(pErrorMsg))
+		{
+			*pErrorMsg = ss.str();
+		}
+
+		return COMPILE_ERROR_COMPILE_FAILED;
+	}
+
+	//
+	// Link
+	//
+	ScopedProgram program = {};
+	{
+		glslang_program_t* p_program = glslang_program_create();
+		if (IsNull(p_program))
+		{
+			return COMPILE_ERROR_INTERNAL_COMPILER_ERROR;
+		}
+		program.pObject = p_program;
+	}
+	glslang_program_add_shader(program, shader);
+
+	if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT))
+	{
+		std::stringstream ss;
+
+		const char* info_log = glslang_program_get_info_log(program);
+		if (info_log != nullptr)
+		{
+			ss << "GLSL link failed (info): " << info_log;
+		}
+
+		const char* debug_log = glslang_program_get_info_debug_log(program);
+		if (debug_log != nullptr)
+		{
+			ss << "GLSL link failed (debug): " << debug_log;
+		}
+
+		if (!IsNull(pErrorMsg))
+		{
+			*pErrorMsg = ss.str();
+		}
+
+		return COMPILE_ERROR_LINK_FAILED;
+	}
+
+	//
+	// Map IO
+	//
+	if (!glslang_program_map_io(program))
+	{
+		std::stringstream ss;
+
+		ss << "GLSL program map IO failed";
+
+		if (!IsNull(pErrorMsg))
+		{
+			*pErrorMsg = ss.str();
+		}
+
+		return COMPILE_ERROR_MAP_IO_FAILED;
+	}
+
+	//
+	// Get SPIR-V
+	//
+	if (!IsNull(pSPIRV))
+	{
+		glslang_program_SPIRV_generate(program, input.stage);
+		const char* spirv_msg = glslang_program_SPIRV_get_messages(program);
+		if (!IsNull(spirv_msg))
+		{
+			std::stringstream ss;
+			ss << "SPIR-V generation error: " << spirv_msg;
+
+			if (!IsNull(pErrorMsg))
+			{
+				*pErrorMsg = ss.str();
+			}
+
+			return COMPILE_ERROR_CODE_GEN_FAILED;
+		}
+
+		const size_t    size = glslang_program_SPIRV_get_size(program);
+		const uint32_t* p_spirv = reinterpret_cast<const uint32_t*>(glslang_program_SPIRV_get_ptr(program));
+
+		*pSPIRV = std::vector<uint32_t>(p_spirv, p_spirv + size);
+	}
+
+	//
+	// Finish
+	//
+	glslang_finalize_process();
+
+	return COMPILE_SUCCESS;
 }
 
 std::vector<char> RenderDevice::LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName)

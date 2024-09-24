@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "019_gltf.h"
 
-vkr::Bitmap ColorToBitmap(const float3& color)
+Bitmap ColorToBitmap(const float3& color)
 {
-	vkr::Bitmap bitmap;
-	CHECKED_CALL(vkr::Bitmap::Create(1, 1, vkr::Bitmap::Format::FORMAT_RGBA_FLOAT, &bitmap));
+	Bitmap bitmap;
+	CHECKED_CALL(Bitmap::Create(1, 1, Bitmap::Format::FORMAT_RGBA_FLOAT, &bitmap));
 	float* ptr = bitmap.GetPixel32f(0, 0);
 	ptr[0] = color.r;
 	ptr[1] = color.g;
@@ -357,7 +357,7 @@ void Example_019::loadTexture(
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &pOutput->pSampler));
 }
 
-void Example_019::loadTexture(const vkr::Bitmap& bitmap, vkr::Queue* pQueue, Texture* pOutput)
+void Example_019::loadTexture(const Bitmap& bitmap, vkr::Queue* pQueue, Texture* pOutput)
 {
 	auto& device = GetRenderDevice();
 

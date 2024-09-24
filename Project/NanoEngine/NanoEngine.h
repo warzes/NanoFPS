@@ -2,6 +2,7 @@
 
 #include "Base.h"
 #include "Core.h"
+#include "CoreData.h"
 #include "Platform.h"
 #include "RenderCore.h"
 #include "RenderResources.h"

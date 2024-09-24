@@ -87,6 +87,8 @@
 //#include <glslang/Public/ResourceLimits.h>
 //#include <glslang/Public/ShaderLang.h>
 //#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/Include/glslang_c_interface.h>
+#include <glslang/Public/resource_limits_c.h>
 
 #define GLFW_INCLUDE_NONE
 //#define GLFW_INCLUDE_VULKAN
@@ -129,6 +131,7 @@ Left handed
 
 #include <stb/stb_image.h>
 #include <stb/stb_image_resize.h>
+#include <stb/stb_image_write.h>
 #include <stb/stb_truetype.h>
 
 #include <gli/gli.hpp>

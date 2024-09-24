@@ -100,7 +100,7 @@ private:
 		Texture* pOutput);
 
 	void loadTexture(
-		const vkr::Bitmap& bitmap,
+		const Bitmap& bitmap,
 		vkr::Queue* pQueue,
 		Texture* pOutput);
 

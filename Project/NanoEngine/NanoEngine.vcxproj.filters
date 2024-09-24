@@ -29,6 +29,9 @@
     <ClCompile Include="Graphics.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="CoreData.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="engine">
@@ -69,6 +72,9 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="Graphics.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreData.h">
       <Filter>engine</Filter>
     </ClInclude>
   </ItemGroup>

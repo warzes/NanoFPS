@@ -20,3 +20,6 @@ Thumbs.db
 /bin/Editor_Debug.*
 /bin/Editor_Release.*
 
+Project/3rdparty/lib/SPIRV-Tools-optd.lib
+Project/3rdparty/lib/SPIRV-Toolsd.lib
+Project/3rdparty/lib/glslangd.lib

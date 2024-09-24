@@ -540,8 +540,8 @@ namespace scene {
 
 		// Default texture
 		{
-			vkr::Bitmap bitmap;
-			auto        ppxres = vkr::Bitmap::Create(1, 1, vkr::Bitmap::FORMAT_RGBA_UINT8, &bitmap);
+			Bitmap bitmap;
+			auto        ppxres = Bitmap::Create(1, 1, Bitmap::FORMAT_RGBA_UINT8, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -620,8 +620,8 @@ namespace scene {
 
 		// Default IBL texture
 		{
-			vkr::Bitmap bitmap;
-			auto        ppxres = vkr::Bitmap::Create(1, 1, vkr::Bitmap::FORMAT_RGBA_UINT8, &bitmap);
+			Bitmap bitmap;
+			auto        ppxres = Bitmap::Create(1, 1, Bitmap::FORMAT_RGBA_UINT8, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -2340,8 +2340,8 @@ namespace scene {
 				return ERROR_BAD_DATA_SOURCE;
 			}
 
-			vkr::Bitmap bitmap;
-			auto        ppxres = vkr::Bitmap::LoadFromMemory(dataSize, pData, &bitmap);
+			Bitmap bitmap;
+			auto        ppxres = Bitmap::LoadFromMemory(dataSize, pData, &bitmap);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
