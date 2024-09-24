@@ -220,7 +220,7 @@ namespace e020
 			*ppTexture = it->second;
 		}
 		else {
-			vkr::vkrUtil::TextureOptions textureOptions = vkr::vkrUtil::TextureOptions().MipLevelCount(vkr::RemainingMipLevels);
+			vkr::vkrUtil::TextureOptions textureOptions = vkr::vkrUtil::TextureOptions().MipLevelCount(RemainingMipLevels);
 			CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(pQueue, path, ppTexture, textureOptions));
 		}
 

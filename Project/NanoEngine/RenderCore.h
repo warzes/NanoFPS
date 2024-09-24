@@ -2619,7 +2619,6 @@ namespace vkrUtil
 		const TriMeshOptions& options = TriMeshOptions());
 
 	Format ToGrfxFormat(Bitmap::Format value);
-
 }
 
 #pragma endregion

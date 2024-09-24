@@ -36,7 +36,7 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 0;
 
-			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);
@@ -46,7 +46,7 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 1;
 
-			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/chinatown.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);
@@ -56,7 +56,7 @@ bool Example_022::Setup()
 		{
 			const uint32_t textureIndex = 2;
 
-			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImages[textureIndex], options, true));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImages[textureIndex]);

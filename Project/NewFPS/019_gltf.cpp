@@ -334,7 +334,7 @@ void Example_019::loadTexture(
 
 	auto it = pTextureCache->find(texture.image->uri);
 	if (it == pTextureCache->end()) {
-		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(pQueue, gltfFolder / texture.image->uri, &pOutput->pImage, options, false));
 		pTextureCache->emplace(texture.image->uri, pOutput->pImage);
 	}

@@ -39,7 +39,7 @@ bool Example_013::Setup()
 
 	// Textures, views, and samplers
 	{
-		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+		vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/albedo.jpg", &mAlbedoTexture, options, false));
 		CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/normal_map/normal.jpg", &mNormalMap, options, false));
 

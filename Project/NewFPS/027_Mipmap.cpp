@@ -27,7 +27,7 @@ bool Example_027::Setup()
 	{
 		// std::vector<std::string> textureFiles = {"box_panel.jpg", "statue.jpg"};
 		for (uint32_t i = 0; i < 2; ++i) {
-			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(vkr::RemainingMipLevels);
+			vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
 			CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/hanging_lights.jpg", &mImage[i], options, i == 1));
 
 			vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mImage[i]);

@@ -81,7 +81,7 @@ bool Example_017::Setup()
 
 	// vkr::Texture.
 	{
-		vkr::vkrUtil::TextureOptions options = vkr::vkrUtil::TextureOptions().MipLevelCount(vkr::RemainingMipLevels);
+		vkr::vkrUtil::TextureOptions options = vkr::vkrUtil::TextureOptions().MipLevelCount(RemainingMipLevels);
 		CHECKED_CALL(vkr::vkrUtil::CreateTextureFromFile(device.GetGraphicsQueue(), "materials/textures/altimeter/albedo.jpg", &mModelTexture, options));
 	}
 

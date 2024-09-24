@@ -206,7 +206,6 @@ void Bitmap::Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataTy
 
 #pragma endregion
 
-
 #pragma region Mipmap
 
 constexpr auto RemainingMipLevels = UINT32_MAX;
