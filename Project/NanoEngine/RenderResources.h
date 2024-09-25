@@ -35,7 +35,7 @@ private:
 
 struct SemaphoreCreateInfo final
 {
-	SemaphoreType semaphoreType = SEMAPHORE_TYPE_BINARY;
+	SemaphoreType semaphoreType = SemaphoreType::Binary;
 	uint64_t      initialValue = 0; // Timeline semaphore only
 };
 
@@ -45,8 +45,8 @@ class Semaphore final : public DeviceObject<SemaphoreCreateInfo>
 public:
 	VkSemaphorePtr GetVkSemaphore() const { return m_semaphore; }
 	SemaphoreType  GetSemaphoreType() const { return m_createInfo.semaphoreType; }
-	bool           IsBinary() const { return m_createInfo.semaphoreType == SEMAPHORE_TYPE_BINARY; }
-	bool           IsTimeline() const { return m_createInfo.semaphoreType == SEMAPHORE_TYPE_TIMELINE; }
+	bool           IsBinary() const { return m_createInfo.semaphoreType == SemaphoreType::Binary; }
+	bool           IsTimeline() const { return m_createInfo.semaphoreType == SemaphoreType::Timeline; }
 
 	// Timeline semaphore wait
 	Result Wait(uint64_t value, uint64_t timeout = UINT64_MAX) const;
@@ -80,31 +80,25 @@ private:
 
 #pragma region Query
 
-#define GRFX_PIPELINE_STATISTIC_NUM_ENTRIES 11
-
-union PipelineStatistics
+struct PipelineStatistics final
 {
-	struct
-	{
-		uint64_t IAVertices;    // Input Assembly Vertices
-		uint64_t IAPrimitives;  // Input Assembly Primitives
-		uint64_t VSInvocations; // Vertex Shader Invocations
-		uint64_t GSInvocations; // Geometry Shader Invocations
-		uint64_t GSPrimitives;  // Geometry Shader Primitives
-		uint64_t CInvocations;  // Clipping Invocations
-		uint64_t CPrimitives;   // Clipping Primitives
-		uint64_t PSInvocations; // Pixel Shader Invocations
-		uint64_t HSInvocations; // Hull Shader Invocations
-		uint64_t DSInvocations; // Domain Shader Invocations
-		uint64_t CSInvocations; // Compute Shader Invocations
-	};
-	uint64_t Statistics[GRFX_PIPELINE_STATISTIC_NUM_ENTRIES] = { 0 };
+	uint64_t IAVertices;    // Input Assembly Vertices
+	uint64_t IAPrimitives;  // Input Assembly Primitives
+	uint64_t VSInvocations; // Vertex Shader Invocations
+	uint64_t GSInvocations; // Geometry Shader Invocations
+	uint64_t GSPrimitives;  // Geometry Shader Primitives
+	uint64_t CInvocations;  // Clipping Invocations
+	uint64_t CPrimitives;   // Clipping Primitives
+	uint64_t PSInvocations; // Pixel Shader Invocations
+	uint64_t HSInvocations; // Hull Shader Invocations
+	uint64_t DSInvocations; // Domain Shader Invocations
+	uint64_t CSInvocations; // Compute Shader Invocations
 };
 
-struct QueryCreateInfo
+struct QueryCreateInfo final
 {
-	QueryType type = QUERY_TYPE_UNDEFINED;
-	uint32_t        count = 0;
+	QueryType type = QueryType::Undefined;
+	uint32_t count = 0;
 };
 
 class Query final : public DeviceObject<QueryCreateInfo>
@@ -112,26 +106,25 @@ class Query final : public DeviceObject<QueryCreateInfo>
 	friend class RenderDevice;
 public:
 	QueryType GetType() const { return m_createInfo.type; }
-	uint32_t  GetCount() const { return m_createInfo.count; }
+	uint32_t GetCount() const { return m_createInfo.count; }
 
-	VkQueryPoolPtr GetVkQueryPool() const { return mQueryPool; }
-	uint32_t       GetQueryTypeSize() const { return GetQueryTypeSize(mType, mMultiplier); }
-	VkBufferPtr    GetReadBackBuffer() const;
+	VkQueryPoolPtr GetVkQueryPool() const { return m_queryPool; }
+	uint32_t GetQueryTypeSize() const { return getQueryTypeSize(m_type, m_multiplier); }
+	VkBufferPtr GetReadBackBuffer() const;
 
-	void   Reset(uint32_t firstQuery, uint32_t queryCount);
-	Result GetData(void* pDstData, uint64_t dstDataSize);
+	void Reset(uint32_t firstQuery, uint32_t queryCount);
+	Result GetData(void* dstData, uint64_t dstDataSize);
 
 private:
-	Result create(const QueryCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const QueryCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
-	uint32_t       GetQueryTypeSize(VkQueryType type, uint32_t multiplier) const;
-	VkQueryType    GetQueryType() const { return mType; }
+	Result createApiObjects(const QueryCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
+	uint32_t getQueryTypeSize(VkQueryType type, uint32_t multiplier) const;
+	VkQueryType getQueryType() const { return m_type; }
 
-	VkQueryPoolPtr  mQueryPool;
-	VkQueryType     mType = VK_QUERY_TYPE_MAX_ENUM;
-	BufferPtr mBuffer;
-	uint32_t        mMultiplier = 1;
+	VkQueryPoolPtr  m_queryPool;
+	VkQueryType     m_type = VK_QUERY_TYPE_MAX_ENUM;
+	BufferPtr       m_buffer;
+	uint32_t        m_multiplier = 1;
 };
 
 #pragma endregion

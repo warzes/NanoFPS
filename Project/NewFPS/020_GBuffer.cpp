@@ -890,7 +890,7 @@ void Example_020::setupPerFrame()
 
 #ifdef ENABLE_GPU_QUERIES
 		vkr::QueryCreateInfo queryCreateInfo = {};
-		queryCreateInfo.type = vkr::QUERY_TYPE_TIMESTAMP;
+		queryCreateInfo.type = vkr::QueryType::Timestamp;
 		queryCreateInfo.count = 2;
 		CHECKED_CALL(device.CreateQuery(queryCreateInfo, &frame.timestampQuery));
 
@@ -898,7 +898,7 @@ void Example_020::setupPerFrame()
 		if (device.PipelineStatsAvailable())
 		{
 			queryCreateInfo = {};
-			queryCreateInfo.type = vkr::QUERY_TYPE_PIPELINE_STATISTICS;
+			queryCreateInfo.type = vkr::QueryType::PipelineStatistics;
 			queryCreateInfo.count = 1;
 			CHECKED_CALL(device.CreateQuery(queryCreateInfo, &frame.pipelineStatsQuery));
 		}

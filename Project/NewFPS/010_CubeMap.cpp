@@ -140,7 +140,7 @@ bool Example_010::Setup()
 #if defined(ENABLE_GPU_QUERIES)
 		// Timestamp query
 		vkr::QueryCreateInfo queryCreateInfo = {};
-		queryCreateInfo.type = vkr::QUERY_TYPE_TIMESTAMP;
+		queryCreateInfo.type = vkr::QueryType::Timestamp;
 		queryCreateInfo.count = 2;
 		CHECKED_CALL(device.CreateQuery(queryCreateInfo, &frame.timestampQuery));
 #endif // defined(ENABLE_GPU_QUERIES)

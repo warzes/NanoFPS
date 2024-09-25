@@ -1440,13 +1440,13 @@ VkPrimitiveTopology ToVkPrimitiveTopology(PrimitiveTopology value)
 	return InvalidValue<VkPrimitiveTopology>();
 }
 
-VkQueryType ToVkQueryType(QueryType value)
+VkQueryType ToVkEnum(QueryType value)
 {
 	switch (value) {
 	default: break;
-	case QUERY_TYPE_OCCLUSION: return VK_QUERY_TYPE_OCCLUSION; break;
-	case QUERY_TYPE_TIMESTAMP: return VK_QUERY_TYPE_TIMESTAMP; break;
-	case QUERY_TYPE_PIPELINE_STATISTICS: return VK_QUERY_TYPE_PIPELINE_STATISTICS; break;
+	case decltype(value)::Occlusion:          return VK_QUERY_TYPE_OCCLUSION;
+	case decltype(value)::Timestamp:          return VK_QUERY_TYPE_TIMESTAMP;
+	case decltype(value)::PipelineStatistics: return VK_QUERY_TYPE_PIPELINE_STATISTICS;
 	}
 	return InvalidValue<VkQueryType>();
 }

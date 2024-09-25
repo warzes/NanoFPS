@@ -5,8 +5,6 @@
 
 namespace vkr {
 
-#define REQUIRES_TIMELINE_MSG "invalid semaphore type: operation requires timeline semaphore"
-
 #pragma region VulkanFence
 
 Result Fence::Wait(uint64_t timeout)
@@ -40,7 +38,7 @@ Result Fence::createApiObjects(const FenceCreateInfo& createInfo)
 	VkResult vkres = vkCreateFence(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_fence);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateFence failed: " + ToString(vkres));
+		Fatal("vkCreateFence failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -60,11 +58,13 @@ void Fence::destroyApiObjects()
 
 #pragma region VulkanSemaphore
 
+#define REQUIRES_TIMELINE_MSG "invalid semaphore type: operation requires timeline semaphore"
+
 Result Semaphore::Wait(uint64_t value, uint64_t timeout) const
 {
-	if (GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	if (GetSemaphoreType() != SemaphoreType::Timeline)
 	{
-		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		Fatal(REQUIRES_TIMELINE_MSG);
 		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
 	}
 
@@ -76,9 +76,9 @@ Result Semaphore::Wait(uint64_t value, uint64_t timeout) const
 
 Result Semaphore::Signal(uint64_t value) const
 {
-	if (GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	if (GetSemaphoreType() != SemaphoreType::Timeline)
 	{
-		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		Fatal(REQUIRES_TIMELINE_MSG);
 		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
 	}
 
@@ -90,9 +90,9 @@ Result Semaphore::Signal(uint64_t value) const
 
 uint64_t Semaphore::GetCounterValue() const
 {
-	if (this->GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE)
+	if (GetSemaphoreType() != SemaphoreType::Timeline)
 	{
-		ASSERT_MSG(false, REQUIRES_TIMELINE_MSG);
+		Fatal(REQUIRES_TIMELINE_MSG);
 		return UINT64_MAX;
 	}
 
@@ -103,16 +103,16 @@ uint64_t Semaphore::GetCounterValue() const
 Result Semaphore::createApiObjects(const SemaphoreCreateInfo& createInfo)
 {
 	VkSemaphoreTypeCreateInfo timelineCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
-	timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-	timelineCreateInfo.initialValue = createInfo.initialValue;
+	timelineCreateInfo.semaphoreType             = VK_SEMAPHORE_TYPE_TIMELINE;
+	timelineCreateInfo.initialValue              = createInfo.initialValue;
 
 	VkSemaphoreCreateInfo vkci = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
-	vkci.pNext = (createInfo.semaphoreType == SEMAPHORE_TYPE_TIMELINE) ? &timelineCreateInfo : nullptr;
+	vkci.pNext = (createInfo.semaphoreType == SemaphoreType::Timeline) ? &timelineCreateInfo : nullptr;
 
 	VkResult vkres = vkCreateSemaphore(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_semaphore);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateSemaphore failed: " + ToString(vkres));
+		Fatal("vkCreateSemaphore failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -175,50 +175,48 @@ uint64_t Semaphore::timelineCounterValue() const
 
 #pragma region Query
 
-Result Query::create(const QueryCreateInfo& pCreateInfo)
+VkBufferPtr Query::GetReadBackBuffer() const
 {
-	if (pCreateInfo.type == QUERY_TYPE_UNDEFINED) return ERROR_GRFX_INVALID_QUERY_TYPE;
-	if (pCreateInfo.count == 0)  return ERROR_GRFX_INVALID_QUERY_COUNT;
+	return m_buffer->GetVkBuffer();
+}
 
-	Result ppxres = DeviceObject<QueryCreateInfo>::create(pCreateInfo);
+void Query::Reset(uint32_t firstQuery, uint32_t queryCount)
+{
+	vkResetQueryPool(GetDevice()->GetVkDevice(), m_queryPool, firstQuery, queryCount);
+}
+
+Result Query::GetData(void* dstData, uint64_t dstDataSize)
+{
+	void* pMappedAddress = 0;
+	Result ppxres = m_buffer->MapMemory(0, &pMappedAddress);
 	if (Failed(ppxres)) return ppxres;
+
+	size_t copySize = std::min<size_t>(dstDataSize, m_buffer->GetSize());
+	memcpy(dstData, pMappedAddress, copySize);
+
+	m_buffer->UnmapMemory();
 
 	return SUCCESS;
 }
 
-uint32_t Query::GetQueryTypeSize(VkQueryType type, uint32_t multiplier) const
+Result Query::createApiObjects(const QueryCreateInfo& createInfo)
 {
-	uint32_t result = 0;
-	switch (type) {
-	case VK_QUERY_TYPE_OCCLUSION:
-	case VK_QUERY_TYPE_TIMESTAMP:
-		// this need VK_QUERY_RESULT_64_BIT to be set
-		result = (uint32_t)sizeof(uint64_t);
-		break;
-	case VK_QUERY_TYPE_PIPELINE_STATISTICS:
-		// this need VK_QUERY_RESULT_64_BIT to be set
-		result = (uint32_t)sizeof(uint64_t) * multiplier;
-		break;
-	default:
-		ASSERT_MSG(false, "Unsupported query type");
-		break;
-	}
-	return result;
-}
+	if (createInfo.type == QueryType::Undefined) return ERROR_GRFX_INVALID_QUERY_TYPE;
+	if (createInfo.count == 0) return ERROR_GRFX_INVALID_QUERY_COUNT;
 
-Result Query::createApiObjects(const QueryCreateInfo& pCreateInfo)
-{
 	VkQueryPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
-	vkci.flags = 0;
-	vkci.queryType = ToVkQueryType(pCreateInfo.type);
-	vkci.queryCount = pCreateInfo.count;
-	vkci.pipelineStatistics = 0;
+	vkci.flags                 = 0;
+	vkci.queryType             = ToVkEnum(createInfo.type);
+	vkci.queryCount            = createInfo.count;
+	vkci.pipelineStatistics    = 0;
 
-	mType = vkci.queryType;
-	mMultiplier = 1;
+	m_type = vkci.queryType;
+	m_multiplier = 1;
 
-	if (vkci.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-		vkci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
+	if (vkci.queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS)
+	{
+		vkci.pipelineStatistics = 
+			VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT |
 			VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT |
 			VK_QUERY_PIPELINE_STATISTIC_VERTEX_SHADER_INVOCATIONS_BIT |
 			VK_QUERY_PIPELINE_STATISTIC_GEOMETRY_SHADER_INVOCATIONS_BIT |
@@ -230,25 +228,29 @@ Result Query::createApiObjects(const QueryCreateInfo& pCreateInfo)
 			VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT |
 			VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT;
 		std::bitset<32> flagbit(vkci.pipelineStatistics);
-		mMultiplier = (uint32_t)flagbit.count();
+		m_multiplier = (uint32_t)flagbit.count();
 	}
 
-	VkResult vkres = vkCreateQueryPool(GetDevice()->GetVkDevice(), &vkci, nullptr, &mQueryPool);
-	if (vkres != VK_SUCCESS) {
+	VkResult vkres = vkCreateQueryPool(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_queryPool);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateQueryPool failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
-	BufferCreateInfo createInfo = {};
-	createInfo.size = vkci.queryCount * GetQueryTypeSize(mType, mMultiplier);
-	createInfo.structuredElementStride = GetQueryTypeSize(mType, mMultiplier);
-	createInfo.usageFlags = BUFFER_USAGE_TRANSFER_DST;
-	createInfo.memoryUsage = MEMORY_USAGE_GPU_TO_CPU;
-	createInfo.initialState = RESOURCE_STATE_COPY_DST;
-	createInfo.ownership = Ownership::Reference;
+	BufferCreateInfo bufferInfo        = {};
+	bufferInfo.size                    = vkci.queryCount * getQueryTypeSize(m_type, m_multiplier);
+	bufferInfo.structuredElementStride = getQueryTypeSize(m_type, m_multiplier);
+	bufferInfo.usageFlags              = BUFFER_USAGE_TRANSFER_DST;
+	bufferInfo.memoryUsage             = MEMORY_USAGE_GPU_TO_CPU;
+	bufferInfo.initialState            = RESOURCE_STATE_COPY_DST;
+	bufferInfo.ownership               = Ownership::Reference;
 
 	// Create buffer
-	Result ppxres = GetDevice()->CreateBuffer(createInfo, &mBuffer);
-	if (Failed(ppxres)) {
+	Result ppxres = GetDevice()->CreateBuffer(bufferInfo, &m_buffer);
+	if (Failed(ppxres))
+	{
+		Fatal("Create buffer in Query failed: " + ToString(vkres));
 		return ppxres;
 	}
 
@@ -257,44 +259,34 @@ Result Query::createApiObjects(const QueryCreateInfo& pCreateInfo)
 
 void Query::destroyApiObjects()
 {
-	if (mQueryPool) {
-		vkDestroyQueryPool(
-			GetDevice()->GetVkDevice(),
-			mQueryPool,
-			nullptr);
-
-		mQueryPool.Reset();
+	if (m_queryPool)
+	{
+		vkDestroyQueryPool(GetDevice()->GetVkDevice(), m_queryPool, nullptr);
+		m_queryPool.Reset();
 	}
 
-	if (mBuffer) {
-		mBuffer.Reset();
+	if (m_buffer) m_buffer.Reset();
+}
+
+uint32_t Query::getQueryTypeSize(VkQueryType type, uint32_t multiplier) const
+{
+	uint32_t result = 0;
+	switch (type)
+	{
+	case VK_QUERY_TYPE_OCCLUSION:
+	case VK_QUERY_TYPE_TIMESTAMP:
+		// this need VK_QUERY_RESULT_64_BIT to be set
+		result = (uint32_t)sizeof(uint64_t);
+		break;
+	case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+		// this need VK_QUERY_RESULT_64_BIT to be set
+		result = (uint32_t)sizeof(uint64_t) * multiplier;
+		break;
+	default:
+		Fatal("Unsupported query type");
+		break;
 	}
-}
-
-void Query::Reset(uint32_t firstQuery, uint32_t queryCount)
-{
-	vkResetQueryPool(GetDevice()->GetVkDevice(), mQueryPool, firstQuery, queryCount);
-}
-
-Result Query::GetData(void* pDstData, uint64_t dstDataSize)
-{
-	void* pMappedAddress = 0;
-	Result ppxres = mBuffer->MapMemory(0, &pMappedAddress);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	size_t copySize = std::min<size_t>(dstDataSize, mBuffer->GetSize());
-	memcpy(pDstData, pMappedAddress, copySize);
-
-	mBuffer->UnmapMemory();
-
-	return SUCCESS;
-}
-
-VkBufferPtr Query::GetReadBackBuffer() const
-{
-	return mBuffer->GetVkBuffer();
+	return result;
 }
 
 #pragma endregion
@@ -6642,7 +6634,7 @@ void CommandBuffer::BeginQuery(
 	ASSERT_MSG(queryIndex <= pQuery->GetCount(), "invalid query index");
 
 	VkQueryControlFlags flags = 0;
-	if (pQuery->GetType() == QUERY_TYPE_OCCLUSION) {
+	if (pQuery->GetType() == QueryType::Occlusion) {
 		flags = VK_QUERY_CONTROL_PRECISE_BIT;
 	}
 
@@ -6990,7 +6982,7 @@ Result Queue::QueueWait(Semaphore* pSemaphore, uint64_t value)
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
 
-	if (pSemaphore->GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE) {
+	if (pSemaphore->GetSemaphoreType() != SemaphoreType::Timeline) {
 		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
 	}
 
@@ -7029,7 +7021,7 @@ Result Queue::QueueSignal(Semaphore* pSemaphore, uint64_t value)
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
 
-	if (pSemaphore->GetSemaphoreType() != SEMAPHORE_TYPE_TIMELINE) {
+	if (pSemaphore->GetSemaphoreType() != SemaphoreType::Timeline) {
 		return ERROR_GRFX_INVALID_SEMAPHORE_TYPE;
 	}
 

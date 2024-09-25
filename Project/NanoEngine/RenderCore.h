@@ -580,12 +580,12 @@ enum PrimitiveTopology
 	PRIMITIVE_TOPOLOGY_PATCH_LIST = 6,
 };
 
-enum QueryType
+enum class QueryType : uint8_t
 {
-	QUERY_TYPE_UNDEFINED = 0,
-	QUERY_TYPE_OCCLUSION = 1,
-	QUERY_TYPE_PIPELINE_STATISTICS = 2,
-	QUERY_TYPE_TIMESTAMP = 3,
+	Undefined,
+	Occlusion,
+	PipelineStatistics,
+	Timestamp
 };
 
 enum ResourceState
@@ -651,10 +651,10 @@ enum SampleCount
 	SAMPLE_COUNT_64 = 64,
 };
 
-enum SemaphoreType
+enum class SemaphoreType : uint8_t
 {
-	SEMAPHORE_TYPE_BINARY = 0,
-	SEMAPHORE_TYPE_TIMELINE = 1,
+	Binary,
+	Timeline
 };
 
 enum ShaderStageBits
@@ -1675,7 +1675,7 @@ VkPipelineStageFlagBits       ToVkPipelineStage(PipelineStage value);
 VkPolygonMode                 ToVkPolygonMode(PolygonMode value);
 VkPresentModeKHR              ToVkPresentMode(PresentMode value);
 VkPrimitiveTopology           ToVkPrimitiveTopology(PrimitiveTopology value);
-VkQueryType                   ToVkQueryType(QueryType value);
+VkQueryType                   ToVkEnum(QueryType value);
 VkSamplerAddressMode          ToVkEnum(SamplerAddressMode value);
 VkSamplerMipmapMode           ToVkEnum(SamplerMipmapMode value);
 VkSamplerReductionMode        ToVkEnum(SamplerReductionMode value);
