@@ -332,12 +332,11 @@ constexpr FormatDesc formatDescs[] =
 };
 
 constexpr size_t formatDescsSize = sizeof(formatDescs) / sizeof(FormatDesc);
-static_assert(formatDescsSize == FORMAT_COUNT, "Missing format descriptions");
 
 const FormatDesc* GetFormatDescription(Format format)
 {
 	uint32_t formatIndex = static_cast<uint32_t>(format);
-	ASSERT_MSG(format != FORMAT_UNDEFINED && formatIndex < formatDescsSize, "invalid format");
+	ASSERT_MSG(format != Format::Undefined && formatIndex < formatDescsSize, "invalid format");
 	return &formatDescs[formatIndex];
 }
 
@@ -577,37 +576,37 @@ Format VertexSemanticFormat(VertexSemantic value)
 {
 	switch (value) {
 	default: break;
-	case VERTEX_SEMANTIC_POSITION: return FORMAT_R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_NORMAL: return FORMAT_R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_COLOR: return FORMAT_R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_TANGENT: return FORMAT_R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_BITANGENT: return FORMAT_R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD0: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD1: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD2: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD3: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD4: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD5: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD6: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD7: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD8: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD9: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD10: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD11: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD12: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD13: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD14: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD15: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD16: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD17: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD18: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD19: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD20: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD21: return FORMAT_R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD22: return FORMAT_R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_POSITION: return Format::R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_NORMAL: return Format::R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_COLOR: return Format::R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_TANGENT: return Format::R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_BITANGENT: return Format::R32G32B32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD0: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD1: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD2: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD3: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD4: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD5: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD6: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD7: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD8: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD9: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD10: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD11: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD12: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD13: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD14: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD15: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD16: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD17: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD18: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD19: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD20: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD21: return Format::R32G32_FLOAT; break;
+	case VERTEX_SEMANTIC_TEXCOORD22: return Format::R32G32_FLOAT; break;
 	}
-	return FORMAT_UNDEFINED;
+	return Format::Undefined;
 }
 
 std::string ToString(const gli::target& target)
@@ -1172,136 +1171,136 @@ VkFilter ToVkEnum(Filter value)
 	return InvalidValue<VkFilter>();
 }
 
-VkFormat ToVkFormat(Format value)
+VkFormat ToVkEnum(Format value)
 {
 	switch (value) {
 	default: break;
 
 	// 8-bit signed normalized
-	case FORMAT_R8_SNORM: return VK_FORMAT_R8_SNORM; break;
-	case FORMAT_R8G8_SNORM: return VK_FORMAT_R8G8_SNORM; break;
-	case FORMAT_R8G8B8_SNORM: return VK_FORMAT_R8G8B8_SNORM; break;
-	case FORMAT_R8G8B8A8_SNORM: return VK_FORMAT_R8G8B8A8_SNORM; break;
-	case FORMAT_B8G8R8_SNORM: return VK_FORMAT_B8G8R8_SNORM; break;
-	case FORMAT_B8G8R8A8_SNORM: return VK_FORMAT_B8G8R8A8_SNORM; break;
+	case Format::R8_SNORM: return VK_FORMAT_R8_SNORM; break;
+	case Format::R8G8_SNORM: return VK_FORMAT_R8G8_SNORM; break;
+	case Format::R8G8B8_SNORM: return VK_FORMAT_R8G8B8_SNORM; break;
+	case Format::R8G8B8A8_SNORM: return VK_FORMAT_R8G8B8A8_SNORM; break;
+	case Format::B8G8R8_SNORM: return VK_FORMAT_B8G8R8_SNORM; break;
+	case Format::B8G8R8A8_SNORM: return VK_FORMAT_B8G8R8A8_SNORM; break;
 
-		// 8-bit unsigned normalized
-	case FORMAT_R8_UNORM: return VK_FORMAT_R8_UNORM; break;
-	case FORMAT_R8G8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
-	case FORMAT_R8G8B8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
-	case FORMAT_R8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
-	case FORMAT_B8G8R8_UNORM: return VK_FORMAT_B8G8R8_UNORM; break;
-	case FORMAT_B8G8R8A8_UNORM: return VK_FORMAT_B8G8R8A8_UNORM; break;
+	// 8-bit unsigned normalized
+	case Format::R8_UNORM: return VK_FORMAT_R8_UNORM; break;
+	case Format::R8G8_UNORM: return VK_FORMAT_R8G8_UNORM; break;
+	case Format::R8G8B8_UNORM: return VK_FORMAT_R8G8B8_UNORM; break;
+	case Format::R8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; break;
+	case Format::B8G8R8_UNORM: return VK_FORMAT_B8G8R8_UNORM; break;
+	case Format::B8G8R8A8_UNORM: return VK_FORMAT_B8G8R8A8_UNORM; break;
 
-		// 8-bit signed integer
-	case FORMAT_R8_SINT: return VK_FORMAT_R8_SINT; break;
-	case FORMAT_R8G8_SINT: return VK_FORMAT_R8G8_SINT; break;
-	case FORMAT_R8G8B8_SINT: return VK_FORMAT_R8G8B8_SINT; break;
-	case FORMAT_R8G8B8A8_SINT: return VK_FORMAT_R8G8B8A8_SINT; break;
-	case FORMAT_B8G8R8_SINT: return VK_FORMAT_B8G8R8_SINT; break;
-	case FORMAT_B8G8R8A8_SINT: return VK_FORMAT_B8G8R8A8_SINT; break;
+	// 8-bit signed integer
+	case Format::R8_SINT: return VK_FORMAT_R8_SINT; break;
+	case Format::R8G8_SINT: return VK_FORMAT_R8G8_SINT; break;
+	case Format::R8G8B8_SINT: return VK_FORMAT_R8G8B8_SINT; break;
+	case Format::R8G8B8A8_SINT: return VK_FORMAT_R8G8B8A8_SINT; break;
+	case Format::B8G8R8_SINT: return VK_FORMAT_B8G8R8_SINT; break;
+	case Format::B8G8R8A8_SINT: return VK_FORMAT_B8G8R8A8_SINT; break;
 
-		// 8-bit unsigned integer
-	case FORMAT_R8_UINT: return VK_FORMAT_R8_UINT; break;
-	case FORMAT_R8G8_UINT: return VK_FORMAT_R8G8_UINT; break;
-	case FORMAT_R8G8B8_UINT: return VK_FORMAT_R8G8B8_UINT; break;
-	case FORMAT_R8G8B8A8_UINT: return VK_FORMAT_R8G8B8A8_UINT; break;
-	case FORMAT_B8G8R8_UINT: return VK_FORMAT_B8G8R8_UINT; break;
-	case FORMAT_B8G8R8A8_UINT: return VK_FORMAT_B8G8R8A8_UINT; break;
+	// 8-bit unsigned integer
+	case Format::R8_UINT: return VK_FORMAT_R8_UINT; break;
+	case Format::R8G8_UINT: return VK_FORMAT_R8G8_UINT; break;
+	case Format::R8G8B8_UINT: return VK_FORMAT_R8G8B8_UINT; break;
+	case Format::R8G8B8A8_UINT: return VK_FORMAT_R8G8B8A8_UINT; break;
+	case Format::B8G8R8_UINT: return VK_FORMAT_B8G8R8_UINT; break;
+	case Format::B8G8R8A8_UINT: return VK_FORMAT_B8G8R8A8_UINT; break;
 
-		// 16-bit signed normalized
-	case FORMAT_R16_SNORM: return VK_FORMAT_R16_SNORM; break;
-	case FORMAT_R16G16_SNORM: return VK_FORMAT_R16G16_SNORM; break;
-	case FORMAT_R16G16B16_SNORM: return VK_FORMAT_R16G16B16_SNORM; break;
-	case FORMAT_R16G16B16A16_SNORM: return VK_FORMAT_R16G16B16A16_SNORM; break;
+	// 16-bit signed normalized
+	case Format::R16_SNORM: return VK_FORMAT_R16_SNORM; break;
+	case Format::R16G16_SNORM: return VK_FORMAT_R16G16_SNORM; break;
+	case Format::R16G16B16_SNORM: return VK_FORMAT_R16G16B16_SNORM; break;
+	case Format::R16G16B16A16_SNORM: return VK_FORMAT_R16G16B16A16_SNORM; break;
 
-		// 16-bit unsigned normalized
-	case FORMAT_R16_UNORM: return VK_FORMAT_R16_UNORM; break;
-	case FORMAT_R16G16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
-	case FORMAT_R16G16B16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
-	case FORMAT_R16G16B16A16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
+	// 16-bit unsigned normalized
+	case Format::R16_UNORM: return VK_FORMAT_R16_UNORM; break;
+	case Format::R16G16_UNORM: return VK_FORMAT_R16G16_UNORM; break;
+	case Format::R16G16B16_UNORM: return VK_FORMAT_R16G16B16_UNORM; break;
+	case Format::R16G16B16A16_UNORM: return VK_FORMAT_R16G16B16A16_UNORM; break;
 
-		// 16-bit signed integer
-	case FORMAT_R16_SINT: return VK_FORMAT_R16_SINT; break;
-	case FORMAT_R16G16_SINT: return VK_FORMAT_R16G16_SINT; break;
-	case FORMAT_R16G16B16_SINT: return VK_FORMAT_R16G16B16_SINT; break;
-	case FORMAT_R16G16B16A16_SINT: return VK_FORMAT_R16G16B16A16_SINT; break;
+	// 16-bit signed integer
+	case Format::R16_SINT: return VK_FORMAT_R16_SINT; break;
+	case Format::R16G16_SINT: return VK_FORMAT_R16G16_SINT; break;
+	case Format::R16G16B16_SINT: return VK_FORMAT_R16G16B16_SINT; break;
+	case Format::R16G16B16A16_SINT: return VK_FORMAT_R16G16B16A16_SINT; break;
 
-		// 16-bit unsigned integer
-	case FORMAT_R16_UINT: return VK_FORMAT_R16_UINT; break;
-	case FORMAT_R16G16_UINT: return VK_FORMAT_R16G16_UINT; break;
-	case FORMAT_R16G16B16_UINT: return VK_FORMAT_R16G16B16_UINT; break;
-	case FORMAT_R16G16B16A16_UINT: return VK_FORMAT_R16G16B16A16_UINT; break;
+	// 16-bit unsigned integer
+	case Format::R16_UINT: return VK_FORMAT_R16_UINT; break;
+	case Format::R16G16_UINT: return VK_FORMAT_R16G16_UINT; break;
+	case Format::R16G16B16_UINT: return VK_FORMAT_R16G16B16_UINT; break;
+	case Format::R16G16B16A16_UINT: return VK_FORMAT_R16G16B16A16_UINT; break;
 
-		// 16-bit float
-	case FORMAT_R16_FLOAT: return VK_FORMAT_R16_SFLOAT; break;
-	case FORMAT_R16G16_FLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
-	case FORMAT_R16G16B16_FLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
-	case FORMAT_R16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
+	// 16-bit float
+	case Format::R16_FLOAT: return VK_FORMAT_R16_SFLOAT; break;
+	case Format::R16G16_FLOAT: return VK_FORMAT_R16G16_SFLOAT; break;
+	case Format::R16G16B16_FLOAT: return VK_FORMAT_R16G16B16_SFLOAT; break;
+	case Format::R16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT; break;
 
-		// 32-bit signed integer
-	case FORMAT_R32_SINT: return VK_FORMAT_R32_SINT; break;
-	case FORMAT_R32G32_SINT: return VK_FORMAT_R32G32_SINT; break;
-	case FORMAT_R32G32B32_SINT: return VK_FORMAT_R32G32B32_SINT; break;
-	case FORMAT_R32G32B32A32_SINT: return VK_FORMAT_R32G32B32A32_SINT; break;
+	// 32-bit signed integer
+	case Format::R32_SINT: return VK_FORMAT_R32_SINT; break;
+	case Format::R32G32_SINT: return VK_FORMAT_R32G32_SINT; break;
+	case Format::R32G32B32_SINT: return VK_FORMAT_R32G32B32_SINT; break;
+	case Format::R32G32B32A32_SINT: return VK_FORMAT_R32G32B32A32_SINT; break;
 
-		// 32-bit unsigned integer
-	case FORMAT_R32_UINT: return VK_FORMAT_R32_UINT; break;
-	case FORMAT_R32G32_UINT: return VK_FORMAT_R32G32_UINT; break;
-	case FORMAT_R32G32B32_UINT: return VK_FORMAT_R32G32B32_UINT; break;
-	case FORMAT_R32G32B32A32_UINT: return VK_FORMAT_R32G32B32A32_UINT; break;
+	// 32-bit unsigned integer
+	case Format::R32_UINT: return VK_FORMAT_R32_UINT; break;
+	case Format::R32G32_UINT: return VK_FORMAT_R32G32_UINT; break;
+	case Format::R32G32B32_UINT: return VK_FORMAT_R32G32B32_UINT; break;
+	case Format::R32G32B32A32_UINT: return VK_FORMAT_R32G32B32A32_UINT; break;
 
-		// 32-bit float
-	case FORMAT_R32_FLOAT: return VK_FORMAT_R32_SFLOAT; break;
-	case FORMAT_R32G32_FLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
-	case FORMAT_R32G32B32_FLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
-	case FORMAT_R32G32B32A32_FLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
+	// 32-bit float
+	case Format::R32_FLOAT: return VK_FORMAT_R32_SFLOAT; break;
+	case Format::R32G32_FLOAT: return VK_FORMAT_R32G32_SFLOAT; break;
+	case Format::R32G32B32_FLOAT: return VK_FORMAT_R32G32B32_SFLOAT; break;
+	case Format::R32G32B32A32_FLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT; break;
 
-		// 8-bit unsigned integer stencil
-	case FORMAT_S8_UINT: return VK_FORMAT_S8_UINT; break;
+	// 8-bit unsigned integer stencil
+	case Format::S8_UINT: return VK_FORMAT_S8_UINT; break;
 
-		// 16-bit unsigned normalized depth
-	case FORMAT_D16_UNORM: return VK_FORMAT_D16_UNORM; break;
+	// 16-bit unsigned normalized depth
+	case Format::D16_UNORM: return VK_FORMAT_D16_UNORM; break;
 
-		// 32-bit float depth
-	case FORMAT_D32_FLOAT: return VK_FORMAT_D32_SFLOAT; break;
+	// 32-bit float depth
+	case Format::D32_FLOAT: return VK_FORMAT_D32_SFLOAT; break;
 
-		// Depth/stencil combinations
-	case FORMAT_D16_UNORM_S8_UINT: return VK_FORMAT_D16_UNORM_S8_UINT; break;
-	case FORMAT_D24_UNORM_S8_UINT: return VK_FORMAT_D24_UNORM_S8_UINT; break;
-	case FORMAT_D32_FLOAT_S8_UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT; break;
+	// Depth/stencil combinations
+	case Format::D16_UNORM_S8_UINT: return VK_FORMAT_D16_UNORM_S8_UINT; break;
+	case Format::D24_UNORM_S8_UINT: return VK_FORMAT_D24_UNORM_S8_UINT; break;
+	case Format::D32_FLOAT_S8_UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT; break;
 
-		// SRGB
-	case FORMAT_R8_SRGB: return VK_FORMAT_R8_SRGB; break;
-	case FORMAT_R8G8_SRGB: return VK_FORMAT_R8G8_SRGB; break;
-	case FORMAT_R8G8B8_SRGB: return VK_FORMAT_R8G8B8_SRGB; break;
-	case FORMAT_R8G8B8A8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
-	case FORMAT_B8G8R8_SRGB: return VK_FORMAT_B8G8R8_SRGB; break;
-	case FORMAT_B8G8R8A8_SRGB: return VK_FORMAT_B8G8R8A8_SRGB; break;
+	// SRGB
+	case Format::R8_SRGB: return VK_FORMAT_R8_SRGB; break;
+	case Format::R8G8_SRGB: return VK_FORMAT_R8G8_SRGB; break;
+	case Format::R8G8B8_SRGB: return VK_FORMAT_R8G8B8_SRGB; break;
+	case Format::R8G8B8A8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; break;
+	case Format::B8G8R8_SRGB: return VK_FORMAT_B8G8R8_SRGB; break;
+	case Format::B8G8R8A8_SRGB: return VK_FORMAT_B8G8R8A8_SRGB; break;
 
-		// 10-bit
-	case FORMAT_R10G10B10A2_UNORM: return VK_FORMAT_A2R10G10B10_UNORM_PACK32; break;
+	// 10-bit
+	case Format::R10G10B10A2_UNORM: return VK_FORMAT_A2R10G10B10_UNORM_PACK32; break;
 
-		// 11-bit R, 11-bit G, 10-bit B packed
-	case FORMAT_R11G11B10_FLOAT: return VK_FORMAT_B10G11R11_UFLOAT_PACK32; break;
+	// 11-bit R, 11-bit G, 10-bit B packed
+	case Format::R11G11B10_FLOAT: return VK_FORMAT_B10G11R11_UFLOAT_PACK32; break;
 
-		// Compressed images
-	case FORMAT_BC1_RGBA_SRGB: return VK_FORMAT_BC1_RGBA_SRGB_BLOCK; break;
-	case FORMAT_BC1_RGBA_UNORM: return VK_FORMAT_BC1_RGBA_UNORM_BLOCK; break;
-	case FORMAT_BC1_RGB_SRGB: return VK_FORMAT_BC1_RGB_SRGB_BLOCK; break;
-	case FORMAT_BC1_RGB_UNORM: return VK_FORMAT_BC1_RGB_UNORM_BLOCK; break;
-	case FORMAT_BC2_SRGB: return VK_FORMAT_BC2_SRGB_BLOCK; break;
-	case FORMAT_BC2_UNORM: return VK_FORMAT_BC2_UNORM_BLOCK; break;
-	case FORMAT_BC3_SRGB: return VK_FORMAT_BC3_SRGB_BLOCK; break;
-	case FORMAT_BC3_UNORM: return VK_FORMAT_BC3_UNORM_BLOCK; break;
-	case FORMAT_BC4_UNORM: return VK_FORMAT_BC4_UNORM_BLOCK; break;
-	case FORMAT_BC4_SNORM: return VK_FORMAT_BC4_SNORM_BLOCK; break;
-	case FORMAT_BC5_UNORM: return VK_FORMAT_BC5_UNORM_BLOCK; break;
-	case FORMAT_BC5_SNORM: return VK_FORMAT_BC5_SNORM_BLOCK; break;
-	case FORMAT_BC6H_UFLOAT: return VK_FORMAT_BC6H_UFLOAT_BLOCK; break;
-	case FORMAT_BC6H_SFLOAT: return VK_FORMAT_BC6H_SFLOAT_BLOCK; break;
-	case FORMAT_BC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK; break;
-	case FORMAT_BC7_SRGB: return VK_FORMAT_BC7_SRGB_BLOCK; break;
+	// Compressed images
+	case Format::BC1_RGBA_SRGB: return VK_FORMAT_BC1_RGBA_SRGB_BLOCK; break;
+	case Format::BC1_RGBA_UNORM: return VK_FORMAT_BC1_RGBA_UNORM_BLOCK; break;
+	case Format::BC1_RGB_SRGB: return VK_FORMAT_BC1_RGB_SRGB_BLOCK; break;
+	case Format::BC1_RGB_UNORM: return VK_FORMAT_BC1_RGB_UNORM_BLOCK; break;
+	case Format::BC2_SRGB: return VK_FORMAT_BC2_SRGB_BLOCK; break;
+	case Format::BC2_UNORM: return VK_FORMAT_BC2_UNORM_BLOCK; break;
+	case Format::BC3_SRGB: return VK_FORMAT_BC3_SRGB_BLOCK; break;
+	case Format::BC3_UNORM: return VK_FORMAT_BC3_UNORM_BLOCK; break;
+	case Format::BC4_UNORM: return VK_FORMAT_BC4_UNORM_BLOCK; break;
+	case Format::BC4_SNORM: return VK_FORMAT_BC4_SNORM_BLOCK; break;
+	case Format::BC5_UNORM: return VK_FORMAT_BC5_UNORM_BLOCK; break;
+	case Format::BC5_SNORM: return VK_FORMAT_BC5_SNORM_BLOCK; break;
+	case Format::BC6H_UFLOAT: return VK_FORMAT_BC6H_UFLOAT_BLOCK; break;
+	case Format::BC6H_SFLOAT: return VK_FORMAT_BC6H_SFLOAT_BLOCK; break;
+	case Format::BC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK; break;
+	case Format::BC7_SRGB: return VK_FORMAT_BC7_SRGB_BLOCK; break;
 	}
 	return VK_FORMAT_UNDEFINED;
 }
@@ -1320,10 +1319,10 @@ VkImageType ToVkImageType(ImageType value)
 {
 	switch (value) {
 	default: break;
-	case IMAGE_TYPE_1D: return VK_IMAGE_TYPE_1D; break;
-	case IMAGE_TYPE_2D: return VK_IMAGE_TYPE_2D; break;
-	case IMAGE_TYPE_3D: return VK_IMAGE_TYPE_3D; break;
-	case IMAGE_TYPE_CUBE: return VK_IMAGE_TYPE_2D; break;
+	case ImageType::Image1D: return VK_IMAGE_TYPE_1D; break;
+	case ImageType::Image2D: return VK_IMAGE_TYPE_2D; break;
+	case ImageType::Image3D: return VK_IMAGE_TYPE_3D; break;
+	case ImageType::Cube: return VK_IMAGE_TYPE_2D; break;
 	}
 	return InvalidValue<VkImageType>();
 }
@@ -4801,47 +4800,47 @@ namespace vkrUtil
 	{
 		switch (value) {
 		default: break;
-		case Bitmap::FORMAT_R_UINT8: return FORMAT_R8_UNORM; break;
-		case Bitmap::FORMAT_RG_UINT8: return FORMAT_R8G8_UNORM; break;
-		case Bitmap::FORMAT_RGB_UINT8: return FORMAT_R8G8B8_UNORM; break;
-		case Bitmap::FORMAT_RGBA_UINT8: return FORMAT_R8G8B8A8_UNORM; break;
-		case Bitmap::FORMAT_R_UINT16: return FORMAT_R16_UNORM; break;
-		case Bitmap::FORMAT_RG_UINT16: return FORMAT_R16G16_UNORM; break;
-		case Bitmap::FORMAT_RGB_UINT16: return FORMAT_R16G16B16_UNORM; break;
-		case Bitmap::FORMAT_RGBA_UINT16: return FORMAT_R16G16B16A16_UNORM; break;
-		//case Bitmap::FORMAT_R_UINT32    : return FORMAT_R32_UNORM; break;
-		//case Bitmap::FORMAT_RG_UINT32   : return FORMAT_R32G32_UNORM; break;
-		//case Bitmap::FORMAT_RGB_UINT32  : return FORMAT_R32G32B32_UNORM; break;
-		//case Bitmap::FORMAT_RGBA_UINT32 : return FORMAT_R32G32B32A32_UNORM; break;
-		case Bitmap::FORMAT_R_FLOAT: return FORMAT_R32_FLOAT; break;
-		case Bitmap::FORMAT_RG_FLOAT: return FORMAT_R32G32_FLOAT; break;
-		case Bitmap::FORMAT_RGB_FLOAT: return FORMAT_R32G32B32_FLOAT; break;
-		case Bitmap::FORMAT_RGBA_FLOAT: return FORMAT_R32G32B32A32_FLOAT; break;
+		case Bitmap::FORMAT_R_UINT8: return Format::R8_UNORM; break;
+		case Bitmap::FORMAT_RG_UINT8: return Format::R8G8_UNORM; break;
+		case Bitmap::FORMAT_RGB_UINT8: return Format::R8G8B8_UNORM; break;
+		case Bitmap::FORMAT_RGBA_UINT8: return Format::R8G8B8A8_UNORM; break;
+		case Bitmap::FORMAT_R_UINT16: return Format::R16_UNORM; break;
+		case Bitmap::FORMAT_RG_UINT16: return Format::R16G16_UNORM; break;
+		case Bitmap::FORMAT_RGB_UINT16: return Format::R16G16B16_UNORM; break;
+		case Bitmap::FORMAT_RGBA_UINT16: return Format::R16G16B16A16_UNORM; break;
+		//case Bitmap::FORMAT_R_UINT32    : return Format::R32_UNORM; break;
+		//case Bitmap::FORMAT_RG_UINT32   : return Format::R32G32_UNORM; break;
+		//case Bitmap::FORMAT_RGB_UINT32  : return Format::R32G32B32_UNORM; break;
+		//case Bitmap::FORMAT_RGBA_UINT32 : return Format::R32G32B32A32_UNORM; break;
+		case Bitmap::FORMAT_R_FLOAT: return Format::R32_FLOAT; break;
+		case Bitmap::FORMAT_RG_FLOAT: return Format::R32G32_FLOAT; break;
+		case Bitmap::FORMAT_RGB_FLOAT: return Format::R32G32B32_FLOAT; break;
+		case Bitmap::FORMAT_RGBA_FLOAT: return Format::R32G32B32A32_FLOAT; break;
 		}
-		return FORMAT_UNDEFINED;
+		return Format::Undefined;
 	}
 
 	Format ToGrfxFormat(gli::format value)
 	{
 		switch (value) {
-		case gli::FORMAT_RGB_DXT1_UNORM_BLOCK8: return FORMAT_BC1_RGB_UNORM;
-		case gli::FORMAT_RGB_DXT1_SRGB_BLOCK8: return FORMAT_BC1_RGB_SRGB;
-		case gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8: return FORMAT_BC1_RGBA_UNORM;
-		case gli::FORMAT_RGBA_DXT1_SRGB_BLOCK8: return FORMAT_BC1_RGBA_SRGB;
-		case gli::FORMAT_RGBA_DXT3_SRGB_BLOCK16: return FORMAT_BC2_SRGB;
-		case gli::FORMAT_RGBA_DXT3_UNORM_BLOCK16: return FORMAT_BC2_UNORM;
-		case gli::FORMAT_RGBA_DXT5_SRGB_BLOCK16: return FORMAT_BC3_SRGB;
-		case gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16: return FORMAT_BC3_UNORM;
-		case gli::FORMAT_R_ATI1N_UNORM_BLOCK8: return FORMAT_BC4_UNORM;
-		case gli::FORMAT_R_ATI1N_SNORM_BLOCK8: return FORMAT_BC4_SNORM;
-		case gli::FORMAT_RG_ATI2N_UNORM_BLOCK16: return FORMAT_BC5_UNORM;
-		case gli::FORMAT_RG_ATI2N_SNORM_BLOCK16: return FORMAT_BC5_SNORM;
-		case gli::FORMAT_RGB_BP_UFLOAT_BLOCK16: return FORMAT_BC6H_UFLOAT;
-		case gli::FORMAT_RGB_BP_SFLOAT_BLOCK16: return FORMAT_BC6H_SFLOAT;
-		case gli::FORMAT_RGBA_BP_UNORM_BLOCK16: return FORMAT_BC7_UNORM;
-		case gli::FORMAT_RGBA_BP_SRGB_BLOCK16: return FORMAT_BC7_SRGB;
+		case gli::FORMAT_RGB_DXT1_UNORM_BLOCK8: return Format::BC1_RGB_UNORM;
+		case gli::FORMAT_RGB_DXT1_SRGB_BLOCK8: return Format::BC1_RGB_SRGB;
+		case gli::FORMAT_RGBA_DXT1_UNORM_BLOCK8: return Format::BC1_RGBA_UNORM;
+		case gli::FORMAT_RGBA_DXT1_SRGB_BLOCK8: return Format::BC1_RGBA_SRGB;
+		case gli::FORMAT_RGBA_DXT3_SRGB_BLOCK16: return Format::BC2_SRGB;
+		case gli::FORMAT_RGBA_DXT3_UNORM_BLOCK16: return Format::BC2_UNORM;
+		case gli::FORMAT_RGBA_DXT5_SRGB_BLOCK16: return Format::BC3_SRGB;
+		case gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16: return Format::BC3_UNORM;
+		case gli::FORMAT_R_ATI1N_UNORM_BLOCK8: return Format::BC4_UNORM;
+		case gli::FORMAT_R_ATI1N_SNORM_BLOCK8: return Format::BC4_SNORM;
+		case gli::FORMAT_RG_ATI2N_UNORM_BLOCK16: return Format::BC5_UNORM;
+		case gli::FORMAT_RG_ATI2N_SNORM_BLOCK16: return Format::BC5_SNORM;
+		case gli::FORMAT_RGB_BP_UFLOAT_BLOCK16: return Format::BC6H_UFLOAT;
+		case gli::FORMAT_RGB_BP_SFLOAT_BLOCK16: return Format::BC6H_SFLOAT;
+		case gli::FORMAT_RGBA_BP_UNORM_BLOCK16: return Format::BC7_UNORM;
+		case gli::FORMAT_RGBA_BP_SRGB_BLOCK16: return Format::BC7_SRGB;
 		default:
-			return FORMAT_UNDEFINED;
+			return Format::Undefined;
 		}
 	}
 
@@ -4976,7 +4975,7 @@ namespace vkrUtil
 		ImagePtr targetImage;
 		{
 			ImageCreateInfo ci = {};
-			ci.type = IMAGE_TYPE_2D;
+			ci.type = ImageType::Image2D;
 			ci.width = pBitmap->GetWidth();
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
@@ -5053,7 +5052,7 @@ namespace vkrUtil
 		ImagePtr targetImage;
 		{
 			ImageCreateInfo ci = {};
-			ci.type = IMAGE_TYPE_2D;
+			ci.type = ImageType::Image2D;
 			ci.width = pBitmap->GetWidth();
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
@@ -5478,7 +5477,7 @@ namespace vkrUtil
 		ImagePtr targetImage;
 		{
 			ImageCreateInfo ci = {};
-			ci.type = IMAGE_TYPE_2D;
+			ci.type = ImageType::Image2D;
 			ci.width = imageWidth;
 			ci.height = imageHeight;
 			ci.depth = 1;
@@ -5656,7 +5655,7 @@ namespace vkrUtil
 		{
 			TextureCreateInfo ci = {};
 			ci.pImage = nullptr;
-			ci.imageType = IMAGE_TYPE_2D;
+			ci.imageType = ImageType::Image2D;
 			ci.width = pBitmap->GetWidth();
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
@@ -5671,11 +5670,11 @@ namespace vkrUtil
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
+			ci.sampledImageViewFormat = Format::Undefined;
 			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
-			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
-			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
-			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.renderTargetViewFormat = Format::Undefined;
+			ci.depthStencilViewFormat = Format::Undefined;
+			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Reference;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
@@ -5743,7 +5742,7 @@ namespace vkrUtil
 		{
 			TextureCreateInfo ci = {};
 			ci.pImage = nullptr;
-			ci.imageType = IMAGE_TYPE_2D;
+			ci.imageType = ImageType::Image2D;
 			ci.width = pMip0->GetWidth();
 			ci.height = pMip0->GetHeight();
 			ci.depth = 1;
@@ -5758,11 +5757,11 @@ namespace vkrUtil
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
+			ci.sampledImageViewFormat = Format::Undefined;
 			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
-			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
-			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
-			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.renderTargetViewFormat = Format::Undefined;
+			ci.depthStencilViewFormat = Format::Undefined;
+			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Reference;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
@@ -6002,7 +6001,7 @@ namespace vkrUtil
 		}
 
 		// Target format
-		Format targetFormat = FORMAT_R8G8B8A8_UNORM;
+		Format targetFormat = Format::R8G8B8A8_UNORM;
 
 		ASSERT_MSG(bitmap.GetWidth() * 3 == bitmap.GetHeight() * 4, "cubemap texture dimension must be a multiple of 4x3");
 		// Calculate subImage to use for target image dimensions
@@ -6013,7 +6012,7 @@ namespace vkrUtil
 		ImagePtr targetImage;
 		{
 			ImageCreateInfo ci = {};
-			ci.type = IMAGE_TYPE_CUBE;
+			ci.type = ImageType::Cube;
 			ci.width = tmpSubImage.width;
 			ci.height = tmpSubImage.height;
 			ci.depth = 1;

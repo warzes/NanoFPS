@@ -55,7 +55,7 @@ void game::Player::Turn(float deltaAzimuth, float deltaAltitude)
 EngineApplicationCreateInfo GameApplication::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -435,7 +435,7 @@ bool GameApplication::setupPipelines()
 		gpCreateInfo.depthWriteEnable = true;
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
-		gpCreateInfo.outputState.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
 		gpCreateInfo.pPipelineInterface = mShadowPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mShadowPipeline));
@@ -454,7 +454,7 @@ bool GameApplication::setupShadowRenderPass()
 		vkr::RenderPassCreateInfo2 createInfo = {};
 		createInfo.width = kShadowMapSize;
 		createInfo.height = kShadowMapSize;
-		createInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		createInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
 		createInfo.depthStencilUsageFlags.bits.depthStencilAttachment = true;
 		createInfo.depthStencilUsageFlags.bits.sampled = true;
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };

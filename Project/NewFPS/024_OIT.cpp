@@ -51,7 +51,7 @@ struct ShaderGlobals
 EngineApplicationCreateInfo Example_024::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -252,7 +252,7 @@ void Example_024::SetupCommon()
 		createInfo.height = swapChain.GetHeight();
 		createInfo.renderTargetCount = 1;
 		createInfo.renderTargetFormats[0] = swapChain.GetColorFormat();
-		createInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		createInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
 		createInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 		createInfo.depthStencilUsageFlags = vkr::IMAGE_USAGE_TRANSFER_SRC | vkr::IMAGE_USAGE_SAMPLED;
 		createInfo.renderTargetInitialStates[0] = vkr::ResourceState::ShaderResource;
@@ -320,11 +320,11 @@ void Example_024::SetupCommon()
 	// Texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = swapChain.GetWidth();
 		createInfo.height = swapChain.GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_R16G16B16A16_FLOAT;
+		createInfo.imageFormat = vkr::Format::R16G16B16A16_FLOAT;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
@@ -661,11 +661,11 @@ void Example_024::SetupBufferBuckets()
 	// Count texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_R32_UINT;
+		createInfo.imageFormat = vkr::Format::R32_UINT;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
@@ -680,11 +680,11 @@ void Example_024::SetupBufferBuckets()
 	// Fragment texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight() * BUFFER_BUCKETS_SIZE_PER_PIXEL;
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_R32G32_UINT;
+		createInfo.imageFormat = vkr::Format::R32G32_UINT;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
@@ -866,11 +866,11 @@ void Example_024::SetupBufferLinkedLists()
 	// Linked list head texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_R32_UINT;
+		createInfo.imageFormat = vkr::Format::R32_UINT;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
@@ -1267,11 +1267,11 @@ void Example_024::SetupDepthPeeling()
 	// Layer texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_B8G8R8A8_UNORM;
+		createInfo.imageFormat = vkr::Format::B8G8R8A8_UNORM;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
@@ -1288,7 +1288,7 @@ void Example_024::SetupDepthPeeling()
 	// Depth texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mDepthPeeling.layerTextures[0]->GetWidth();
 		createInfo.height = mDepthPeeling.layerTextures[0]->GetHeight();
 		createInfo.depth = 1;
@@ -1677,7 +1677,7 @@ void Example_024::SetupWeightedAverage()
 	// Texture
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
@@ -1689,10 +1689,10 @@ void Example_024::SetupWeightedAverage()
 		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
-		createInfo.imageFormat = vkr::FORMAT_R16G16B16A16_FLOAT;
+		createInfo.imageFormat = vkr::Format::R16G16B16A16_FLOAT;
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mWeightedAverage.colorTexture));
 
-		createInfo.imageFormat = vkr::FORMAT_R16_FLOAT;
+		createInfo.imageFormat = vkr::Format::R16_FLOAT;
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mWeightedAverage.extraTexture));
 	}
 

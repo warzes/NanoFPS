@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_016::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }

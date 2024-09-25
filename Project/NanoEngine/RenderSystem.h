@@ -150,8 +150,8 @@ struct VulkanSwapChainCreateInfo final
 	ShadingRatePattern* shadingRatePattern = nullptr;
 	uint32_t            width = 0;
 	uint32_t            height = 0;
-	Format              colorFormat = FORMAT_UNDEFINED;
-	Format              depthFormat = FORMAT_UNDEFINED;
+	Format              colorFormat = Format::Undefined;
+	Format              depthFormat = Format::Undefined;
 	uint32_t            imageCount = 0;
 	uint32_t            arrayLayerCount = 1;
 	PresentMode         presentMode = PRESENT_MODE_IMMEDIATE;
@@ -160,8 +160,8 @@ struct VulkanSwapChainCreateInfo final
 // TODO: неудачно получается. VulkanSwapChainCreateInfo используется для создания ресурса свапчаина. а SwapChainCreateInfo - настройка пользователем. надо как-то переделать
 struct SwapChainCreateInfo final
 {
-	Format   colorFormat = FORMAT_B8G8R8A8_UNORM;
-	Format   depthFormat = FORMAT_UNDEFINED;
+	Format   colorFormat = Format::B8G8R8A8_UNORM;
+	Format   depthFormat = Format::Undefined;
 	uint32_t imageCount = 2;
 };
 

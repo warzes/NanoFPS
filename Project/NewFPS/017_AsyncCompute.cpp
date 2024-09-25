@@ -129,7 +129,7 @@ bool Example_017::Setup()
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
 		gpCreateInfo.pPipelineInterface = mRenderPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mRenderPipeline));
 
@@ -191,7 +191,7 @@ bool Example_017::Setup()
 				vkr::DrawPassCreateInfo dpCreateInfo = {};
 				dpCreateInfo.width = GetRender().GetSwapChain().GetWidth();
 				dpCreateInfo.height = GetRender().GetSwapChain().GetHeight();
-				dpCreateInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+				dpCreateInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
 				dpCreateInfo.depthStencilClearValue = { 1.0f, 0 };
 				dpCreateInfo.depthStencilInitialState = vkr::ResourceState::DepthStencilWrite;
 				dpCreateInfo.renderTargetCount = 1;
@@ -282,8 +282,8 @@ void Example_017::setupComposition()
 		piCreateInfo.sets[0].pLayout = mComposeLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComposePipelineInterface));
 
-		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, vkr::FORMAT_R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
-		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
@@ -299,7 +299,7 @@ void Example_017::setupComposition()
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
 		gpCreateInfo.pPipelineInterface = mComposePipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mComposePipeline));
 
@@ -313,7 +313,7 @@ void Example_017::setupComposition()
 			vkr::DrawPassCreateInfo dpCreateInfo = {};
 			dpCreateInfo.width = GetRender().GetSwapChain().GetWidth();
 			dpCreateInfo.height = GetRender().GetSwapChain().GetHeight();
-			dpCreateInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+			dpCreateInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
 			dpCreateInfo.renderTargetCount = 1;
 			dpCreateInfo.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 			dpCreateInfo.renderTargetClearValues[0] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -431,7 +431,7 @@ void Example_017::setupCompute()
 			// Output image and views.
 			{
 				vkr::ImageCreateInfo ci = {};
-				ci.type = vkr::IMAGE_TYPE_2D;
+				ci.type = vkr::ImageType::Image2D;
 				ci.width = sourceTexture->GetWidth();
 				ci.height = sourceTexture->GetHeight();
 				ci.depth = 1;

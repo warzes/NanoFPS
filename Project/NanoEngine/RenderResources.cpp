@@ -456,7 +456,7 @@ ImageCreateInfo ImageCreateInfo::SampledImage2D(
 	MemoryUsage memoryUsage)
 {
 	ImageCreateInfo ci = {};
-	ci.type = IMAGE_TYPE_2D;
+	ci.type = ImageType::Image2D;
 	ci.width = width;
 	ci.height = height;
 	ci.depth = 1;
@@ -478,7 +478,7 @@ ImageCreateInfo ImageCreateInfo::DepthStencilTarget(
 	SampleCount sampleCount)
 {
 	ImageCreateInfo ci = {};
-	ci.type = IMAGE_TYPE_2D;
+	ci.type = ImageType::Image2D;
 	ci.width = width;
 	ci.height = height;
 	ci.depth = 1;
@@ -501,7 +501,7 @@ ImageCreateInfo ImageCreateInfo::RenderTarget2D(
 	SampleCount sampleCount)
 {
 	ImageCreateInfo ci = {};
-	ci.type = IMAGE_TYPE_2D;
+	ci.type = ImageType::Image2D;
 	ci.width = width;
 	ci.height = height;
 	ci.depth = 1;
@@ -551,7 +551,7 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 			extent.depth = pCreateInfo.depth;
 
 			VkImageCreateFlags createFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-			if (pCreateInfo.type == IMAGE_TYPE_CUBE)
+			if (pCreateInfo.type == ImageType::Cube)
 			{
 				createFlags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 			}
@@ -565,7 +565,7 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 			VkImageCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 			vkci.flags = createFlags;
 			vkci.imageType = ToVkImageType(pCreateInfo.type);
-			vkci.format = ToVkFormat(pCreateInfo.format);
+			vkci.format = ToVkEnum(pCreateInfo.format);
 			vkci.extent = extent;
 			vkci.mipLevels = pCreateInfo.mipLevelCount;
 			vkci.arrayLayers = pCreateInfo.arrayLayerCount;
@@ -650,7 +650,7 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 		mImage = reinterpret_cast<VkImage>(pCreateInfo.pApiObject);
 	}
 
-	mVkFormat = ToVkFormat(pCreateInfo.format);
+	mVkFormat = ToVkEnum(pCreateInfo.format);
 	mImageAspect = DetermineAspectMask(mVkFormat);
 
 	if ((pCreateInfo.initialState != ResourceState::Undefined) && IsNull(pCreateInfo.pApiObject))
@@ -724,9 +724,9 @@ void Image::destroyApiObjects()
 
 Result Image::create(const ImageCreateInfo& pCreateInfo)
 {
-	if ((pCreateInfo.type == IMAGE_TYPE_CUBE) && (pCreateInfo.arrayLayerCount != 6))
+	if ((pCreateInfo.type == ImageType::Cube) && (pCreateInfo.arrayLayerCount != 6))
 	{
-		ASSERT_MSG(false, "arrayLayerCount must be 6 if type is IMAGE_TYPE_CUBE");
+		ASSERT_MSG(false, "arrayLayerCount must be 6 if type is ImageType::Cube");
 		return ERROR_INVALID_CREATE_ARGUMENT;
 	}
 
@@ -748,9 +748,9 @@ ImageViewType Image::GuessImageViewType(bool isCube) const
 	{
 		switch (m_createInfo.type) {
 		default: break;
-		case IMAGE_TYPE_1D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_1D_ARRAY : IMAGE_VIEW_TYPE_1D; break;
-		case IMAGE_TYPE_2D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_2D_ARRAY : IMAGE_VIEW_TYPE_2D; break;
-		case IMAGE_TYPE_CUBE: return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
+		case ImageType::Image1D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_1D_ARRAY : IMAGE_VIEW_TYPE_1D; break;
+		case ImageType::Image2D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_2D_ARRAY : IMAGE_VIEW_TYPE_2D; break;
+		case ImageType::Cube: return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
 		}
 	}
 
@@ -834,7 +834,7 @@ Result DepthStencilView::createApiObjects(const DepthStencilViewCreateInfo& pCre
 	vkci.flags = 0;
 	vkci.image = pCreateInfo.pImage->GetVkImage();
 	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkFormat(pCreateInfo.format);
+	vkci.format = ToVkEnum(pCreateInfo.format);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
 	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
 	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
@@ -896,7 +896,7 @@ Result RenderTargetView::createApiObjects(const RenderTargetViewCreateInfo& pCre
 	vkci.flags = 0;
 	vkci.image = pCreateInfo.pImage->GetVkImage();
 	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkFormat(pCreateInfo.format);
+	vkci.format = ToVkEnum(pCreateInfo.format);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
 	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
 	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
@@ -955,7 +955,7 @@ Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& pCre
 	vkci.flags = 0;
 	vkci.image = pCreateInfo.pImage->GetVkImage();
 	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkFormat(pCreateInfo.format);
+	vkci.format = ToVkEnum(pCreateInfo.format);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
 	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
 	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
@@ -1004,7 +1004,7 @@ void SampledImageView::destroyApiObjects()
 Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCreateInfo& pCreateInfo)
 {
 	VkSamplerYcbcrConversionCreateInfo vkci{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO };
-	vkci.format = ToVkFormat(pCreateInfo.format);
+	vkci.format = ToVkEnum(pCreateInfo.format);
 	vkci.ycbcrModel = ToVkYcbcrModelConversion(pCreateInfo.ycbcrModel);
 	vkci.ycbcrRange = ToVkYcbcrRange(pCreateInfo.ycbcrRange);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
@@ -1054,7 +1054,7 @@ Result StorageImageView::createApiObjects(const StorageImageViewCreateInfo& pCre
 	vkci.flags = 0;
 	vkci.image = pCreateInfo.pImage->GetVkImage();
 	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkFormat(pCreateInfo.format);
+	vkci.format = ToVkEnum(pCreateInfo.format);
 	vkci.components = ToVkComponentMapping(pCreateInfo.components);
 	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
 	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
@@ -1191,7 +1191,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 	if (pCreateInfo.usageFlags.bits.colorAttachment)
 	{
 		RenderTargetViewCreateInfo ci = RenderTargetViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.renderTargetViewFormat != FORMAT_UNDEFINED)
+		if (pCreateInfo.renderTargetViewFormat != Format::Undefined)
 		{
 			ci.format = pCreateInfo.renderTargetViewFormat;
 		}
@@ -1207,7 +1207,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 	if (pCreateInfo.usageFlags.bits.depthStencilAttachment)
 	{
 		DepthStencilViewCreateInfo ci = DepthStencilViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.depthStencilViewFormat != FORMAT_UNDEFINED)
+		if (pCreateInfo.depthStencilViewFormat != Format::Undefined)
 		{
 			ci.format = pCreateInfo.depthStencilViewFormat;
 		}
@@ -1223,7 +1223,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 	if (pCreateInfo.usageFlags.bits.storage)
 	{
 		StorageImageViewCreateInfo ci = StorageImageViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.storageImageViewFormat != FORMAT_UNDEFINED)
+		if (pCreateInfo.storageImageViewFormat != Format::Undefined)
 		{
 			ci.format = pCreateInfo.storageImageViewFormat;
 		}
@@ -1324,22 +1324,22 @@ MemoryUsage Texture::GetMemoryUsage() const
 
 Format Texture::GetSampledImageViewFormat() const
 {
-	return m_sampledImageView ? m_sampledImageView->GetFormat() : FORMAT_UNDEFINED;
+	return m_sampledImageView ? m_sampledImageView->GetFormat() : Format::Undefined;
 }
 
 Format Texture::GetRenderTargetViewFormat() const
 {
-	return m_renderTargetView ? m_renderTargetView->GetFormat() : FORMAT_UNDEFINED;
+	return m_renderTargetView ? m_renderTargetView->GetFormat() : Format::Undefined;
 }
 
 Format Texture::GetDepthStencilViewFormat() const
 {
-	return m_depthStencilView ? m_depthStencilView->GetFormat() : FORMAT_UNDEFINED;
+	return m_depthStencilView ? m_depthStencilView->GetFormat() : Format::Undefined;
 }
 
 Format Texture::GetStorageImageViewFormat() const
 {
-	return m_storageImageView ? m_storageImageView->GetFormat() : FORMAT_UNDEFINED;
+	return m_storageImageView ? m_storageImageView->GetFormat() : Format::Undefined;
 }
 
 #pragma endregion
@@ -1575,7 +1575,7 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 				initialState = pCreateInfo.V2.renderTargetInitialStates[i];
 			}
 			ImageCreateInfo imageCreateInfo = {};
-			imageCreateInfo.type = IMAGE_TYPE_2D;
+			imageCreateInfo.type = ImageType::Image2D;
 			imageCreateInfo.width = pCreateInfo.width;
 			imageCreateInfo.height = pCreateInfo.height;
 			imageCreateInfo.depth = 1;
@@ -1600,14 +1600,14 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 		}
 
 		// DSV image
-		if (pCreateInfo.V2.depthStencilFormat != FORMAT_UNDEFINED) {
+		if (pCreateInfo.V2.depthStencilFormat != Format::Undefined) {
 			ResourceState initialState = ResourceState::DepthStencilWrite;
 			if (pCreateInfo.V2.depthStencilInitialState != ResourceState::Undefined) {
 				initialState = pCreateInfo.V2.depthStencilInitialState;
 			}
 
 			ImageCreateInfo imageCreateInfo = {};
-			imageCreateInfo.type = IMAGE_TYPE_2D;
+			imageCreateInfo.type = ImageType::Image2D;
 			imageCreateInfo.width = pCreateInfo.width;
 			imageCreateInfo.height = pCreateInfo.height;
 			imageCreateInfo.depth = 1;
@@ -1664,7 +1664,7 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 		}
 
 		// DSV
-		if (pCreateInfo.V2.depthStencilFormat != FORMAT_UNDEFINED) {
+		if (pCreateInfo.V2.depthStencilFormat != Format::Undefined) {
 			ImagePtr image = mDepthStencilImage;
 
 			DepthStencilViewCreateInfo dsvCreateInfo = {};
@@ -1890,7 +1890,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
-			desc.format = ToVkFormat(rtv->GetFormat());
+			desc.format = ToVkEnum(rtv->GetFormat());
 			desc.samples = ToVkSampleCount(rtv->GetSampleCount());
 			desc.loadOp = ToVkAttachmentLoadOp(rtv->GetLoadOp());
 			desc.storeOp = ToVkAttachmentStoreOp(rtv->GetStoreOp());
@@ -1908,7 +1908,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
-			desc.format = ToVkFormat(dsv->GetFormat());
+			desc.format = ToVkEnum(dsv->GetFormat());
 			desc.samples = VK_SAMPLE_COUNT_1_BIT;
 			desc.loadOp = ToVkAttachmentLoadOp(dsv->GetDepthLoadOp());
 			desc.storeOp = ToVkAttachmentStoreOp(dsv->GetDepthStoreOp());
@@ -2483,7 +2483,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 		{
 			TextureCreateInfo ci = {};
 			ci.pImage = nullptr;
-			ci.imageType = IMAGE_TYPE_2D;
+			ci.imageType = ImageType::Image2D;
 			ci.width = pCreateInfo.width;
 			ci.height = pCreateInfo.height;
 			ci.depth = 1;
@@ -2496,10 +2496,10 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.initialState = pCreateInfo.V1.renderTargetInitialStates[i];
 			ci.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
-			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
-			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
-			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.sampledImageViewFormat = Format::Undefined;
+			ci.renderTargetViewFormat = Format::Undefined;
+			ci.depthStencilViewFormat = Format::Undefined;
+			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Exclusive;
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
@@ -2514,10 +2514,10 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 		}
 
 		// DSV image
-		if (pCreateInfo.V1.depthStencilFormat != FORMAT_UNDEFINED) {
+		if (pCreateInfo.V1.depthStencilFormat != Format::Undefined) {
 			TextureCreateInfo ci = {};
 			ci.pImage = nullptr;
-			ci.imageType = IMAGE_TYPE_2D;
+			ci.imageType = ImageType::Image2D;
 			ci.width = pCreateInfo.width;
 			ci.height = pCreateInfo.height;
 			ci.depth = 1;
@@ -2530,10 +2530,10 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.initialState = pCreateInfo.V1.depthStencilInitialState;
 			ci.DSVClearValue = pCreateInfo.depthStencilClearValue;
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-			ci.sampledImageViewFormat = FORMAT_UNDEFINED;
-			ci.renderTargetViewFormat = FORMAT_UNDEFINED;
-			ci.depthStencilViewFormat = FORMAT_UNDEFINED;
-			ci.storageImageViewFormat = FORMAT_UNDEFINED;
+			ci.sampledImageViewFormat = Format::Undefined;
+			ci.renderTargetViewFormat = Format::Undefined;
+			ci.depthStencilViewFormat = Format::Undefined;
+			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Exclusive;
 			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
 
@@ -3477,7 +3477,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 	{
 		minTexelSize = capabilities.fdm.minTexelSize;
 		maxTexelSize = capabilities.fdm.maxTexelSize;
-		imageCreateInfo.format = FORMAT_R8G8_UNORM;
+		imageCreateInfo.format = Format::R8G8_UNORM;
 		imageCreateInfo.usageFlags.bits.fragmentDensityMap = true;
 		imageCreateInfo.initialState = ResourceState::FragmentDensityMapAttachment;
 		mShadingRateEncoder = std::make_unique<internal::FDMShadingRateEncoder>();
@@ -3486,7 +3486,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 	{
 		minTexelSize = capabilities.vrs.minTexelSize;
 		maxTexelSize = capabilities.vrs.maxTexelSize;
-		imageCreateInfo.format = FORMAT_R8_UINT;
+		imageCreateInfo.format = Format::R8_UINT;
 		imageCreateInfo.usageFlags.bits.fragmentShadingRateAttachment = true;
 		imageCreateInfo.initialState = ResourceState::FragmentShadingRateAttachment;
 
@@ -3529,7 +3529,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 	vkci.flags = 0;
 	vkci.image = mAttachmentImage->GetVkImage();
 	vkci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	vkci.format = ToVkFormat(imageCreateInfo.format);
+	vkci.format = ToVkEnum(imageCreateInfo.format);
 	vkci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	vkci.subresourceRange.baseMipLevel = 0;
 	vkci.subresourceRange.levelCount = 1;
@@ -3943,7 +3943,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 			for (uint32_t attrIdx = 0; attrIdx < vertexBufferDesc.attributeCount; ++attrIdx) {
 				auto& attr = vertexBufferDesc.attributes[attrIdx];
 				Format format = attr.format;
-				if (format == FORMAT_UNDEFINED) {
+				if (format == Format::Undefined) {
 					return Result::ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED;
 				}
 
@@ -4308,7 +4308,7 @@ Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
 	//         ASSERT_MSG(false, "binding exceeds PPX_MAX_VERTEX_ATTRIBUTES");
 	//         return ERROR_GRFX_MAX_VERTEX_BINDING_EXCEEDED;
 	//     }
-	//     if (attribute.format == FORMAT_UNDEFINED) {
+	//     if (attribute.format == Format::Undefined) {
 	//         ASSERT_MSG(false, "vertex attribute format is undefined");
 	//         return ERROR_GRFX_VERTEX_ATTRIBUTE_FROMAT_UNDEFINED;
 	//     }
@@ -4474,7 +4474,7 @@ Result GraphicsPipeline::initializeVertexInput(
 			VkVertexInputAttributeDescription vkAttribute = {};
 			vkAttribute.location = pAttribute->location;
 			vkAttribute.binding = pAttribute->binding;
-			vkAttribute.format = ToVkFormat(pAttribute->format);
+			vkAttribute.format = ToVkEnum(pAttribute->format);
 			vkAttribute.offset = pAttribute->offset;
 			vkAttributes.push_back(vkAttribute);
 		}
@@ -4777,9 +4777,9 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCre
 	VkRenderPassPtr       renderPass = VK_NULL_HANDLE;
 	std::vector<VkFormat> renderTargetFormats;
 	for (uint32_t i = 0; i < pCreateInfo.outputState.renderTargetCount; ++i) {
-		renderTargetFormats.push_back(ToVkFormat(pCreateInfo.outputState.renderTargetFormats[i]));
+		renderTargetFormats.push_back(ToVkEnum(pCreateInfo.outputState.renderTargetFormats[i]));
 	}
-	VkFormat depthStencilFormat = ToVkFormat(pCreateInfo.outputState.depthStencilFormat);
+	VkFormat depthStencilFormat = ToVkEnum(pCreateInfo.outputState.depthStencilFormat);
 
 #if defined(VK_KHR_dynamic_rendering)
 	VkPipelineRenderingCreateInfo renderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
@@ -6466,10 +6466,10 @@ ImageToBufferOutputPitch CommandBuffer::CopyImageToBuffer(
 	region.imageOffset.z = pCopyInfo->srcImage.offset.z;
 	region.imageExtent = { 0, 1, 1 };
 	region.imageExtent.width = pCopyInfo->extent.x;
-	if (pSrcImage->GetType() != IMAGE_TYPE_1D) { // Can only be set for 2D and 3D textures.
+	if (pSrcImage->GetType() != ImageType::Image1D) { // Can only be set for 2D and 3D textures.
 		region.imageExtent.height = pCopyInfo->extent.y;
 	}
-	if (pSrcImage->GetType() == IMAGE_TYPE_3D) { // Can only be set for 3D textures.
+	if (pSrcImage->GetType() == ImageType::Image3D) { // Can only be set for 3D textures.
 		region.imageExtent.depth = pCopyInfo->extent.z;
 	}
 
@@ -6544,10 +6544,10 @@ void CommandBuffer::CopyImageToImage(
 	region.dstSubresource = dstSubresource;
 	region.extent = { 0, 1, 1 };
 	region.extent.width = pCopyInfo->extent.x;
-	if (pSrcImage->GetType() != IMAGE_TYPE_1D) { // Can only be set for 2D and 3D textures.
+	if (pSrcImage->GetType() != ImageType::Image1D) { // Can only be set for 2D and 3D textures.
 		region.extent.height = pCopyInfo->extent.y;
 	}
-	if (pSrcImage->GetType() == IMAGE_TYPE_3D) { // Can only be set for 3D textures.
+	if (pSrcImage->GetType() == ImageType::Image3D) { // Can only be set for 3D textures.
 		region.extent.height = pCopyInfo->extent.z;
 	}
 
@@ -7946,9 +7946,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 	// Pipeline
 	{
 		VertexBinding vertexBinding;
-		vertexBinding.AppendAttribute({ "POSITION", 0, FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		vertexBinding.AppendAttribute({ "TEXCOORD", 1, FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		vertexBinding.AppendAttribute({ "COLOR", 2, FORMAT_R8G8B8A8_UNORM, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		vertexBinding.AppendAttribute({ "POSITION", 0, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		vertexBinding.AppendAttribute({ "TEXCOORD", 1, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		vertexBinding.AppendAttribute({ "COLOR", 2, Format::R8G8B8A8_UNORM, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
 
 		GraphicsPipelineCreateInfo2 createInfo = {};
 		createInfo.VS = { pCreateInfo.VS.pModule, pCreateInfo.VS.entryPoint };

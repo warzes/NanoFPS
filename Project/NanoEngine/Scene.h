@@ -45,11 +45,11 @@ namespace scene
 	const uint32_t kVertexAttributeTangentLocation = 3;
 	const uint32_t kVertexAttributeColorLocation = 4;
 
-	const vkr::Format kVertexPositionFormat = vkr::FORMAT_R32G32B32_FLOAT;
-	const vkr::Format kVertexAttributeTexCoordFormat = vkr::FORMAT_R32G32_FLOAT;
-	const vkr::Format kVertexAttributeNormalFormat = vkr::FORMAT_R32G32B32_FLOAT;
-	const vkr::Format kVertexAttributeTagentFormat = vkr::FORMAT_R32G32B32A32_FLOAT;
-	const vkr::Format kVertexAttributeColorFormat = vkr::FORMAT_R32G32B32_FLOAT;
+	const vkr::Format kVertexPositionFormat = vkr::Format::R32G32B32_FLOAT;
+	const vkr::Format kVertexAttributeTexCoordFormat = vkr::Format::R32G32_FLOAT;
+	const vkr::Format kVertexAttributeNormalFormat = vkr::Format::R32G32B32_FLOAT;
+	const vkr::Format kVertexAttributeTagentFormat = vkr::Format::R32G32B32A32_FLOAT;
+	const vkr::Format kVertexAttributeColorFormat = vkr::Format::R32G32B32_FLOAT;
 
 	template <
 		typename ObjectT,
@@ -140,22 +140,22 @@ namespace scene
 			uint32_t offset = 0;
 			if (this->bits.texCoords)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, vkr::FORMAT_R32G32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, vkr::Format::R32G32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 8;
 			}
 			if (this->bits.normals)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, vkr::FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 12;
 			}
 			if (this->bits.tangents)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, vkr::FORMAT_R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, vkr::Format::R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 				offset += 16;
 			}
 			if (this->bits.colors)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "COLOR", kVertexAttributeColorLocation, vkr::FORMAT_R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "COLOR", kVertexAttributeColorLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
 			}
 
 			return binding;

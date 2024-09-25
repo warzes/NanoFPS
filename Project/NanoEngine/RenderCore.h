@@ -473,13 +473,13 @@ enum FrontFace
 	FRONT_FACE_CW = 1, // Clockwise
 };
 
-enum ImageType
+enum class ImageType : uint8_t
 {
-	IMAGE_TYPE_UNDEFINED = 0,
-	IMAGE_TYPE_1D = 1,
-	IMAGE_TYPE_2D = 2,
-	IMAGE_TYPE_3D = 3,
-	IMAGE_TYPE_CUBE = 6,
+	Undefined,
+	Image1D,
+	Image2D,
+	Image3D,
+	Cube
 };
 
 enum ImageUsageFlagBits
@@ -773,137 +773,135 @@ enum CompileResult
 
 #pragma region Format
 
-enum Format
+enum class Format : uint8_t
 {
-	FORMAT_UNDEFINED = 0,
+	Undefined,
 
 	// 8-bit signed normalized
-	FORMAT_R8_SNORM,
-	FORMAT_R8G8_SNORM,
-	FORMAT_R8G8B8_SNORM,
-	FORMAT_R8G8B8A8_SNORM,
-	FORMAT_B8G8R8_SNORM,
-	FORMAT_B8G8R8A8_SNORM,
+	R8_SNORM,
+	R8G8_SNORM,
+	R8G8B8_SNORM,
+	R8G8B8A8_SNORM,
+	B8G8R8_SNORM,
+	B8G8R8A8_SNORM,
 
 	// 8-bit unsigned normalized
-	FORMAT_R8_UNORM,
-	FORMAT_R8G8_UNORM,
-	FORMAT_R8G8B8_UNORM,
-	FORMAT_R8G8B8A8_UNORM,
-	FORMAT_B8G8R8_UNORM,
-	FORMAT_B8G8R8A8_UNORM,
+	R8_UNORM,
+	R8G8_UNORM,
+	R8G8B8_UNORM,
+	R8G8B8A8_UNORM,
+	B8G8R8_UNORM,
+	B8G8R8A8_UNORM,
 
 	// 8-bit signed integer
-	FORMAT_R8_SINT,
-	FORMAT_R8G8_SINT,
-	FORMAT_R8G8B8_SINT,
-	FORMAT_R8G8B8A8_SINT,
-	FORMAT_B8G8R8_SINT,
-	FORMAT_B8G8R8A8_SINT,
+	R8_SINT,
+	R8G8_SINT,
+	R8G8B8_SINT,
+	R8G8B8A8_SINT,
+	B8G8R8_SINT,
+	B8G8R8A8_SINT,
 
 	// 8-bit unsigned integer
-	FORMAT_R8_UINT,
-	FORMAT_R8G8_UINT,
-	FORMAT_R8G8B8_UINT,
-	FORMAT_R8G8B8A8_UINT,
-	FORMAT_B8G8R8_UINT,
-	FORMAT_B8G8R8A8_UINT,
+	R8_UINT,
+	R8G8_UINT,
+	R8G8B8_UINT,
+	R8G8B8A8_UINT,
+	B8G8R8_UINT,
+	B8G8R8A8_UINT,
 
 	// 16-bit signed normalized
-	FORMAT_R16_SNORM,
-	FORMAT_R16G16_SNORM,
-	FORMAT_R16G16B16_SNORM,
-	FORMAT_R16G16B16A16_SNORM,
+	R16_SNORM,
+	R16G16_SNORM,
+	R16G16B16_SNORM,
+	R16G16B16A16_SNORM,
 
 	// 16-bit unsigned normalized
-	FORMAT_R16_UNORM,
-	FORMAT_R16G16_UNORM,
-	FORMAT_R16G16B16_UNORM,
-	FORMAT_R16G16B16A16_UNORM,
+	R16_UNORM,
+	R16G16_UNORM,
+	R16G16B16_UNORM,
+	R16G16B16A16_UNORM,
 
 	// 16-bit signed integer
-	FORMAT_R16_SINT,
-	FORMAT_R16G16_SINT,
-	FORMAT_R16G16B16_SINT,
-	FORMAT_R16G16B16A16_SINT,
+	R16_SINT,
+	R16G16_SINT,
+	R16G16B16_SINT,
+	R16G16B16A16_SINT,
 
 	// 16-bit unsigned integer
-	FORMAT_R16_UINT,
-	FORMAT_R16G16_UINT,
-	FORMAT_R16G16B16_UINT,
-	FORMAT_R16G16B16A16_UINT,
+	R16_UINT,
+	R16G16_UINT,
+	R16G16B16_UINT,
+	R16G16B16A16_UINT,
 
 	// 16-bit float
-	FORMAT_R16_FLOAT,
-	FORMAT_R16G16_FLOAT,
-	FORMAT_R16G16B16_FLOAT,
-	FORMAT_R16G16B16A16_FLOAT,
+	R16_FLOAT,
+	R16G16_FLOAT,
+	R16G16B16_FLOAT,
+	R16G16B16A16_FLOAT,
 
 	// 32-bit signed integer
-	FORMAT_R32_SINT,
-	FORMAT_R32G32_SINT,
-	FORMAT_R32G32B32_SINT,
-	FORMAT_R32G32B32A32_SINT,
+	R32_SINT,
+	R32G32_SINT,
+	R32G32B32_SINT,
+	R32G32B32A32_SINT,
 
 	// 32-bit unsigned integer
-	FORMAT_R32_UINT,
-	FORMAT_R32G32_UINT,
-	FORMAT_R32G32B32_UINT,
-	FORMAT_R32G32B32A32_UINT,
+	R32_UINT,
+	R32G32_UINT,
+	R32G32B32_UINT,
+	R32G32B32A32_UINT,
 
 	// 32-bit float
-	FORMAT_R32_FLOAT,
-	FORMAT_R32G32_FLOAT,
-	FORMAT_R32G32B32_FLOAT,
-	FORMAT_R32G32B32A32_FLOAT,
+	R32_FLOAT,
+	R32G32_FLOAT,
+	R32G32B32_FLOAT,
+	R32G32B32A32_FLOAT,
 
 	// 8-bit unsigned integer stencil
-	FORMAT_S8_UINT,
+	S8_UINT,
 
 	// 16-bit unsigned normalized depth
-	FORMAT_D16_UNORM,
+	D16_UNORM,
 
 	// 32-bit float depth
-	FORMAT_D32_FLOAT,
+	D32_FLOAT,
 
 	// Depth/stencil combinations
-	FORMAT_D16_UNORM_S8_UINT,
-	FORMAT_D24_UNORM_S8_UINT,
-	FORMAT_D32_FLOAT_S8_UINT,
+	D16_UNORM_S8_UINT,
+	D24_UNORM_S8_UINT,
+	D32_FLOAT_S8_UINT,
 
 	// SRGB
-	FORMAT_R8_SRGB,
-	FORMAT_R8G8_SRGB,
-	FORMAT_R8G8B8_SRGB,
-	FORMAT_R8G8B8A8_SRGB,
-	FORMAT_B8G8R8_SRGB,
-	FORMAT_B8G8R8A8_SRGB,
+	R8_SRGB,
+	R8G8_SRGB,
+	R8G8B8_SRGB,
+	R8G8B8A8_SRGB,
+	B8G8R8_SRGB,
+	B8G8R8A8_SRGB,
 
 	// 10-bit RGB, 2-bit A packed
-	FORMAT_R10G10B10A2_UNORM,
+	R10G10B10A2_UNORM,
 
 	// 11-bit R, 11-bit G, 10-bit B packed
-	FORMAT_R11G11B10_FLOAT,
+	R11G11B10_FLOAT,
 
 	// Compressed formats
-	FORMAT_BC1_RGBA_SRGB,
-	FORMAT_BC1_RGBA_UNORM,
-	FORMAT_BC1_RGB_SRGB,
-	FORMAT_BC1_RGB_UNORM,
-	FORMAT_BC2_SRGB,
-	FORMAT_BC2_UNORM,
-	FORMAT_BC3_SRGB,
-	FORMAT_BC3_UNORM,
-	FORMAT_BC4_UNORM,
-	FORMAT_BC4_SNORM,
-	FORMAT_BC5_UNORM,
-	FORMAT_BC5_SNORM,
-	FORMAT_BC6H_UFLOAT,
-	FORMAT_BC6H_SFLOAT,
-	FORMAT_BC7_UNORM,
-	FORMAT_BC7_SRGB,
-
-	FORMAT_COUNT,
+	BC1_RGBA_SRGB,
+	BC1_RGBA_UNORM,
+	BC1_RGB_SRGB,
+	BC1_RGB_UNORM,
+	BC2_SRGB,
+	BC2_UNORM,
+	BC3_SRGB,
+	BC3_UNORM,
+	BC4_UNORM,
+	BC4_SNORM,
+	BC5_UNORM,
+	BC5_SNORM,
+	BC6H_UFLOAT,
+	BC6H_SFLOAT,
+	BC7_UNORM,
+	BC7_SRGB,
 };
 
 enum FormatAspectBit
@@ -1397,7 +1395,7 @@ struct VertexAttribute final
 {
 	std::string     semanticName = "";                    // Semantic name (no effect in Vulkan currently)
 	uint32_t        location = 0;                         // @TODO: Find a way to handle between DX and VK
-	Format          format = FORMAT_UNDEFINED;
+	Format          format = Format::Undefined;
 	uint32_t        binding = 0;                          // Valid range is [0, 15]
 	uint32_t        offset = APPEND_OFFSET_ALIGNED;       // Use APPEND_OFFSET_ALIGNED to auto calculate offsets
 	VertexInputRate inputRate = VERTEX_INPUT_RATE_VERTEX;
@@ -1661,7 +1659,7 @@ VkCullModeFlagBits            ToVkCullMode(CullMode value);
 VkDescriptorBindingFlags      ToVkDescriptorBindingFlags(const DescriptorBindingFlags& value);
 VkDescriptorType              ToVkDescriptorType(DescriptorType value);
 VkFilter                      ToVkEnum(Filter value);
-VkFormat                      ToVkFormat(Format value);
+VkFormat                      ToVkEnum(Format value);
 VkFrontFace                   ToVkFrontFace(FrontFace value);
 VkImageType                   ToVkImageType(ImageType value);
 VkImageUsageFlags             ToVkImageUsageFlags(const ImageUsageFlags& value);
@@ -2059,15 +2057,15 @@ struct GeometryCreateInfo
 	PrimitiveTopology       primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 	// Creates a create info objects with UINT8, UINT16 or UINT32 index type and position vertex attribute.
-	static GeometryCreateInfo InterleavedU8(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo InterleavedU16(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo InterleavedU32(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PlanarU8(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PlanarU16(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PlanarU32(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PositionPlanarU8(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PositionPlanarU16(Format format = FORMAT_R32G32B32_FLOAT);
-	static GeometryCreateInfo PositionPlanarU32(Format format = FORMAT_R32G32B32_FLOAT);
+	static GeometryCreateInfo InterleavedU8(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo InterleavedU16(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo InterleavedU32(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PlanarU8(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PlanarU16(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PlanarU32(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PositionPlanarU8(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PositionPlanarU16(Format format = Format::R32G32B32_FLOAT);
+	static GeometryCreateInfo PositionPlanarU32(Format format = Format::R32G32B32_FLOAT);
 
 	// Create a create info with a position vertex attribute.
 	//
@@ -2095,12 +2093,12 @@ struct GeometryCreateInfo
 	//          with the vertex bindings after or in between calling
 	//          these functions can result in undefined behavior.
 	//
-	GeometryCreateInfo& AddPosition(Format format = FORMAT_R32G32B32_FLOAT);
-	GeometryCreateInfo& AddNormal(Format format = FORMAT_R32G32B32_FLOAT);
-	GeometryCreateInfo& AddColor(Format format = FORMAT_R32G32B32_FLOAT);
-	GeometryCreateInfo& AddTexCoord(Format format = FORMAT_R32G32_FLOAT);
-	GeometryCreateInfo& AddTangent(Format format = FORMAT_R32G32B32A32_FLOAT);
-	GeometryCreateInfo& AddBitangent(Format format = FORMAT_R32G32B32_FLOAT);
+	GeometryCreateInfo& AddPosition(Format format = Format::R32G32B32_FLOAT);
+	GeometryCreateInfo& AddNormal(Format format = Format::R32G32B32_FLOAT);
+	GeometryCreateInfo& AddColor(Format format = Format::R32G32B32_FLOAT);
+	GeometryCreateInfo& AddTexCoord(Format format = Format::R32G32_FLOAT);
+	GeometryCreateInfo& AddTangent(Format format = Format::R32G32B32A32_FLOAT);
+	GeometryCreateInfo& AddBitangent(Format format = Format::R32G32B32_FLOAT);
 
 private:
 	GeometryCreateInfo& AddAttribute(VertexSemantic semantic, Format format);

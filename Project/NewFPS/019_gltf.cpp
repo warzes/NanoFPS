@@ -79,7 +79,7 @@ float4x4 ComputeObjectMatrix(const cgltf_node* node)
 EngineApplicationCreateInfo Example_019::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	createInfo.render.showImgui = true;
 	return createInfo;
 }
@@ -494,9 +494,9 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 
 			ci.vertexBuffers[i].attributeCount = 1;
 			ci.vertexBuffers[i].vertexInputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-			ci.vertexBuffers[i].attributes[0].format = a.type == cgltf_type_vec2 ? vkr::FORMAT_R32G32_FLOAT
-				: a.type == cgltf_type_vec3 ? vkr::FORMAT_R32G32B32_FLOAT
-				: vkr::FORMAT_R32G32B32A32_FLOAT;
+			ci.vertexBuffers[i].attributes[0].format = a.type == cgltf_type_vec2 ? vkr::Format::R32G32_FLOAT
+				: a.type == cgltf_type_vec3 ? vkr::Format::R32G32B32_FLOAT
+				: vkr::Format::R32G32B32A32_FLOAT;
 			ci.vertexBuffers[i].attributes[0].stride = static_cast<uint32_t>(bv.stride == 0 ? a.stride : bv.stride);
 
 			constexpr std::array<vkr::VertexSemantic, ATTRIBUTE_COUNT> semantics = {

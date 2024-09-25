@@ -93,12 +93,12 @@ namespace e020
 			const vkr::VertexInputRate inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
 			vkr::VertexDescription     vertexDescription;
 			// clang-format off
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_POSITION , 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_COLOR    , 1, vkr::FORMAT_R32G32B32_FLOAT, 1, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_NORMAL   , 2, vkr::FORMAT_R32G32B32_FLOAT, 2, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TEXCOORD , 3, vkr::FORMAT_R32G32_FLOAT,    3, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TANGENT  , 4, vkr::FORMAT_R32G32B32_FLOAT, 4, APPEND_OFFSET_ALIGNED, inputRate });
-			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_BITANGENT, 5, vkr::FORMAT_R32G32B32_FLOAT, 5, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_POSITION , 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_COLOR    , 1, vkr::Format::R32G32B32_FLOAT, 1, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_NORMAL   , 2, vkr::Format::R32G32B32_FLOAT, 2, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TEXCOORD , 3, vkr::Format::R32G32_FLOAT,    3, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_TANGENT  , 4, vkr::Format::R32G32B32_FLOAT, 4, APPEND_OFFSET_ALIGNED, inputRate });
+			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_BITANGENT, 5, vkr::Format::R32G32B32_FLOAT, 5, APPEND_OFFSET_ALIGNED, inputRate });
 			// clang-format on
 
 			vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -973,11 +973,11 @@ void Example_020::setupGBufferPasses()
 		createInfo.width = GetWindowWidth();
 		createInfo.height = GetWindowHeight();
 		createInfo.renderTargetCount = 4;
-		createInfo.renderTargetFormats[0] = vkr::FORMAT_R16G16B16A16_FLOAT;
-		createInfo.renderTargetFormats[1] = vkr::FORMAT_R16G16B16A16_FLOAT;
-		createInfo.renderTargetFormats[2] = vkr::FORMAT_R16G16B16A16_FLOAT;
-		createInfo.renderTargetFormats[3] = vkr::FORMAT_R16G16B16A16_FLOAT;
-		createInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
+		createInfo.renderTargetFormats[0] = vkr::Format::R16G16B16A16_FLOAT;
+		createInfo.renderTargetFormats[1] = vkr::Format::R16G16B16A16_FLOAT;
+		createInfo.renderTargetFormats[2] = vkr::Format::R16G16B16A16_FLOAT;
+		createInfo.renderTargetFormats[3] = vkr::Format::R16G16B16A16_FLOAT;
+		createInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
 		createInfo.renderTargetUsageFlags[0] = additionalUsageFlags;
 		createInfo.renderTargetUsageFlags[1] = additionalUsageFlags;
 		createInfo.renderTargetUsageFlags[2] = additionalUsageFlags;
@@ -1000,11 +1000,11 @@ void Example_020::setupGBufferPasses()
 	// GBuffer light render target
 	{
 		vkr::TextureCreateInfo createInfo = {};
-		createInfo.imageType = vkr::IMAGE_TYPE_2D;
+		createInfo.imageType = vkr::ImageType::Image2D;
 		createInfo.width = mGBufferRenderPass->GetWidth();
 		createInfo.height = mGBufferRenderPass->GetHeight();
 		createInfo.depth = 1;
-		createInfo.imageFormat = vkr::FORMAT_R8G8B8A8_UNORM;
+		createInfo.imageFormat = vkr::Format::R8G8B8A8_UNORM;
 		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;

@@ -1721,7 +1721,7 @@ namespace scene {
 	static vkr::Format GetFormat(const cgltf_accessor* pGltfAccessor)
 	{
 		if (IsNull(pGltfAccessor)) {
-			return vkr::FORMAT_UNDEFINED;
+			return vkr::Format::Undefined;
 		}
 
 		// clang-format off
@@ -1730,55 +1730,55 @@ namespace scene {
 
 		case cgltf_type_scalar: {
 			switch (pGltfAccessor->component_type) {
-			default: return vkr::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return vkr::FORMAT_R8_SINT;
-			case cgltf_component_type_r_8u: return vkr::FORMAT_R8_UINT;
-			case cgltf_component_type_r_16: return vkr::FORMAT_R16_SINT;
-			case cgltf_component_type_r_16u: return vkr::FORMAT_R16_UINT;
-			case cgltf_component_type_r_32u: return vkr::FORMAT_R32_UINT;
-			case cgltf_component_type_r_32f: return vkr::FORMAT_R32_FLOAT;
+			default: return vkr::Format::Undefined;
+			case cgltf_component_type_r_8: return vkr::Format::R8_SINT;
+			case cgltf_component_type_r_8u: return vkr::Format::R8_UINT;
+			case cgltf_component_type_r_16: return vkr::Format::R16_SINT;
+			case cgltf_component_type_r_16u: return vkr::Format::R16_UINT;
+			case cgltf_component_type_r_32u: return vkr::Format::R32_UINT;
+			case cgltf_component_type_r_32f: return vkr::Format::R32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec2: {
 			switch (pGltfAccessor->component_type) {
-			default: return vkr::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8_SINT;
-			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8_UINT;
-			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16_SINT;
-			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16_UINT;
-			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32_UINT;
-			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32_FLOAT;
+			default: return vkr::Format::Undefined;
+			case cgltf_component_type_r_8: return vkr::Format::R8G8_SINT;
+			case cgltf_component_type_r_8u: return vkr::Format::R8G8_UINT;
+			case cgltf_component_type_r_16: return vkr::Format::R16G16_SINT;
+			case cgltf_component_type_r_16u: return vkr::Format::R16G16_UINT;
+			case cgltf_component_type_r_32u: return vkr::Format::R32G32_UINT;
+			case cgltf_component_type_r_32f: return vkr::Format::R32G32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec3: {
 			switch (pGltfAccessor->component_type) {
-			default: return vkr::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8B8_SINT;
-			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8B8_UINT;
-			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16B16_SINT;
-			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16B16_UINT;
-			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32B32_UINT;
-			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32B32_FLOAT;
+			default: return vkr::Format::Undefined;
+			case cgltf_component_type_r_8: return vkr::Format::R8G8B8_SINT;
+			case cgltf_component_type_r_8u: return vkr::Format::R8G8B8_UINT;
+			case cgltf_component_type_r_16: return vkr::Format::R16G16B16_SINT;
+			case cgltf_component_type_r_16u: return vkr::Format::R16G16B16_UINT;
+			case cgltf_component_type_r_32u: return vkr::Format::R32G32B32_UINT;
+			case cgltf_component_type_r_32f: return vkr::Format::R32G32B32_FLOAT;
 			}
 		} break;
 
 		case cgltf_type_vec4: {
 			switch (pGltfAccessor->component_type) {
-			default: return vkr::FORMAT_UNDEFINED;
-			case cgltf_component_type_r_8: return vkr::FORMAT_R8G8B8A8_SINT;
-			case cgltf_component_type_r_8u: return vkr::FORMAT_R8G8B8A8_UINT;
-			case cgltf_component_type_r_16: return vkr::FORMAT_R16G16B16A16_SINT;
-			case cgltf_component_type_r_16u: return vkr::FORMAT_R16G16B16A16_UINT;
-			case cgltf_component_type_r_32u: return vkr::FORMAT_R32G32B32A32_UINT;
-			case cgltf_component_type_r_32f: return vkr::FORMAT_R32G32B32A32_FLOAT;
+			default: return vkr::Format::Undefined;
+			case cgltf_component_type_r_8: return vkr::Format::R8G8B8A8_SINT;
+			case cgltf_component_type_r_8u: return vkr::Format::R8G8B8A8_UINT;
+			case cgltf_component_type_r_16: return vkr::Format::R16G16B16A16_SINT;
+			case cgltf_component_type_r_16u: return vkr::Format::R16G16B16A16_UINT;
+			case cgltf_component_type_r_32u: return vkr::Format::R32G32B32A32_UINT;
+			case cgltf_component_type_r_32f: return vkr::Format::R32G32B32A32_FLOAT;
 			}
 		} break;
 		}
 		// clang-format on
 
-		return vkr::FORMAT_UNDEFINED;
+		return vkr::Format::Undefined;
 	}
 
 	static scene::NodeType GetNodeType(const cgltf_node* pGltfNode)
@@ -1850,8 +1850,8 @@ namespace scene {
 			switch (format) {
 				// Bail if we don't recognize the format
 			default: return vkr::IndexType::Undefined;
-			case vkr::FORMAT_R16_UINT: bitCount = 16; break;
-			case vkr::FORMAT_R32_UINT: bitCount = 32; break;
+			case vkr::Format::R16_UINT: bitCount = 16; break;
+			case vkr::Format::R32_UINT: bitCount = 32; break;
 			}
 
 			finalBitCount = std::max(bitCount, finalBitCount);
@@ -2874,15 +2874,15 @@ namespace scene {
 
 		// Target vertex formats
 		auto targetPositionFormat = scene::kVertexPositionFormat;
-		auto targetTexCoordFormat = loadParams.requiredVertexAttributes.bits.texCoords ? scene::kVertexAttributeTexCoordFormat : vkr::FORMAT_UNDEFINED;
-		auto targetNormalFormat = loadParams.requiredVertexAttributes.bits.normals ? scene::kVertexAttributeNormalFormat : vkr::FORMAT_UNDEFINED;
-		auto targetTangentFormat = loadParams.requiredVertexAttributes.bits.tangents ? scene::kVertexAttributeTagentFormat : vkr::FORMAT_UNDEFINED;
-		auto targetColorFormat = loadParams.requiredVertexAttributes.bits.colors ? scene::kVertexAttributeColorFormat : vkr::FORMAT_UNDEFINED;
+		auto targetTexCoordFormat = loadParams.requiredVertexAttributes.bits.texCoords ? scene::kVertexAttributeTexCoordFormat : vkr::Format::Undefined;
+		auto targetNormalFormat = loadParams.requiredVertexAttributes.bits.normals ? scene::kVertexAttributeNormalFormat : vkr::Format::Undefined;
+		auto targetTangentFormat = loadParams.requiredVertexAttributes.bits.tangents ? scene::kVertexAttributeTagentFormat : vkr::Format::Undefined;
+		auto targetColorFormat = loadParams.requiredVertexAttributes.bits.colors ? scene::kVertexAttributeColorFormat : vkr::Format::Undefined;
 
-		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0;
-		const uint32_t targetNormalElementSize = (targetNormalFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0;
-		const uint32_t targetTangentElementSize = (targetTangentFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0;
-		const uint32_t targetColorElementSize = (targetColorFormat != vkr::FORMAT_UNDEFINED) ? vkr::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0;
+		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0;
+		const uint32_t targetNormalElementSize = (targetNormalFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0;
+		const uint32_t targetTangentElementSize = (targetTangentFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0;
+		const uint32_t targetColorElementSize = (targetColorFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0;
 
 		const uint32_t targetPositionElementSize = vkr::GetFormatDescription(targetPositionFormat)->bytesPerTexel;
 		const uint32_t targetAttributesElementSize = targetTexCoordElementSize + targetNormalElementSize + targetTangentElementSize + targetColorElementSize;
@@ -2896,7 +2896,7 @@ namespace scene {
 			uint32_t           positionDataSize = 0;
 			uint32_t           attributeDataOffset = 0; // Must have 4 byte alignment
 			uint32_t           attributeDataSize = 0;
-			vkr::Format       indexFormat = vkr::FORMAT_UNDEFINED;
+			vkr::Format       indexFormat = vkr::Format::Undefined;
 			uint32_t           indexCount = 0;
 			uint32_t           vertexCount = 0;
 			AABB          boundingBox = {};
@@ -2928,7 +2928,7 @@ namespace scene {
 			// However, if it's not UNDEFINED, UINT16, or UINT32 then it's a format we can't handle.
 			//
 			auto indexFormat = GetFormat(pGltfPrimitive->indices);
-			if ((indexFormat != vkr::FORMAT_UNDEFINED) && (indexFormat != vkr::FORMAT_R16_UINT) && (indexFormat != vkr::FORMAT_R32_UINT)) {
+			if ((indexFormat != vkr::Format::Undefined) && (indexFormat != vkr::Format::R16_UINT) && (indexFormat != vkr::Format::R32_UINT)) {
 				ASSERT_MSG(false, "GLTF mesh primitive has unrecognized index format");
 				return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_TYPE;
 			}
@@ -3053,14 +3053,11 @@ namespace scene {
 				BatchInfo& batch = batchInfos[primIdx];
 
 				// Our resulting geometry must have index data for draw efficiency.
-				// This means that if the index format is undefined we need to generate
-				// topology indices for it.
-				//
-				//
+				// This means that if the index format is undefined we need to generate topology indices for it.
 				bool genTopologyIndices = false;
-				if (batch.indexFormat == vkr::FORMAT_UNDEFINED) {
+				if (batch.indexFormat == vkr::Format::Undefined) {
 					genTopologyIndices = true;
-					batch.indexFormat = (batch.vertexCount < 65536) ? vkr::FORMAT_R16_UINT : vkr::FORMAT_R32_UINT;
+					batch.indexFormat = (batch.vertexCount < 65536) ? vkr::Format::R16_UINT : vkr::Format::R32_UINT;
 				}
 
 				// Create genTopologyIndices so we can repack gemetry data into position planar + packed vertex attributes.
@@ -3069,7 +3066,7 @@ namespace scene {
 				//
 				{
 					auto createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU16() : vkr::GeometryCreateInfo::PlanarU16();
-					if (batch.indexFormat == vkr::FORMAT_R32_UINT) {
+					if (batch.indexFormat == vkr::Format::R32_UINT) {
 						createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU32() : vkr::GeometryCreateInfo::PlanarU32();
 					}
 					if (loadParams.requiredVertexAttributes.bits.texCoords) createInfo.AddTexCoord(targetTexCoordFormat);
@@ -3095,14 +3092,14 @@ namespace scene {
 						ASSERT_MSG(!IsNull(pGltfIndices), "GLTF: indices data start is NULL");
 
 						// UINT32
-						if (batch.indexFormat == vkr::FORMAT_R32_UINT) {
+						if (batch.indexFormat == vkr::Format::R32_UINT) {
 							const uint32_t* pGltfIndex = static_cast<const uint32_t*>(pGltfIndices);
 							for (cgltf_size i = 0; i < pGltfAccessor->count; ++i, ++pGltfIndex) {
 								targetGeometry.AppendIndex(*pGltfIndex);
 							}
 						}
 						// UINT16
-						else if (batch.indexFormat == vkr::FORMAT_R16_UINT) {
+						else if (batch.indexFormat == vkr::Format::R16_UINT) {
 							const uint16_t* pGltfIndex = static_cast<const uint16_t*>(pGltfIndices);
 							for (cgltf_size i = 0; i < pGltfAccessor->count; ++i, ++pGltfIndex) {
 								targetGeometry.AppendIndex(*pGltfIndex);
@@ -3287,7 +3284,7 @@ namespace scene {
 		for (uint32_t batchIdx = 0; batchIdx < CountU32(batchInfos); ++batchIdx) {
 			const auto& batch = batchInfos[batchIdx];
 
-			const vkr::IndexType indexType = (batch.indexFormat == vkr::FORMAT_R32_UINT) ? vkr::IndexType::Uint32 : vkr::IndexType::Uint16;
+			const vkr::IndexType indexType = (batch.indexFormat == vkr::Format::R32_UINT) ? vkr::IndexType::Uint32 : vkr::IndexType::Uint16;
 			vkr::IndexBufferView indexBufferView = vkr::IndexBufferView(targetGpuBuffer, indexType, batch.indexDataOffset, batch.indexDataSize);
 
 			vkr::VertexBufferView positionBufferView = vkr::VertexBufferView(targetGpuBuffer, targetPositionElementSize, batch.positionDataOffset, batch.positionDataSize);

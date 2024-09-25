@@ -4,7 +4,7 @@
 EngineApplicationCreateInfo Example_005::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
-	createInfo.render.swapChain.depthFormat = vkr::FORMAT_D32_FLOAT;
+	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	return createInfo;
 }
 
@@ -91,8 +91,8 @@ bool Example_005::Setup()
 		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::FORMAT_R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
-		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::FORMAT_R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };

@@ -574,7 +574,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			// Surface format
 			VkSurfaceFormatKHR surfaceFormat = {};
 			{
-				VkFormat format = ToVkFormat(m_createInfo.colorFormat);
+				VkFormat format = ToVkEnum(m_createInfo.colorFormat);
 				if (format == VK_FORMAT_UNDEFINED)
 				{
 					ASSERT_MSG(false, "Invalid swapchain format");
@@ -753,7 +753,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			for (uint32_t i = 0; i < colorImages.size(); ++i)
 			{
 				ImageCreateInfo imageCreateInfo = {};
-				imageCreateInfo.type = IMAGE_TYPE_2D;
+				imageCreateInfo.type = ImageType::Image2D;
 				imageCreateInfo.width = createInfo.width;
 				imageCreateInfo.height = createInfo.height;
 				imageCreateInfo.depth = 1;
@@ -1001,7 +1001,7 @@ void VulkanSwapChain::destroyColorImages()
 
 Result VulkanSwapChain::createDepthImages()
 {
-	if ((m_createInfo.depthFormat != FORMAT_UNDEFINED) && m_depthImages.empty())
+	if ((m_createInfo.depthFormat != Format::Undefined) && m_depthImages.empty())
 	{
 		for (uint32_t i = 0; i < m_createInfo.imageCount; ++i)
 		{
@@ -1473,7 +1473,7 @@ Result ImGuiImpl::initApiObjects()
 #if defined(IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING)
 		init_info.UseDynamicRendering = m_enableImGuiDynamicRendering;
 		init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
-		VkFormat colorFormat = ToVkFormat(m_render.GetSwapChain().GetColorFormat());
+		VkFormat colorFormat = ToVkEnum(m_render.GetSwapChain().GetColorFormat());
 		init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
 		init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat;
 #else

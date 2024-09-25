@@ -193,11 +193,11 @@ struct VertexBufferView final
 
 struct ImageCreateInfo final
 {
-	ImageType              type = IMAGE_TYPE_2D;
+	ImageType              type = ImageType::Image2D;
 	uint32_t               width = 0;
 	uint32_t               height = 0;
 	uint32_t               depth = 0;
-	Format                 format = FORMAT_UNDEFINED;
+	Format                 format = Format::Undefined;
 	SampleCount            sampleCount = SAMPLE_COUNT_1;
 	uint32_t               mipLevelCount = 1;
 	uint32_t               arrayLayerCount = 1;
@@ -350,7 +350,7 @@ struct DepthStencilViewCreateInfo final
 {
 	Image* pImage = nullptr;
 	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-	Format            format = FORMAT_UNDEFINED;
+	Format            format = Format::Undefined;
 	uint32_t          mipLevel = 0;
 	uint32_t          mipLevelCount = 0;
 	uint32_t          arrayLayer = 0;
@@ -391,7 +391,7 @@ struct RenderTargetViewCreateInfo
 {
 	Image*            pImage = nullptr;
 	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-	Format            format = FORMAT_UNDEFINED;
+	Format            format = Format::Undefined;
 	uint32_t          mipLevel = 0;
 	uint32_t          mipLevelCount = 0;
 	uint32_t          arrayLayer = 0;
@@ -428,7 +428,7 @@ struct SampledImageViewCreateInfo
 {
 	Image*                  pImage = nullptr;
 	ImageViewType           imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-	Format                  format = FORMAT_UNDEFINED;
+	Format                  format = Format::Undefined;
 	SampleCount             sampleCount = SAMPLE_COUNT_1;
 	uint32_t                mipLevel = 0;
 	uint32_t                mipLevelCount = 0;
@@ -466,7 +466,7 @@ private:
 // SamplerYcbcrConversionCreateInfo defines a color model conversion for a texture, sampler, or sampled image.
 struct SamplerYcbcrConversionCreateInfo final
 {
-	Format               format = FORMAT_UNDEFINED;
+	Format               format = Format::Undefined;
 	YcbcrModelConversion ycbcrModel = YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
 	YcbcrRange           ycbcrRange = YCBCR_RANGE_ITU_FULL;
 	ComponentMapping     components = {};
@@ -492,7 +492,7 @@ struct StorageImageViewCreateInfo
 {
 	Image* pImage = nullptr;
 	ImageViewType    imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
-	Format           format = FORMAT_UNDEFINED;
+	Format           format = Format::Undefined;
 	uint32_t         mipLevel = 0;
 	uint32_t         mipLevelCount = 0;
 	uint32_t         arrayLayer = 0;
@@ -531,11 +531,11 @@ private:
 struct TextureCreateInfo final
 {
 	Image*                  pImage = nullptr;
-	ImageType               imageType = IMAGE_TYPE_2D;
+	ImageType               imageType = ImageType::Image2D;
 	uint32_t                width = 0;
 	uint32_t                height = 0;
 	uint32_t                depth = 0;
-	Format                  imageFormat = FORMAT_UNDEFINED;
+	Format                  imageFormat = Format::Undefined;
 	SampleCount             sampleCount = SAMPLE_COUNT_1;
 	uint32_t                mipLevelCount = 1;
 	uint32_t                arrayLayerCount = 1;
@@ -545,11 +545,11 @@ struct TextureCreateInfo final
 	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                   // Optimized RTV clear value
 	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                   // Optimized DSV clear value
 	ImageViewType           sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED; // Guesses from image if UNDEFINED
-	Format                  sampledImageViewFormat = FORMAT_UNDEFINED;        // Guesses from image if UNDEFINED
+	Format                  sampledImageViewFormat = Format::Undefined;        // Guesses from image if UNDEFINED
 	SamplerYcbcrConversion* pSampledImageYcbcrConversion = nullptr;           // Leave null if not Ycbcr, or not using sampled image.
-	Format                  renderTargetViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
-	Format                  depthStencilViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
-	Format                  storageImageViewFormat = FORMAT_UNDEFINED;         // Guesses from image if UNDEFINED
+	Format                  renderTargetViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
+	Format                  depthStencilViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
+	Format                  storageImageViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
 	Ownership               ownership = Ownership::Reference;
 	bool                    concurrentMultiQueueUsage = false;
 	ImageCreateFlags        imageCreateFlags = {};
@@ -632,7 +632,7 @@ struct RenderPassCreateInfo2 final
 	SampleCount            sampleCount = SAMPLE_COUNT_1;
 	uint32_t               renderTargetCount = 0;
 	Format                 renderTargetFormats[MaxRenderTargets] = {};
-	Format                 depthStencilFormat = FORMAT_UNDEFINED;
+	Format                 depthStencilFormat = Format::Undefined;
 	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
@@ -723,7 +723,7 @@ namespace internal
 		{
 			SampleCount     sampleCount = SAMPLE_COUNT_1;
 			Format          renderTargetFormats[MaxRenderTargets] = {};
-			Format          depthStencilFormat = FORMAT_UNDEFINED;
+			Format          depthStencilFormat = Format::Undefined;
 			ImageUsageFlags renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags depthStencilUsageFlags = {};
 			ResourceState   renderTargetInitialStates[MaxRenderTargets] = { ResourceState::Undefined };
@@ -848,7 +848,7 @@ struct DrawPassCreateInfo
 	SampleCount            sampleCount = SAMPLE_COUNT_1;
 	uint32_t               renderTargetCount = 0;
 	Format                 renderTargetFormats[MaxRenderTargets] = {};
-	Format                 depthStencilFormat = FORMAT_UNDEFINED;
+	Format                 depthStencilFormat = Format::Undefined;
 	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
 	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { ResourceState::RenderTarget };
@@ -910,7 +910,7 @@ namespace internal
 		{
 			SampleCount      sampleCount = SAMPLE_COUNT_1;
 			Format           renderTargetFormats[MaxRenderTargets] = {};
-			Format           depthStencilFormat = FORMAT_UNDEFINED;
+			Format           depthStencilFormat = Format::Undefined;
 			ImageUsageFlags  renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags  depthStencilUsageFlags = {};
 			ResourceState    renderTargetInitialStates[MaxRenderTargets] = { ResourceState::RenderTarget };
@@ -1443,7 +1443,7 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 
 struct MeshVertexAttribute
 {
-	Format format = FORMAT_UNDEFINED;
+	Format format = Format::Undefined;
 
 	// Use 0 to have stride calculated from format
 	uint32_t stride = 0;
@@ -1658,8 +1658,8 @@ struct ColorBlendState
 struct OutputState
 {
 	uint32_t     renderTargetCount = 0;
-	Format renderTargetFormats[MaxRenderTargets] = { FORMAT_UNDEFINED };
-	Format depthStencilFormat = FORMAT_UNDEFINED;
+	Format renderTargetFormats[MaxRenderTargets] = { Format::Undefined };
+	Format depthStencilFormat = Format::Undefined;
 };
 
 struct GraphicsPipelineCreateInfo
@@ -2545,8 +2545,8 @@ struct FullscreenQuadCreateInfo
 	} sets[MaxBoundDescriptorSets] = {};
 
 	uint32_t     renderTargetCount = 0;
-	Format renderTargetFormats[MaxRenderTargets] = { FORMAT_UNDEFINED };
-	Format depthStencilFormat = FORMAT_UNDEFINED;
+	Format renderTargetFormats[MaxRenderTargets] = { Format::Undefined };
+	Format depthStencilFormat = Format::Undefined;
 };
 
 class FullscreenQuad : public DeviceObject<FullscreenQuadCreateInfo>
@@ -2663,8 +2663,8 @@ struct TextDrawCreateInfo
 	ShaderStageInfo VS = {}; // Use basic/shaders/TextDraw.hlsl (vsmain) for now
 	ShaderStageInfo PS = {}; // Use basic/shaders/TextDraw.hlsl (psmain) for now
 	BlendMode       blendMode = BLEND_MODE_PREMULT_ALPHA;
-	Format          renderTargetFormat = FORMAT_UNDEFINED;
-	Format          depthStencilFormat = FORMAT_UNDEFINED;
+	Format          renderTargetFormat = Format::Undefined;
+	Format          depthStencilFormat = Format::Undefined;
 };
 
 class TextDraw
