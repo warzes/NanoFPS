@@ -22,12 +22,12 @@ namespace e020
 			vkr::BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuModelConstants));
 
 			bufferCreateInfo.usageFlags.bits.transferDst = true;
 			bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuModelConstants));
 		}
 
@@ -159,7 +159,7 @@ namespace e020
 		mCpuModelConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuModelConstants->GetSize() };
-		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, mCpuModelConstants, mGpuModelConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER));
+		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, mCpuModelConstants, mGpuModelConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer));
 	}
 
 	void Entity::Draw(vkr::DescriptorSet* pSceneDataSet, vkr::CommandBuffer* pCmd)
@@ -238,7 +238,7 @@ namespace e020
 			vkr::BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &tmpCpuMaterialConstants));
 
 			CHECKED_CALL(tmpCpuMaterialConstants->MapMemory(0, reinterpret_cast<void**>(&pMaterialConstants)));
@@ -289,12 +289,12 @@ namespace e020
 			bufferCreateInfo.size = tmpCpuMaterialConstants->GetSize();
 			bufferCreateInfo.usageFlags.bits.transferDst = true;
 			bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 			CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mMaterialConstants));
 
 			vkr::BufferToBufferCopyInfo copyInfo = { tmpCpuMaterialConstants->GetSize() };
 
-			ppxres = pQueue->CopyBufferToBuffer(&copyInfo, tmpCpuMaterialConstants, mMaterialConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+			ppxres = pQueue->CopyBufferToBuffer(&copyInfo, tmpCpuMaterialConstants, mMaterialConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -475,7 +475,7 @@ bool Example_020::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGBufferDrawAttrConstants));
 	}
@@ -549,26 +549,26 @@ bool Example_020::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuSceneConstants));
 
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuSceneConstants));
 
 		// Light constants
 		bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_STRUCTURED_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		bufferCreateInfo.structuredElementStride = 32;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuLightConstants));
 
 		bufferCreateInfo.structuredElementStride = 32;
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.roStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuLightConstants));
 
 		// Descriptor set layout
@@ -681,10 +681,10 @@ void Example_020::Render()
 		// =====================================================================
 		frame.cmd->TransitionImageLayout(
 			mGBufferRenderPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		frame.cmd->BeginRenderPass(mGBufferRenderPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS | vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH);
 		{
 #ifdef ENABLE_GPU_QUERIES
@@ -710,20 +710,20 @@ void Example_020::Render()
 		frame.cmd->EndRenderPass();
 		frame.cmd->TransitionImageLayout(
 			mGBufferRenderPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
 
 		// =====================================================================
 		//  GBuffer light
 		// =====================================================================
 		frame.cmd->TransitionImageLayout(
 			mGBufferLightPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_READ);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilRead);
 		frame.cmd->BeginRenderPass(mGBufferLightPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 		{
 			// Light scene using gbuffer data
@@ -745,10 +745,10 @@ void Example_020::Render()
 
 		frame.cmd->TransitionImageLayout(
 			mGBufferLightPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_READ,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilRead,
+			vkr::ResourceState::ShaderResource);
 
 		// =====================================================================
 		//  Blit to swapchain
@@ -759,7 +759,7 @@ void Example_020::Render()
 		frame.cmd->SetScissors(renderPass->GetScissor());
 		frame.cmd->SetViewports(renderPass->GetViewport());
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(renderPass);
 		{
 			// Draw gbuffer light output to swapchain
@@ -835,7 +835,7 @@ void Example_020::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 #ifdef ENABLE_GPU_QUERIES
 	// Resolve queries
@@ -983,11 +983,11 @@ void Example_020::setupGBufferPasses()
 		createInfo.renderTargetUsageFlags[2] = additionalUsageFlags;
 		createInfo.renderTargetUsageFlags[3] = additionalUsageFlags;
 		createInfo.depthStencilUsageFlags = additionalUsageFlags;
-		createInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.renderTargetInitialStates[1] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.renderTargetInitialStates[2] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.renderTargetInitialStates[3] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.depthStencilInitialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.renderTargetInitialStates[0] = vkr::ResourceState::ShaderResource;
+		createInfo.renderTargetInitialStates[1] = vkr::ResourceState::ShaderResource;
+		createInfo.renderTargetInitialStates[2] = vkr::ResourceState::ShaderResource;
+		createInfo.renderTargetInitialStates[3] = vkr::ResourceState::ShaderResource;
+		createInfo.depthStencilInitialState = vkr::ResourceState::ShaderResource;
 		createInfo.renderTargetClearValues[0] = rtvClearValue;
 		createInfo.renderTargetClearValues[1] = rtvClearValue;
 		createInfo.renderTargetClearValues[2] = rtvClearValue;
@@ -1010,8 +1010,8 @@ void Example_020::setupGBufferPasses()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 		createInfo.RTVClearValue = { 0, 0, 0, 0 };
 		createInfo.DSVClearValue = { 1.0f, 0xFF }; // Not used - we won't write to depth
 
@@ -1026,7 +1026,7 @@ void Example_020::setupGBufferPasses()
 		createInfo.renderTargetCount = 1;
 		createInfo.pRenderTargetTextures[0] = mGBufferLightRenderTarget;
 		createInfo.pDepthStencilTexture = mGBufferRenderPass->GetDepthStencilTexture();
-		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_READ;
+		createInfo.depthStencilState = vkr::ResourceState::DepthStencilRead;
 
 		CHECKED_CALL(device.CreateDrawPass(createInfo, &mGBufferLightPass));
 	}
@@ -1178,7 +1178,7 @@ void Example_020::updateConstants()
 		mCpuSceneConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuSceneConstants->GetSize() };
-		CHECKED_CALL(device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuSceneConstants, mGpuSceneConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER));
+		CHECKED_CALL(device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuSceneConstants, mGpuSceneConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer));
 	}
 
 	// Light constants
@@ -1218,7 +1218,7 @@ void Example_020::updateConstants()
 		mCpuLightConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuLightConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuLightConstants, mGpuLightConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuLightConstants, mGpuLightConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 	}
 
 	// Model constants

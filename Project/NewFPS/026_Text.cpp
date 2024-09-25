@@ -134,7 +134,7 @@ void Example_026::Render()
 		beginInfo.RTVClearCount = 1;
 		beginInfo.RTVClearValues[0] = { {0.25f, 0.3f, 0.33f, 1} };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			vkr::Rect     scissorRect = renderPass->GetScissor();
@@ -146,7 +146,7 @@ void Example_026::Render()
 			mDynamicText->Draw(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(frame.cmd->End());
 

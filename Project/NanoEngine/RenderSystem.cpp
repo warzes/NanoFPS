@@ -821,7 +821,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			ImageCreateInfo rtCreateInfo = ImageCreateInfo::RenderTarget2D(m_createInfo.width, m_createInfo.height, m_createInfo.colorFormat);
 			rtCreateInfo.ownership = Ownership::Restricted;
 			rtCreateInfo.RTVClearValue = { 0.0f, 0.0f, 0.0f, 0.0f };
-			rtCreateInfo.initialState = RESOURCE_STATE_PRESENT;
+			rtCreateInfo.initialState = ResourceState::Present;
 			rtCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 			rtCreateInfo.usageFlags =
 				IMAGE_USAGE_COLOR_ATTACHMENT |

@@ -136,8 +136,8 @@ struct BufferCreateInfo final
 	uint64_t         size = 0;
 	uint32_t         structuredElementStride = 0; // HLSL StructuredBuffer<> only
 	BufferUsageFlags usageFlags = 0;
-	MemoryUsage      memoryUsage = MEMORY_USAGE_GPU_ONLY;
-	ResourceState    initialState = RESOURCE_STATE_GENERAL;
+	MemoryUsage      memoryUsage = MemoryUsage::GPUOnly;
+	ResourceState    initialState = ResourceState::General;
 	Ownership        ownership = Ownership::Reference;
 };
 
@@ -203,8 +203,8 @@ struct ImageCreateInfo final
 	uint32_t               mipLevelCount = 1;
 	uint32_t               arrayLayerCount = 1;
 	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
-	MemoryUsage            memoryUsage = MEMORY_USAGE_GPU_ONLY;   // D3D12 will fail on any other memory usage
-	ResourceState          initialState = RESOURCE_STATE_GENERAL; // This may not be the best choice
+	MemoryUsage            memoryUsage = MemoryUsage::GPUOnly;   // D3D12 will fail on any other memory usage
+	ResourceState          initialState = ResourceState::General; // This may not be the best choice
 	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
 	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
@@ -218,7 +218,7 @@ struct ImageCreateInfo final
 		uint32_t    height,
 		Format      format,
 		SampleCount sampleCount = SAMPLE_COUNT_1,
-		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY);
+		MemoryUsage memoryUsage = MemoryUsage::GPUOnly);
 
 	// Returns a create info for sampled image and depth stencil target
 	static ImageCreateInfo DepthStencilTarget(
@@ -541,8 +541,8 @@ struct TextureCreateInfo final
 	uint32_t                mipLevelCount = 1;
 	uint32_t                arrayLayerCount = 1;
 	ImageUsageFlags         usageFlags = ImageUsageFlags::SampledImage();
-	MemoryUsage             memoryUsage = MEMORY_USAGE_GPU_ONLY;
-	ResourceState           initialState = RESOURCE_STATE_GENERAL;            // This may not be the best choice
+	MemoryUsage             memoryUsage = MemoryUsage::GPUOnly;
+	ResourceState           initialState = ResourceState::General;            // This may not be the best choice
 	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                   // Optimized RTV clear value
 	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                   // Optimized DSV clear value
 	ImageViewType           sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED; // Guesses from image if UNDEFINED
@@ -609,7 +609,7 @@ struct RenderPassCreateInfo final
 	MultiViewState         multiViewState = {};
 	RenderTargetView*      pRenderTargetViews[MaxRenderTargets] = {};
 	DepthStencilView*      pDepthStencilView = nullptr;
-	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	Ownership              ownership = Ownership::Reference;
@@ -644,8 +644,8 @@ struct RenderPassCreateInfo2 final
 	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
 	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
 	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
-	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_UNDEFINED };
-	ResourceState          depthStencilInitialState = RESOURCE_STATE_UNDEFINED;
+	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { ResourceState::Undefined };
+	ResourceState          depthStencilInitialState = ResourceState::Undefined;
 	Ownership              ownership = Ownership::Reference;
 
 	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
@@ -669,7 +669,7 @@ struct RenderPassCreateInfo3 final
 	MultiViewState         multiViewState = {};
 	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
 	Image*                 pDepthStencilImage = nullptr;
-	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
@@ -709,7 +709,7 @@ namespace internal
 		uint32_t            renderTargetCount = 0;
 		uint32_t            arrayLayerCount = 1;
 		MultiViewState      multiViewState = {};
-		ResourceState       depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
 		ShadingRatePattern* pShadingRatePattern = nullptr;
 
 		// Data unique to RenderPassCreateInfo
@@ -727,8 +727,8 @@ namespace internal
 			Format          depthStencilFormat = FORMAT_UNDEFINED;
 			ImageUsageFlags renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags depthStencilUsageFlags = {};
-			ResourceState   renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_UNDEFINED };
-			ResourceState   depthStencilInitialState = RESOURCE_STATE_UNDEFINED;
+			ResourceState   renderTargetInitialStates[MaxRenderTargets] = { ResourceState::Undefined };
+			ResourceState   depthStencilInitialState = ResourceState::Undefined;
 		} V2;
 
 		// Data unique to RenderPassCreateInfo3
@@ -852,8 +852,8 @@ struct DrawPassCreateInfo
 	Format                 depthStencilFormat = FORMAT_UNDEFINED;
 	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
-	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_RENDER_TARGET };
-	ResourceState          depthStencilInitialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { ResourceState::RenderTarget };
+	ResourceState          depthStencilInitialState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    pShadingRatePattern = nullptr;
@@ -868,7 +868,7 @@ struct DrawPassCreateInfo2
 	uint32_t               renderTargetCount = 0;
 	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
 	Image*                 pDepthStencilImage = nullptr;
-	ResourceState          depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    pShadingRatePattern = nullptr;
@@ -882,7 +882,7 @@ struct DrawPassCreateInfo3
 	uint32_t            renderTargetCount = 0;
 	Texture*            pRenderTargetTextures[MaxRenderTargets] = {};
 	Texture*            pDepthStencilTexture = nullptr;
-	ResourceState       depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
 	ShadingRatePattern* pShadingRatePattern = nullptr;
 };
 
@@ -903,7 +903,7 @@ namespace internal
 		uint32_t            width = 0;
 		uint32_t            height = 0;
 		uint32_t            renderTargetCount = 0;
-		ResourceState       depthStencilState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
 		ShadingRatePattern* pShadingRatePattern = nullptr;
 
 		// Data unique to DrawPassCreateInfo1
@@ -914,8 +914,8 @@ namespace internal
 			Format           depthStencilFormat = FORMAT_UNDEFINED;
 			ImageUsageFlags  renderTargetUsageFlags[MaxRenderTargets] = {};
 			ImageUsageFlags  depthStencilUsageFlags = {};
-			ResourceState    renderTargetInitialStates[MaxRenderTargets] = { RESOURCE_STATE_RENDER_TARGET };
-			ResourceState    depthStencilInitialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+			ResourceState    renderTargetInitialStates[MaxRenderTargets] = { ResourceState::RenderTarget };
+			ResourceState    depthStencilInitialState = ResourceState::DepthStencilWrite;
 			ImageCreateFlags imageCreateFlags = {};
 		} V1;
 
@@ -1485,7 +1485,7 @@ struct MeshCreateInfo
 	uint32_t                          vertexCount = 0;
 	uint32_t                          vertexBufferCount = 0;
 	MeshVertexBufferDescription vertexBuffers[MaxVertexBindings] = {};
-	MemoryUsage                 memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	MemoryUsage                 memoryUsage = MemoryUsage::GPUOnly;
 
 	MeshCreateInfo() {}
 	MeshCreateInfo(const Geometry& geometry);

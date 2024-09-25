@@ -538,13 +538,13 @@ enum LogicOp
 	LOGIC_OP_SET = 15,
 };
 
-enum MemoryUsage
+enum MemoryUsage : uint8_t
 {
-	MEMORY_USAGE_UNKNOWN = 0,
-	MEMORY_USAGE_GPU_ONLY = 1,
-	MEMORY_USAGE_CPU_ONLY = 2,
-	MEMORY_USAGE_CPU_TO_GPU = 3,
-	MEMORY_USAGE_GPU_TO_CPU = 4,
+	Unknown,
+	GPUOnly,
+	CPUOnly,
+	CPUToGPU,
+	GPUToCPU
 };
 
 // VK: Maps to top/bottom of pipeline stages for timestamp queries.
@@ -588,33 +588,33 @@ enum class QueryType : uint8_t
 	Timestamp
 };
 
-enum ResourceState
+enum class ResourceState : uint8_t
 {
-	RESOURCE_STATE_UNDEFINED = 0,
-	RESOURCE_STATE_GENERAL,
-	RESOURCE_STATE_CONSTANT_BUFFER,
-	RESOURCE_STATE_VERTEX_BUFFER,
-	RESOURCE_STATE_INDEX_BUFFER,
-	RESOURCE_STATE_RENDER_TARGET,
-	RESOURCE_STATE_UNORDERED_ACCESS,
-	RESOURCE_STATE_DEPTH_STENCIL_READ,        // Depth and stencil READ
-	RESOURCE_STATE_DEPTH_STENCIL_WRITE,       // Depth and stencil WRITE
-	RESOURCE_STATE_DEPTH_WRITE_STENCIL_READ,  // Depth WRITE and stencil READ
-	RESOURCE_STATE_DEPTH_READ_STENCIL_WRITE,  // Depth READ and stencil WRITE
-	RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, // VS, HS, DS, GS, CS
-	RESOURCE_STATE_PIXEL_SHADER_RESOURCE,     // PS
-	RESOURCE_STATE_SHADER_RESOURCE,           // RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE and RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-	RESOURCE_STATE_STREAM_OUT,
-	RESOURCE_STATE_INDIRECT_ARGUMENT,
-	RESOURCE_STATE_COPY_SRC,
-	RESOURCE_STATE_COPY_DST,
-	RESOURCE_STATE_RESOLVE_SRC,
-	RESOURCE_STATE_RESOLVE_DST,
-	RESOURCE_STATE_PRESENT,
-	RESOURCE_STATE_PREDICATION,
-	RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
-	RESOURCE_STATE_FRAGMENT_DENSITY_MAP_ATTACHMENT,
-	RESOURCE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT,
+	Undefined = 0,
+	General,
+	ConstantBuffer,
+	VertexBuffer,
+	IndexBuffer,
+	RenderTarget,
+	UnorderedAccess,
+	DepthStencilRead,
+	DepthStencilWrite,
+	DepthWriteStencilRead,
+	DepthReadStencilWrite,
+	NonPixelShaderResource, // vs, hs, ds, gs, cs
+	PixelShaderResource,
+	ShaderResource,         // NonPixelShaderResource and PixelShaderResource
+	StreamOut,
+	IndirectArgument,
+	CopySrc,
+	CopyDst,
+	ResolveSrc,
+	ResolveDst,
+	Present,
+	Predication,
+	RaytracingAccelerationStructure,
+	FragmentDensityMapAttachment,
+	FragmentShadingRateAttachment,
 };
 
 enum class SamplerAddressMode : uint8_t
@@ -2364,7 +2364,7 @@ namespace vkrUtil
 
 	private:
 		ImageUsageFlags         mAdditionalUsage = ImageUsageFlags();
-		ResourceState           mInitialState = ResourceState::RESOURCE_STATE_SHADER_RESOURCE;
+		ResourceState           mInitialState = ResourceState::ShaderResource;
 		uint32_t                      mMipLevelCount = 1;
 		vkr::SamplerYcbcrConversion* mYcbcrConversion = nullptr;
 

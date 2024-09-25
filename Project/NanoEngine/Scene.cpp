@@ -736,7 +736,7 @@ namespace scene {
 			createInfo.usageFlags.bits.uniformBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -746,7 +746,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -766,7 +766,7 @@ namespace scene {
 			createInfo.usageFlags.bits.roStructuredBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -776,7 +776,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -796,7 +796,7 @@ namespace scene {
 			createInfo.usageFlags.bits.roStructuredBuffer = true;
 
 			// CPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+			createInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 			createInfo.usageFlags.bits.transferSrc = true;
 			createInfo.usageFlags.bits.transferDst = false;
 			//
@@ -806,7 +806,7 @@ namespace scene {
 			}
 
 			// GPU buffer
-			createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+			createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 			createInfo.usageFlags.bits.transferSrc = false;
 			createInfo.usageFlags.bits.transferDst = true;
 			//
@@ -3009,8 +3009,8 @@ namespace scene {
 			vkr::BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = totalDataSize;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
-			bufferCreateInfo.initialState = vkr::RESOURCE_STATE_COPY_SRC;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
+			bufferCreateInfo.initialState = vkr::ResourceState::CopySrc;
 
 			// Create staging buffer
 			//
@@ -3029,8 +3029,8 @@ namespace scene {
 			bufferCreateInfo.usageFlags.bits.indexBuffer = true;
 			bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
 			bufferCreateInfo.usageFlags.bits.transferDst = true;
-			bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-			bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
+			bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+			bufferCreateInfo.initialState = vkr::ResourceState::General;
 			//
 			ppxres = loadParams.pDevice->CreateBuffer(bufferCreateInfo, &targetGpuBuffer);
 			if (Failed(ppxres)) {
@@ -3269,8 +3269,8 @@ namespace scene {
 				&copyInfo,
 				stagingBuffer,
 				targetGpuBuffer,
-				vkr::RESOURCE_STATE_GENERAL,
-				vkr::RESOURCE_STATE_GENERAL);
+				vkr::ResourceState::General,
+				vkr::ResourceState::General);
 			if (Failed(ppxres)) {
 				ASSERT_MSG(false, "staging buffer to GPU buffer copy failed");
 				return ppxres;

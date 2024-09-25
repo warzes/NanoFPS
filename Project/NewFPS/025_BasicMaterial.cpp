@@ -137,25 +137,25 @@ bool Example_025::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuSceneConstants));
 
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuSceneConstants));
 
 		// HlslLight constants
 		bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_STRUCTURED_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuLightConstants));
 
 		bufferCreateInfo.structuredElementStride = 32;
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.roStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuLightConstants));
 
 		vkr::WriteDescriptor write = {};
@@ -195,12 +195,12 @@ bool Example_025::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuEnvDrawConstants));
 
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuEnvDrawConstants));
 
 		vkr::WriteDescriptor writes[3] = {};
@@ -240,12 +240,12 @@ bool Example_025::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuMaterialConstants));
 
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuMaterialConstants));
 
 		vkr::WriteDescriptor write = {};
@@ -270,12 +270,12 @@ bool Example_025::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_CONSTANT_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.transferSrc = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mCpuModelConstants));
 
 		bufferCreateInfo.usageFlags.bits.transferDst = true;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mGpuModelConstants));
 
 		vkr::WriteDescriptor write = {};
@@ -550,7 +550,7 @@ void Example_025::Render()
 		mCpuSceneConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuSceneConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuSceneConstants, mGpuSceneConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuSceneConstants, mGpuSceneConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 	}
 
 	// Lights
@@ -588,7 +588,7 @@ void Example_025::Render()
 		mCpuLightConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuLightConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuLightConstants, mGpuLightConstants, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuLightConstants, mGpuLightConstants, vkr::ResourceState::ShaderResource, vkr::ResourceState::ShaderResource);
 	}
 
 	// MaterialData constatns
@@ -631,7 +631,7 @@ void Example_025::Render()
 		mCpuMaterialConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuMaterialConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuMaterialConstants, mGpuMaterialConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuMaterialConstants, mGpuMaterialConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 	}
 
 	// Update model constants
@@ -659,7 +659,7 @@ void Example_025::Render()
 		mCpuModelConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuModelConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuModelConstants, mGpuModelConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuModelConstants, mGpuModelConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 	}
 
 	// Update env draw constants
@@ -674,7 +674,7 @@ void Example_025::Render()
 		mCpuEnvDrawConstants->UnmapMemory();
 
 		vkr::BufferToBufferCopyInfo copyInfo = { mCpuEnvDrawConstants->GetSize() };
-		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuEnvDrawConstants, mGpuEnvDrawConstants, vkr::RESOURCE_STATE_CONSTANT_BUFFER, vkr::RESOURCE_STATE_CONSTANT_BUFFER);
+		device.GetGraphicsQueue()->CopyBufferToBuffer(&copyInfo, mCpuEnvDrawConstants, mGpuEnvDrawConstants, vkr::ResourceState::ConstantBuffer, vkr::ResourceState::ConstantBuffer);
 	}
 
 	// Update descriptors if IBL selection changed
@@ -736,7 +736,7 @@ void Example_025::Render()
 		// =====================================================================
 		//  Render scene
 		// =====================================================================
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(renderPass);
 		{
 #ifdef ENABLE_GPU_QUERIES
@@ -919,7 +919,7 @@ void Example_025::Render()
 			frame.cmd->ResolveQueryData(frame.pipelineStatsQuery, 0, 1);
 		}
 #endif
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(frame.cmd->End());
 

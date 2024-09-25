@@ -242,8 +242,8 @@ Result Query::createApiObjects(const QueryCreateInfo& createInfo)
 	bufferInfo.size                    = vkci.queryCount * getQueryTypeSize(m_type, m_multiplier);
 	bufferInfo.structuredElementStride = getQueryTypeSize(m_type, m_multiplier);
 	bufferInfo.usageFlags              = BUFFER_USAGE_TRANSFER_DST;
-	bufferInfo.memoryUsage             = MEMORY_USAGE_GPU_TO_CPU;
-	bufferInfo.initialState            = RESOURCE_STATE_COPY_DST;
+	bufferInfo.memoryUsage             = MemoryUsage::GPUToCPU;
+	bufferInfo.initialState            = ResourceState::CopyDst;
 	bufferInfo.ownership               = Ownership::Reference;
 
 	// Create buffer
@@ -481,7 +481,7 @@ ImageCreateInfo ImageCreateInfo::SampledImage2D(
 	ci.arrayLayerCount = 1;
 	ci.usageFlags.bits.sampled = true;
 	ci.memoryUsage = memoryUsage;
-	ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+	ci.initialState = ResourceState::ShaderResource;
 	ci.pApiObject = nullptr;
 	return ci;
 }
@@ -503,8 +503,8 @@ ImageCreateInfo ImageCreateInfo::DepthStencilTarget(
 	ci.arrayLayerCount = 1;
 	ci.usageFlags.bits.sampled = true;
 	ci.usageFlags.bits.depthStencilAttachment = true;
-	ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-	ci.initialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+	ci.memoryUsage = MemoryUsage::GPUOnly;
+	ci.initialState = ResourceState::DepthStencilWrite;
 	ci.pApiObject = nullptr;
 	return ci;
 }
@@ -526,7 +526,7 @@ ImageCreateInfo ImageCreateInfo::RenderTarget2D(
 	ci.arrayLayerCount = 1;
 	ci.usageFlags.bits.sampled = true;
 	ci.usageFlags.bits.colorAttachment = true;
-	ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	ci.memoryUsage = MemoryUsage::GPUOnly;
 	ci.pApiObject = nullptr;
 	return ci;
 }
@@ -585,7 +585,7 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 			vkci.mipLevels = pCreateInfo.mipLevelCount;
 			vkci.arrayLayers = pCreateInfo.arrayLayerCount;
 			vkci.samples = ToVkSampleCount(pCreateInfo.sampleCount);
-			vkci.tiling = pCreateInfo.memoryUsage == MEMORY_USAGE_GPU_TO_CPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+			vkci.tiling = pCreateInfo.memoryUsage == MemoryUsage::GPUToCPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 			vkci.usage = ToVkImageUsageFlags(pCreateInfo.usageFlags);
 			vkci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			if (pCreateInfo.concurrentMultiQueueUsage)
@@ -668,7 +668,7 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 	mVkFormat = ToVkFormat(pCreateInfo.format);
 	mImageAspect = DetermineAspectMask(mVkFormat);
 
-	if ((pCreateInfo.initialState != RESOURCE_STATE_UNDEFINED) && IsNull(pCreateInfo.pApiObject))
+	if ((pCreateInfo.initialState != ResourceState::Undefined) && IsNull(pCreateInfo.pApiObject))
 	{
 		QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
 		if (!grfxQueue)
@@ -1585,8 +1585,8 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 	{
 		// RTV images
 		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-			ResourceState initialState = RESOURCE_STATE_RENDER_TARGET;
-			if (pCreateInfo.V2.renderTargetInitialStates[i] != RESOURCE_STATE_UNDEFINED) {
+			ResourceState initialState = ResourceState::RenderTarget;
+			if (pCreateInfo.V2.renderTargetInitialStates[i] != ResourceState::Undefined) {
 				initialState = pCreateInfo.V2.renderTargetInitialStates[i];
 			}
 			ImageCreateInfo imageCreateInfo = {};
@@ -1599,8 +1599,8 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			imageCreateInfo.mipLevelCount = 1;
 			imageCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
 			imageCreateInfo.usageFlags = pCreateInfo.V2.renderTargetUsageFlags[i];
-			imageCreateInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-			imageCreateInfo.initialState = RESOURCE_STATE_RENDER_TARGET;
+			imageCreateInfo.memoryUsage = MemoryUsage::GPUOnly;
+			imageCreateInfo.initialState = ResourceState::RenderTarget;
 			imageCreateInfo.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
 			imageCreateInfo.ownership = pCreateInfo.ownership;
 
@@ -1616,8 +1616,8 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 
 		// DSV image
 		if (pCreateInfo.V2.depthStencilFormat != FORMAT_UNDEFINED) {
-			ResourceState initialState = RESOURCE_STATE_DEPTH_STENCIL_WRITE;
-			if (pCreateInfo.V2.depthStencilInitialState != RESOURCE_STATE_UNDEFINED) {
+			ResourceState initialState = ResourceState::DepthStencilWrite;
+			if (pCreateInfo.V2.depthStencilInitialState != ResourceState::Undefined) {
 				initialState = pCreateInfo.V2.depthStencilInitialState;
 			}
 
@@ -1631,7 +1631,7 @@ Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& 
 			imageCreateInfo.mipLevelCount = 1;
 			imageCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
 			imageCreateInfo.usageFlags = pCreateInfo.V2.depthStencilUsageFlags;
-			imageCreateInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			imageCreateInfo.memoryUsage = MemoryUsage::GPUOnly;
 			imageCreateInfo.initialState = initialState;
 			imageCreateInfo.DSVClearValue = pCreateInfo.depthStencilClearValue;
 			imageCreateInfo.ownership = pCreateInfo.ownership;
@@ -2507,7 +2507,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.mipLevelCount = 1;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags = pCreateInfo.V1.renderTargetUsageFlags[i];
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = pCreateInfo.V1.renderTargetInitialStates[i];
 			ci.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
@@ -2541,7 +2541,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.mipLevelCount = 1;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags = pCreateInfo.V1.depthStencilUsageFlags;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = pCreateInfo.V1.depthStencilInitialState;
 			ci.DSVClearValue = pCreateInfo.depthStencilClearValue;
 			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
@@ -2680,8 +2680,8 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 		if (depthLoadOp == ATTACHMENT_LOAD_OP_CLEAR) {
 			switch (pCreateInfo.depthStencilState) {
 			default: break;
-			case RESOURCE_STATE_DEPTH_STENCIL_READ:
-			case RESOURCE_STATE_DEPTH_READ_STENCIL_WRITE: {
+			case ResourceState::DepthStencilRead:
+			case ResourceState::DepthReadStencilWrite: {
 				skip = true;
 			} break;
 			}
@@ -2689,8 +2689,8 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 		if (stencilLoadOp == ATTACHMENT_LOAD_OP_CLEAR) {
 			switch (pCreateInfo.depthStencilState) {
 			default: break;
-			case RESOURCE_STATE_DEPTH_STENCIL_READ:
-			case RESOURCE_STATE_DEPTH_WRITE_STENCIL_READ: {
+			case ResourceState::DepthStencilRead:
+			case ResourceState::DepthWriteStencilRead: {
 				skip = true;
 			} break;
 			}
@@ -3494,7 +3494,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 		maxTexelSize = capabilities.fdm.maxTexelSize;
 		imageCreateInfo.format = FORMAT_R8G8_UNORM;
 		imageCreateInfo.usageFlags.bits.fragmentDensityMap = true;
-		imageCreateInfo.initialState = RESOURCE_STATE_FRAGMENT_DENSITY_MAP_ATTACHMENT;
+		imageCreateInfo.initialState = ResourceState::FragmentDensityMapAttachment;
 		mShadingRateEncoder = std::make_unique<internal::FDMShadingRateEncoder>();
 	} break;
 	case SHADING_RATE_VRS:
@@ -3503,7 +3503,7 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 		maxTexelSize = capabilities.vrs.maxTexelSize;
 		imageCreateInfo.format = FORMAT_R8_UINT;
 		imageCreateInfo.usageFlags.bits.fragmentShadingRateAttachment = true;
-		imageCreateInfo.initialState = RESOURCE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT;
+		imageCreateInfo.initialState = ResourceState::FragmentShadingRateAttachment;
 
 		auto vrsShadingRateEncoder = std::make_unique<internal::VRSShadingRateEncoder>();
 		vrsShadingRateEncoder->Initialize(mSampleCount, capabilities);
@@ -3881,7 +3881,7 @@ MeshCreateInfo::MeshCreateInfo(const Geometry& geometry)
 	this->indexCount = geometry.GetIndexCount();
 	this->vertexCount = geometry.GetVertexCount();
 	this->vertexBufferCount = geometry.GetVertexBufferCount();
-	this->memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	this->memoryUsage = MemoryUsage::GPUOnly;
 	std::memset(&this->vertexBuffers, 0, MaxVertexBindings * sizeof(MeshVertexBufferDescription));
 
 	const uint32_t bindingCount = geometry.GetVertexBindingCount();
@@ -3928,7 +3928,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 		createInfo.usageFlags.bits.indexBuffer = true;
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.memoryUsage = pCreateInfo.memoryUsage;
-		createInfo.initialState = RESOURCE_STATE_GENERAL;
+		createInfo.initialState = ResourceState::General;
 		createInfo.ownership = Ownership::Reference;
 
 		auto ppxres = GetDevice()->CreateBuffer(createInfo, &mIndexBuffer);
@@ -3991,7 +3991,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 			createInfo.usageFlags.bits.vertexBuffer = true;
 			createInfo.usageFlags.bits.transferDst = true;
 			createInfo.memoryUsage = pCreateInfo.memoryUsage;
-			createInfo.initialState = RESOURCE_STATE_GENERAL;
+			createInfo.initialState = ResourceState::General;
 			createInfo.ownership = Ownership::Reference;
 
 			auto ppxres = GetDevice()->CreateBuffer(createInfo, &mVertexBuffers[vbIdx].first);
@@ -6767,9 +6767,9 @@ Result Queue::CopyBufferToBuffer(
 			return ppxres;
 		}
 
-		cmd->BufferResourceBarrier(pDstBuffer, stateBefore, RESOURCE_STATE_COPY_DST);
+		cmd->BufferResourceBarrier(pDstBuffer, stateBefore, ResourceState::CopyDst);
 		cmd->CopyBufferToBuffer(pCopyInfo, pSrcBuffer, pDstBuffer);
-		cmd->BufferResourceBarrier(pDstBuffer, RESOURCE_STATE_COPY_DST, stateAfter);
+		cmd->BufferResourceBarrier(pDstBuffer, ResourceState::CopyDst, stateAfter);
 
 		ppxres = cmd->End();
 		if (Failed(ppxres)) {
@@ -6824,9 +6824,9 @@ Result Queue::CopyBufferToImage(
 			return ppxres;
 		}
 
-		cmd->TransitionImageLayout(pDstImage, ALL_SUBRESOURCES, stateBefore, RESOURCE_STATE_COPY_DST);
+		cmd->TransitionImageLayout(pDstImage, ALL_SUBRESOURCES, stateBefore, ResourceState::CopyDst);
 		cmd->CopyBufferToImage(pCopyInfos, pSrcBuffer, pDstImage);
-		cmd->TransitionImageLayout(pDstImage, ALL_SUBRESOURCES, RESOURCE_STATE_COPY_DST, stateAfter);
+		cmd->TransitionImageLayout(pDstImage, ALL_SUBRESOURCES, ResourceState::CopyDst, stateAfter);
 
 		ppxres = cmd->End();
 		if (Failed(ppxres)) {
@@ -7786,8 +7786,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		BufferCreateInfo createInfo = {};
 		createInfo.size = size;
 		createInfo.usageFlags.bits.transferSrc = true;
-		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
-		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
+		createInfo.memoryUsage = MemoryUsage::CPUToGPU;
+		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuIndexBuffer);
 		if (Failed(ppxres)) {
@@ -7798,8 +7798,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.usageFlags.bits.transferSrc = false;
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.usageFlags.bits.indexBuffer = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_INDEX_BUFFER;
+		createInfo.memoryUsage = MemoryUsage::GPUOnly;
+		createInfo.initialState = ResourceState::IndexBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuIndexBuffer);
 		if (Failed(ppxres)) {
@@ -7819,8 +7819,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		BufferCreateInfo createInfo = {};
 		createInfo.size = size;
 		createInfo.usageFlags.bits.transferSrc = true;
-		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
-		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
+		createInfo.memoryUsage = MemoryUsage::CPUToGPU;
+		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuVertexBuffer);
 		if (Failed(ppxres)) {
@@ -7831,8 +7831,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.usageFlags.bits.transferSrc = false;
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.usageFlags.bits.vertexBuffer = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_VERTEX_BUFFER;
+		createInfo.memoryUsage = MemoryUsage::GPUOnly;
+		createInfo.initialState = ResourceState::VertexBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuVertexBuffer);
 		if (Failed(ppxres)) {
@@ -7877,8 +7877,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		BufferCreateInfo createInfo = {};
 		createInfo.size = size;
 		createInfo.usageFlags.bits.transferSrc = true;
-		createInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
-		createInfo.initialState = RESOURCE_STATE_COPY_SRC;
+		createInfo.memoryUsage = MemoryUsage::CPUToGPU;
+		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuConstantBuffer);
 		if (Failed(ppxres)) {
@@ -7889,8 +7889,8 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.usageFlags.bits.transferSrc = false;
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.usageFlags.bits.uniformBuffer = true;
-		createInfo.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = RESOURCE_STATE_CONSTANT_BUFFER;
+		createInfo.memoryUsage = MemoryUsage::GPUOnly;
+		createInfo.initialState = ResourceState::ConstantBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuConstantBuffer);
 		if (Failed(ppxres)) {
@@ -8173,13 +8173,13 @@ Result TextDraw::UploadToGpu(Queue* pQueue)
 	copyInfo.srcBuffer.offset = 0;
 	copyInfo.dstBuffer.offset = 0;
 
-	Result ppxres = pQueue->CopyBufferToBuffer(&copyInfo, mCpuIndexBuffer, mGpuIndexBuffer, RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_INDEX_BUFFER);
+	Result ppxres = pQueue->CopyBufferToBuffer(&copyInfo, mCpuIndexBuffer, mGpuIndexBuffer, ResourceState::IndexBuffer, ResourceState::IndexBuffer);
 	if (Failed(ppxres)) {
 		return ppxres;
 	}
 
 	copyInfo.size = mCpuVertexBuffer->GetSize();
-	ppxres = pQueue->CopyBufferToBuffer(&copyInfo, mCpuVertexBuffer, mGpuVertexBuffer, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_VERTEX_BUFFER);
+	ppxres = pQueue->CopyBufferToBuffer(&copyInfo, mCpuVertexBuffer, mGpuVertexBuffer, ResourceState::VertexBuffer, ResourceState::VertexBuffer);
 	if (Failed(ppxres)) {
 		return ppxres;
 	}
@@ -8194,14 +8194,14 @@ void TextDraw::UploadToGpu(CommandBuffer* pCommandBuffer)
 	copyInfo.srcBuffer.offset = 0;
 	copyInfo.dstBuffer.offset = 0;
 
-	pCommandBuffer->BufferResourceBarrier(mGpuIndexBuffer, RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_COPY_DST);
+	pCommandBuffer->BufferResourceBarrier(mGpuIndexBuffer, ResourceState::IndexBuffer, ResourceState::CopyDst);
 	pCommandBuffer->CopyBufferToBuffer(&copyInfo, mCpuIndexBuffer, mGpuIndexBuffer);
-	pCommandBuffer->BufferResourceBarrier(mGpuIndexBuffer, RESOURCE_STATE_COPY_DST, RESOURCE_STATE_INDEX_BUFFER);
+	pCommandBuffer->BufferResourceBarrier(mGpuIndexBuffer, ResourceState::CopyDst, ResourceState::IndexBuffer);
 
 	copyInfo.size = mTextLength * kGlyphVerticesSize;
-	pCommandBuffer->BufferResourceBarrier(mGpuVertexBuffer, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_COPY_DST);
+	pCommandBuffer->BufferResourceBarrier(mGpuVertexBuffer, ResourceState::VertexBuffer, ResourceState::CopyDst);
 	pCommandBuffer->CopyBufferToBuffer(&copyInfo, mCpuVertexBuffer, mGpuVertexBuffer);
-	pCommandBuffer->BufferResourceBarrier(mGpuVertexBuffer, RESOURCE_STATE_COPY_DST, RESOURCE_STATE_VERTEX_BUFFER);
+	pCommandBuffer->BufferResourceBarrier(mGpuVertexBuffer, ResourceState::CopyDst, ResourceState::VertexBuffer);
 }
 
 void TextDraw::PrepareDraw(const float4x4& MVP, CommandBuffer* pCommandBuffer)
@@ -8221,9 +8221,9 @@ void TextDraw::PrepareDraw(const float4x4& MVP, CommandBuffer* pCommandBuffer)
 	copyInfo.srcBuffer.offset = 0;
 	copyInfo.dstBuffer.offset = 0;
 
-	pCommandBuffer->BufferResourceBarrier(mGpuConstantBuffer, RESOURCE_STATE_CONSTANT_BUFFER, RESOURCE_STATE_COPY_DST);
+	pCommandBuffer->BufferResourceBarrier(mGpuConstantBuffer, ResourceState::ConstantBuffer, ResourceState::CopyDst);
 	pCommandBuffer->CopyBufferToBuffer(&copyInfo, mCpuConstantBuffer, mGpuConstantBuffer);
-	pCommandBuffer->BufferResourceBarrier(mGpuConstantBuffer, RESOURCE_STATE_COPY_DST, RESOURCE_STATE_CONSTANT_BUFFER);
+	pCommandBuffer->BufferResourceBarrier(mGpuConstantBuffer, ResourceState::CopyDst, ResourceState::ConstantBuffer);
 }
 
 void TextDraw::Draw(CommandBuffer* pCommandBuffer)

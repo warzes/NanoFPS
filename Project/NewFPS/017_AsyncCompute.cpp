@@ -171,7 +171,7 @@ bool Example_017::Setup()
 				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &renderData.constants));
 
@@ -193,11 +193,11 @@ bool Example_017::Setup()
 				dpCreateInfo.height = GetRender().GetSwapChain().GetHeight();
 				dpCreateInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 				dpCreateInfo.depthStencilClearValue = { 1.0f, 0 };
-				dpCreateInfo.depthStencilInitialState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+				dpCreateInfo.depthStencilInitialState = vkr::ResourceState::DepthStencilWrite;
 				dpCreateInfo.renderTargetCount = 1;
 				dpCreateInfo.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 				dpCreateInfo.renderTargetClearValues[0] = { 100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f };
-				dpCreateInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+				dpCreateInfo.renderTargetInitialStates[0] = vkr::ResourceState::ShaderResource;
 				dpCreateInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 
 				CHECKED_CALL(device.CreateDrawPass(dpCreateInfo, &renderData.drawPass));
@@ -317,7 +317,7 @@ void Example_017::setupComposition()
 			dpCreateInfo.renderTargetCount = 1;
 			dpCreateInfo.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 			dpCreateInfo.renderTargetClearValues[0] = { 0.0f, 0.0f, 0.0f, 0.0f };
-			dpCreateInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_RENDER_TARGET;
+			dpCreateInfo.renderTargetInitialStates[0] = vkr::ResourceState::RenderTarget;
 			dpCreateInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 
 			CHECKED_CALL(device.CreateDrawPass(dpCreateInfo, &frameData.composeDrawPass));
@@ -356,7 +356,7 @@ void Example_017::setupComposition()
 				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = dataSize;
 				bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &composeData.quadVertexBuffer));
 
@@ -438,8 +438,8 @@ void Example_017::setupCompute()
 				ci.format = GetRender().GetSwapChain().GetColorFormat();
 				ci.usageFlags.bits.sampled = true;
 				ci.usageFlags.bits.storage = true;
-				ci.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-				ci.initialState = vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+				ci.memoryUsage = vkr::MemoryUsage::GPUOnly;
+				ci.initialState = vkr::ResourceState::NonPixelShaderResource;
 
 				CHECKED_CALL(device.CreateImage(ci, &computeData.outputImage));
 
@@ -455,7 +455,7 @@ void Example_017::setupCompute()
 				vkr::BufferCreateInfo bufferCreateInfo = {};
 				bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 				bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-				bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+				bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 				CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &computeData.constants));
 
@@ -612,8 +612,8 @@ void Example_017::blitAndPresent(PerFrame& frame, uint32_t swapchainImageIndex)
 	{
 		cmd->SetScissors(renderPass->GetScissor());
 		cmd->SetViewports(renderPass->GetViewport());
-		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
-		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
+		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::PixelShaderResource);
 		cmd->BeginRenderPass(renderPass);
 		{
 			// Draw composed image to swapchain.
@@ -627,8 +627,8 @@ void Example_017::blitAndPresent(PerFrame& frame, uint32_t swapchainImageIndex)
 			GetRender().DrawImGui(cmd);
 		}
 		cmd->EndRenderPass();
-		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_RENDER_TARGET);
-		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		cmd->TransitionImageLayout(frame.composeDrawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::PixelShaderResource, vkr::ResourceState::RenderTarget);
+		cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(cmd->End());
 
@@ -662,10 +662,10 @@ void Example_017::runCompute(PerFrame& frame, size_t quadIndex)
 	{
 		// Acquire from graphics queue to compute queue.
 		if (mUseQueueFamilyTransfers) {
-			computeData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
+			computeData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::ShaderResource, vkr::ResourceState::ShaderResource, mGraphicsQueue, mComputeQueue);
 		}
 
-		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_UNORDERED_ACCESS);
+		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::ResourceState::NonPixelShaderResource, vkr::ResourceState::UnorderedAccess);
 		{
 			vkr::DescriptorSet* sets[1] = { nullptr };
 			sets[0] = computeData.descriptorSet;
@@ -676,11 +676,11 @@ void Example_017::runCompute(PerFrame& frame, size_t quadIndex)
 			for (int i = 0; i < mComputeLoad; ++i)
 				computeData.cmd->Dispatch(dispatchX, dispatchY, 1);
 		}
-		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_UNORDERED_ACCESS, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+		computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::ResourceState::UnorderedAccess, vkr::ResourceState::NonPixelShaderResource);
 
 		// Release from compute queue to graphics queue.
 		if (mUseQueueFamilyTransfers) {
-			computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
+			computeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::ResourceState::NonPixelShaderResource, vkr::ResourceState::NonPixelShaderResource, mComputeQueue, mGraphicsQueue);
 		}
 	}
 	CHECKED_CALL(computeData.cmd->End());
@@ -715,7 +715,7 @@ void Example_017::compose(PerFrame& frame, size_t quadIndex)
 
 		// Acquire from compute queue to graphics queue.
 		if (mUseQueueFamilyTransfers) {
-			composeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, mComputeQueue, mGraphicsQueue);
+			composeData.cmd->TransitionImageLayout(computeData.outputImage, ALL_SUBRESOURCES, vkr::ResourceState::NonPixelShaderResource, vkr::ResourceState::NonPixelShaderResource, mComputeQueue, mGraphicsQueue);
 		}
 
 		composeData.cmd->BeginRenderPass(renderPass, 0 /* do not clear render target */);
@@ -753,7 +753,7 @@ void Example_017::drawScene(PerFrame& frame, size_t quadIndex)
 		renderData.cmd->SetViewports(renderData.drawPass->GetViewport());
 
 		// Draw model.
-		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_RENDER_TARGET);
+		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::ShaderResource, vkr::ResourceState::RenderTarget);
 		renderData.cmd->BeginRenderPass(renderData.drawPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS | vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH);
 		{
 			vkr::DescriptorSet* sets[1] = { nullptr };
@@ -767,11 +767,11 @@ void Example_017::drawScene(PerFrame& frame, size_t quadIndex)
 			renderData.cmd->DrawIndexed(mModelMesh->GetIndexCount(), mGraphicsLoad);
 		}
 		renderData.cmd->EndRenderPass();
-		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::ShaderResource);
 
 		// Release from graphics queue to compute queue.
 		if (mUseQueueFamilyTransfers) {
-			renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_SHADER_RESOURCE, mGraphicsQueue, mComputeQueue);
+			renderData.cmd->TransitionImageLayout(renderData.drawPass->GetRenderTargetTexture(0), ALL_SUBRESOURCES, vkr::ResourceState::ShaderResource, vkr::ResourceState::ShaderResource, mGraphicsQueue, mComputeQueue);
 		}
 	}
 	CHECKED_CALL(renderData.cmd->End());

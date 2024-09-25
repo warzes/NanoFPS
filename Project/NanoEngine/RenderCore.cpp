@@ -1597,150 +1597,150 @@ static Result ToVkBarrier(
 	switch (state) {
 	default: return ERROR_FAILED; break;
 
-	case RESOURCE_STATE_UNDEFINED: {
+	case ResourceState::Undefined: {
 		stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 		accessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	} break;
 
-	case RESOURCE_STATE_GENERAL: {
+	case ResourceState::General: {
 		stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 		accessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_GENERAL;
 	} break;
 
-	case RESOURCE_STATE_CONSTANT_BUFFER: {
+	case ResourceState::ConstantBuffer: {
 		stageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
-	case RESOURCE_STATE_VERTEX_BUFFER: {
+	case ResourceState::VertexBuffer: {
 		stageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_INDEX_BUFFER: {
+	case ResourceState::IndexBuffer: {
 		stageMask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
 		accessMask = VK_ACCESS_INDEX_READ_BIT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_RENDER_TARGET: {
+	case ResourceState::RenderTarget: {
 		stageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		accessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_UNORDERED_ACCESS: {
+	case ResourceState::UnorderedAccess: {
 		stageMask = PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_GENERAL;
 	} break;
 
-	case RESOURCE_STATE_DEPTH_STENCIL_READ: {
+	case ResourceState::DepthStencilRead: {
 		stageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_DEPTH_STENCIL_WRITE: {
+	case ResourceState::DepthStencilWrite: {
 		stageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_DEPTH_WRITE_STENCIL_READ: {
+	case ResourceState::DepthWriteStencilRead: {
 		stageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_DEPTH_READ_STENCIL_WRITE: {
+	case ResourceState::DepthReadStencilWrite: {
 		stageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		accessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE: {
+	case ResourceState::NonPixelShaderResource: {
 		stageMask = PIPELINE_STAGE_NON_PIXEL_SHADER_STAGES;
 		accessMask = VK_ACCESS_SHADER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_SHADER_RESOURCE: {
+	case ResourceState::ShaderResource: {
 		stageMask = PIPELINE_STAGE_ALL_SHADER_STAGES;
 		accessMask = VK_ACCESS_SHADER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_PIXEL_SHADER_RESOURCE: {
+	case ResourceState::PixelShaderResource: {
 		stageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		accessMask = VK_ACCESS_SHADER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_STREAM_OUT: {
+	case ResourceState::StreamOut: {
 		stageMask = VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
 		accessMask = VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_INDIRECT_ARGUMENT: {
+	case ResourceState::IndirectArgument: {
 		stageMask = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 		accessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_COPY_SRC: {
+	case ResourceState::CopySrc: {
 		stageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		accessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_COPY_DST: {
+	case ResourceState::CopyDst: {
 		stageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_RESOLVE_SRC: {
+	case ResourceState::ResolveSrc: {
 		stageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		accessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_RESOLVE_DST: {
+	case ResourceState::ResolveDst: {
 		stageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		accessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	} break;
 
-	case RESOURCE_STATE_PRESENT: {
+	case ResourceState::Present: {
 		stageMask = isSource ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 		accessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
 		layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	} break;
 
-	case RESOURCE_STATE_PREDICATION: {
+	case ResourceState::Predication: {
 		stageMask = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
 		accessMask = VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT;
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE: {
+	case ResourceState::RaytracingAccelerationStructure: {
 		stageMask = InvalidValue<VkPipelineStageFlags>();
 		accessMask = InvalidValue<VkAccessFlags>();
 		layout = InvalidValue<VkImageLayout>();
 	} break;
 
-	case RESOURCE_STATE_FRAGMENT_DENSITY_MAP_ATTACHMENT: {
+	case ResourceState::FragmentDensityMapAttachment: {
 		stageMask = VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
 		accessMask = VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
 		layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 	} break;
 
-	case RESOURCE_STATE_FRAGMENT_SHADING_RATE_ATTACHMENT: {
+	case ResourceState::FragmentShadingRateAttachment: {
 		stageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
 		accessMask = VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
 		layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
@@ -1805,10 +1805,10 @@ VmaMemoryUsage ToVmaMemoryUsage(MemoryUsage value)
 {
 	switch (value) {
 	default: break;
-	case MEMORY_USAGE_GPU_ONLY: return VMA_MEMORY_USAGE_GPU_ONLY; break;
-	case MEMORY_USAGE_CPU_ONLY: return VMA_MEMORY_USAGE_CPU_ONLY; break;
-	case MEMORY_USAGE_CPU_TO_GPU: return VMA_MEMORY_USAGE_CPU_TO_GPU; break;
-	case MEMORY_USAGE_GPU_TO_CPU: return VMA_MEMORY_USAGE_GPU_TO_CPU; break;
+	case MemoryUsage::GPUOnly: return VMA_MEMORY_USAGE_GPU_ONLY; break;
+	case MemoryUsage::CPUOnly: return VMA_MEMORY_USAGE_CPU_ONLY; break;
+	case MemoryUsage::CPUToGPU: return VMA_MEMORY_USAGE_CPU_TO_GPU; break;
+	case MemoryUsage::GPUToCPU: return VMA_MEMORY_USAGE_GPU_TO_CPU; break;
 	}
 	return VMA_MEMORY_USAGE_UNKNOWN;
 }
@@ -4888,7 +4888,7 @@ namespace vkrUtil
 			BufferCreateInfo ci = {};
 			ci.size = bufferSize;
 			ci.usageFlags.bits.transferSrc = true;
-			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			ci.memoryUsage = MemoryUsage::CPUToGPU;
 
 			ppxres = pQueue->GetDevice()->CreateBuffer(ci, &stagingBuffer);
 			if (Failed(ppxres)) {
@@ -4986,8 +4986,8 @@ namespace vkrUtil
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
 			ci.usageFlags.bits.sampled = true;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-			ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
+			ci.initialState = ResourceState::ShaderResource;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
 
@@ -5014,8 +5014,8 @@ namespace vkrUtil
 				targetImage,
 				mipLevel,
 				0,
-				RESOURCE_STATE_SHADER_RESOURCE,
-				RESOURCE_STATE_SHADER_RESOURCE);
+				ResourceState::ShaderResource,
+				ResourceState::ShaderResource);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -5065,8 +5065,8 @@ namespace vkrUtil
 			ci.usageFlags.bits.transferSrc = true; // For CS
 			ci.usageFlags.bits.sampled = true;
 			ci.usageFlags.bits.storage = true; // For CS
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
-			ci.initialState = RESOURCE_STATE_SHADER_RESOURCE;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
+			ci.initialState = ResourceState::ShaderResource;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
 
@@ -5084,8 +5084,8 @@ namespace vkrUtil
 			targetImage,
 			0,
 			0,
-			RESOURCE_STATE_SHADER_RESOURCE,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			ResourceState::ShaderResource,
+			ResourceState::ShaderResource);
 
 		if (Failed(ppxres)) {
 			return ppxres;
@@ -5098,7 +5098,7 @@ namespace vkrUtil
 			CHECKED_CALL(pQueue->CreateCommandBuffer(&cmdBuffer));
 			// Record command buffer
 			CHECKED_CALL(cmdBuffer->Begin());
-			cmdBuffer->TransitionImageLayout(targetImage, 1, mipLevelCount - 1, 0, 1, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_GENERAL);
+			cmdBuffer->TransitionImageLayout(targetImage, 1, mipLevelCount - 1, 0, 1, ResourceState::ShaderResource, ResourceState::General);
 			CHECKED_CALL(cmdBuffer->End());
 			// Submit to queue
 			SubmitInfo submitInfo = {};
@@ -5126,7 +5126,7 @@ namespace vkrUtil
 			BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = MINIMUM_UNIFORM_BUFFER_SIZE;
 			bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-			bufferCreateInfo.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			bufferCreateInfo.memoryUsage = MemoryUsage::CPUToGPU;
 			CHECKED_CALL(pQueue->GetDevice()->CreateBuffer(bufferCreateInfo, &uniformBuffer));
 		}
 
@@ -5299,7 +5299,7 @@ namespace vkrUtil
 				CHECKED_CALL(pQueue->CreateCommandBuffer(&cmdBuffer));
 				// Record into command buffer
 				CHECKED_CALL(cmdBuffer->Begin());
-				cmdBuffer->TransitionImageLayout(targetImage, i, 1, 0, 1, RESOURCE_STATE_GENERAL, RESOURCE_STATE_SHADER_RESOURCE);
+				cmdBuffer->TransitionImageLayout(targetImage, i, 1, 0, 1, ResourceState::General, ResourceState::ShaderResource);
 				CHECKED_CALL(cmdBuffer->End());
 				// Submitt to queue
 				SubmitInfo submitInfo = {};
@@ -5401,7 +5401,7 @@ namespace vkrUtil
 		BufferCreateInfo ci = {};
 		ci.size = 0;
 		ci.usageFlags.bits.transferSrc = true;
-		ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+		ci.memoryUsage = MemoryUsage::CPUToGPU;
 
 		// Compute each mipmap level size and alignments.
 		// This step filters out levels too small to match minimal alignment.
@@ -5488,7 +5488,7 @@ namespace vkrUtil
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
 			ci.usageFlags.bits.sampled = true;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 
 			ci.usageFlags.flags |= options.mAdditionalUsage;
 
@@ -5530,8 +5530,8 @@ namespace vkrUtil
 			stagingBuffer,
 			targetImage,
 			ALL_SUBRESOURCES,
-			RESOURCE_STATE_UNDEFINED,
-			RESOURCE_STATE_SHADER_RESOURCE);
+			ResourceState::Undefined,
+			ResourceState::ShaderResource);
 		if (Failed(ppxres)) {
 			return ppxres;
 		}
@@ -5666,7 +5666,7 @@ namespace vkrUtil
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
 			ci.usageFlags.bits.sampled = true;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = options.mInitialState;
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
@@ -5753,7 +5753,7 @@ namespace vkrUtil
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
 			ci.usageFlags.bits.sampled = true;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = options.mInitialState;
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
@@ -5983,7 +5983,7 @@ namespace vkrUtil
 			BufferCreateInfo ci = {};
 			ci.size = bitmapFootprintSize;
 			ci.usageFlags.bits.transferSrc = true;
-			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			ci.memoryUsage = MemoryUsage::CPUToGPU;
 
 			ppxres = pQueue->GetDevice()->CreateBuffer(ci, &stagingBuffer);
 			if (Failed(ppxres)) {
@@ -6023,7 +6023,7 @@ namespace vkrUtil
 			ci.arrayLayerCount = 6;
 			ci.usageFlags.bits.transferDst = true;
 			ci.usageFlags.bits.sampled = true;
-			ci.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+			ci.memoryUsage = MemoryUsage::GPUOnly;
 
 			ci.usageFlags.flags |= additionalImageUsage.flags;
 
@@ -6076,8 +6076,8 @@ namespace vkrUtil
 				stagingBuffer,
 				targetImage,
 				ALL_SUBRESOURCES,
-				RESOURCE_STATE_UNDEFINED,
-				RESOURCE_STATE_SHADER_RESOURCE);
+				ResourceState::Undefined,
+				ResourceState::ShaderResource);
 			if (Failed(ppxres)) {
 				return ppxres;
 			}
@@ -6113,7 +6113,7 @@ namespace vkrUtil
 			BufferCreateInfo ci = {};
 			ci.size = biggestBufferSize;
 			ci.usageFlags.bits.transferSrc = true;
-			ci.memoryUsage = MEMORY_USAGE_CPU_TO_GPU;
+			ci.memoryUsage = MemoryUsage::CPUToGPU;
 
 			Result ppxres = pQueue->GetDevice()->CreateBuffer(ci, &stagingBuffer);
 			if (Failed(ppxres)) {
@@ -6155,7 +6155,7 @@ namespace vkrUtil
 				copyInfo.size = geoBufferSize;
 
 				// Copy to GPU buffer
-				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetMesh->GetIndexBuffer(), RESOURCE_STATE_INDEX_BUFFER, RESOURCE_STATE_INDEX_BUFFER);
+				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetMesh->GetIndexBuffer(), ResourceState::IndexBuffer, ResourceState::IndexBuffer);
 				if (Failed(ppxres))
 				{
 					return ppxres;
@@ -6181,7 +6181,7 @@ namespace vkrUtil
 				BufferPtr targetBuffer = targetMesh->GetVertexBuffer(i);
 
 				// Copy to GPU buffer
-				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetBuffer, RESOURCE_STATE_VERTEX_BUFFER, RESOURCE_STATE_VERTEX_BUFFER);
+				ppxres = pQueue->CopyBufferToBuffer(&copyInfo, stagingBuffer, targetBuffer, ResourceState::VertexBuffer, ResourceState::VertexBuffer);
 				if (Failed(ppxres)) {
 					return ppxres;
 				}

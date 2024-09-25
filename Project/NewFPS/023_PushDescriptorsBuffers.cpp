@@ -24,7 +24,7 @@ bool Example_023::Setup()
 		vkr::BufferCreateInfo createInfo = {};
 		createInfo.size = 256;
 		createInfo.usageFlags.bits.uniformBuffer = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		createInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 		CHECKED_CALL(device.CreateBuffer(createInfo, &mUniformBuffers[i]));
 	}
@@ -239,7 +239,7 @@ bool Example_023::Setup()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = dataSize;
 		bufferCreateInfo.usageFlags.bits.vertexBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &mVertexBuffer));
 
@@ -291,7 +291,7 @@ void Example_023::Render()
 		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
 		beginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -377,7 +377,7 @@ void Example_023::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(frame.cmd->End());
 

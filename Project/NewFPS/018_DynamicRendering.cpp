@@ -93,7 +93,7 @@ bool Example_018::Setup()
 
 		CHECKED_CALL(preRecordedCmd->Begin());
 		{
-			preRecordedCmd->TransitionImageLayout(GetRender().GetSwapChain().GetColorImage(imageIndex), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+			preRecordedCmd->TransitionImageLayout(GetRender().GetSwapChain().GetColorImage(imageIndex), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 			vkr::RenderingInfo renderingInfo = {};
 			renderingInfo.flags.bits.suspending = true;
 			renderingInfo.renderArea = { 0, 0, GetRender().GetSwapChain().GetWidth(), GetRender().GetSwapChain().GetHeight() };
@@ -197,7 +197,7 @@ void Example_018::Render()
 			frame.cmd->EndRendering();
 		}
 
-		frame.cmd->TransitionImageLayout(swapChain.GetColorImage(imageIndex), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(swapChain.GetColorImage(imageIndex), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(frame.cmd->End());
 

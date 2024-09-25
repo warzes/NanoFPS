@@ -237,7 +237,7 @@ void Example_024::SetupCommon()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = std::max(sizeof(ShaderGlobals), static_cast<size_t>(vkr::MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mShaderGlobalsBuffer));
 	}
 
@@ -255,8 +255,8 @@ void Example_024::SetupCommon()
 		createInfo.depthStencilFormat = vkr::FORMAT_D32_FLOAT;
 		createInfo.renderTargetUsageFlags[0] = vkr::IMAGE_USAGE_SAMPLED;
 		createInfo.depthStencilUsageFlags = vkr::IMAGE_USAGE_TRANSFER_SRC | vkr::IMAGE_USAGE_SAMPLED;
-		createInfo.renderTargetInitialStates[0] = vkr::RESOURCE_STATE_SHADER_RESOURCE;
-		createInfo.depthStencilInitialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.renderTargetInitialStates[0] = vkr::ResourceState::ShaderResource;
+		createInfo.depthStencilInitialState = vkr::ResourceState::ShaderResource;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mOpaquePass));
@@ -330,8 +330,8 @@ void Example_024::SetupCommon()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 		createInfo.RTVClearValue = { 0, 0, 0, 0 };
 		createInfo.DSVClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mTransparencyTexture));
@@ -345,7 +345,7 @@ void Example_024::SetupCommon()
 		createInfo.renderTargetCount = 1;
 		createInfo.pRenderTargetImages[0] = mTransparencyTexture->GetImage();
 		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
-		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::ResourceState::DepthStencilWrite;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mTransparencyPass));
@@ -580,10 +580,10 @@ void Example_024::RecordOpaque()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mOpaquePass,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite);
 	mCommandBuffer->BeginRenderPass(mOpaquePass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 	mCommandBuffer->SetScissors(mOpaquePass->GetScissor());
@@ -600,10 +600,10 @@ void Example_024::RecordOpaque()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mOpaquePass,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite,
+		vkr::ResourceState::ShaderResource);
 }
 
 void Example_024::RecordTransparency()
@@ -627,7 +627,7 @@ void Example_024::RecordComposite(vkr::RenderPassPtr renderPass)
 {
 	ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
-	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 
 	vkr::RenderPassBeginInfo beginInfo = {};
 	beginInfo.pRenderPass = renderPass;
@@ -647,7 +647,7 @@ void Example_024::RecordComposite(vkr::RenderPassPtr renderPass)
 	GetRender().DrawImGui(mCommandBuffer);
 
 	mCommandBuffer->EndRenderPass();
-	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+	mCommandBuffer->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 }
 
 //=============================================================================
@@ -671,8 +671,8 @@ void Example_024::SetupBufferBuckets()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.buckets.countTexture));
 	}
@@ -689,8 +689,8 @@ void Example_024::SetupBufferBuckets()
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.buckets.fragmentTexture));
 	}
@@ -876,8 +876,8 @@ void Example_024::SetupBufferLinkedLists()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.storage = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mBuffer.lists.linkedListHeadTexture));
 	}
@@ -892,8 +892,8 @@ void Example_024::SetupBufferLinkedLists()
 		bufferCreateInfo.size = fragmentBufferSize;
 		bufferCreateInfo.structuredElementStride = fragmentBufferElementSize;
 		bufferCreateInfo.usageFlags.bits.rwStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		bufferCreateInfo.initialState = vkr::ResourceState::General;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mBuffer.lists.fragmentBuffer));
 	}
 
@@ -903,8 +903,8 @@ void Example_024::SetupBufferLinkedLists()
 		bufferCreateInfo.size = std::max(sizeof(uint), static_cast<size_t>(vkr::MINIMUM_UNIFORM_BUFFER_SIZE));
 		bufferCreateInfo.structuredElementStride = sizeof(uint);
 		bufferCreateInfo.usageFlags.bits.rwStructuredBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		bufferCreateInfo.initialState = vkr::RESOURCE_STATE_GENERAL;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		bufferCreateInfo.initialState = vkr::ResourceState::General;
 		CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &mBuffer.lists.atomicCounter));
 	}
 
@@ -1106,10 +1106,10 @@ void Example_024::RecordBufferBuckets()
 	if (mBuffer.buckets.countTextureNeedClear) {
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.buckets.clearPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource);
 		mCommandBuffer->BeginRenderPass(mBuffer.buckets.clearPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(mBuffer.buckets.clearPass->GetScissor());
@@ -1118,17 +1118,17 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.buckets.clearPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource);
 
 		mBuffer.buckets.countTextureNeedClear = false;
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
 		mCommandBuffer->BeginRenderPass(mBuffer.buckets.gatherPass, 0);
 
 		mCommandBuffer->SetScissors(mBuffer.buckets.gatherPass->GetScissor());
@@ -1141,19 +1141,19 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->DrawIndexed(GetTransparentMesh()->GetIndexCount());
 
 		mCommandBuffer->EndRenderPass();
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -1166,12 +1166,12 @@ void Example_024::RecordBufferBuckets()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.countTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
+		mCommandBuffer->TransitionImageLayout(mBuffer.buckets.fragmentTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
 	}
 }
 
@@ -1180,10 +1180,10 @@ void Example_024::RecordBufferLinkedLists()
 	if (mBuffer.lists.linkedListHeadTextureNeedClear) {
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.lists.clearPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource);
 		mCommandBuffer->BeginRenderPass(mBuffer.lists.clearPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(mBuffer.lists.clearPass->GetScissor());
@@ -1192,16 +1192,16 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mBuffer.lists.clearPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::ShaderResource);
 
 		mBuffer.lists.linkedListHeadTextureNeedClear = false;
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
 		mCommandBuffer->BeginRenderPass(mBuffer.lists.gatherPass, 0);
 
 		mCommandBuffer->SetScissors(mBuffer.lists.gatherPass->GetScissor());
@@ -1214,17 +1214,17 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->DrawIndexed(GetTransparentMesh()->GetIndexCount());
 
 		mCommandBuffer->EndRenderPass();
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
 	}
 
 	{
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_SHADER_RESOURCE, vkr::RESOURCE_STATE_GENERAL);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::ResourceState::ShaderResource, vkr::ResourceState::General);
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -1237,11 +1237,11 @@ void Example_024::RecordBufferLinkedLists()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
-		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::RESOURCE_STATE_GENERAL, vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
+		mCommandBuffer->TransitionImageLayout(mBuffer.lists.linkedListHeadTexture, 0, 1, 0, 1, vkr::ResourceState::General, vkr::ResourceState::ShaderResource);
 	}
 }
 
@@ -1277,8 +1277,8 @@ void Example_024::SetupDepthPeeling()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
 			CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mDepthPeeling.layerTextures[i]));
@@ -1299,8 +1299,8 @@ void Example_024::SetupDepthPeeling()
 		createInfo.usageFlags.bits.transferDst = true;
 		createInfo.usageFlags.bits.depthStencilAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_DEPTH_TEXTURES_COUNT; ++i) {
 			CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mDepthPeeling.depthTextures[i]));
@@ -1313,7 +1313,7 @@ void Example_024::SetupDepthPeeling()
 		createInfo.width = mDepthPeeling.layerTextures[0]->GetWidth();
 		createInfo.height = mDepthPeeling.layerTextures[0]->GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::ResourceState::DepthStencilWrite;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 
@@ -1485,10 +1485,10 @@ void Example_024::RecordDepthPeeling()
 		vkr::DrawPassPtr layerPass = mDepthPeeling.layerPasses[i];
 		mCommandBuffer->TransitionImageLayout(
 			layerPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(layerPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_ALL);
 
 		mCommandBuffer->SetScissors(layerPass->GetScissor());
@@ -1503,20 +1503,20 @@ void Example_024::RecordDepthPeeling()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			layerPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
 	}
 
 	// Transparency pass: combine the results for each pixels
 	{
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -1529,10 +1529,10 @@ void Example_024::RecordDepthPeeling()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
 	}
 }
 
@@ -1614,10 +1614,10 @@ void Example_024::RecordUnsortedOver()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite);
 	mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 	mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -1658,10 +1658,10 @@ void Example_024::RecordUnsortedOver()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite,
+		vkr::ResourceState::ShaderResource);
 }
 
 //=============================================================================
@@ -1686,8 +1686,8 @@ void Example_024::SetupWeightedAverage()
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
 		createInfo.usageFlags.bits.sampled = true;
-		createInfo.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
-		createInfo.initialState = vkr::RESOURCE_STATE_SHADER_RESOURCE;
+		createInfo.memoryUsage = vkr::MemoryUsage::GPUOnly;
+		createInfo.initialState = vkr::ResourceState::ShaderResource;
 
 		createInfo.imageFormat = vkr::FORMAT_R16G16B16A16_FLOAT;
 		CHECKED_CALL(GetRenderDevice().CreateTexture(createInfo, &mWeightedAverage.colorTexture));
@@ -1709,7 +1709,7 @@ void Example_024::SetupWeightedAverage()
 		createInfo.pRenderTargetImages[0] = mWeightedAverage.colorTexture->GetImage();
 		createInfo.pRenderTargetImages[1] = mWeightedAverage.extraTexture->GetImage();
 		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
-		createInfo.depthStencilState = vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE;
+		createInfo.depthStencilState = vkr::ResourceState::DepthStencilWrite;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 
@@ -1910,10 +1910,10 @@ void Example_024::RecordWeightedAverage()
 	{
 		mCommandBuffer->TransitionImageLayout(
 			gatherPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(gatherPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(gatherPass->GetScissor());
@@ -1928,20 +1928,20 @@ void Example_024::RecordWeightedAverage()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			gatherPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
 	}
 
 	// Transparency pass: combine the results for each pixels
 	{
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite);
 		mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 		mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -1954,10 +1954,10 @@ void Example_024::RecordWeightedAverage()
 		mCommandBuffer->EndRenderPass();
 		mCommandBuffer->TransitionImageLayout(
 			mTransparencyPass,
-			vkr::RESOURCE_STATE_RENDER_TARGET,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE,
-			vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-			vkr::RESOURCE_STATE_SHADER_RESOURCE);
+			vkr::ResourceState::RenderTarget,
+			vkr::ResourceState::ShaderResource,
+			vkr::ResourceState::DepthStencilWrite,
+			vkr::ResourceState::ShaderResource);
 	}
 }
 
@@ -2032,10 +2032,10 @@ void Example_024::RecordWeightedSum()
 {
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite);
 	mCommandBuffer->BeginRenderPass(mTransparencyPass, vkr::DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS);
 
 	mCommandBuffer->SetScissors(mTransparencyPass->GetScissor());
@@ -2050,8 +2050,8 @@ void Example_024::RecordWeightedSum()
 	mCommandBuffer->EndRenderPass();
 	mCommandBuffer->TransitionImageLayout(
 		mTransparencyPass,
-		vkr::RESOURCE_STATE_RENDER_TARGET,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE,
-		vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE,
-		vkr::RESOURCE_STATE_SHADER_RESOURCE);
+		vkr::ResourceState::RenderTarget,
+		vkr::ResourceState::ShaderResource,
+		vkr::ResourceState::DepthStencilWrite,
+		vkr::ResourceState::ShaderResource);
 }

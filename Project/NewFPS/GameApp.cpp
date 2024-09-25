@@ -111,7 +111,7 @@ void GameApplication::Render()
 
 		//  Render shadow pass
 		{
-			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE, vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE);
+			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::ResourceState::PixelShaderResource, vkr::ResourceState::DepthStencilWrite);
 			frame.cmd->BeginRenderPass(mShadowRenderPass);
 			{
 				frame.cmd->SetScissors(mShadowRenderPass->GetScissor());
@@ -130,7 +130,7 @@ void GameApplication::Render()
 				}
 			}
 			frame.cmd->EndRenderPass();
-			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_DEPTH_STENCIL_WRITE, vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::ResourceState::DepthStencilWrite, vkr::ResourceState::PixelShaderResource);
 		}
 		
 		//  Render scene
@@ -142,7 +142,7 @@ void GameApplication::Render()
 			renderPassBeginInfo.RTVClearValues[0] = { {0.2f, 0.4f, 1.0f, 0.0f} };
 			renderPassBeginInfo.DSVClearValue = { 1.0f, 0xFF };
 
-			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 			frame.cmd->BeginRenderPass(&renderPassBeginInfo);
 			{
 				frame.cmd->SetScissors(render.GetScissor());
@@ -218,7 +218,7 @@ void GameApplication::Render()
 				render.DrawImGui(frame.cmd);
 			}
 			frame.cmd->EndRenderPass();
-			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+			frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 		}
 	}
 	CHECKED_CALL(frame.cmd->End());
@@ -259,14 +259,14 @@ void GameApplication::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool*
 	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->drawUniformBuffer));
 
 	// Shadow uniform buffer
 	bufferCreateInfo = {};
 	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+	bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->shadowUniformBuffer));
 
 	// Draw descriptor set
@@ -460,7 +460,7 @@ bool GameApplication::setupShadowRenderPass()
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		createInfo.depthLoadOp = vkr::ATTACHMENT_LOAD_OP_CLEAR;
 		createInfo.depthStoreOp = vkr::ATTACHMENT_STORE_OP_STORE;
-		createInfo.depthStencilInitialState = vkr::RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		createInfo.depthStencilInitialState = vkr::ResourceState::PixelShaderResource;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateRenderPass(createInfo, &mShadowRenderPass));
 	}
@@ -527,7 +527,7 @@ bool GameApplication::setupLight()
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateBuffer(bufferCreateInfo, &mLight.drawUniformBuffer));
 
 		// Descriptor set

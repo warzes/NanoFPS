@@ -278,7 +278,7 @@ void Example_019::Render()
 		// =====================================================================
 		//  Render scene
 		// =====================================================================
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_PRESENT, vkr::RESOURCE_STATE_RENDER_TARGET);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(renderPass);
 		{
 			frame.cmd->SetScissors(render.GetScissor());
@@ -299,7 +299,7 @@ void Example_019::Render()
 			render.DrawImGui(frame.cmd);
 		}
 		frame.cmd->EndRenderPass();
-		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::RESOURCE_STATE_RENDER_TARGET, vkr::RESOURCE_STATE_PRESENT);
+		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::RenderTarget, vkr::ResourceState::Present);
 	}
 	CHECKED_CALL(frame.cmd->End());
 
@@ -483,7 +483,7 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 			: vkr::IndexType::INDEX_TYPE_UINT32;
 		ci.indexCount = static_cast<uint32_t>(indices.count);
 		ci.vertexCount = static_cast<uint32_t>(accessors[POSITION_INDEX]->count);
-		ci.memoryUsage = vkr::MEMORY_USAGE_GPU_ONLY;
+		ci.memoryUsage = vkr::MemoryUsage::GPUOnly;
 		ci.vertexBufferCount = 4;
 
 		for (size_t i = 0; i < accessors.size(); i++) {
@@ -520,7 +520,7 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 		copyInfo.size = targetMesh->GetIndexBuffer()->GetSize();
 		copyInfo.srcBuffer.offset = indices.offset + bufferView.offset;
 		copyInfo.dstBuffer.offset = 0;
-		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, targetMesh->GetIndexBuffer(), vkr::RESOURCE_STATE_INDEX_BUFFER, vkr::RESOURCE_STATE_INDEX_BUFFER));
+		CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, targetMesh->GetIndexBuffer(), vkr::ResourceState::IndexBuffer, vkr::ResourceState::IndexBuffer));
 		for (size_t i = 0; i < accessors.size(); i++) {
 			const auto& bufferView = *accessors[i]->buffer_view;
 
@@ -529,7 +529,7 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 			copyInfo.size = vertexBuffer->GetSize();
 			copyInfo.srcBuffer.offset = accessors[i]->offset + bufferView.offset;
 			copyInfo.dstBuffer.offset = 0;
-			CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, vertexBuffer, vkr::RESOURCE_STATE_VERTEX_BUFFER, vkr::RESOURCE_STATE_VERTEX_BUFFER));
+			CHECKED_CALL(pQueue->CopyBufferToBuffer(&copyInfo, pStagingBuffer, vertexBuffer, vkr::ResourceState::VertexBuffer, vkr::ResourceState::VertexBuffer));
 		}
 	}
 
@@ -580,7 +580,7 @@ void Example_019::loadScene(
 		vkr::BufferCreateInfo ci = {};
 		ci.size = data->buffers[0].size;
 		ci.usageFlags.bits.transferSrc = true;
-		ci.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		ci.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 
 		CHECKED_CALL(device.CreateBuffer(ci, &stagingBuffer));
 		SCOPED_DESTROYER.AddObject(stagingBuffer);
@@ -674,7 +674,7 @@ void Example_019::loadNodes(
 		vkr::BufferCreateInfo bufferCreateInfo = {};
 		bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
 		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MEMORY_USAGE_CPU_TO_GPU;
+		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
 		CHECKED_CALL(device.CreateBuffer(bufferCreateInfo, &item.pUniformBuffer));
 
 		objects->emplace_back(std::move(item));
