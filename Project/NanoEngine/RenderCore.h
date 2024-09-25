@@ -638,15 +638,15 @@ enum class SamplerReductionMode : uint8_t
 	Maximum
 };
 
-enum SampleCount
+enum class SampleCount : uint8_t
 {
-	SAMPLE_COUNT_1 = 1,
-	SAMPLE_COUNT_2 = 2,
-	SAMPLE_COUNT_4 = 4,
-	SAMPLE_COUNT_8 = 8,
-	SAMPLE_COUNT_16 = 16,
-	SAMPLE_COUNT_32 = 32,
-	SAMPLE_COUNT_64 = 64,
+	Sample1 = 1,
+	Sample2 = 2,
+	Sample4 = 4,
+	Sample8 = 8,
+	Sample16 = 16,
+	Sample32 = 32,
+	Sample64 = 64,
 };
 
 enum class SemaphoreType : uint8_t
@@ -1661,7 +1661,7 @@ VkDescriptorType              ToVkDescriptorType(DescriptorType value);
 VkFilter                      ToVkEnum(Filter value);
 VkFormat                      ToVkEnum(Format value);
 VkFrontFace                   ToVkFrontFace(FrontFace value);
-VkImageType                   ToVkImageType(ImageType value);
+VkImageType                   ToVkEnum(ImageType value);
 VkImageUsageFlags             ToVkImageUsageFlags(const ImageUsageFlags& value);
 VkImageViewType               ToVkImageViewType(ImageViewType value);
 VkIndexType                   ToVkIndexType(IndexType value);

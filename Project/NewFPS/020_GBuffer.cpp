@@ -1005,7 +1005,7 @@ void Example_020::setupGBufferPasses()
 		createInfo.height = mGBufferRenderPass->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::R8G8B8A8_UNORM;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;

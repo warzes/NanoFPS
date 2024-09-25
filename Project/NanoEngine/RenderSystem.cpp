@@ -758,7 +758,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				imageCreateInfo.height = createInfo.height;
 				imageCreateInfo.depth = 1;
 				imageCreateInfo.format = createInfo.colorFormat;
-				imageCreateInfo.sampleCount = SAMPLE_COUNT_1;
+				imageCreateInfo.sampleCount = SampleCount::Sample1;
 				imageCreateInfo.mipLevelCount = 1;
 				imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
 				imageCreateInfo.usageFlags.bits.transferSrc = true;
@@ -766,7 +766,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				imageCreateInfo.usageFlags.bits.sampled = true;
 				imageCreateInfo.usageFlags.bits.storage = true;
 				imageCreateInfo.usageFlags.bits.colorAttachment = true;
-				imageCreateInfo.pApiObject = (void*)(colorImages[i]);
+				imageCreateInfo.ApiObject = (void*)(colorImages[i]);
 
 				ImagePtr image;
 				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);
@@ -781,8 +781,8 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 
 			for (size_t i = 0; i < depthImages.size(); ++i)
 			{
-				ImageCreateInfo imageCreateInfo = ImageCreateInfo::DepthStencilTarget(createInfo.width, createInfo.height, createInfo.depthFormat, SAMPLE_COUNT_1);
-				imageCreateInfo.pApiObject = (void*)(depthImages[i]);
+				ImageCreateInfo imageCreateInfo = ImageCreateInfo::DepthStencilTarget(createInfo.width, createInfo.height, createInfo.depthFormat, SampleCount::Sample1);
+				imageCreateInfo.ApiObject = (void*)(depthImages[i]);
 				imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
 				ImagePtr image;
 				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);

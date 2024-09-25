@@ -325,7 +325,7 @@ void Example_024::SetupCommon()
 		createInfo.height = swapChain.GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::R16G16B16A16_FLOAT;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
@@ -666,7 +666,7 @@ void Example_024::SetupBufferBuckets()
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::R32_UINT;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
@@ -685,7 +685,7 @@ void Example_024::SetupBufferBuckets()
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight() * BUFFER_BUCKETS_SIZE_PER_PIXEL;
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::R32G32_UINT;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.storage = true;
@@ -871,7 +871,7 @@ void Example_024::SetupBufferLinkedLists()
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::R32_UINT;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
@@ -1272,7 +1272,7 @@ void Example_024::SetupDepthPeeling()
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = vkr::Format::B8G8R8A8_UNORM;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
@@ -1293,7 +1293,7 @@ void Example_024::SetupDepthPeeling()
 		createInfo.height = mDepthPeeling.layerTextures[0]->GetHeight();
 		createInfo.depth = 1;
 		createInfo.imageFormat = mOpaquePass->GetDepthStencilTexture()->GetDepthStencilViewFormat();
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.transferDst = true;
@@ -1579,7 +1579,7 @@ void Example_024::SetupUnsortedOver()
 		gpCreateInfo.inputAssemblyState.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
 		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SampleCount::Sample1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 		gpCreateInfo.colorBlendState.blendAttachmentCount = 1;
@@ -1681,7 +1681,7 @@ void Example_024::SetupWeightedAverage()
 		createInfo.width = mTransparencyTexture->GetWidth();
 		createInfo.height = mTransparencyTexture->GetHeight();
 		createInfo.depth = 1;
-		createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+		createInfo.sampleCount = vkr::SampleCount::Sample1;
 		createInfo.mipLevelCount = 1;
 		createInfo.arrayLayerCount = 1;
 		createInfo.usageFlags.bits.colorAttachment = true;
@@ -1755,7 +1755,7 @@ void Example_024::SetupWeightedAverage()
 		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
 		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
 		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SampleCount::Sample1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 
@@ -2005,7 +2005,7 @@ void Example_024::SetupWeightedSum()
 		gpCreateInfo.rasterState.polygonMode = vkr::POLYGON_MODE_FILL;
 		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
 		gpCreateInfo.rasterState.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.rasterState.rasterizationSamples = vkr::SAMPLE_COUNT_1;
+		gpCreateInfo.rasterState.rasterizationSamples = vkr::SampleCount::Sample1;
 		gpCreateInfo.depthStencilState.depthTestEnable = true;
 		gpCreateInfo.depthStencilState.depthWriteEnable = false;
 		gpCreateInfo.colorBlendState.blendAttachmentCount = 1;

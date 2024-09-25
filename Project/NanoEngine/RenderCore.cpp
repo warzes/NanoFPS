@@ -1315,14 +1315,14 @@ VkFrontFace ToVkFrontFace(FrontFace value)
 	return InvalidValue<VkFrontFace>();
 }
 
-VkImageType ToVkImageType(ImageType value)
+VkImageType ToVkEnum(ImageType value)
 {
 	switch (value) {
 	default: break;
-	case ImageType::Image1D: return VK_IMAGE_TYPE_1D; break;
-	case ImageType::Image2D: return VK_IMAGE_TYPE_2D; break;
-	case ImageType::Image3D: return VK_IMAGE_TYPE_3D; break;
-	case ImageType::Cube: return VK_IMAGE_TYPE_2D; break;
+	case decltype(value)::Image1D: return VK_IMAGE_TYPE_1D;
+	case decltype(value)::Image2D: return VK_IMAGE_TYPE_2D;
+	case decltype(value)::Image3D: return VK_IMAGE_TYPE_3D;
+	case decltype(value)::Cube:    return VK_IMAGE_TYPE_2D;
 	}
 	return InvalidValue<VkImageType>();
 }
@@ -1489,13 +1489,13 @@ VkSampleCountFlagBits ToVkSampleCount(SampleCount value)
 {
 	switch (value) {
 	default: break;
-	case SAMPLE_COUNT_1: return VK_SAMPLE_COUNT_1_BIT; break;
-	case SAMPLE_COUNT_2: return VK_SAMPLE_COUNT_2_BIT; break;
-	case SAMPLE_COUNT_4: return VK_SAMPLE_COUNT_4_BIT; break;
-	case SAMPLE_COUNT_8: return VK_SAMPLE_COUNT_8_BIT; break;
-	case SAMPLE_COUNT_16: return VK_SAMPLE_COUNT_16_BIT; break;
-	case SAMPLE_COUNT_32: return VK_SAMPLE_COUNT_32_BIT; break;
-	case SAMPLE_COUNT_64: return VK_SAMPLE_COUNT_64_BIT; break;
+	case SampleCount::Sample1: return VK_SAMPLE_COUNT_1_BIT; break;
+	case SampleCount::Sample2: return VK_SAMPLE_COUNT_2_BIT; break;
+	case SampleCount::Sample4: return VK_SAMPLE_COUNT_4_BIT; break;
+	case SampleCount::Sample8: return VK_SAMPLE_COUNT_8_BIT; break;
+	case SampleCount::Sample16: return VK_SAMPLE_COUNT_16_BIT; break;
+	case SampleCount::Sample32: return VK_SAMPLE_COUNT_32_BIT; break;
+	case SampleCount::Sample64: return VK_SAMPLE_COUNT_64_BIT; break;
 	}
 	return InvalidValue<VkSampleCountFlagBits>();
 }
@@ -4980,7 +4980,7 @@ namespace vkrUtil
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
 			ci.format = ToGrfxFormat(pBitmap->GetFormat());
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = mipLevelCount;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
@@ -5057,7 +5057,7 @@ namespace vkrUtil
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
 			ci.format = ToGrfxFormat(pBitmap->GetFormat());
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = mipLevelCount;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
@@ -5482,7 +5482,7 @@ namespace vkrUtil
 			ci.height = imageHeight;
 			ci.depth = 1;
 			ci.format = format;
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = mipmapLevelCount;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
@@ -5660,7 +5660,7 @@ namespace vkrUtil
 			ci.height = pBitmap->GetHeight();
 			ci.depth = 1;
 			ci.imageFormat = ToGrfxFormat(pBitmap->GetFormat());
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = mipLevelCount;
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
@@ -5747,7 +5747,7 @@ namespace vkrUtil
 			ci.height = pMip0->GetHeight();
 			ci.depth = 1;
 			ci.imageFormat = ToGrfxFormat(pMip0->GetFormat());
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = pMipmap->GetLevelCount();
 			ci.arrayLayerCount = 1;
 			ci.usageFlags.bits.transferDst = true;
@@ -6017,7 +6017,7 @@ namespace vkrUtil
 			ci.height = tmpSubImage.height;
 			ci.depth = 1;
 			ci.format = targetFormat;
-			ci.sampleCount = SAMPLE_COUNT_1;
+			ci.sampleCount = SampleCount::Sample1;
 			ci.mipLevelCount = 1;
 			ci.arrayLayerCount = 6;
 			ci.usageFlags.bits.transferDst = true;

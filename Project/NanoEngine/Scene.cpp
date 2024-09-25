@@ -2366,7 +2366,7 @@ namespace scene {
 			createInfo.pImage = pGrfxImage;
 			createInfo.imageViewType = vkr::IMAGE_VIEW_TYPE_2D;
 			createInfo.format = pGrfxImage->GetFormat();
-			createInfo.sampleCount = vkr::SAMPLE_COUNT_1;
+			createInfo.sampleCount = vkr::SampleCount::Sample1;
 			createInfo.mipLevel = 0;
 			createInfo.mipLevelCount = pGrfxImage->GetMipLevelCount();
 			createInfo.arrayLayer = 0;

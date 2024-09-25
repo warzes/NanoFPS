@@ -198,15 +198,15 @@ struct ImageCreateInfo final
 	uint32_t               height = 0;
 	uint32_t               depth = 0;
 	Format                 format = Format::Undefined;
-	SampleCount            sampleCount = SAMPLE_COUNT_1;
+	SampleCount            sampleCount = SampleCount::Sample1;
 	uint32_t               mipLevelCount = 1;
 	uint32_t               arrayLayerCount = 1;
 	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
-	MemoryUsage            memoryUsage = MemoryUsage::GPUOnly;   // D3D12 will fail on any other memory usage
+	MemoryUsage            memoryUsage = MemoryUsage::GPUOnly;    // D3D12 will fail on any other memory usage
 	ResourceState          initialState = ResourceState::General; // This may not be the best choice
 	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
-	void*                  pApiObject = nullptr;                  // [OPTIONAL] For external images such as swapchain images
+	void*                  ApiObject = nullptr;                   // [OPTIONAL] For external images such as swapchain images
 	Ownership              ownership = Ownership::Reference;
 	bool                   concurrentMultiQueueUsage = false;
 	ImageCreateFlags       createFlags = {};
@@ -216,7 +216,7 @@ struct ImageCreateInfo final
 		uint32_t    width,
 		uint32_t    height,
 		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1,
+		SampleCount sampleCount = SampleCount::Sample1,
 		MemoryUsage memoryUsage = MemoryUsage::GPUOnly);
 
 	// Returns a create info for sampled image and depth stencil target
@@ -224,14 +224,14 @@ struct ImageCreateInfo final
 		uint32_t    width,
 		uint32_t    height,
 		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1);
+		SampleCount sampleCount = SampleCount::Sample1);
 
 	// Returns a create info for sampled image and render target
 	static ImageCreateInfo RenderTarget2D(
 		uint32_t    width,
 		uint32_t    height,
 		Format      format,
-		SampleCount sampleCount = SAMPLE_COUNT_1);
+		SampleCount sampleCount = SampleCount::Sample1);
 };
 
 class Image final : public DeviceObject<ImageCreateInfo>
@@ -254,26 +254,25 @@ public:
 	bool                          GetConcurrentMultiQueueUsageEnabled() const { return m_createInfo.concurrentMultiQueueUsage; }
 	ImageCreateFlags              GetCreateFlags() const { return m_createInfo.createFlags; }
 
-	VkImagePtr                    GetVkImage() const { return mImage; }
-	VkFormat                      GetVkFormat() const { return mVkFormat; }
-	VkImageAspectFlags            GetVkImageAspectFlags() const { return mImageAspect; }
+	VkImagePtr                    GetVkImage() const { return m_image; }
+	VkFormat                      GetVkFormat() const { return m_vkFormat; }
+	VkImageAspectFlags            GetVkImageAspectFlags() const { return m_imageAspect; }
 
 	// Convenience functions
 	ImageViewType GuessImageViewType(bool isCube = false) const;
 
-	Result MapMemory(uint64_t offset, void** ppMappedAddress);
+	Result MapMemory(uint64_t offset, void** mappedAddress);
 	void   UnmapMemory();
 
 private:
-	Result create(const ImageCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const ImageCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() override;
+	Result createApiObjects(const ImageCreateInfo& createInfo) final;
+	void   destroyApiObjects() final;
 
-	VkImagePtr         mImage;
-	VmaAllocationPtr   mAllocation;
-	VmaAllocationInfo  mAllocationInfo = {};
-	VkFormat           mVkFormat = VK_FORMAT_UNDEFINED;
-	VkImageAspectFlags mImageAspect = InvalidValue<VkImageAspectFlags>();
+	VkImagePtr         m_image;
+	VmaAllocationPtr   m_allocation;
+	VmaAllocationInfo  m_allocationInfo = {};
+	VkFormat           m_vkFormat = VK_FORMAT_UNDEFINED;
+	VkImageAspectFlags m_imageAspect = InvalidValue<VkImageAspectFlags>();
 };
 
 namespace internal
@@ -281,15 +280,14 @@ namespace internal
 	class ImageResourceView final
 	{
 	public:
-		ImageResourceView(VkImageViewPtr vkImageView, VkImageLayout layout)
-			: mImageView(vkImageView), mImageLayout(layout) {}
+		ImageResourceView(VkImageViewPtr vkImageView, VkImageLayout layout) : m_imageView(vkImageView), m_imageLayout(layout) {}
 
-		VkImageViewPtr GetVkImageView() const { return mImageView; }
-		VkImageLayout  GetVkImageLayout() const { return mImageLayout; }
+		VkImageViewPtr GetVkImageView() const { return m_imageView; }
+		VkImageLayout  GetVkImageLayout() const { return m_imageLayout; }
 
 	private:
-		VkImageViewPtr mImageView;
-		VkImageLayout  mImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		VkImageViewPtr m_imageView;
+		VkImageLayout  m_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	};
 } // namespace internal
 
@@ -297,8 +295,8 @@ namespace internal
 class ImageView
 {
 public:
-	ImageView() {}
-	virtual ~ImageView() {}
+	ImageView() = default;
+	virtual ~ImageView() = default;
 
 	const internal::ImageResourceView* GetResourceView() const { return m_resourceView.get(); }
 
@@ -348,7 +346,7 @@ private:
 
 struct DepthStencilViewCreateInfo final
 {
-	Image* pImage = nullptr;
+	Image*            pImage = nullptr;
 	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
 	Format            format = Format::Undefined;
 	uint32_t          mipLevel = 0;
@@ -429,7 +427,7 @@ struct SampledImageViewCreateInfo
 	Image*                  pImage = nullptr;
 	ImageViewType           imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
 	Format                  format = Format::Undefined;
-	SampleCount             sampleCount = SAMPLE_COUNT_1;
+	SampleCount             sampleCount = SampleCount::Sample1;
 	uint32_t                mipLevel = 0;
 	uint32_t                mipLevelCount = 0;
 	uint32_t                arrayLayer = 0;
@@ -536,7 +534,7 @@ struct TextureCreateInfo final
 	uint32_t                height = 0;
 	uint32_t                depth = 0;
 	Format                  imageFormat = Format::Undefined;
-	SampleCount             sampleCount = SAMPLE_COUNT_1;
+	SampleCount             sampleCount = SampleCount::Sample1;
 	uint32_t                mipLevelCount = 1;
 	uint32_t                arrayLayerCount = 1;
 	ImageUsageFlags         usageFlags = ImageUsageFlags::SampledImage();
@@ -629,7 +627,7 @@ struct RenderPassCreateInfo2 final
 	uint32_t               height = 0;
 	uint32_t               arrayLayerCount = 1;
 	MultiViewState         multiViewState = {};
-	SampleCount            sampleCount = SAMPLE_COUNT_1;
+	SampleCount            sampleCount = SampleCount::Sample1;
 	uint32_t               renderTargetCount = 0;
 	Format                 renderTargetFormats[MaxRenderTargets] = {};
 	Format                 depthStencilFormat = Format::Undefined;
@@ -721,7 +719,7 @@ namespace internal
 		// Data unique to RenderPassCreateInfo2
 		struct
 		{
-			SampleCount     sampleCount = SAMPLE_COUNT_1;
+			SampleCount     sampleCount = SampleCount::Sample1;
 			Format          renderTargetFormats[MaxRenderTargets] = {};
 			Format          depthStencilFormat = Format::Undefined;
 			ImageUsageFlags renderTargetUsageFlags[MaxRenderTargets] = {};
@@ -845,7 +843,7 @@ struct DrawPassCreateInfo
 {
 	uint32_t               width = 0;
 	uint32_t               height = 0;
-	SampleCount            sampleCount = SAMPLE_COUNT_1;
+	SampleCount            sampleCount = SampleCount::Sample1;
 	uint32_t               renderTargetCount = 0;
 	Format                 renderTargetFormats[MaxRenderTargets] = {};
 	Format                 depthStencilFormat = Format::Undefined;
@@ -908,7 +906,7 @@ namespace internal
 		// Data unique to DrawPassCreateInfo1
 		struct
 		{
-			SampleCount      sampleCount = SAMPLE_COUNT_1;
+			SampleCount      sampleCount = SampleCount::Sample1;
 			Format           renderTargetFormats[MaxRenderTargets] = {};
 			Format           depthStencilFormat = Format::Undefined;
 			ImageUsageFlags  renderTargetUsageFlags[MaxRenderTargets] = {};
@@ -1593,7 +1591,7 @@ struct RasterState
 	float             depthBiasClamp = 0.0f;
 	float             depthBiasSlopeFactor = 0.0f;
 	bool              depthClipEnable = false;
-	SampleCount rasterizationSamples = SAMPLE_COUNT_1;
+	SampleCount rasterizationSamples = SampleCount::Sample1;
 };
 
 struct MultisampleState

@@ -448,12 +448,7 @@ void Buffer::destroyApiObjects()
 
 #pragma region Image
 
-ImageCreateInfo ImageCreateInfo::SampledImage2D(
-	uint32_t    width,
-	uint32_t    height,
-	Format      format,
-	SampleCount sampleCount,
-	MemoryUsage memoryUsage)
+ImageCreateInfo ImageCreateInfo::SampledImage2D(uint32_t width, uint32_t height, Format format, SampleCount sampleCount, MemoryUsage memoryUsage)
 {
 	ImageCreateInfo ci = {};
 	ci.type = ImageType::Image2D;
@@ -467,15 +462,11 @@ ImageCreateInfo ImageCreateInfo::SampledImage2D(
 	ci.usageFlags.bits.sampled = true;
 	ci.memoryUsage = memoryUsage;
 	ci.initialState = ResourceState::ShaderResource;
-	ci.pApiObject = nullptr;
+	ci.ApiObject = nullptr;
 	return ci;
 }
 
-ImageCreateInfo ImageCreateInfo::DepthStencilTarget(
-	uint32_t    width,
-	uint32_t    height,
-	Format      format,
-	SampleCount sampleCount)
+ImageCreateInfo ImageCreateInfo::DepthStencilTarget(uint32_t width, uint32_t height, Format format, SampleCount sampleCount)
 {
 	ImageCreateInfo ci = {};
 	ci.type = ImageType::Image2D;
@@ -490,15 +481,11 @@ ImageCreateInfo ImageCreateInfo::DepthStencilTarget(
 	ci.usageFlags.bits.depthStencilAttachment = true;
 	ci.memoryUsage = MemoryUsage::GPUOnly;
 	ci.initialState = ResourceState::DepthStencilWrite;
-	ci.pApiObject = nullptr;
+	ci.ApiObject = nullptr;
 	return ci;
 }
 
-ImageCreateInfo ImageCreateInfo::RenderTarget2D(
-	uint32_t    width,
-	uint32_t    height,
-	Format      format,
-	SampleCount sampleCount)
+ImageCreateInfo ImageCreateInfo::RenderTarget2D(uint32_t width, uint32_t height, Format format, SampleCount sampleCount)
 {
 	ImageCreateInfo ci = {};
 	ci.type = ImageType::Image2D;
@@ -512,22 +499,17 @@ ImageCreateInfo ImageCreateInfo::RenderTarget2D(
 	ci.usageFlags.bits.sampled = true;
 	ci.usageFlags.bits.colorAttachment = true;
 	ci.memoryUsage = MemoryUsage::GPUOnly;
-	ci.pApiObject = nullptr;
+	ci.ApiObject = nullptr;
 	return ci;
 }
 
-Result Image::MapMemory(uint64_t offset, void** ppMappedAddress)
+Result Image::MapMemory(uint64_t offset, void** mappedAddress)
 {
-	if (IsNull(ppMappedAddress)) {
-		return ERROR_UNEXPECTED_NULL_ARGUMENT;
-	}
+	if (IsNull(mappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
-	VkResult vkres = vmaMapMemory(
-		GetDevice()->GetVmaAllocator(),
-		mAllocation,
-		ppMappedAddress);
+	VkResult vkres = vmaMapMemory(GetDevice()->GetVmaAllocator(), m_allocation, mappedAddress);
 	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vmaMapMemory failed: " + ToString(vkres));
+		Fatal("vmaMapMemory failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -536,27 +518,33 @@ Result Image::MapMemory(uint64_t offset, void** ppMappedAddress)
 
 void Image::UnmapMemory()
 {
-	vmaUnmapMemory(GetDevice()->GetVmaAllocator(), mAllocation);
+	vmaUnmapMemory(GetDevice()->GetVmaAllocator(), m_allocation);
 }
 
-Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
+Result Image::createApiObjects(const ImageCreateInfo& createInfo)
 {
-	if (IsNull(pCreateInfo.pApiObject))
+	if ((createInfo.type == ImageType::Cube) && (createInfo.arrayLayerCount != 6))
+	{
+		Fatal("arrayLayerCount must be 6 if type is ImageType::Cube");
+		return ERROR_INVALID_CREATE_ARGUMENT;
+	}
+
+	if (IsNull(createInfo.ApiObject))
 	{
 		// Create image
 		{
 			VkExtent3D extent = {};
-			extent.width = pCreateInfo.width;
-			extent.height = pCreateInfo.height;
-			extent.depth = pCreateInfo.depth;
+			extent.width = createInfo.width;
+			extent.height = createInfo.height;
+			extent.depth = createInfo.depth;
 
 			VkImageCreateFlags createFlags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-			if (pCreateInfo.type == ImageType::Cube)
+			if (createInfo.type == ImageType::Cube)
 			{
 				createFlags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 			}
 
-			if (pCreateInfo.createFlags.bits.subsampledFormat)
+			if (createInfo.createFlags.bits.subsampledFormat)
 			{
 				createFlags |= VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
 			}
@@ -564,16 +552,16 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 
 			VkImageCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 			vkci.flags = createFlags;
-			vkci.imageType = ToVkImageType(pCreateInfo.type);
-			vkci.format = ToVkEnum(pCreateInfo.format);
+			vkci.imageType = ToVkEnum(createInfo.type);
+			vkci.format = ToVkEnum(createInfo.format);
 			vkci.extent = extent;
-			vkci.mipLevels = pCreateInfo.mipLevelCount;
-			vkci.arrayLayers = pCreateInfo.arrayLayerCount;
-			vkci.samples = ToVkSampleCount(pCreateInfo.sampleCount);
-			vkci.tiling = pCreateInfo.memoryUsage == MemoryUsage::GPUToCPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
-			vkci.usage = ToVkImageUsageFlags(pCreateInfo.usageFlags);
+			vkci.mipLevels = createInfo.mipLevelCount;
+			vkci.arrayLayers = createInfo.arrayLayerCount;
+			vkci.samples = ToVkSampleCount(createInfo.sampleCount);
+			vkci.tiling = createInfo.memoryUsage == MemoryUsage::GPUToCPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+			vkci.usage = ToVkImageUsageFlags(createInfo.usageFlags);
 			vkci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			if (pCreateInfo.concurrentMultiQueueUsage)
+			if (createInfo.concurrentMultiQueueUsage)
 			{
 				vkci.sharingMode = VK_SHARING_MODE_CONCURRENT;
 				vkci.queueFamilyIndexCount = 3;
@@ -586,30 +574,28 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 				vkci.pQueueFamilyIndices = nullptr;
 			}
 
-			VkAllocationCallbacks* pAllocator = nullptr;
-
-			VkResult vkres = vkCreateImage(GetDevice()->GetVkDevice(), &vkci, pAllocator, &mImage);
+			VkAllocationCallbacks* allocator = nullptr;
+			VkResult vkres = vkCreateImage(GetDevice()->GetVkDevice(), &vkci, allocator, &m_image);
 			if (vkres != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vkCreateImage failed: " + ToString(vkres));
+				Fatal("vkCreateImage failed: " + ToString(vkres));
 				return ERROR_API_FAILURE;
 			}
 		}
 
 		// Allocate memory
 		{
-			VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(pCreateInfo.memoryUsage);
+			VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(createInfo.memoryUsage);
 			if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
 			{
-				ASSERT_MSG(false, "unknown memory usage");
+				Fatal("unknown memory usage");
 				return ERROR_API_FAILURE;
 			}
 
 			VmaAllocationCreateFlags createFlags = 0;
 
-			if ((memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) || (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU)) {
+			if ((memoryUsage == VMA_MEMORY_USAGE_CPU_ONLY) || (memoryUsage == VMA_MEMORY_USAGE_CPU_TO_GPU))
 				createFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-			}
 
 			VmaAllocationCreateInfo vma_alloc_ci = {};
 			vma_alloc_ci.flags = createFlags;
@@ -620,40 +606,33 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 			vma_alloc_ci.pool = VK_NULL_HANDLE;
 			vma_alloc_ci.pUserData = nullptr;
 
-			VkResult vkres = vmaAllocateMemoryForImage(
-				GetDevice()->GetVmaAllocator(),
-				mImage,
-				&vma_alloc_ci,
-				&mAllocation,
-				&mAllocationInfo);
+			VkResult vkres = vmaAllocateMemoryForImage(GetDevice()->GetVmaAllocator(), m_image, &vma_alloc_ci, &m_allocation, &m_allocationInfo);
 			if (vkres != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vmaAllocateMemoryForImage failed: " + ToString(vkres));
+				Fatal("vmaAllocateMemoryForImage failed: " + ToString(vkres));
 				return ERROR_API_FAILURE;
 			}
 		}
 
 		// Bind memory
 		{
-			VkResult vkres = vmaBindImageMemory(
-				GetDevice()->GetVmaAllocator(),
-				mAllocation,
-				mImage);
-			if (vkres != VK_SUCCESS) {
-				ASSERT_MSG(false, "vmaBindImageMemory failed: " + ToString(vkres));
+			VkResult vkres = vmaBindImageMemory(GetDevice()->GetVmaAllocator(), m_allocation, m_image);
+			if (vkres != VK_SUCCESS)
+			{
+				Fatal("vmaBindImageMemory failed: " + ToString(vkres));
 				return ERROR_API_FAILURE;
 			}
 		}
 	}
 	else
 	{
-		mImage = reinterpret_cast<VkImage>(pCreateInfo.pApiObject);
+		m_image = reinterpret_cast<VkImage>(createInfo.ApiObject);
 	}
 
-	mVkFormat = ToVkEnum(pCreateInfo.format);
-	mImageAspect = DetermineAspectMask(mVkFormat);
+	m_vkFormat = ToVkEnum(createInfo.format);
+	m_imageAspect = DetermineAspectMask(m_vkFormat);
 
-	if ((pCreateInfo.initialState != ResourceState::Undefined) && IsNull(pCreateInfo.pApiObject))
+	if ((createInfo.initialState != ResourceState::Undefined) && IsNull(createInfo.ApiObject))
 	{
 		QueuePtr grfxQueue = GetDevice()->GetAnyAvailableQueue();
 		if (!grfxQueue)
@@ -663,35 +642,30 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 
 		// Determine pipeline stage and layout from the initial state
 		VkPipelineStageFlags pipelineStage = 0;
-		VkAccessFlags        accessMask = 0;
-		VkImageLayout        layout = VK_IMAGE_LAYOUT_UNDEFINED;
-		Result               ppxres = ToVkBarrierDst(
-			pCreateInfo.initialState,
-			grfxQueue->GetCommandType(),
-			GetDevice()->GetDeviceFeatures(),
-			pipelineStage,
-			accessMask,
-			layout);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "couldn't determine pipeline stage and layout from initial state");
+		VkAccessFlags accessMask = 0;
+		VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		Result ppxres = ToVkBarrierDst(createInfo.initialState, grfxQueue->GetCommandType(), GetDevice()->GetDeviceFeatures(), pipelineStage, accessMask, layout);
+		if (Failed(ppxres))
+		{
+			Fatal("couldn't determine pipeline stage and layout from initial state");
 			return ppxres;
 		}
 
 		Queue* pQueue = grfxQueue.Get();
 
 		VkResult vkres = pQueue->TransitionImageLayout(
-			mImage,                       // image
-			mImageAspect,                 // aspectMask
-			0,                            // baseMipLevel
-			pCreateInfo.mipLevelCount,   // levelCount
-			0,                            // baseArrayLayer
-			pCreateInfo.arrayLayerCount, // layerCount
-			VK_IMAGE_LAYOUT_UNDEFINED,    // oldLayout
-			layout,                       // newLayout
-			pipelineStage);               // newPipelineStage)
+			m_image,                    // image
+			m_imageAspect,              // aspectMask
+			0,                          // baseMipLevel
+			createInfo.mipLevelCount,   // levelCount
+			0,                          // baseArrayLayer
+			createInfo.arrayLayerCount, // layerCount
+			VK_IMAGE_LAYOUT_UNDEFINED,  // oldLayout
+			layout,                     // newLayout
+			pipelineStage);             // newPipelineStage)
 		if (vkres != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vk::Queue::TransitionImageLayout failed: " + ToString(vkres));
+			Fatal("vk::Queue::TransitionImageLayout failed: " + ToString(vkres));
 			return ERROR_API_FAILURE;
 		}
 	}
@@ -702,38 +676,20 @@ Result Image::createApiObjects(const ImageCreateInfo& pCreateInfo)
 void Image::destroyApiObjects()
 {
 	// Don't destroy image unless we created it
-	if (!IsNull(m_createInfo.pApiObject))
+	if (!IsNull(m_createInfo.ApiObject)) return;
+
+	if (m_allocation)
 	{
-		return;
+		vmaFreeMemory(GetDevice()->GetVmaAllocator(), m_allocation);
+		m_allocation.Reset();
+		m_allocationInfo = {};
 	}
 
-	if (mAllocation)
+	if (m_image)
 	{
-		vmaFreeMemory(GetDevice()->GetVmaAllocator(), mAllocation);
-		mAllocation.Reset();
-
-		mAllocationInfo = {};
+		vkDestroyImage(GetDevice()->GetVkDevice(), m_image, nullptr);
+		m_image.Reset();
 	}
-
-	if (mImage)
-	{
-		vkDestroyImage(GetDevice()->GetVkDevice(), mImage, nullptr);
-		mImage.Reset();
-	}
-}
-
-Result Image::create(const ImageCreateInfo& pCreateInfo)
-{
-	if ((pCreateInfo.type == ImageType::Cube) && (pCreateInfo.arrayLayerCount != 6))
-	{
-		ASSERT_MSG(false, "arrayLayerCount must be 6 if type is ImageType::Cube");
-		return ERROR_INVALID_CREATE_ARGUMENT;
-	}
-
-	Result ppxres = DeviceObject<ImageCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) return ppxres;
-
-	return SUCCESS;
 }
 
 ImageViewType Image::GuessImageViewType(bool isCube) const
@@ -750,7 +706,7 @@ ImageViewType Image::GuessImageViewType(bool isCube) const
 		default: break;
 		case ImageType::Image1D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_1D_ARRAY : IMAGE_VIEW_TYPE_1D; break;
 		case ImageType::Image2D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_2D_ARRAY : IMAGE_VIEW_TYPE_2D; break;
-		case ImageType::Cube: return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
+		case ImageType::Cube:    return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
 		}
 	}
 
@@ -1158,7 +1114,7 @@ Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
 		ci.initialState = pCreateInfo.initialState;
 		ci.RTVClearValue = pCreateInfo.RTVClearValue;
 		ci.DSVClearValue = pCreateInfo.DSVClearValue;
-		ci.pApiObject = nullptr;
+		ci.ApiObject = nullptr;
 		ci.ownership = pCreateInfo.ownership;
 		ci.concurrentMultiQueueUsage = pCreateInfo.concurrentMultiQueueUsage;
 		ci.createFlags = pCreateInfo.imageCreateFlags;
@@ -3372,7 +3328,8 @@ namespace internal {
 
 		// Supported shading rates map to themselves.
 		for (const auto& rate : capabilities.vrs.supportedRates) {
-			if ((rate.sampleCountMask & sampleCount) != 0) {
+			if ((rate.sampleCountMask & (uint32_t)sampleCount) != 0)
+			{
 				uint32_t encoded = rawEncode(rate.fragmentSize.width, rate.fragmentSize.height);
 				mMapRateToSupported[encoded] = encoded;
 			}
