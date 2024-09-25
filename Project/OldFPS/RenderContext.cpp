@@ -4,6 +4,31 @@
 #include "RenderContext.h"
 #include "EngineWindow.h"
 
+
+#if defined(_MSC_VER)
+#	if defined(_DEBUG)
+#		pragma comment( lib, "glslang-default-resource-limitsd.lib" )
+//#		pragma comment( lib, "SPVRemapperd.lib" )
+//#		pragma comment( lib, "MachineIndependentd.lib" )
+//#		pragma comment( lib, "OSDependentd.lib" )
+//#		pragma comment( lib, "SPIRVd.lib" )
+#		pragma comment( lib, "glslangd.lib" )
+#		pragma comment( lib, "SPIRV-Tools-optd.lib" )
+#		pragma comment( lib, "SPIRV-Toolsd.lib" )
+//#		pragma comment( lib, "GenericCodeGend.lib" )
+#	else
+#		pragma comment( lib, "glslang-default-resource-limits.lib" )
+//#		pragma comment( lib, "SPVRemapper.lib" )
+//#		pragma comment( lib, "MachineIndependent.lib" )
+//#		pragma comment( lib, "OSDependent.lib" )
+//#		pragma comment( lib, "SPIRV.lib" )
+#		pragma comment( lib, "glslang.lib" )
+#		pragma comment( lib, "SPIRV-Tools-opt.lib" )
+#		pragma comment( lib, "SPIRV-Tools.lib" )
+//#		pragma comment( lib, "GenericCodeGen.lib" )
+#	endif
+#endif
+
 namespace
 {
 	VulkanInstance2 Instance;

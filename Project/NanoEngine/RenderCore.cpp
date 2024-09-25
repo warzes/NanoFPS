@@ -1008,12 +1008,12 @@ VkBorderColor ToVkEnum(BorderColor value)
 {
 	switch (value) {
 	default: break;
-	case BorderColor::FloatTransparentBlack: return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-	case BorderColor::IntTransparentBlack:   return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
-	case BorderColor::FloatOpaqueBlack:      return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-	case BorderColor::IntOpaqueBlack:        return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	case BorderColor::FloatOpaqueWhite:      return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	case BorderColor::IntOpaqueWhite:        return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+	case decltype(value)::FloatTransparentBlack: return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+	case decltype(value)::IntTransparentBlack:   return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+	case decltype(value)::FloatOpaqueBlack:      return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+	case decltype(value)::IntOpaqueBlack:        return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	case decltype(value)::FloatOpaqueWhite:      return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	case decltype(value)::IntOpaqueWhite:        return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
 	}
 	return InvalidValue<VkBorderColor>();
 }
@@ -1081,14 +1081,14 @@ VkCompareOp ToVkEnum(CompareOp value)
 {
 	switch (value) {
 	default: break;
-	case CompareOp::Never:          return VK_COMPARE_OP_NEVER;
-	case CompareOp::Less:           return VK_COMPARE_OP_LESS;
-	case CompareOp::Equal:          return VK_COMPARE_OP_EQUAL;
-	case CompareOp::LessOrEqual:    return VK_COMPARE_OP_LESS_OR_EQUAL;
-	case CompareOp::Greater:        return VK_COMPARE_OP_GREATER;
-	case CompareOp::NotEqual:       return VK_COMPARE_OP_NOT_EQUAL;
-	case CompareOp::GreaterOrEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
-	case CompareOp::Always:         return VK_COMPARE_OP_ALWAYS;
+	case decltype(value)::Never:          return VK_COMPARE_OP_NEVER;
+	case decltype(value)::Less:           return VK_COMPARE_OP_LESS;
+	case decltype(value)::Equal:          return VK_COMPARE_OP_EQUAL;
+	case decltype(value)::LessOrEqual:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+	case decltype(value)::Greater:        return VK_COMPARE_OP_GREATER;
+	case decltype(value)::NotEqual:       return VK_COMPARE_OP_NOT_EQUAL;
+	case decltype(value)::GreaterOrEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+	case decltype(value)::Always:         return VK_COMPARE_OP_ALWAYS;
 	}
 	return InvalidValue<VkCompareOp>();
 }
@@ -1166,8 +1166,8 @@ VkFilter ToVkEnum(Filter value)
 {
 	switch (value) {
 	default: break;
-	case Filter::Nearest: return VK_FILTER_NEAREST;
-	case Filter::Linear:  return VK_FILTER_LINEAR;
+	case decltype(value)::Nearest: return VK_FILTER_NEAREST;
+	case decltype(value)::Linear:  return VK_FILTER_LINEAR;
 	}
 	return InvalidValue<VkFilter>();
 }
@@ -1455,10 +1455,11 @@ VkSamplerAddressMode ToVkEnum(SamplerAddressMode value)
 {
 	switch (value) {
 	default: break;
-	case SamplerAddressMode::Repeat:        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	case SamplerAddressMode::MirrorRepeat:  return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	case SamplerAddressMode::ClampToEdge:   return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	case SamplerAddressMode::ClampToBorder: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	case decltype(value)::Repeat:            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	case decltype(value)::MirrorRepeat:      return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	case decltype(value)::ClampToEdge:       return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	case decltype(value)::ClampToBorder:     return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	case decltype(value)::MirrorClampToEdge: return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 	}
 	return InvalidValue<VkSamplerAddressMode>();
 }
@@ -1467,10 +1468,22 @@ VkSamplerMipmapMode ToVkEnum(SamplerMipmapMode value)
 {
 	switch (value) {
 	default: break;
-	case SamplerMipmapMode::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-	case SamplerMipmapMode::Linear:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	case decltype(value)::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	case decltype(value)::Linear:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	}
 	return InvalidValue<VkSamplerMipmapMode>();
+}
+
+VkSamplerReductionMode vkr::ToVkEnum(SamplerReductionMode value)
+{
+	switch (value) {
+	default: break;
+	case decltype(value)::Standard:   return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+	case decltype(value)::Comparison: return VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
+	case decltype(value)::Minimum:    return VK_SAMPLER_REDUCTION_MODE_MIN;
+	case decltype(value)::Maximum:    return VK_SAMPLER_REDUCTION_MODE_MAX;
+	}
+	return InvalidValue<VkSamplerReductionMode>();
 }
 
 VkSampleCountFlagBits ToVkSampleCount(SampleCount value)

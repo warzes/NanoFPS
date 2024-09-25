@@ -623,12 +623,21 @@ enum class SamplerAddressMode : uint8_t
 	MirrorRepeat,
 	ClampToEdge,
 	ClampToBorder,
+	MirrorClampToEdge
 };
 
 enum class SamplerMipmapMode : uint8_t
 {
 	Nearest,
 	Linear
+};
+
+enum class SamplerReductionMode : uint8_t
+{
+	Standard,
+	Comparison,
+	Minimum,
+	Maximum
 };
 
 enum SampleCount
@@ -1669,6 +1678,7 @@ VkPrimitiveTopology           ToVkPrimitiveTopology(PrimitiveTopology value);
 VkQueryType                   ToVkQueryType(QueryType value);
 VkSamplerAddressMode          ToVkEnum(SamplerAddressMode value);
 VkSamplerMipmapMode           ToVkEnum(SamplerMipmapMode value);
+VkSamplerReductionMode        ToVkEnum(SamplerReductionMode value);
 VkSampleCountFlagBits         ToVkSampleCount(SampleCount value);
 VkShaderStageFlags            ToVkShaderStageFlags(const ShaderStageFlags& value);
 VkStencilOp                   ToVkStencilOp(StencilOp value);

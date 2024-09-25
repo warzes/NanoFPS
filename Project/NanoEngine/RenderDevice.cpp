@@ -1311,22 +1311,6 @@ std::optional<std::filesystem::path> RenderDevice::getShaderPathSuffix(const std
 	return (std::filesystem::path("spv") / baseName).concat(".spv");
 }
 
-//===================================================================
-// OLD
-//===================================================================
-
-VulkanFencePtr RenderDevice::CreateFence(const FenceCreateInfo& createInfo)
-{
-	VulkanFencePtr res = std::make_shared<VulkanFence>(*this, createInfo);
-	return res->IsValid() ? res : nullptr;
-}
-
-VulkanSemaphorePtr RenderDevice::CreateSemaphore(const SemaphoreCreateInfo& createInfo)
-{
-	VulkanSemaphorePtr res = std::make_shared<VulkanSemaphore>(*this, createInfo);
-	return res->IsValid() ? res : nullptr;
-}
-
 #pragma endregion
 
 } // namespace vkr

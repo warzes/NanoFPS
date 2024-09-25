@@ -149,18 +149,6 @@ public:
 	Result AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet);
 	void   FreeDescriptorSet(const DescriptorSet* pSet);
 
-	//===================================================================
-	// OLD
-	//===================================================================
-
-	VulkanFencePtr CreateFence(const FenceCreateInfo& createInfo);
-	VulkanSemaphorePtr CreateSemaphore(const SemaphoreCreateInfo& createInfo);
-
-	VulkanCommandPoolPtr CreateCommandPool(const CommandPoolCreateInfo& createInfo) { return {}; }
-
-	bool AllocateCommandBuffer(VulkanCommandPoolPtr pool, VulkanCommandBufferPtr& commandBuffer, uint32_t resourceDescriptorCount = DefaultResourceDescriptorCount, uint32_t samplerDescriptorCount = DefaultSampleDescriptorCount) { return true; }
-	void FreeCommandBuffer(VulkanCommandBufferPtr& commandBuffer) {}
-
 private:
 	Result allocateObject(Buffer** ppObject);
 	Result allocateObject(CommandBuffer** ppObject);
