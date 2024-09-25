@@ -85,6 +85,12 @@
     <ClCompile Include="027_Mipmap.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -169,6 +175,12 @@
     </ClInclude>
     <ClInclude Include="027_Mipmap.h">
       <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
+      <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

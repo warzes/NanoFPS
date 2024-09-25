@@ -1,5 +1,7 @@
 #pragma 
 
+#include "World.h"
+
 namespace game
 {
 	constexpr auto NumMaxEntities = 512u;
@@ -79,6 +81,9 @@ public:
 	void KeyUp(KeyCode key) final;
 
 private:
+	World m_world;
+
+private:
 	bool setupDescriptors();
 	bool setupEntities();
 	bool setupPipelines();
@@ -98,7 +103,7 @@ private:
 	ArcballCamera m_arcballCamera;
 	PerspCamera* m_currentCamera;
 	std::set<KeyCode> m_pressedKeys;
-	game::Player m_player;
+	game::Player m_oldPlayer;
 
 	struct PerFrame
 	{

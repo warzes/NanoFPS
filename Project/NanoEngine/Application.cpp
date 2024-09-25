@@ -172,6 +172,11 @@ bool EngineApplication::IsWindowMaximized() const
 	return m_window.IsMaximized();
 }
 
+float EngineApplication::GetDeltaTime() const
+{
+	return 0.001f; // TODO: исправить
+}
+
 void EngineApplication::resizeCallback(uint32_t width, uint32_t height)
 {
 	m_render.resize();

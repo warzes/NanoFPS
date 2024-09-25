@@ -83,6 +83,8 @@ public:
 	bool IsWindowIconified() const;
 	bool IsWindowMaximized() const;
 
+	float GetDeltaTime() const;
+
 private:
 	bool setup();
 

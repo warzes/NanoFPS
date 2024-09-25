@@ -356,9 +356,7 @@ CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, Vk
 		return COMPILE_ERROR_PREPROCESS_FAILED;
 	}
 
-	//
 	// Compile
-	//
 	if (!glslang_shader_parse(shader, &input))
 	{
 		std::stringstream ss;
@@ -383,9 +381,7 @@ CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, Vk
 		return COMPILE_ERROR_COMPILE_FAILED;
 	}
 
-	//
 	// Link
-	//
 	ScopedProgram program = {};
 	{
 		glslang_program_t* p_program = glslang_program_create();
@@ -438,9 +434,7 @@ CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, Vk
 		return COMPILE_ERROR_MAP_IO_FAILED;
 	}
 
-	//
 	// Get SPIR-V
-	//
 	if (!IsNull(pSPIRV))
 	{
 		glslang_program_SPIRV_generate(program, input.stage);
@@ -464,9 +458,7 @@ CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, Vk
 		*pSPIRV = std::vector<uint32_t>(p_spirv, p_spirv + size);
 	}
 
-	//
 	// Finish
-	//
 	glslang_finalize_process();
 
 	return COMPILE_SUCCESS;
@@ -479,14 +471,15 @@ std::vector<char> RenderDevice::LoadShader(const std::filesystem::path& baseDir,
 	auto suffix = getShaderPathSuffix(baseName);
 	if (!suffix.has_value())
 	{
-		ASSERT_MSG(false, "unsupported API");
+		Fatal("unsupported API");
 		return {};
 	}
 
 	const auto filePath = baseDir / suffix.value();
 	auto       bytecode = LoadFile(filePath);
-	if (!bytecode.has_value()) {
-		ASSERT_MSG(false, "could not load file: " + filePath.string());
+	if (!bytecode.has_value())
+	{
+		Fatal("could not load file: " + filePath.string());
 		return {};
 	}
 

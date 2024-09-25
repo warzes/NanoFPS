@@ -64,6 +64,9 @@ bool GameApplication::Setup()
 {
 	auto& device = GetRenderDevice();
 
+	WorldCreateInfo worldCI = {};
+	if (!m_world.Setup(this, worldCI)) return false;
+
 	if (!setupCamera()) return false;
 	if (!setupDescriptors()) return false;
 	if (!setupEntities()) return false;
@@ -83,14 +86,16 @@ bool GameApplication::Setup()
 
 void GameApplication::Shutdown()
 {
+	m_world.Shutdown();
 	mPerFrame.clear();
-
+	// TODO: очистка
 }
 
 void GameApplication::Update()
 {
 	updateLight();
 	processInput();
+	m_world.Update(GetDeltaTime());
 }
 
 void GameApplication::Render()
@@ -189,25 +194,25 @@ void GameApplication::Render()
 						ImGui::Columns(2);
 						ImGui::Text("Person location");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_player.GetLocation()[0], m_player.GetLocation()[1], m_player.GetLocation()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_oldPlayer.GetLocation()[0], m_oldPlayer.GetLocation()[1], m_oldPlayer.GetLocation()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Person looking at");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_player.GetLookAt()[0], m_player.GetLookAt()[1], m_player.GetLookAt()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_oldPlayer.GetLookAt()[0], m_oldPlayer.GetLookAt()[1], m_oldPlayer.GetLookAt()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Azimuth");
 						ImGui::NextColumn();
-						ImGui::Text("%.4f", m_player.GetAzimuth());
+						ImGui::Text("%.4f", m_oldPlayer.GetAzimuth());
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Altitude");
 						ImGui::NextColumn();
-						ImGui::Text("%.4f", m_player.GetAltitude());
+						ImGui::Text("%.4f", m_oldPlayer.GetAltitude());
 						ImGui::NextColumn();
 					}
 
@@ -235,7 +240,7 @@ void GameApplication::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, Mo
 	float2 deltaPos = prevPos - curPos;
 	float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
 	float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
-	m_player.Turn(-deltaAzimuth, deltaAltitude);
+	m_oldPlayer.Turn(-deltaAzimuth, deltaAltitude);
 	updateCamera(m_currentCamera);
 }
 
@@ -304,7 +309,7 @@ bool GameApplication::setupCamera()
 		mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
 	}
 
-	m_player.Setup();
+	m_oldPlayer.Setup();
 	m_currentCamera = &m_arcballCamera;
 	updateCamera(&m_perspCamera);
 	updateCamera(&m_arcballCamera);
@@ -611,10 +616,10 @@ bool GameApplication::setupPerFrameData()
 void GameApplication::updateCamera(PerspCamera* camera)
 {
 	float3 cameraPosition(0, 0, 0);
-	if (camera == &m_perspCamera) cameraPosition = m_player.GetLocation();
-	else cameraPosition = m_player.GetLocation() + float3(0, 1, -5);
+	if (camera == &m_perspCamera) cameraPosition = m_oldPlayer.GetLocation();
+	else cameraPosition = m_oldPlayer.GetLocation() + float3(0, 1, -5);
 
-	camera->LookAt(cameraPosition, m_player.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
+	camera->LookAt(cameraPosition, m_oldPlayer.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
 	camera->SetPerspective(60.f, GetWindowAspect());
 }
 
@@ -670,19 +675,19 @@ void GameApplication::processInput()
 	}
 
 	if (m_pressedKeys.count(KEY_W) > 0) {
-		m_player.Move(game::Player::MovementDirection::FORWARD, m_player.GetRateOfMove());
+		m_oldPlayer.Move(game::Player::MovementDirection::FORWARD, m_oldPlayer.GetRateOfMove());
 	}
 
 	if (m_pressedKeys.count(KEY_A) > 0) {
-		m_player.Move(game::Player::MovementDirection::LEFT, m_player.GetRateOfMove());
+		m_oldPlayer.Move(game::Player::MovementDirection::LEFT, m_oldPlayer.GetRateOfMove());
 	}
 
 	if (m_pressedKeys.count(KEY_S) > 0) {
-		m_player.Move(game::Player::MovementDirection::BACKWARD, m_player.GetRateOfMove());
+		m_oldPlayer.Move(game::Player::MovementDirection::BACKWARD, m_oldPlayer.GetRateOfMove());
 	}
 
 	if (m_pressedKeys.count(KEY_D) > 0) {
-		m_player.Move(game::Player::MovementDirection::RIGHT, m_player.GetRateOfMove());
+		m_oldPlayer.Move(game::Player::MovementDirection::RIGHT, m_oldPlayer.GetRateOfMove());
 	}
 
 	if (m_pressedKeys.count(KEY_SPACE) > 0) {
@@ -699,19 +704,19 @@ void GameApplication::processInput()
 	}
 
 	if (m_pressedKeys.count(KEY_LEFT) > 0) {
-		m_player.Turn(-m_player.GetRateOfTurn(), 0);
+		m_oldPlayer.Turn(-m_oldPlayer.GetRateOfTurn(), 0);
 	}
 
 	if (m_pressedKeys.count(KEY_RIGHT) > 0) {
-		m_player.Turn(m_player.GetRateOfTurn(), 0);
+		m_oldPlayer.Turn(m_oldPlayer.GetRateOfTurn(), 0);
 	}
 
 	if (m_pressedKeys.count(KEY_UP) > 0) {
-		m_player.Turn(0, -m_player.GetRateOfTurn());
+		m_oldPlayer.Turn(0, -m_oldPlayer.GetRateOfTurn());
 	}
 
 	if (m_pressedKeys.count(KEY_DOWN) > 0) {
-		m_player.Turn(0, m_player.GetRateOfTurn());
+		m_oldPlayer.Turn(0, m_oldPlayer.GetRateOfTurn());
 	}
 
 	updateCamera(m_currentCamera);

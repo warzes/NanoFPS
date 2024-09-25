@@ -51,9 +51,10 @@ public:
 	[[nodiscard]] QueuePtr GetComputeQueue() const;
 	[[nodiscard]] QueuePtr GetAnyAvailableQueue() const;
 
-	CompileResult CompileGLSL(const std::string& shaderSource, VkShaderStageFlagBits shaderStage, const CompilerOptions& options, std::vector<uint32_t>* pSPIRV, std::string* pErrorMsg);
+	CompileResult CompileGLSL(const std::string& shaderSource, VkShaderStageFlagBits shaderStage, const CompilerOptions& options, std::vector<uint32_t>* pSPIRV, std::string* errorMsg);
 
 	std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName);
+
 	Result CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule);
 
 	Result CreateBuffer(const BufferCreateInfo& createInfo, Buffer** ppBuffer);
