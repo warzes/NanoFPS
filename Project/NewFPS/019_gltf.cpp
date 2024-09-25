@@ -479,8 +479,8 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 		vkr::MeshCreateInfo ci;
 
 		ci.indexType = indicesTypes == cgltf_component_type_r_16u
-			? vkr::IndexType::INDEX_TYPE_UINT16
-			: vkr::IndexType::INDEX_TYPE_UINT32;
+			? vkr::IndexType::Uint16
+			: vkr::IndexType::Uint32;
 		ci.indexCount = static_cast<uint32_t>(indices.count);
 		ci.vertexCount = static_cast<uint32_t>(accessors[POSITION_INDEX]->count);
 		ci.memoryUsage = vkr::MemoryUsage::GPUOnly;

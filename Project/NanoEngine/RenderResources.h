@@ -150,19 +150,18 @@ public:
 	const BufferUsageFlags& GetUsageFlags() const { return m_createInfo.usageFlags; }
 	VkBufferPtr             GetVkBuffer() const { return m_buffer; }
 
-	Result MapMemory(uint64_t offset, void** ppMappedAddress);
+	Result MapMemory(uint64_t offset, void** mappedAddress);
 	void   UnmapMemory();
 
-	Result CopyFromSource(uint32_t dataSize, const void* pData);
-	Result CopyToDest(uint32_t dataSize, void* pData);
+	Result CopyFromSource(uint32_t dataSize, const void* srcData);
+	Result CopyToDest(uint32_t dataSize, void* destData);
 
 private:
-	Result create(const BufferCreateInfo& createInfo) final;
 	Result createApiObjects(const BufferCreateInfo& createInfo) final;
 	void destroyApiObjects() final;
 
-	VkBufferPtr m_buffer;
-	VmaAllocationPtr m_allocation;
+	VkBufferPtr       m_buffer;
+	VmaAllocationPtr  m_allocation;
 	VmaAllocationInfo m_allocationInfo = {};
 };
 
@@ -172,7 +171,7 @@ struct IndexBufferView final
 	IndexBufferView(const Buffer* pBuffer_, IndexType indexType_, uint64_t offset_ = 0, uint64_t size_ = WHOLE_SIZE) : pBuffer(pBuffer_), indexType(indexType_), offset(offset_), size(size_) {}
 
 	const Buffer* pBuffer = nullptr;
-	IndexType     indexType = INDEX_TYPE_UINT16;
+	IndexType     indexType = IndexType::Uint16;
 	uint64_t      offset = 0;
 	uint64_t      size = WHOLE_SIZE; // [D3D12 - REQUIRED] Size in bytes of view
 };
@@ -1473,14 +1472,14 @@ struct MeshVertexBufferDescription
 //! Usage Notes:
 //!   - Index and vertex data configuration needs to make sense
 //!       - If \b indexCount is 0 then \b vertexCount cannot be 0
-//!   - To create a mesh without an index buffer, \b indexType must be INDEX_TYPE_UNDEFINED
+//!   - To create a mesh without an index buffer, \b indexType must be IndexType::Undefined
 //!   - If \b vertexCount is 0 then no vertex buffers will be created
 //!       - This means vertex buffer information will be ignored
 //!   - Active elements in \b vertexBuffers cannot have an \b attributeCount of 0
 //!
 struct MeshCreateInfo
 {
-	IndexType                   indexType = INDEX_TYPE_UNDEFINED;
+	IndexType                   indexType = IndexType::Undefined;
 	uint32_t                          indexCount = 0;
 	uint32_t                          vertexCount = 0;
 	uint32_t                          vertexBufferCount = 0;

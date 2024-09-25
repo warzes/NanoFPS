@@ -1837,7 +1837,7 @@ namespace scene {
 		const cgltf_mesh* pGltfMesh)
 	{
 		if (IsNull(pGltfMesh)) {
-			return vkr::INDEX_TYPE_UNDEFINED;
+			return vkr::IndexType::Undefined;
 		}
 
 		uint32_t finalBitCount = 0;
@@ -1849,7 +1849,7 @@ namespace scene {
 			uint32_t bitCount = 0;
 			switch (format) {
 				// Bail if we don't recognize the format
-			default: return vkr::INDEX_TYPE_UNDEFINED;
+			default: return vkr::IndexType::Undefined;
 			case vkr::FORMAT_R16_UINT: bitCount = 16; break;
 			case vkr::FORMAT_R32_UINT: bitCount = 32; break;
 			}
@@ -1858,13 +1858,13 @@ namespace scene {
 		}
 
 		if (finalBitCount == 32) {
-			return vkr::INDEX_TYPE_UINT32;
+			return vkr::IndexType::Uint32;
 		}
 		else if (finalBitCount == 16) {
-			return vkr::INDEX_TYPE_UINT16;
+			return vkr::IndexType::Uint16;
 		}
 
-		return vkr::INDEX_TYPE_UNDEFINED;
+		return vkr::IndexType::Undefined;
 	}
 
 	// Calcualte a unique hash based a meshes primitive accessors
@@ -3287,7 +3287,7 @@ namespace scene {
 		for (uint32_t batchIdx = 0; batchIdx < CountU32(batchInfos); ++batchIdx) {
 			const auto& batch = batchInfos[batchIdx];
 
-			const vkr::IndexType indexType = (batch.indexFormat == vkr::FORMAT_R32_UINT) ? vkr::INDEX_TYPE_UINT32 : vkr::INDEX_TYPE_UINT16;
+			const vkr::IndexType indexType = (batch.indexFormat == vkr::FORMAT_R32_UINT) ? vkr::IndexType::Uint32 : vkr::IndexType::Uint16;
 			vkr::IndexBufferView indexBufferView = vkr::IndexBufferView(targetGpuBuffer, indexType, batch.indexDataOffset, batch.indexDataSize);
 
 			vkr::VertexBufferView positionBufferView = vkr::VertexBufferView(targetGpuBuffer, targetPositionElementSize, batch.positionDataOffset, batch.positionDataSize);

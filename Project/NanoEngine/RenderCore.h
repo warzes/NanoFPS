@@ -508,14 +508,12 @@ enum ImageViewType
 	IMAGE_VIEW_TYPE_CUBE_ARRAY = 7,
 };
 
-enum IndexType
+enum class IndexType : uint8_t
 {
-	INDEX_TYPE_UNDEFINED = 0,
-	INDEX_TYPE_UINT16 = 1,
-	INDEX_TYPE_UINT32 = 2,
-	// Vulkan: UINT8 requires VK_EXT_index_type_uint8
-	// DX12: UINT8 is not supported
-	INDEX_TYPE_UINT8 = 3,
+	Undefined,
+	Uint8,
+	Uint16,
+	Uint32,
 };
 
 enum LogicOp
@@ -538,7 +536,7 @@ enum LogicOp
 	LOGIC_OP_SET = 15,
 };
 
-enum MemoryUsage : uint8_t
+enum class MemoryUsage : uint8_t
 {
 	Unknown,
 	GPUOnly,
@@ -1026,6 +1024,20 @@ std::string ToString(Format format);
 
 struct BufferUsageFlags final
 {
+	BufferUsageFlags() : flags(0) {}
+	BufferUsageFlags(uint32_t _flags) : flags(_flags) {}
+
+	BufferUsageFlags& operator=(uint32_t rhs)
+	{
+		this->flags = rhs;
+		return *this;
+	}
+
+	operator uint32_t() const
+	{
+		return flags;
+	}
+
 	union
 	{
 		struct
@@ -1049,21 +1061,6 @@ struct BufferUsageFlags final
 		} bits;
 		uint32_t flags;
 	};
-
-	BufferUsageFlags() : flags(0) {}
-
-	BufferUsageFlags(uint32_t _flags) : flags(_flags) {}
-
-	BufferUsageFlags& operator=(uint32_t rhs)
-	{
-		this->flags = rhs;
-		return *this;
-	}
-
-	operator uint32_t() const
-	{
-		return flags;
-	}
 };
 
 struct ColorComponentFlags final
@@ -1903,7 +1900,7 @@ private:
 		TriMesh& mesh);
 
 private:
-	IndexType      mIndexType = INDEX_TYPE_UNDEFINED;
+	IndexType      mIndexType = IndexType::Undefined;
 	TriMeshAttributeDim  mTexCoordDim = TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	std::vector<uint8_t> mIndices;        // Stores both 16 and 32 bit indices
 	std::vector<float3>  mPositions;      // Vertex positions
@@ -2010,7 +2007,7 @@ private:
 		WireMesh& mesh);
 
 private:
-	IndexType      mIndexType = INDEX_TYPE_UNDEFINED;
+	IndexType      mIndexType = IndexType::Undefined;
 	std::vector<uint8_t> mIndices;        // Stores both 16 and 32 bit indices
 	std::vector<float3>  mPositions;      // Vertex positions
 	std::vector<float3>  mColors;         // Vertex colors
@@ -2055,7 +2052,7 @@ enum GeometryVertexAttributeLayout
 //!
 struct GeometryCreateInfo
 {
-	IndexType               indexType = INDEX_TYPE_UNDEFINED;
+	IndexType               indexType = IndexType::Undefined;
 	GeometryVertexAttributeLayout vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
 	uint32_t                      vertexBindingCount = 0;
 	VertexBinding           vertexBindings[MaxVertexBindings] = {};

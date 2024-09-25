@@ -554,10 +554,10 @@ std::string ToString(IndexType value)
 {
 	switch (value) {
 	default: break;
-	case INDEX_TYPE_UNDEFINED: return "INDEX_TYPE_UNDEFINED";
-	case INDEX_TYPE_UINT16: return "INDEX_TYPE_UINT16";
-	case INDEX_TYPE_UINT32: return "INDEX_TYPE_UINT32";
-	case INDEX_TYPE_UINT8: return "INDEX_TYPE_UINT8";
+	case IndexType::Undefined: return "IndexType::Undefined";
+	case IndexType::Uint16:    return "IndexType::Uint16";
+	case IndexType::Uint32:    return "IndexType::Uint32";
+	case IndexType::Uint8:     return "IndexType::Uint8";
 	}
 	return "<unknown IndexType>";
 }
@@ -566,9 +566,9 @@ uint32_t IndexTypeSize(IndexType value)
 {
 	switch (value) {
 	default: break;
-	case INDEX_TYPE_UINT16: return sizeof(uint16_t); break;
-	case INDEX_TYPE_UINT32: return sizeof(uint32_t); break;
-	case INDEX_TYPE_UINT8:  return sizeof(uint8_t);  break;
+	case IndexType::Uint16: return sizeof(uint16_t); break;
+	case IndexType::Uint32: return sizeof(uint32_t); break;
+	case IndexType::Uint8:  return sizeof(uint8_t);  break;
 	}
 	return 0;
 }
@@ -1021,21 +1021,21 @@ VkBorderColor ToVkEnum(BorderColor value)
 VkBufferUsageFlags ToVkBufferUsageFlags(const BufferUsageFlags& value)
 {
 	VkBufferUsageFlags flags = 0;
-	if (value.bits.transferSrc) flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	if (value.bits.transferDst) flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	if (value.bits.uniformTexelBuffer) flags |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-	if (value.bits.storageTexelBuffer) flags |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-	if (value.bits.uniformBuffer) flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	if (value.bits.rawStorageBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	if (value.bits.roStructuredBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	if (value.bits.rwStructuredBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-	if (value.bits.indexBuffer) flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	if (value.bits.vertexBuffer) flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	if (value.bits.indirectBuffer) flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-	if (value.bits.conditionalRendering) flags |= VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
-	if (value.bits.transformFeedbackBuffer) flags |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
+	if (value.bits.transferSrc)                    flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	if (value.bits.transferDst)                    flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	if (value.bits.uniformTexelBuffer)             flags |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+	if (value.bits.storageTexelBuffer)             flags |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+	if (value.bits.uniformBuffer)                  flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	if (value.bits.rawStorageBuffer)               flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	if (value.bits.roStructuredBuffer)             flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	if (value.bits.rwStructuredBuffer)             flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+	if (value.bits.indexBuffer)                    flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+	if (value.bits.vertexBuffer)                   flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	if (value.bits.indirectBuffer)                 flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+	if (value.bits.conditionalRendering)           flags |= VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
+	if (value.bits.transformFeedbackBuffer)        flags |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
 	if (value.bits.transformFeedbackCounterBuffer) flags |= VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
-	if (value.bits.shaderDeviceAddress) flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+	if (value.bits.shaderDeviceAddress)            flags |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
 	return flags;
 }
 
@@ -1363,9 +1363,9 @@ VkIndexType ToVkIndexType(IndexType value)
 {
 	switch (value) {
 	default: break;
-	case INDEX_TYPE_UINT16: return VK_INDEX_TYPE_UINT16; break;
-	case INDEX_TYPE_UINT32: return VK_INDEX_TYPE_UINT32; break;
-	case INDEX_TYPE_UINT8:  return VK_INDEX_TYPE_UINT8_EXT; break;
+	case IndexType::Uint16: return VK_INDEX_TYPE_UINT16; break;
+	case IndexType::Uint32: return VK_INDEX_TYPE_UINT32; break;
+	case IndexType::Uint8:  return VK_INDEX_TYPE_UINT8_EXT; break;
 	}
 	return InvalidValue<VkIndexType>();
 }
@@ -1881,7 +1881,7 @@ TriMesh::TriMesh(IndexType indexType)
 	: mIndexType(indexType)
 {
 	// TODO: #514 - Remove assert when UINT8 is supported
-	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in TriMesh");
+	ASSERT_MSG(mIndexType != IndexType::Uint8, "IndexType::Uint8 unsupported in TriMesh");
 }
 
 TriMesh::TriMesh(TriMeshAttributeDim texCoordDim)
@@ -1893,7 +1893,7 @@ TriMesh::TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim)
 	: mIndexType(indexType), mTexCoordDim(texCoordDim)
 {
 	// TODO: #514 - Remove assert when UINT8 is supported
-	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in TriMesh");
+	ASSERT_MSG(mIndexType != IndexType::Uint8, "IndexType::Uint8 unsupported in TriMesh");
 }
 
 TriMesh::~TriMesh()
@@ -1903,7 +1903,7 @@ TriMesh::~TriMesh()
 uint32_t TriMesh::GetCountTriangles() const
 {
 	uint32_t count = 0;
-	if (mIndexType != INDEX_TYPE_UNDEFINED) {
+	if (mIndexType != IndexType::Undefined) {
 		uint32_t elementSize = IndexTypeSize(mIndexType);
 		uint32_t elementCount = CountU32(mIndices) / elementSize;
 		count = elementCount / 3;
@@ -2016,7 +2016,7 @@ uint64_t TriMesh::GetDataSizeBitangents() const
 
 const uint16_t* TriMesh::GetDataIndicesU16(uint32_t index) const
 {
-	if (mIndexType != INDEX_TYPE_UINT16) {
+	if (mIndexType != IndexType::Uint16) {
 		return nullptr;
 	}
 	uint32_t count = GetCountIndices();
@@ -2030,7 +2030,7 @@ const uint16_t* TriMesh::GetDataIndicesU16(uint32_t index) const
 
 const uint32_t* TriMesh::GetDataIndicesU32(uint32_t index) const
 {
-	if (mIndexType != INDEX_TYPE_UINT32) {
+	if (mIndexType != IndexType::Uint32) {
 		return nullptr;
 	}
 	uint32_t count = GetCountIndices();
@@ -2156,10 +2156,10 @@ void TriMesh::PreallocateForTriangleCount(size_t triangleCount, bool enableColor
 
 	// Reserve for triangles
 	switch (mIndexType) {
-	case INDEX_TYPE_UINT16:
+	case IndexType::Uint16:
 		mIndices.reserve(vertexCount * sizeof(uint16_t));
 		break;
-	case INDEX_TYPE_UINT32:
+	case IndexType::Uint32:
 		mIndices.reserve(vertexCount * sizeof(uint32_t));
 		break;
 	default:
@@ -2191,13 +2191,13 @@ void TriMesh::PreallocateForTriangleCount(size_t triangleCount, bool enableColor
 
 uint32_t TriMesh::AppendTriangle(uint32_t v0, uint32_t v1, uint32_t v2)
 {
-	if (mIndexType == INDEX_TYPE_UINT16) {
+	if (mIndexType == IndexType::Uint16) {
 		mIndices.reserve(mIndices.size() + 3 * sizeof(uint16_t));
 		AppendIndexU16(static_cast<uint16_t>(v0));
 		AppendIndexU16(static_cast<uint16_t>(v1));
 		AppendIndexU16(static_cast<uint16_t>(v2));
 	}
-	else if (mIndexType == INDEX_TYPE_UINT32) {
+	else if (mIndexType == IndexType::Uint32) {
 		mIndices.reserve(mIndices.size() + 3 * sizeof(uint32_t));
 		AppendIndexU32(v0);
 		AppendIndexU32(v1);
@@ -2302,7 +2302,7 @@ uint32_t TriMesh::AppendBitangent(const float3& value)
 
 Result TriMesh::GetTriangle(uint32_t triIndex, uint32_t& v0, uint32_t& v1, uint32_t& v2) const
 {
-	if (mIndexType == INDEX_TYPE_UNDEFINED) {
+	if (mIndexType == IndexType::Undefined) {
 		return ERROR_GEOMETRY_NO_INDEX_DATA;
 	}
 
@@ -2314,14 +2314,14 @@ Result TriMesh::GetTriangle(uint32_t triIndex, uint32_t& v0, uint32_t& v1, uint3
 	const uint8_t* pData = mIndices.data();
 	uint32_t       elementSize = IndexTypeSize(mIndexType);
 
-	if (mIndexType == INDEX_TYPE_UINT16) {
+	if (mIndexType == IndexType::Uint16) {
 		size_t          offset = 3 * triIndex * elementSize;
 		const uint16_t* pIndexData = reinterpret_cast<const uint16_t*>(pData + offset);
 		v0 = static_cast<uint32_t>(pIndexData[0]);
 		v1 = static_cast<uint32_t>(pIndexData[1]);
 		v2 = static_cast<uint32_t>(pIndexData[2]);
 	}
-	else if (mIndexType == INDEX_TYPE_UINT32) {
+	else if (mIndexType == IndexType::Uint32) {
 		size_t          offset = 3 * triIndex * elementSize;
 		const uint32_t* pIndexData = reinterpret_cast<const uint32_t*>(pData + offset);
 		v0 = static_cast<uint32_t>(pIndexData[0]);
@@ -2377,7 +2377,7 @@ void TriMesh::AppendIndexAndVertexData(
 	const TriMeshOptions& options,
 	TriMesh& mesh)
 {
-	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 
 	// Verify expected vertex count
 	size_t vertexCount = (vertexData.size() * sizeof(float)) / sizeof(TriMeshVertexData);
@@ -2386,7 +2386,7 @@ void TriMesh::AppendIndexAndVertexData(
 	// Get base pointer to vertex data
 	const char* pData = reinterpret_cast<const char*>(vertexData.data());
 
-	if (indexType != INDEX_TYPE_UNDEFINED) {
+	if (indexType != IndexType::Undefined) {
 		for (size_t i = 0; i < vertexCount; ++i) {
 			const TriMeshVertexData* pVertexData = reinterpret_cast<const TriMeshVertexData*>(pData + (i * sizeof(TriMeshVertexData)));
 
@@ -2570,7 +2570,7 @@ TriMesh TriMesh::CreatePlane(TriMeshPlane plane, const float2& size, uint32_t us
 		}
 	}
 
-	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType     indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	TriMesh             mesh = TriMesh(indexType, texCoordDim);
 
@@ -2597,7 +2597,7 @@ TriMesh TriMesh::CreatePlane(TriMeshPlane plane, const float2& size, uint32_t us
 	};
 	// clang-format on
 
-	IndexType     indexType   = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType     indexType   = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	TriMesh             mesh        = TriMesh(indexType, texCoordDim);
 
@@ -2668,7 +2668,7 @@ TriMesh TriMesh::CreateCube(const float3& size, const TriMeshOptions& options)
 	};
 	// clang-format on
 
-	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType     indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	TriMesh             mesh = TriMesh(indexType, texCoordDim);
 
@@ -2746,7 +2746,7 @@ TriMesh TriMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, cons
 		}
 	}
 
-	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType     indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	TriMesh             mesh = TriMesh(indexType, texCoordDim);
 
@@ -2767,7 +2767,7 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 	double fnStartTime = timer.SecondsSinceStart();*/
 
 	// Determine index type and tex coord dim
-	IndexType     indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType     indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 
 	// Create new mesh
@@ -2992,7 +2992,7 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 				pTriMesh->AppendBitangent(-bitangent);
 			}
 
-			if (indexType != INDEX_TYPE_UNDEFINED) {
+			if (indexType != IndexType::Undefined) {
 				if (options.mInvertWinding) {
 					pTriMesh->AppendTriangle(triVtx0, triVtx2, triVtx1);
 				}
@@ -3042,7 +3042,7 @@ WireMesh::WireMesh(IndexType indexType)
 	: mIndexType(indexType)
 {
 	// TODO: #514 - Remove assert when UINT8 is supported
-	ASSERT_MSG(mIndexType != INDEX_TYPE_UINT8, "INDEX_TYPE_UINT8 unsupported in WireMesh");
+	ASSERT_MSG(mIndexType != IndexType::Uint8, "IndexType::Uint8 unsupported in WireMesh");
 }
 
 WireMesh::~WireMesh()
@@ -3052,7 +3052,7 @@ WireMesh::~WireMesh()
 uint32_t WireMesh::GetCountEdges() const
 {
 	uint32_t count = 0;
-	if (mIndexType != INDEX_TYPE_UNDEFINED) {
+	if (mIndexType != IndexType::Undefined) {
 		uint32_t elementSize = IndexTypeSize(mIndexType);
 		uint32_t elementCount = CountU32(mIndices) / elementSize;
 		count = elementCount / 2;
@@ -3106,7 +3106,7 @@ uint64_t WireMesh::GetDataSizeColors() const
 
 const uint16_t* WireMesh::GetDataIndicesU16(uint32_t index) const
 {
-	if (mIndexType != INDEX_TYPE_UINT16) {
+	if (mIndexType != IndexType::Uint16) {
 		return nullptr;
 	}
 	uint32_t count = GetCountIndices();
@@ -3120,7 +3120,7 @@ const uint16_t* WireMesh::GetDataIndicesU16(uint32_t index) const
 
 const uint32_t* WireMesh::GetDataIndicesU32(uint32_t index) const
 {
-	if (mIndexType != INDEX_TYPE_UINT32) {
+	if (mIndexType != IndexType::Uint32) {
 		return nullptr;
 	}
 	uint32_t count = GetCountIndices();
@@ -3170,14 +3170,14 @@ void WireMesh::AppendIndexU32(uint32_t value)
 
 uint32_t WireMesh::AppendEdge(uint32_t v0, uint32_t v1)
 {
-	if (mIndexType == INDEX_TYPE_UINT16) {
+	if (mIndexType == IndexType::Uint16) {
 		ASSERT_MSG(v0 <= UINT16_MAX, "v0 is out of range for index type UINT16");
 		ASSERT_MSG(v1 <= UINT16_MAX, "v1 is out of range for index type UINT16");
 		mIndices.reserve(mIndices.size() + 2 * sizeof(uint16_t));
 		AppendIndexU16(static_cast<uint16_t>(v0));
 		AppendIndexU16(static_cast<uint16_t>(v1));
 	}
-	else if (mIndexType == INDEX_TYPE_UINT32) {
+	else if (mIndexType == IndexType::Uint32) {
 		mIndices.reserve(mIndices.size() + 2 * sizeof(uint32_t));
 		AppendIndexU32(v0);
 		AppendIndexU32(v1);
@@ -3217,7 +3217,7 @@ uint32_t WireMesh::AppendColor(const float3& value)
 
 Result WireMesh::GetEdge(uint32_t triIndex, uint32_t& v0, uint32_t& v1) const
 {
-	if (mIndexType == INDEX_TYPE_UNDEFINED) {
+	if (mIndexType == IndexType::Undefined) {
 		return ERROR_GEOMETRY_NO_INDEX_DATA;
 	}
 
@@ -3229,13 +3229,13 @@ Result WireMesh::GetEdge(uint32_t triIndex, uint32_t& v0, uint32_t& v1) const
 	const uint8_t* pData = mIndices.data();
 	uint32_t       elementSize = IndexTypeSize(mIndexType);
 
-	if (mIndexType == INDEX_TYPE_UINT16) {
+	if (mIndexType == IndexType::Uint16) {
 		size_t          offset = 2 * triIndex * elementSize;
 		const uint16_t* pIndexData = reinterpret_cast<const uint16_t*>(pData + offset);
 		v0 = static_cast<uint32_t>(pIndexData[0]);
 		v1 = static_cast<uint32_t>(pIndexData[1]);
 	}
-	else if (mIndexType == INDEX_TYPE_UINT32) {
+	else if (mIndexType == IndexType::Uint32) {
 		size_t          offset = 2 * triIndex * elementSize;
 		const uint32_t* pIndexData = reinterpret_cast<const uint32_t*>(pData + offset);
 		v0 = static_cast<uint32_t>(pIndexData[0]);
@@ -3271,7 +3271,7 @@ void WireMesh::AppendIndexAndVertexData(
 	const WireMeshOptions& options,
 	WireMesh& mesh)
 {
-	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 
 	// Verify expected vertex count
 	size_t vertexCount = (vertexData.size() * sizeof(float)) / sizeof(WireMeshVertexData);
@@ -3280,7 +3280,7 @@ void WireMesh::AppendIndexAndVertexData(
 	// Get base pointer to vertex data
 	const char* pData = reinterpret_cast<const char*>(vertexData.data());
 
-	if (indexType != INDEX_TYPE_UNDEFINED) {
+	if (indexType != IndexType::Undefined) {
 		for (size_t i = 0; i < vertexCount; ++i) {
 			const WireMeshVertexData* pVertexData = reinterpret_cast<const WireMeshVertexData*>(pData + (i * sizeof(WireMeshVertexData)));
 
@@ -3442,7 +3442,7 @@ WireMesh WireMesh::CreatePlane(WireMeshPlane plane, const float2& size, uint32_t
 		indexCount += 1;
 	}
 
-	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	WireMesh        mesh = WireMesh(indexType);
 
 	uint32_t expectedVertexCount = 2 * (uverts + vverts);
@@ -3524,7 +3524,7 @@ WireMesh WireMesh::CreateCube(const float3& size, const WireMeshOptions& options
 	};
 	// clang-format on
 
-	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	WireMesh        mesh = WireMesh(indexType);
 
 	AppendIndexAndVertexData(indexData, vertexData, 24, options, mesh);
@@ -3619,7 +3619,7 @@ WireMesh WireMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, co
 		}
 	}
 
-	IndexType indexType = options.mEnableIndices ? INDEX_TYPE_UINT32 : INDEX_TYPE_UNDEFINED;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	WireMesh        mesh = WireMesh(indexType);
 
 	uint32_t expectedVertexCountU = (uverts - 1) * (vverts - 2);
@@ -4028,7 +4028,7 @@ GeometryCreateInfo GeometryCreateInfo::InterleavedU8(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
-	ci.indexType = INDEX_TYPE_UINT8;
+	ci.indexType = IndexType::Uint8;
 	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
 	ci.AddPosition(format);
 	return ci;
@@ -4038,7 +4038,7 @@ GeometryCreateInfo GeometryCreateInfo::InterleavedU16(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
-	ci.indexType = INDEX_TYPE_UINT16;
+	ci.indexType = IndexType::Uint16;
 	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
 	ci.AddPosition(format);
 	return ci;
@@ -4048,7 +4048,7 @@ GeometryCreateInfo GeometryCreateInfo::InterleavedU32(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
-	ci.indexType = INDEX_TYPE_UINT32;
+	ci.indexType = IndexType::Uint32;
 	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
 	ci.AddPosition(format);
 	return ci;
@@ -4058,7 +4058,7 @@ GeometryCreateInfo GeometryCreateInfo::PlanarU8(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT8;
+	ci.indexType = IndexType::Uint8;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4067,7 +4067,7 @@ GeometryCreateInfo GeometryCreateInfo::PlanarU16(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT16;
+	ci.indexType = IndexType::Uint16;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4076,7 +4076,7 @@ GeometryCreateInfo GeometryCreateInfo::PlanarU32(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT32;
+	ci.indexType = IndexType::Uint32;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4085,7 +4085,7 @@ GeometryCreateInfo GeometryCreateInfo::PositionPlanarU8(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT8;
+	ci.indexType = IndexType::Uint8;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4094,7 +4094,7 @@ GeometryCreateInfo GeometryCreateInfo::PositionPlanarU16(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT16;
+	ci.indexType = IndexType::Uint16;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4103,7 +4103,7 @@ GeometryCreateInfo GeometryCreateInfo::PositionPlanarU32(Format format)
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
-	ci.indexType = INDEX_TYPE_UINT32;
+	ci.indexType = IndexType::Uint32;
 	ci.AddPosition(format);
 	return ci;
 }
@@ -4112,7 +4112,7 @@ GeometryCreateInfo GeometryCreateInfo::Interleaved()
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_INTERLEAVED;
-	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.indexType = IndexType::Undefined;
 	ci.vertexBindingCount = 1; // Interleave attribute layout always has 1 vertex binding
 	ci.AddPosition();
 	return ci;
@@ -4122,7 +4122,7 @@ GeometryCreateInfo GeometryCreateInfo::Planar()
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
-	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.indexType = IndexType::Undefined;
 	ci.AddPosition();
 	return ci;
 }
@@ -4131,7 +4131,7 @@ GeometryCreateInfo GeometryCreateInfo::PositionPlanar()
 {
 	GeometryCreateInfo ci = {};
 	ci.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR;
-	ci.indexType = INDEX_TYPE_UNDEFINED;
+	ci.indexType = IndexType::Undefined;
 	ci.AddPosition();
 	return ci;
 }
@@ -4144,17 +4144,17 @@ GeometryCreateInfo& GeometryCreateInfo::IndexType(vkr::IndexType indexType_)
 
 GeometryCreateInfo& GeometryCreateInfo::IndexTypeU8()
 {
-	return IndexType(INDEX_TYPE_UINT8);
+	return IndexType(IndexType::Uint8);
 }
 
 GeometryCreateInfo& GeometryCreateInfo::IndexTypeU16()
 {
-	return IndexType(INDEX_TYPE_UINT16);
+	return IndexType(IndexType::Uint16);
 }
 
 GeometryCreateInfo& GeometryCreateInfo::IndexTypeU32()
 {
-	return IndexType(INDEX_TYPE_UINT32);
+	return IndexType(IndexType::Uint32);
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Format format)
@@ -4290,7 +4290,7 @@ Result Geometry::InternalCtor()
 		return ERROR_FAILED;
 	}
 
-	if (mCreateInfo.indexType != INDEX_TYPE_UNDEFINED) {
+	if (mCreateInfo.indexType != IndexType::Undefined) {
 		uint32_t elementSize = IndexTypeSize(mCreateInfo.indexType);
 
 		if (elementSize == 0) {
@@ -4344,9 +4344,9 @@ Result Geometry::Create(
 	}
 
 	// Target geometry WITHOUT index data
-	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
+	if (createInfo.indexType == IndexType::Undefined) {
 		// Mesh has index data
-		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+		if (mesh.GetIndexType() != IndexType::Undefined) {
 			// Iterate through the meshes triangles and add vertex data for each triangle vertex
 			uint32_t triCount = mesh.GetCountTriangles();
 			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
@@ -4404,7 +4404,7 @@ Result Geometry::Create(
 	// Target geometry WITH index data
 	else {
 		// Mesh has index data
-		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+		if (mesh.GetIndexType() != IndexType::Undefined) {
 			// Iterate the meshes triangles and add the vertex indices
 			uint32_t triCount = mesh.GetCountTriangles();
 			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
@@ -4484,9 +4484,9 @@ Result Geometry::Create(
 	}
 
 	// Target geometry WITHOUT index data
-	if (createInfo.indexType == INDEX_TYPE_UNDEFINED) {
+	if (createInfo.indexType == IndexType::Undefined) {
 		// Mesh has index data
-		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+		if (mesh.GetIndexType() != IndexType::Undefined) {
 			// Iterate through the meshes edges and add vertex data for each edge vertex
 			uint32_t edgeCount = mesh.GetCountEdges();
 			for (uint32_t edgeIndex = 0; edgeIndex < edgeCount; ++edgeIndex) {
@@ -4535,7 +4535,7 @@ Result Geometry::Create(
 	// Target geometry WITH index data
 	else {
 		// Mesh has index data
-		if (mesh.GetIndexType() != INDEX_TYPE_UNDEFINED) {
+		if (mesh.GetIndexType() != IndexType::Undefined) {
 			// Iterate the meshes edges and add the vertex indices
 			uint32_t edgeCount = mesh.GetCountEdges();
 			for (uint32_t edgeIndex = 0; edgeIndex < edgeCount; ++edgeIndex) {
@@ -4666,7 +4666,7 @@ void Geometry::SetIndexBuffer(const Geometry::Buffer& newIndexBuffer)
 uint32_t Geometry::GetIndexCount() const
 {
 	uint32_t count = 0;
-	if (mCreateInfo.indexType != INDEX_TYPE_UNDEFINED) {
+	if (mCreateInfo.indexType != IndexType::Undefined) {
 		count = mIndexBuffer.GetElementCount();
 	}
 	return count;
@@ -4701,30 +4701,30 @@ uint32_t Geometry::GetLargestBufferSize() const
 
 void Geometry::AppendIndex(uint32_t idx)
 {
-	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+	if (mCreateInfo.indexType == IndexType::Uint16) {
 		mIndexBuffer.Append(static_cast<uint16_t>(idx));
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+	else if (mCreateInfo.indexType == IndexType::Uint32) {
 		mIndexBuffer.Append(idx);
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+	else if (mCreateInfo.indexType == IndexType::Uint8) {
 		mIndexBuffer.Append(static_cast<uint8_t>(idx));
 	}
 }
 
 void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2)
 {
-	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+	if (mCreateInfo.indexType == IndexType::Uint16) {
 		mIndexBuffer.Append(static_cast<uint16_t>(idx0));
 		mIndexBuffer.Append(static_cast<uint16_t>(idx1));
 		mIndexBuffer.Append(static_cast<uint16_t>(idx2));
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+	else if (mCreateInfo.indexType == IndexType::Uint32) {
 		mIndexBuffer.Append(idx0);
 		mIndexBuffer.Append(idx1);
 		mIndexBuffer.Append(idx2);
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+	else if (mCreateInfo.indexType == IndexType::Uint8) {
 		mIndexBuffer.Append(static_cast<uint8_t>(idx0));
 		mIndexBuffer.Append(static_cast<uint8_t>(idx1));
 		mIndexBuffer.Append(static_cast<uint8_t>(idx2));
@@ -4733,15 +4733,15 @@ void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2
 
 void Geometry::AppendIndicesEdge(uint32_t idx0, uint32_t idx1)
 {
-	if (mCreateInfo.indexType == INDEX_TYPE_UINT16) {
+	if (mCreateInfo.indexType == IndexType::Uint16) {
 		mIndexBuffer.Append(static_cast<uint16_t>(idx0));
 		mIndexBuffer.Append(static_cast<uint16_t>(idx1));
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT32) {
+	else if (mCreateInfo.indexType == IndexType::Uint32) {
 		mIndexBuffer.Append(idx0);
 		mIndexBuffer.Append(idx1);
 	}
-	else if (mCreateInfo.indexType == INDEX_TYPE_UINT8) {
+	else if (mCreateInfo.indexType == IndexType::Uint8) {
 		mIndexBuffer.Append(static_cast<uint8_t>(idx0));
 		mIndexBuffer.Append(static_cast<uint8_t>(idx1));
 	}
@@ -4749,7 +4749,7 @@ void Geometry::AppendIndicesEdge(uint32_t idx0, uint32_t idx1)
 
 void Geometry::AppendIndicesU32(uint32_t count, const uint32_t* pIndices)
 {
-	if (mCreateInfo.indexType != INDEX_TYPE_UINT32) {
+	if (mCreateInfo.indexType != IndexType::Uint32) {
 		ASSERT_MSG(false, "Can't append UINT32 indices to buffer of type: " + ToString(mCreateInfo.indexType));
 		return;
 	}
@@ -6140,7 +6140,7 @@ namespace vkrUtil
 			BufferToBufferCopyInfo copyInfo = {};
 
 			// Index buffer
-			if (pGeometry->GetIndexType() != INDEX_TYPE_UNDEFINED)
+			if (pGeometry->GetIndexType() != IndexType::Undefined)
 			{
 				const Geometry::Buffer* pGeoBuffer = pGeometry->GetIndexBuffer();
 				ASSERT_NULL_ARG(pGeoBuffer);

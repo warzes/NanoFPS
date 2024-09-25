@@ -293,14 +293,14 @@ uint32_t Query::getQueryTypeSize(VkQueryType type, uint32_t multiplier) const
 
 #pragma region Buffer
 
-Result Buffer::MapMemory(uint64_t offset, void** ppMappedAddress)
+Result Buffer::MapMemory(uint64_t offset, void** mappedAddress)
 {
-	if (IsNull(ppMappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
+	if (IsNull(mappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
-	VkResult vkres = vmaMapMemory(GetDevice()->GetVmaAllocator(), m_allocation, ppMappedAddress);
+	VkResult vkres = vmaMapMemory(GetDevice()->GetVmaAllocator(), m_allocation, mappedAddress);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vmaMapMemory failed: " + ToString(vkres));
+		Fatal("vmaMapMemory failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -312,17 +312,17 @@ void Buffer::UnmapMemory()
 	vmaUnmapMemory(GetDevice()->GetVmaAllocator(), m_allocation);
 }
 
-Result Buffer::CopyFromSource(uint32_t dataSize, const void* pSrcData)
+Result Buffer::CopyFromSource(uint32_t dataSize, const void* srcData)
 {
 	if (dataSize > GetSize()) return ERROR_LIMIT_EXCEEDED;
 
 	// Map
-	void* pBufferAddress = nullptr;
-	Result ppxres = MapMemory(0, &pBufferAddress);
+	void* bufferAddress = nullptr;
+	Result ppxres = MapMemory(0, &bufferAddress);
 	if (Failed(ppxres)) return ppxres;
 
 	// Copy
-	std::memcpy(pBufferAddress, pSrcData, dataSize);
+	std::memcpy(bufferAddress, srcData, dataSize);
 
 	// Unmap
 	UnmapMemory();
@@ -330,17 +330,17 @@ Result Buffer::CopyFromSource(uint32_t dataSize, const void* pSrcData)
 	return SUCCESS;
 }
 
-Result Buffer::CopyToDest(uint32_t dataSize, void* pDestData)
+Result Buffer::CopyToDest(uint32_t dataSize, void* destData)
 {
 	if (dataSize > GetSize()) return ERROR_LIMIT_EXCEEDED;
 
 	// Map
-	void* pBufferAddress = nullptr;
-	Result ppxres = MapMemory(0, &pBufferAddress);
+	void* bufferAddress = nullptr;
+	Result ppxres = MapMemory(0, &bufferAddress);
 	if (Failed(ppxres))  return ppxres;
 
 	// Copy
-	std::memcpy(pDestData, pBufferAddress, dataSize);
+	std::memcpy(destData, bufferAddress, dataSize);
 
 	// Unmap
 	UnmapMemory();
@@ -348,54 +348,47 @@ Result Buffer::CopyToDest(uint32_t dataSize, void* pDestData)
 	return SUCCESS;
 }
 
-Result Buffer::create(const BufferCreateInfo& createInfo)
+Result Buffer::createApiObjects(const BufferCreateInfo& createInfo)
 {
 #ifndef DISABLE_MINIMUM_BUFFER_SIZE_CHECK
-	// Constant/uniform buffers need to be at least PPX_CONSTANT_BUFFER_ALIGNMENT in size
+	// Constant/uniform buffers need to be at least CONSTANT_BUFFER_ALIGNMENT in size
 	if (createInfo.usageFlags.bits.uniformBuffer && (createInfo.size < CONSTANT_BUFFER_ALIGNMENT))
 	{
-		ASSERT_MSG(false, "constant/uniform buffer sizes must be at least PPX_CONSTANT_BUFFER_ALIGNMENT (" + std::to_string(CONSTANT_BUFFER_ALIGNMENT) + ")");
+		Fatal("constant/uniform buffer sizes must be at least CONSTANT_BUFFER_ALIGNMENT (" + std::to_string(CONSTANT_BUFFER_ALIGNMENT) + ")");
 		return ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET;
 	}
 
 	// Storage/structured buffers need to be at least STORAGE_BUFFER_ALIGNMENT in size
 	if (createInfo.usageFlags.bits.uniformBuffer && (createInfo.size < STUCTURED_BUFFER_ALIGNMENT))
 	{
-		ASSERT_MSG(false, "storage/structured buffer sizes must be at least PPX_STUCTURED_BUFFER_ALIGNMENT (" + std::to_string(STUCTURED_BUFFER_ALIGNMENT) + ")");
+		Fatal("storage/structured buffer sizes must be at least STUCTURED_BUFFER_ALIGNMENT (" + std::to_string(STUCTURED_BUFFER_ALIGNMENT) + ")");
 		return ERROR_GRFX_MINIMUM_BUFFER_SIZE_NOT_MET;
 	}
 #endif
-	Result ppxres = DeviceObject<BufferCreateInfo>::create(createInfo);
-	if (Failed(ppxres)) return ppxres;
 
-	return SUCCESS;
-}
+	VkDeviceSize alignedSize = static_cast<VkDeviceSize>(createInfo.size);
+	if (createInfo.usageFlags.bits.uniformBuffer)
+		alignedSize = RoundUp<VkDeviceSize>(createInfo.size, UNIFORM_BUFFER_ALIGNMENT);
 
-Result Buffer::createApiObjects(const BufferCreateInfo& CreateInfo)
-{
-	VkDeviceSize alignedSize = static_cast<VkDeviceSize>(CreateInfo.size);
-	if (CreateInfo.usageFlags.bits.uniformBuffer)
-		alignedSize = RoundUp<VkDeviceSize>(CreateInfo.size, UNIFORM_BUFFER_ALIGNMENT);
+	VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.size               = alignedSize;
+	bufferInfo.usage              = ToVkBufferUsageFlags(createInfo.usageFlags);
+	bufferInfo.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
 
-	VkBufferCreateInfo createInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-	createInfo.size               = alignedSize;
-	createInfo.usage              = ToVkBufferUsageFlags(CreateInfo.usageFlags);
-	createInfo.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
-
-	VkAllocationCallbacks* pAllocator = nullptr;
-	VkResult vkres = vkCreateBuffer(GetDevice()->GetVkDevice(), &createInfo, pAllocator, &m_buffer);
+	VkAllocationCallbacks* allocator = nullptr;
+	VkResult vkres = vkCreateBuffer(GetDevice()->GetVkDevice(), &bufferInfo, allocator, &m_buffer);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateBuffer failed: " + ToString(vkres));
+		Fatal("vkCreateBuffer failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
 	// Allocate memory
 	{
-		VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(CreateInfo.memoryUsage);
+		VmaMemoryUsage memoryUsage = ToVmaMemoryUsage(createInfo.memoryUsage);
 		if (memoryUsage == VMA_MEMORY_USAGE_UNKNOWN)
 		{
-			ASSERT_MSG(false, "unknown memory usage");
+			Fatal("unknown memory usage");
 			return ERROR_API_FAILURE;
 		}
 
@@ -405,37 +398,29 @@ Result Buffer::createApiObjects(const BufferCreateInfo& CreateInfo)
 			createFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		}
 
-		VmaAllocationCreateInfo vma_alloc_ci = {};
-		vma_alloc_ci.flags = createFlags;
-		vma_alloc_ci.usage = memoryUsage;
-		vma_alloc_ci.requiredFlags = 0;
-		vma_alloc_ci.preferredFlags = 0;
-		vma_alloc_ci.memoryTypeBits = 0;
-		vma_alloc_ci.pool = VK_NULL_HANDLE;
-		vma_alloc_ci.pUserData = nullptr;
+		VmaAllocationCreateInfo vmaAllocci = {};
+		vmaAllocci.flags                   = createFlags;
+		vmaAllocci.usage                   = memoryUsage;
+		vmaAllocci.requiredFlags           = 0;
+		vmaAllocci.preferredFlags          = 0;
+		vmaAllocci.memoryTypeBits          = 0;
+		vmaAllocci.pool                    = VK_NULL_HANDLE;
+		vmaAllocci.pUserData               = nullptr;
 
-		VkResult vkres = vmaAllocateMemoryForBuffer(
-			GetDevice()->GetVmaAllocator(),
-			m_buffer,
-			&vma_alloc_ci,
-			&m_allocation,
-			&m_allocationInfo);
+		VkResult vkres = vmaAllocateMemoryForBuffer(GetDevice()->GetVmaAllocator(), m_buffer, &vmaAllocci, &m_allocation, &m_allocationInfo);
 		if (vkres != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vmaAllocateMemoryForBuffer failed: " + ToString(vkres));
+			Fatal("vmaAllocateMemoryForBuffer failed: " + ToString(vkres));
 			return ERROR_API_FAILURE;
 		}
 	}
 
 	// Bind memory
 	{
-		VkResult vkres = vmaBindBufferMemory(
-			GetDevice()->GetVmaAllocator(),
-			m_allocation,
-			m_buffer);
+		VkResult vkres = vmaBindBufferMemory(GetDevice()->GetVmaAllocator(), m_allocation, m_buffer);
 		if (vkres != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vmaBindBufferMemory failed: " + ToString(vkres));
+			Fatal("vmaBindBufferMemory failed: " + ToString(vkres));
 			return ERROR_API_FAILURE;
 		}
 	}
@@ -445,10 +430,10 @@ Result Buffer::createApiObjects(const BufferCreateInfo& CreateInfo)
 
 void Buffer::destroyApiObjects()
 {
-	if (m_allocation) {
+	if (m_allocation)
+	{
 		vmaFreeMemory(GetDevice()->GetVmaAllocator(), m_allocation);
 		m_allocation.Reset();
-
 		m_allocationInfo = {};
 	}
 
@@ -3919,7 +3904,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 	// Index buffer
 	if (pCreateInfo.indexCount > 0) {
 		// Bail if index type doesn't make sense
-		if ((pCreateInfo.indexType != INDEX_TYPE_UINT16) && (pCreateInfo.indexType != INDEX_TYPE_UINT32)) {
+		if ((pCreateInfo.indexType != IndexType::Uint16) && (pCreateInfo.indexType != IndexType::Uint32)) {
 			return Result::ERROR_GRFX_INVALID_INDEX_TYPE;
 		}
 
@@ -7808,7 +7793,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		}
 
 		mIndexBufferView.pBuffer = mGpuIndexBuffer;
-		mIndexBufferView.indexType = INDEX_TYPE_UINT32;
+		mIndexBufferView.indexType = IndexType::Uint32;
 		mIndexBufferView.offset = 0;
 	}
 

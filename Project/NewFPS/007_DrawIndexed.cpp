@@ -252,7 +252,7 @@ void Example_007::Render()
 			frame.cmd->BindVertexBuffers(1, &mVertexBuffer, &mVertexBinding.GetStride());
 			frame.cmd->BindGraphicsDescriptorSets(mPipelineInterface, 1, &mDescriptorSet);
 			frame.cmd->BindGraphicsPipeline(mPipeline);
-			frame.cmd->BindIndexBuffer(mIndexBuffer, vkr::INDEX_TYPE_UINT16);
+			frame.cmd->BindIndexBuffer(mIndexBuffer, vkr::IndexType::Uint16);
 			frame.cmd->DrawIndexed(36, 1, 0, 0, 0);
 
 			// Draw ImGui
