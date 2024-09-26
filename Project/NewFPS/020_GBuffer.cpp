@@ -1024,8 +1024,8 @@ void Example_020::setupGBufferPasses()
 		createInfo.width = mGBufferRenderPass->GetWidth();
 		createInfo.height = mGBufferRenderPass->GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.pRenderTargetTextures[0] = mGBufferLightRenderTarget;
-		createInfo.pDepthStencilTexture = mGBufferRenderPass->GetDepthStencilTexture();
+		createInfo.renderTargetTextures[0] = mGBufferLightRenderTarget;
+		createInfo.depthStencilTexture = mGBufferRenderPass->GetDepthStencilTexture();
 		createInfo.depthStencilState = vkr::ResourceState::DepthStencilRead;
 
 		CHECKED_CALL(device.CreateDrawPass(createInfo, &mGBufferLightPass));

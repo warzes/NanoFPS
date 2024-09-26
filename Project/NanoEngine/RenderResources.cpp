@@ -2270,267 +2270,282 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 #pragma region DrawPass
 
-namespace internal {
-
+namespace internal
+{
 	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo& obj)
 	{
-		this->version = CREATE_INFO_VERSION_1;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
+		version = CREATE_INFO_VERSION_1;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		shadingRatePattern = obj.shadingRatePattern;
 
 		// Formats
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V1.renderTargetFormats[i] = obj.renderTargetFormats[i];
-		}
-		this->V1.depthStencilFormat = obj.depthStencilFormat;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V1.renderTargetFormats[i] = obj.renderTargetFormats[i];
+		V1.depthStencilFormat = obj.depthStencilFormat;
 
 		// Sample count
-		this->V1.sampleCount = obj.sampleCount;
+		V1.sampleCount = obj.sampleCount;
 
 		// Usage flags
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V1.renderTargetUsageFlags[i] = obj.renderTargetUsageFlags[i] | IMAGE_USAGE_COLOR_ATTACHMENT;
-		}
-		this->V1.depthStencilUsageFlags = obj.depthStencilUsageFlags | IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V1.renderTargetUsageFlags[i] = obj.renderTargetUsageFlags[i] | IMAGE_USAGE_COLOR_ATTACHMENT;
+		V1.depthStencilUsageFlags = obj.depthStencilUsageFlags | IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V1.renderTargetInitialStates[i] = obj.renderTargetInitialStates[i];
-		}
-		this->V1.depthStencilInitialState = obj.depthStencilInitialState;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V1.renderTargetInitialStates[i] = obj.renderTargetInitialStates[i];
+		V1.depthStencilInitialState = obj.depthStencilInitialState;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetClearValues[i] = obj.renderTargetClearValues[i];
-		}
-		this->depthStencilClearValue = obj.depthStencilClearValue;
+		for (uint32_t i = 0; i < this->renderTargetCount; ++i)
+			renderTargetClearValues[i] = obj.renderTargetClearValues[i];
+		depthStencilClearValue = obj.depthStencilClearValue;
 
-		this->V1.imageCreateFlags = obj.imageCreateFlags;
+		V1.imageCreateFlags = obj.imageCreateFlags;
 	}
 
 	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo2& obj)
 	{
-		this->version = CREATE_INFO_VERSION_2;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->depthStencilState = obj.depthStencilState;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
+		version = CREATE_INFO_VERSION_2;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		depthStencilState = obj.depthStencilState;
+		shadingRatePattern = obj.shadingRatePattern;
 
 		// Images
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V2.pRenderTargetImages[i] = obj.pRenderTargetImages[i];
-		}
-		this->V2.pDepthStencilImage = obj.pDepthStencilImage;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V2.renderTargetImages[i] = obj.renderTargetImages[i];
+		V2.depthStencilImage = obj.depthStencilImage;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetClearValues[i] = obj.renderTargetClearValues[i];
-		}
-		this->depthStencilClearValue = obj.depthStencilClearValue;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			renderTargetClearValues[i] = obj.renderTargetClearValues[i];
+		depthStencilClearValue = obj.depthStencilClearValue;
 	}
 
 	DrawPassCreateInfo::DrawPassCreateInfo(const vkr::DrawPassCreateInfo3& obj)
 	{
-		this->version = CREATE_INFO_VERSION_3;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->depthStencilState = obj.depthStencilState;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
+		version = CREATE_INFO_VERSION_3;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		depthStencilState = obj.depthStencilState;
+		shadingRatePattern = obj.shadingRatePattern;
 
 		// Textures
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V3.pRenderTargetTextures[i] = obj.pRenderTargetTextures[i];
-		}
-		this->V3.pDepthStencilTexture = obj.pDepthStencilTexture;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V3.renderTargetTextures[i] = obj.renderTargetTextures[i];
+		V3.depthStencilTexture = obj.depthStencilTexture;
 	}
-
 }
 
-Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInfo)
+Result DrawPass::createTexturesV1(const internal::DrawPassCreateInfo& createInfo)
 {
 	// Create textures
 	{
 		// Create render target textures
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i)
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
 		{
 			TextureCreateInfo ci = {};
 			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
-			ci.width = pCreateInfo.width;
-			ci.height = pCreateInfo.height;
+			ci.width = createInfo.width;
+			ci.height = createInfo.height;
 			ci.depth = 1;
-			ci.imageFormat = pCreateInfo.V1.renderTargetFormats[i];
-			ci.sampleCount = pCreateInfo.V1.sampleCount;
+			ci.imageFormat = createInfo.V1.renderTargetFormats[i];
+			ci.sampleCount = createInfo.V1.sampleCount;
 			ci.mipLevelCount = 1;
 			ci.arrayLayerCount = 1;
-			ci.usageFlags = pCreateInfo.V1.renderTargetUsageFlags[i];
+			ci.usageFlags = createInfo.V1.renderTargetUsageFlags[i];
 			ci.memoryUsage = MemoryUsage::GPUOnly;
-			ci.initialState = pCreateInfo.V1.renderTargetInitialStates[i];
-			ci.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
+			ci.initialState = createInfo.V1.renderTargetInitialStates[i];
+			ci.RTVClearValue = createInfo.renderTargetClearValues[i];
 			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
 			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Exclusive;
-			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
+			ci.imageCreateFlags = createInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "render target texture create failed");
+			Result ppxres = GetDevice()->CreateTexture(ci, &texture);
+			if (Failed(ppxres))
+			{
+				Fatal("render target texture create failed");
 				return ppxres;
 			}
 
-			mRenderTargetTextures.push_back(texture);
+			m_renderTargetTextures.push_back(texture);
 		}
 
 		// DSV image
-		if (pCreateInfo.V1.depthStencilFormat != Format::Undefined) {
+		if (createInfo.V1.depthStencilFormat != Format::Undefined)
+		{
 			TextureCreateInfo ci = {};
 			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
-			ci.width = pCreateInfo.width;
-			ci.height = pCreateInfo.height;
+			ci.width = createInfo.width;
+			ci.height = createInfo.height;
 			ci.depth = 1;
-			ci.imageFormat = pCreateInfo.V1.depthStencilFormat;
-			ci.sampleCount = pCreateInfo.V1.sampleCount;
+			ci.imageFormat = createInfo.V1.depthStencilFormat;
+			ci.sampleCount = createInfo.V1.sampleCount;
 			ci.mipLevelCount = 1;
 			ci.arrayLayerCount = 1;
-			ci.usageFlags = pCreateInfo.V1.depthStencilUsageFlags;
+			ci.usageFlags = createInfo.V1.depthStencilUsageFlags;
 			ci.memoryUsage = MemoryUsage::GPUOnly;
-			ci.initialState = pCreateInfo.V1.depthStencilInitialState;
-			ci.DSVClearValue = pCreateInfo.depthStencilClearValue;
+			ci.initialState = createInfo.V1.depthStencilInitialState;
+			ci.DSVClearValue = createInfo.depthStencilClearValue;
 			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
 			ci.storageImageViewFormat = Format::Undefined;
 			ci.ownership = Ownership::Exclusive;
-			ci.imageCreateFlags = pCreateInfo.V1.imageCreateFlags;
+			ci.imageCreateFlags = createInfo.V1.imageCreateFlags;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "depth stencil texture create failed");
+			Result ppxres = GetDevice()->CreateTexture(ci, &texture);
+			if (Failed(ppxres))
+			{
+				Fatal("depth stencil texture create failed");
 				return ppxres;
 			}
 
-			mDepthStencilTexture = texture;
+			m_depthStencilTexture = texture;
 		}
 	}
 	return SUCCESS;
 }
 
-Result DrawPass::CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInfo)
+Result DrawPass::createTexturesV2(const internal::DrawPassCreateInfo& createInfo)
 {
 	// Create textures
 	{
 		// Create render target textures
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
 			TextureCreateInfo ci = {};
-			ci.image = pCreateInfo.V2.pRenderTargetImages[i];
+			ci.image = createInfo.V2.renderTargetImages[i];
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "render target texture create failed");
+			Result ppxres = GetDevice()->CreateTexture(ci, &texture);
+			if (Failed(ppxres))
+			{
+				Fatal("render target texture create failed");
 				return ppxres;
 			}
 
-			mRenderTargetTextures.push_back(texture);
+			m_renderTargetTextures.push_back(texture);
 		}
 
 		// DSV image
-		if (!IsNull(pCreateInfo.V2.pDepthStencilImage)) {
+		if (!IsNull(createInfo.V2.depthStencilImage))
+		{
 			TextureCreateInfo ci = {};
-			ci.image = pCreateInfo.V2.pDepthStencilImage;
+			ci.image = createInfo.V2.depthStencilImage;
 
 			TexturePtr texture;
-			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "depth stencil texture create failed");
+			Result ppxres = GetDevice()->CreateTexture(ci, &texture);
+			if (Failed(ppxres))
+			{
+				Fatal("depth stencil texture create failed");
 				return ppxres;
 			}
 
-			mDepthStencilTexture = texture;
+			m_depthStencilTexture = texture;
 		}
 	}
 	return SUCCESS;
 }
 
-Result DrawPass::CreateTexturesV3(const internal::DrawPassCreateInfo& pCreateInfo)
+Result DrawPass::createTexturesV3(const internal::DrawPassCreateInfo& createInfo)
 {
 	// Create textures
 	{
 		// Create render target textures
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-			TexturePtr texture = pCreateInfo.V3.pRenderTargetTextures[i];
-			mRenderTargetTextures.push_back(texture);
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
+			TexturePtr texture = createInfo.V3.renderTargetTextures[i];
+			m_renderTargetTextures.push_back(texture);
 		}
 
 		// DSV image
-		if (!IsNull(pCreateInfo.V3.pDepthStencilTexture)) {
-			mDepthStencilTexture = pCreateInfo.V3.pDepthStencilTexture;
+		if (!IsNull(createInfo.V3.depthStencilTexture))
+		{
+			m_depthStencilTexture = createInfo.V3.depthStencilTexture;
 		}
 	}
 	return SUCCESS;
 }
 
-Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInfo)
+Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& createInfo)
 {
-	mRenderArea = { 0, 0, pCreateInfo.width, pCreateInfo.height };
+	m_renderArea = { 0, 0, createInfo.width, createInfo.height };
 
 	// Create backing resources
-	switch (pCreateInfo.version) {
+	switch (createInfo.version)
+	{
 	default: return ERROR_INVALID_CREATE_ARGUMENT; break;
 
-	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_1: {
-		Result ppxres = CreateTexturesV1(pCreateInfo);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "create textures(V1) failed");
+	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_1:
+	{
+		Result ppxres = createTexturesV1(createInfo);
+		if (Failed(ppxres))
+		{
+			Fatal("create textures(V1) failed");
 			return ppxres;
 		}
 	} break;
 
-	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_2: {
-		Result ppxres = CreateTexturesV2(pCreateInfo);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "create textures(V2) failed");
+	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_2:
+	{
+		Result ppxres = createTexturesV2(createInfo);
+		if (Failed(ppxres))
+		{
+			Fatal("create textures(V2) failed");
 			return ppxres;
 		}
 	} break;
 
-	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_3: {
-		Result ppxres = CreateTexturesV3(pCreateInfo);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "create textures(V3) failed");
+	case internal::DrawPassCreateInfo::CREATE_INFO_VERSION_3:
+	{
+		Result ppxres = createTexturesV3(createInfo);
+		if (Failed(ppxres))
+		{
+			Fatal("create textures(V3) failed");
 			return ppxres;
 		}
 	} break;
 	}
 
 	// Create render passes
-	for (uint32_t clearMask = 0; clearMask <= static_cast<uint32_t>(DRAW_PASS_CLEAR_FLAG_CLEAR_ALL); ++clearMask) {
+	for (uint32_t clearMask = 0; clearMask <= static_cast<uint32_t>(DRAW_PASS_CLEAR_FLAG_CLEAR_ALL); ++clearMask)
+	{
 		AttachmentLoadOp renderTargetLoadOp = AttachmentLoadOp::Load;
 		AttachmentLoadOp depthLoadOp = AttachmentLoadOp::Load;
 		AttachmentLoadOp stencilLoadOp = AttachmentLoadOp::Load;
 
-		if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS) != 0) {
+		if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS) != 0)
+		{
 			renderTargetLoadOp = AttachmentLoadOp::Clear;
 		}
-		if (mDepthStencilTexture) {
-			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH) != 0) {
-				if (GetFormatDescription(mDepthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_DEPTH) {
+		if (m_depthStencilTexture)
+		{
+			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH) != 0)
+			{
+				if (GetFormatDescription(m_depthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_DEPTH)
+				{
 					depthLoadOp = AttachmentLoadOp::Clear;
 				}
 			}
-			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL) != 0) {
-				if (GetFormatDescription(mDepthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_STENCIL) {
+			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL) != 0)
+			{
+				if (GetFormatDescription(m_depthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_STENCIL)
+				{
 					stencilLoadOp = AttachmentLoadOp::Clear;
 				}
 			}
@@ -2538,67 +2553,79 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 
 		// If the the depth/stencil state has READ for either depth or stecil then skip creating any LOAD_OP_CLEAR render passes for it. Not skipping will result in API errors.
 		bool skip = false;
-		if (depthLoadOp == AttachmentLoadOp::Clear) {
-			switch (pCreateInfo.depthStencilState) {
+		if (depthLoadOp == AttachmentLoadOp::Clear)
+		{
+			switch (createInfo.depthStencilState)
+			{
 			default: break;
 			case ResourceState::DepthStencilRead:
-			case ResourceState::DepthReadStencilWrite: {
+			case ResourceState::DepthReadStencilWrite:
+			{
 				skip = true;
 			} break;
 			}
 		}
-		if (stencilLoadOp == AttachmentLoadOp::Clear) {
-			switch (pCreateInfo.depthStencilState) {
+		if (stencilLoadOp == AttachmentLoadOp::Clear)
+		{
+			switch (createInfo.depthStencilState)
+			{
 			default: break;
 			case ResourceState::DepthStencilRead:
-			case ResourceState::DepthWriteStencilRead: {
+			case ResourceState::DepthWriteStencilRead:
+			{
 				skip = true;
 			} break;
 			}
 		}
-		if (skip) {
+		if (skip)
+		{
 			continue;
 		}
 
 		RenderPassCreateInfo3 rpCreateInfo = {};
-		rpCreateInfo.width = pCreateInfo.width;
-		rpCreateInfo.height = pCreateInfo.height;
-		rpCreateInfo.renderTargetCount = pCreateInfo.renderTargetCount;
-		rpCreateInfo.depthStencilState = pCreateInfo.depthStencilState;
+		rpCreateInfo.width = createInfo.width;
+		rpCreateInfo.height = createInfo.height;
+		rpCreateInfo.renderTargetCount = createInfo.renderTargetCount;
+		rpCreateInfo.depthStencilState = createInfo.depthStencilState;
 
-		for (uint32_t i = 0; i < rpCreateInfo.renderTargetCount; ++i) {
-			if (!mRenderTargetTextures[i]) {
+		for (uint32_t i = 0; i < rpCreateInfo.renderTargetCount; ++i)
+		{
+			if (!m_renderTargetTextures[i])
+			{
 				continue;
 			}
-			rpCreateInfo.renderTargetImages[i] = mRenderTargetTextures[i]->GetImage();
-			rpCreateInfo.renderTargetClearValues[i] = mRenderTargetTextures[i]->GetImage()->GetRTVClearValue();
+			rpCreateInfo.renderTargetImages[i] = m_renderTargetTextures[i]->GetImage();
+			rpCreateInfo.renderTargetClearValues[i] = m_renderTargetTextures[i]->GetImage()->GetRTVClearValue();
 			rpCreateInfo.renderTargetLoadOps[i] = renderTargetLoadOp;
 			rpCreateInfo.renderTargetStoreOps[i] = AttachmentStoreOp::Store;
 		}
 
-		if (mDepthStencilTexture) {
-			rpCreateInfo.depthStencilImage = mDepthStencilTexture->GetImage();
-			rpCreateInfo.depthStencilClearValue = mDepthStencilTexture->GetImage()->GetDSVClearValue();
+		if (m_depthStencilTexture)
+		{
+			rpCreateInfo.depthStencilImage = m_depthStencilTexture->GetImage();
+			rpCreateInfo.depthStencilClearValue = m_depthStencilTexture->GetImage()->GetDSVClearValue();
 			rpCreateInfo.depthLoadOp = depthLoadOp;
 			rpCreateInfo.depthStoreOp = AttachmentStoreOp::Store;
 			rpCreateInfo.stencilLoadOp = stencilLoadOp;
 			rpCreateInfo.stencilStoreOp = AttachmentStoreOp::Store;
 		}
 
-		if (!IsNull(pCreateInfo.pShadingRatePattern) && pCreateInfo.pShadingRatePattern->GetShadingRateMode() != SHADING_RATE_NONE) {
-			rpCreateInfo.shadingRatePattern = pCreateInfo.pShadingRatePattern;
+		if (!IsNull(createInfo.shadingRatePattern) && createInfo.shadingRatePattern->GetShadingRateMode() != SHADING_RATE_NONE)
+		{
+			rpCreateInfo.shadingRatePattern = createInfo.shadingRatePattern;
 		}
 
 		Pass pass = {};
 		pass.clearMask = clearMask;
 
 		Result ppxres = GetDevice()->CreateRenderPass(rpCreateInfo, &pass.renderPass);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "create render pass failed for clearMask=" + std::to_string(clearMask));
+		if (Failed(ppxres))
+		{
+			Fatal("create render pass failed for clearMask=" + std::to_string(clearMask));
 			return ppxres;
 		}
 
-		mPasses.push_back(pass);
+		m_passes.push_back(pass);
 	}
 
 	return SUCCESS;
@@ -2606,115 +2633,120 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 
 void DrawPass::destroyApiObjects()
 {
-	for (size_t i = 0; i < mPasses.size(); ++i) {
-		if (mPasses[i].renderPass) {
-			GetDevice()->DestroyRenderPass(mPasses[i].renderPass);
-			mPasses[i].renderPass.Reset();
+	for (size_t i = 0; i < m_passes.size(); ++i)
+	{
+		if (m_passes[i].renderPass)
+		{
+			GetDevice()->DestroyRenderPass(m_passes[i].renderPass);
+			m_passes[i].renderPass.Reset();
 		}
 	}
-	mPasses.clear();
+	m_passes.clear();
 
-	for (size_t i = 0; i < mRenderTargetTextures.size(); ++i) {
-		if (mRenderTargetTextures[i] && (mRenderTargetTextures[i]->GetOwnership() == Ownership::Exclusive)) {
-			GetDevice()->DestroyTexture(mRenderTargetTextures[i]);
-			mRenderTargetTextures[i].Reset();
+	for (size_t i = 0; i < m_renderTargetTextures.size(); ++i)
+	{
+		if (m_renderTargetTextures[i] && (m_renderTargetTextures[i]->GetOwnership() == Ownership::Exclusive))
+		{
+			GetDevice()->DestroyTexture(m_renderTargetTextures[i]);
+			m_renderTargetTextures[i].Reset();
 		}
 	}
-	mRenderTargetTextures.clear();
+	m_renderTargetTextures.clear();
 
-	if (mDepthStencilTexture && (mDepthStencilTexture->GetOwnership() == Ownership::Exclusive)) {
-		GetDevice()->DestroyTexture(mDepthStencilTexture);
-		mDepthStencilTexture.Reset();
+	if (m_depthStencilTexture && (m_depthStencilTexture->GetOwnership() == Ownership::Exclusive))
+	{
+		GetDevice()->DestroyTexture(m_depthStencilTexture);
+		m_depthStencilTexture.Reset();
 	}
 
-	for (size_t i = 0; i < mPasses.size(); ++i) {
-		if (mPasses[i].renderPass) {
-			GetDevice()->DestroyRenderPass(mPasses[i].renderPass);
-			mPasses[i].renderPass.Reset();
+	for (size_t i = 0; i < m_passes.size(); ++i)
+	{
+		if (m_passes[i].renderPass)
+		{
+			GetDevice()->DestroyRenderPass(m_passes[i].renderPass);
+			m_passes[i].renderPass.Reset();
 		}
 	}
-	mPasses.clear();
+	m_passes.clear();
 }
 
 const Rect& DrawPass::GetRenderArea() const
 {
-	ASSERT_MSG(mPasses.size() > 0, "no render passes");
-	ASSERT_MSG(!IsNull(mPasses[0].renderPass.Get()), "first render pass not valid");
-	return mPasses[0].renderPass->GetRenderArea();
+	ASSERT_MSG(m_passes.size() > 0, "no render passes");
+	ASSERT_MSG(!IsNull(m_passes[0].renderPass.Get()), "first render pass not valid");
+	return m_passes[0].renderPass->GetRenderArea();
 }
 
 const Rect& DrawPass::GetScissor() const
 {
-	ASSERT_MSG(mPasses.size() > 0, "no render passes");
-	ASSERT_MSG(!IsNull(mPasses[0].renderPass.Get()), "first render pass not valid");
-	return mPasses[0].renderPass->GetScissor();
+	ASSERT_MSG(m_passes.size() > 0, "no render passes");
+	ASSERT_MSG(!IsNull(m_passes[0].renderPass.Get()), "first render pass not valid");
+	return m_passes[0].renderPass->GetScissor();
 }
 
 const Viewport& DrawPass::GetViewport() const
 {
-	ASSERT_MSG(mPasses.size() > 0, "no render passes");
-	ASSERT_MSG(!IsNull(mPasses[0].renderPass.Get()), "first render pass not valid");
-	return mPasses[0].renderPass->GetViewport();
+	ASSERT_MSG(m_passes.size() > 0, "no render passes");
+	ASSERT_MSG(!IsNull(m_passes[0].renderPass.Get()), "first render pass not valid");
+	return m_passes[0].renderPass->GetViewport();
 }
 
-Result DrawPass::GetRenderTargetTexture(uint32_t index, Texture** ppRenderTarget) const
+Result DrawPass::GetRenderTargetTexture(uint32_t index, Texture** renderTarget) const
 {
-	if (index >= m_createInfo.renderTargetCount) {
-		return ERROR_OUT_OF_RANGE;
-	}
-	*ppRenderTarget = mRenderTargetTextures[index];
+	if (index >= m_createInfo.renderTargetCount) return ERROR_OUT_OF_RANGE;
+	*renderTarget = m_renderTargetTextures[index];
 	return SUCCESS;
 }
 
 Texture* DrawPass::GetRenderTargetTexture(uint32_t index) const
 {
-	Texture* pTexture = nullptr;
-	GetRenderTargetTexture(index, &pTexture);
-	return pTexture;
+	Texture* texture = nullptr;
+	GetRenderTargetTexture(index, &texture);
+	return texture;
 }
 
-Result DrawPass::GetDepthStencilTexture(Texture** ppDepthStencil) const
+Result DrawPass::GetDepthStencilTexture(Texture** depthStencil) const
 {
-	if (!HasDepthStencil()) {
-		return ERROR_ELEMENT_NOT_FOUND;
-	}
-	*ppDepthStencil = mDepthStencilTexture;
+	if (!HasDepthStencil()) return ERROR_ELEMENT_NOT_FOUND;
+	*depthStencil = m_depthStencilTexture;
 	return SUCCESS;
 }
 
 Texture* DrawPass::GetDepthStencilTexture() const
 {
-	Texture* pTexture = nullptr;
-	GetDepthStencilTexture(&pTexture);
-	return pTexture;
+	Texture* texture = nullptr;
+	GetDepthStencilTexture(&texture);
+	return texture;
 }
 
-void DrawPass::PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, RenderPassBeginInfo* pBeginInfo) const
+void DrawPass::PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, RenderPassBeginInfo* beginInfo) const
 {
 	uint32_t clearMask = clearFlags.flags;
 
-	auto it = FindIf(
-		mPasses,
-		[clearMask](const Pass& elem) -> bool {
+	auto it = FindIf(m_passes, [clearMask](const Pass& elem) -> bool {
 			bool isMatch = (elem.clearMask == clearMask);
 			return isMatch; });
-	if (it == std::end(mPasses)) {
-		ASSERT_MSG(false, "couldn't find matching pass for clearMask=" + std::to_string(clearMask));
+	if (it == std::end(m_passes))
+	{
+		Fatal("couldn't find matching pass for clearMask=" + std::to_string(clearMask));
 		return;
 	}
 
-	pBeginInfo->pRenderPass = it->renderPass;
-	pBeginInfo->renderArea = GetRenderArea();
-	pBeginInfo->RTVClearCount = m_createInfo.renderTargetCount;
+	beginInfo->pRenderPass = it->renderPass;
+	beginInfo->renderArea = GetRenderArea();
+	beginInfo->RTVClearCount = m_createInfo.renderTargetCount;
 
-	if (clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS) {
-		for (uint32_t i = 0; i < m_createInfo.renderTargetCount; ++i) {
-			pBeginInfo->RTVClearValues[i] = m_createInfo.renderTargetClearValues[i];
+	if (clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS)
+	{
+		for (uint32_t i = 0; i < m_createInfo.renderTargetCount; ++i)
+		{
+			beginInfo->RTVClearValues[i] = m_createInfo.renderTargetClearValues[i];
 		}
 	}
 
-	if ((clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH) || (clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL)) {
-		pBeginInfo->DSVClearValue = m_createInfo.depthStencilClearValue;
+	if ((clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH) || (clearFlags & DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL))
+	{
+		beginInfo->DSVClearValue = m_createInfo.depthStencilClearValue;
 	}
 }
 

@@ -343,8 +343,8 @@ void Example_024::SetupCommon()
 		createInfo.width = swapChain.GetWidth();
 		createInfo.height = swapChain.GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.pRenderTargetImages[0] = mTransparencyTexture->GetImage();
-		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
+		createInfo.renderTargetImages[0] = mTransparencyTexture->GetImage();
+		createInfo.depthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
 		createInfo.depthStencilState = vkr::ResourceState::DepthStencilWrite;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
@@ -701,8 +701,8 @@ void Example_024::SetupBufferBuckets()
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.pRenderTargetImages[0] = mBuffer.buckets.countTexture->GetImage();
-		createInfo.pDepthStencilImage = nullptr;
+		createInfo.renderTargetImages[0] = mBuffer.buckets.countTexture->GetImage();
+		createInfo.depthStencilImage = nullptr;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mBuffer.buckets.clearPass));
 	}
@@ -713,7 +713,7 @@ void Example_024::SetupBufferBuckets()
 		createInfo.width = mBuffer.buckets.countTexture->GetWidth();
 		createInfo.height = mBuffer.buckets.countTexture->GetHeight();
 		createInfo.renderTargetCount = 0;
-		createInfo.pDepthStencilImage = nullptr;
+		createInfo.depthStencilImage = nullptr;
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mBuffer.buckets.gatherPass));
 	}
 
@@ -916,8 +916,8 @@ void Example_024::SetupBufferLinkedLists()
 		createInfo.width = mBuffer.lists.linkedListHeadTexture->GetWidth();
 		createInfo.height = mBuffer.lists.linkedListHeadTexture->GetHeight();
 		createInfo.renderTargetCount = 1;
-		createInfo.pRenderTargetImages[0] = mBuffer.lists.linkedListHeadTexture->GetImage();
-		createInfo.pDepthStencilImage = nullptr;
+		createInfo.renderTargetImages[0] = mBuffer.lists.linkedListHeadTexture->GetImage();
+		createInfo.depthStencilImage = nullptr;
 		createInfo.renderTargetClearValues[0] = { clearValueFloat, 0, 0, 0 };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mBuffer.lists.clearPass));
 	}
@@ -928,7 +928,7 @@ void Example_024::SetupBufferLinkedLists()
 		createInfo.width = mBuffer.lists.linkedListHeadTexture->GetWidth();
 		createInfo.height = mBuffer.lists.linkedListHeadTexture->GetHeight();
 		createInfo.renderTargetCount = 0;
-		createInfo.pDepthStencilImage = nullptr;
+		createInfo.depthStencilImage = nullptr;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mBuffer.lists.gatherPass));
 	}
@@ -1318,8 +1318,8 @@ void Example_024::SetupDepthPeeling()
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
-			createInfo.pRenderTargetImages[0] = mDepthPeeling.layerTextures[i]->GetImage();
-			createInfo.pDepthStencilImage = mDepthPeeling.depthTextures[i % DEPTH_PEELING_DEPTH_TEXTURES_COUNT]->GetImage();
+			createInfo.renderTargetImages[0] = mDepthPeeling.layerTextures[i]->GetImage();
+			createInfo.depthStencilImage = mDepthPeeling.depthTextures[i % DEPTH_PEELING_DEPTH_TEXTURES_COUNT]->GetImage();
 			CHECKED_CALL(GetRenderDevice().CreateDrawPass(createInfo, &mDepthPeeling.layerPasses[i]));
 		}
 	}
@@ -1706,9 +1706,9 @@ void Example_024::SetupWeightedAverage()
 		createInfo.width = mWeightedAverage.colorTexture->GetWidth();
 		createInfo.height = mWeightedAverage.colorTexture->GetHeight();
 		createInfo.renderTargetCount = 2;
-		createInfo.pRenderTargetImages[0] = mWeightedAverage.colorTexture->GetImage();
-		createInfo.pRenderTargetImages[1] = mWeightedAverage.extraTexture->GetImage();
-		createInfo.pDepthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
+		createInfo.renderTargetImages[0] = mWeightedAverage.colorTexture->GetImage();
+		createInfo.renderTargetImages[1] = mWeightedAverage.extraTexture->GetImage();
+		createInfo.depthStencilImage = mOpaquePass->GetDepthStencilTexture()->GetImage();
 		createInfo.depthStencilState = vkr::ResourceState::DepthStencilWrite;
 		createInfo.renderTargetClearValues[0] = { 0, 0, 0, 0 };
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };

@@ -817,7 +817,7 @@ struct RenderPassBeginInfo;
 
 // Use this version if the format(s) are known but images need creation.
 // Backing images will be created using the criteria provided in this struct.
-struct DrawPassCreateInfo
+struct DrawPassCreateInfo final
 {
 	uint32_t               width = 0;
 	uint32_t               height = 0;
@@ -831,40 +831,39 @@ struct DrawPassCreateInfo
 	ResourceState          depthStencilInitialState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	ShadingRatePattern*    pShadingRatePattern = nullptr;
+	ShadingRatePattern*    shadingRatePattern = nullptr;
 	ImageCreateFlags       imageCreateFlags = {};
 };
 
 // Use this version if the images exists.
-struct DrawPassCreateInfo2
+struct DrawPassCreateInfo2 final
 {
 	uint32_t               width = 0;
 	uint32_t               height = 0;
 	uint32_t               renderTargetCount = 0;
-	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
-	Image*                 pDepthStencilImage = nullptr;
+	Image*                 renderTargetImages[MaxRenderTargets] = {};
+	Image*                 depthStencilImage = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	ShadingRatePattern*    pShadingRatePattern = nullptr;
+	ShadingRatePattern*    shadingRatePattern = nullptr;
 };
 
 // Use this version if the textures exists.
-struct DrawPassCreateInfo3
+struct DrawPassCreateInfo3 final
 {
 	uint32_t            width = 0;
 	uint32_t            height = 0;
 	uint32_t            renderTargetCount = 0;
-	Texture*            pRenderTargetTextures[MaxRenderTargets] = {};
-	Texture*            pDepthStencilTexture = nullptr;
+	Texture*            renderTargetTextures[MaxRenderTargets] = {};
+	Texture*            depthStencilTexture = nullptr;
 	ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
-	ShadingRatePattern* pShadingRatePattern = nullptr;
+	ShadingRatePattern* shadingRatePattern = nullptr;
 };
 
 namespace internal
 {
-
-	struct DrawPassCreateInfo
+	struct DrawPassCreateInfo final
 	{
 		enum CreateInfoVersion
 		{
@@ -879,7 +878,7 @@ namespace internal
 		uint32_t            height = 0;
 		uint32_t            renderTargetCount = 0;
 		ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
-		ShadingRatePattern* pShadingRatePattern = nullptr;
+		ShadingRatePattern* shadingRatePattern = nullptr;
 
 		// Data unique to DrawPassCreateInfo1
 		struct
@@ -897,66 +896,63 @@ namespace internal
 		// Data unique to DrawPassCreateInfo2
 		struct
 		{
-			Image* pRenderTargetImages[MaxRenderTargets] = {};
-			Image* pDepthStencilImage = nullptr;
+			Image* renderTargetImages[MaxRenderTargets] = {};
+			Image* depthStencilImage = nullptr;
 		} V2;
 
 		// Data unique to DrawPassCreateInfo3
 		struct
 		{
-			Texture* pRenderTargetTextures[MaxRenderTargets] = {};
-			Texture* pDepthStencilTexture = nullptr;
+			Texture* renderTargetTextures[MaxRenderTargets] = {};
+			Texture* depthStencilTexture = nullptr;
 		} V3;
 
 		// Clear values
 		RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 		DepthStencilClearValue depthStencilClearValue = {};
 
-		DrawPassCreateInfo() {}
+		DrawPassCreateInfo() = default;
 		DrawPassCreateInfo(const vkr::DrawPassCreateInfo& obj);
 		DrawPassCreateInfo(const vkr::DrawPassCreateInfo2& obj);
 		DrawPassCreateInfo(const vkr::DrawPassCreateInfo3& obj);
 	};
-
 }
 
 class DrawPass final : public DeviceObject<internal::DrawPassCreateInfo>
 {
 public:
-	uint32_t              GetWidth() const { return m_createInfo.width; }
-	uint32_t              GetHeight() const { return m_createInfo.height; }
-	const Rect& GetRenderArea() const;
-	const Rect& GetScissor() const;
+	uint32_t        GetWidth() const { return m_createInfo.width; }
+	uint32_t        GetHeight() const { return m_createInfo.height; }
+	const Rect&     GetRenderArea() const;
+	const Rect&     GetScissor() const;
 	const Viewport& GetViewport() const;
+	uint32_t        GetRenderTargetCount() const { return m_createInfo.renderTargetCount; }
+	Result          GetRenderTargetTexture(uint32_t index, Texture** renderTarget) const;
+	Texture*        GetRenderTargetTexture(uint32_t index) const;
+	bool            HasDepthStencil() const { return m_depthStencilTexture ? true : false; }
+	Result          GetDepthStencilTexture(Texture** depthStencil) const;
+	Texture*        GetDepthStencilTexture() const;
 
-	uint32_t       GetRenderTargetCount() const { return m_createInfo.renderTargetCount; }
-	Result         GetRenderTargetTexture(uint32_t index, Texture** ppRenderTarget) const;
-	Texture* GetRenderTargetTexture(uint32_t index) const;
-	bool           HasDepthStencil() const { return mDepthStencilTexture ? true : false; }
-	Result         GetDepthStencilTexture(Texture** ppDepthStencil) const;
-	Texture* GetDepthStencilTexture() const;
-
-	void PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, RenderPassBeginInfo* pBeginInfo) const;
+	void PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, RenderPassBeginInfo* beginInfo) const;
 
 private:
-	Result createApiObjects(const internal::DrawPassCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const internal::DrawPassCreateInfo& createInfo) final;
 	void destroyApiObjects() final;
 
-	Result CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInfo);
-	Result CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInfo);
-	Result CreateTexturesV3(const internal::DrawPassCreateInfo& pCreateInfo);
+	Result createTexturesV1(const internal::DrawPassCreateInfo& createInfo);
+	Result createTexturesV2(const internal::DrawPassCreateInfo& createInfo);
+	Result createTexturesV3(const internal::DrawPassCreateInfo& createInfo);
 
-	Rect                    mRenderArea = {};
-	std::vector<TexturePtr> mRenderTargetTextures;
-	TexturePtr              mDepthStencilTexture;
+	Rect                    m_renderArea = {};
+	std::vector<TexturePtr> m_renderTargetTextures;
+	TexturePtr              m_depthStencilTexture;
 
-	struct Pass
+	struct Pass final
 	{
-		uint32_t            clearMask = 0;
+		uint32_t clearMask = 0;
 		RenderPassPtr renderPass;
 	};
-
-	std::vector<Pass> mPasses;
+	std::vector<Pass> m_passes;
 };
 
 #pragma endregion
