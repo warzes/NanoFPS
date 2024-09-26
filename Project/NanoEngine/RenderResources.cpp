@@ -508,7 +508,8 @@ Result Image::MapMemory(uint64_t offset, void** mappedAddress)
 	if (IsNull(mappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
 	VkResult vkres = vmaMapMemory(GetDevice()->GetVmaAllocator(), m_allocation, mappedAddress);
-	if (vkres != VK_SUCCESS) {
+	if (vkres != VK_SUCCESS)
+	{
 		Fatal("vmaMapMemory failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
@@ -698,19 +699,19 @@ ImageViewType Image::GuessImageViewType(bool isCube) const
 
 	if (isCube)
 	{
-		return (arrayLayerCount > 0) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE;
+		return (arrayLayerCount > 0) ? ImageViewType::CubeArray : ImageViewType::Cube;
 	}
 	else
 	{
 		switch (m_createInfo.type) {
 		default: break;
-		case ImageType::Image1D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_1D_ARRAY : IMAGE_VIEW_TYPE_1D; break;
-		case ImageType::Image2D: return (arrayLayerCount > 1) ? IMAGE_VIEW_TYPE_2D_ARRAY : IMAGE_VIEW_TYPE_2D; break;
-		case ImageType::Cube:    return (arrayLayerCount > 6) ? IMAGE_VIEW_TYPE_CUBE_ARRAY : IMAGE_VIEW_TYPE_CUBE; break;
+		case ImageType::Image1D: return (arrayLayerCount > 1) ? ImageViewType::ImageView1DArray : ImageViewType::ImageView1D; break;
+		case ImageType::Image2D: return (arrayLayerCount > 1) ? ImageViewType::ImageView2DArray : ImageViewType::ImageView2D; break;
+		case ImageType::Cube:    return (arrayLayerCount > 6) ? ImageViewType::CubeArray : ImageViewType::Cube; break;
 		}
 	}
 
-	return IMAGE_VIEW_TYPE_UNDEFINED;
+	return ImageViewType::Undefined;
 }
 
 Result Sampler::createApiObjects(const SamplerCreateInfo& createInfo)
@@ -765,54 +766,49 @@ void Sampler::destroyApiObjects()
 	}
 }
 
-DepthStencilViewCreateInfo DepthStencilViewCreateInfo::GuessFromImage(Image* pImage)
+DepthStencilViewCreateInfo DepthStencilViewCreateInfo::GuessFromImage(Image* image)
 {
 	DepthStencilViewCreateInfo ci = {};
-	ci.pImage = pImage;
-	ci.imageViewType = pImage->GuessImageViewType();
-	ci.format = pImage->GetFormat();
+	ci.image = image;
+	ci.imageViewType = image->GuessImageViewType();
+	ci.format = image->GetFormat();
 	ci.mipLevel = 0;
 	ci.mipLevelCount = 1;
 	ci.arrayLayer = 0;
 	ci.arrayLayerCount = 1;
 	ci.components = {};
-	ci.depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	ci.depthStoreOp = ATTACHMENT_STORE_OP_STORE;
-	ci.stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	ci.stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	ci.depthLoadOp = AttachmentLoadOp::Load;
+	ci.depthStoreOp = AttachmentStoreOp::Store;
+	ci.stencilLoadOp = AttachmentLoadOp::Load;
+	ci.stencilStoreOp = AttachmentStoreOp::Store;
 	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
-Result DepthStencilView::createApiObjects(const DepthStencilViewCreateInfo& pCreateInfo)
+Result DepthStencilView::createApiObjects(const DepthStencilViewCreateInfo& createInfo)
 {
-	VkImageViewCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-	vkci.flags = 0;
-	vkci.image = pCreateInfo.pImage->GetVkImage();
-	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkEnum(pCreateInfo.format);
-	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
-	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
-	vkci.subresourceRange.levelCount = pCreateInfo.mipLevelCount;
-	vkci.subresourceRange.baseArrayLayer = pCreateInfo.arrayLayer;
-	vkci.subresourceRange.layerCount = pCreateInfo.arrayLayerCount;
-
-	VkResult vkres = vkCreateImageView(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mImageView);
+	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+	vkci.flags                           = 0;
+	vkci.image                           = createInfo.image->GetVkImage();
+	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.format                          = ToVkEnum(createInfo.format);
+	vkci.components                      = ToVkComponentMapping(createInfo.components);
+	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
+	vkci.subresourceRange.baseMipLevel   = createInfo.mipLevel;
+	vkci.subresourceRange.levelCount     = createInfo.mipLevelCount;
+	vkci.subresourceRange.baseArrayLayer = createInfo.arrayLayer;
+	vkci.subresourceRange.layerCount     = createInfo.arrayLayerCount;
+	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_imageView);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateImageView(DepthStencilView) failed: " + ToString(vkres));
+		Fatal("vkCreateImageView(DepthStencilView) failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
-	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(mImageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(m_imageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
 	if (!resourceView)
 	{
-		ASSERT_MSG(false, "vk::internal::ImageResourceView(DepthStencilView) allocation failed");
+		Fatal("internal::ImageResourceView(DepthStencilView) allocation failed");
 		return ERROR_ALLOCATION_FAILED;
 	}
 	setResourceView(std::move(resourceView));
@@ -822,58 +818,55 @@ Result DepthStencilView::createApiObjects(const DepthStencilViewCreateInfo& pCre
 
 void DepthStencilView::destroyApiObjects()
 {
-	if (mImageView) 
+	if (m_imageView) 
 	{
-		vkDestroyImageView(GetDevice()->GetVkDevice(), mImageView, nullptr);
-		mImageView.Reset();
+		vkDestroyImageView(GetDevice()->GetVkDevice(), m_imageView, nullptr);
+		m_imageView.Reset();
 	}
 }
 
-RenderTargetViewCreateInfo RenderTargetViewCreateInfo::GuessFromImage(Image* pImage)
+RenderTargetViewCreateInfo RenderTargetViewCreateInfo::GuessFromImage(Image* image)
 {
 	RenderTargetViewCreateInfo ci = {};
-	ci.pImage = pImage;
-	ci.imageViewType = pImage->GuessImageViewType();
-	ci.format = pImage->GetFormat();
+	ci.image = image;
+	ci.imageViewType = image->GuessImageViewType();
+	ci.format = image->GetFormat();
 	ci.mipLevel = 0;
 	ci.mipLevelCount = 1;
 	ci.arrayLayer = 0;
 	ci.arrayLayerCount = 1;
 	ci.components = {};
-	ci.loadOp = ATTACHMENT_LOAD_OP_LOAD;
-	ci.storeOp = ATTACHMENT_STORE_OP_STORE;
+	ci.loadOp = AttachmentLoadOp::Load;
+	ci.storeOp = AttachmentStoreOp::Store;
 	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
-Result RenderTargetView::createApiObjects(const RenderTargetViewCreateInfo& pCreateInfo)
+Result RenderTargetView::createApiObjects(const RenderTargetViewCreateInfo& createInfo)
 {
-	VkImageViewCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-	vkci.flags = 0;
-	vkci.image = pCreateInfo.pImage->GetVkImage();
-	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkEnum(pCreateInfo.format);
-	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
-	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
-	vkci.subresourceRange.levelCount = pCreateInfo.mipLevelCount;
-	vkci.subresourceRange.baseArrayLayer = pCreateInfo.arrayLayer;
-	vkci.subresourceRange.layerCount = pCreateInfo.arrayLayerCount;
+	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+	vkci.flags                           = 0;
+	vkci.image                           = createInfo.image->GetVkImage();
+	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.format                          = ToVkEnum(createInfo.format);
+	vkci.components                      = ToVkComponentMapping(createInfo.components);
+	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
+	vkci.subresourceRange.baseMipLevel   = createInfo.mipLevel;
+	vkci.subresourceRange.levelCount     = createInfo.mipLevelCount;
+	vkci.subresourceRange.baseArrayLayer = createInfo.arrayLayer;
+	vkci.subresourceRange.layerCount     = createInfo.arrayLayerCount;
 
-	VkResult vkres = vkCreateImageView(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mImageView);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreateImageView(RenderTargetView) failed: " + ToString(vkres));
+	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_imageView);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateImageView(RenderTargetView) failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
-	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(mImageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(m_imageView, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
 	if (!resourceView)
 	{
-		ASSERT_MSG(false, "vk::internal::ImageResourceView(RenderTargetView) allocation failed");
+		Fatal("internal::ImageResourceView(RenderTargetView) allocation failed");
 		return ERROR_ALLOCATION_FAILED;
 	}
 	setResourceView(std::move(resourceView));
@@ -883,64 +876,60 @@ Result RenderTargetView::createApiObjects(const RenderTargetViewCreateInfo& pCre
 
 void RenderTargetView::destroyApiObjects()
 {
-	if (mImageView)
+	if (m_imageView)
 	{
-		vkDestroyImageView(GetDevice()->GetVkDevice(), mImageView, nullptr);
-		mImageView.Reset();
+		vkDestroyImageView(GetDevice()->GetVkDevice(), m_imageView, nullptr);
+		m_imageView.Reset();
 	}
 }
 
-SampledImageViewCreateInfo SampledImageViewCreateInfo::GuessFromImage(Image* pImage)
+SampledImageViewCreateInfo SampledImageViewCreateInfo::GuessFromImage(Image* image)
 {
 	SampledImageViewCreateInfo ci = {};
-	ci.pImage = pImage;
-	ci.imageViewType = pImage->GuessImageViewType();
-	ci.format = pImage->GetFormat();
+	ci.image = image;
+	ci.imageViewType = image->GuessImageViewType();
+	ci.format = image->GetFormat();
 	ci.mipLevel = 0;
-	ci.mipLevelCount = pImage->GetMipLevelCount();
+	ci.mipLevelCount = image->GetMipLevelCount();
 	ci.arrayLayer = 0;
-	ci.arrayLayerCount = pImage->GetArrayLayerCount();
+	ci.arrayLayerCount = image->GetArrayLayerCount();
 	ci.components = {};
 	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
-Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& pCreateInfo)
+Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& createInfo)
 {
-	VkImageViewCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-	vkci.flags = 0;
-	vkci.image = pCreateInfo.pImage->GetVkImage();
-	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkEnum(pCreateInfo.format);
-	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
-	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
-	vkci.subresourceRange.levelCount = pCreateInfo.mipLevelCount;
-	vkci.subresourceRange.baseArrayLayer = pCreateInfo.arrayLayer;
-	vkci.subresourceRange.layerCount = pCreateInfo.arrayLayerCount;
+	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+	vkci.flags                           = 0;
+	vkci.image                           = createInfo.image->GetVkImage();
+	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.format                          = ToVkEnum(createInfo.format);
+	vkci.components                      = ToVkComponentMapping(createInfo.components);
+	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
+	vkci.subresourceRange.baseMipLevel   = createInfo.mipLevel;
+	vkci.subresourceRange.levelCount     = createInfo.mipLevelCount;
+	vkci.subresourceRange.baseArrayLayer = createInfo.arrayLayer;
+	vkci.subresourceRange.layerCount     = createInfo.arrayLayerCount;
 
 	VkSamplerYcbcrConversionInfo conversionInfo{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO };
-	if (pCreateInfo.pYcbcrConversion != nullptr)
+	if (createInfo.ycbcrConversion != nullptr)
 	{
-		conversionInfo.conversion = pCreateInfo.pYcbcrConversion->GetVkSamplerYcbcrConversion().Get();
+		conversionInfo.conversion = createInfo.ycbcrConversion->GetVkSamplerYcbcrConversion().Get();
 		vkci.pNext = &conversionInfo;
 	}
 
-	VkResult vkres = vkCreateImageView(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mImageView);
+	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_imageView);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateImageView(SampledImageView) failed: " + ToString(vkres));
+		Fatal("vkCreateImageView(SampledImageView) failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
-	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(mImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(m_imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 	if (!resourceView)
 	{
-		ASSERT_MSG(false, "internal::ImageResourceView(SampledImageView) allocation failed");
+		Fatal("internal::ImageResourceView(SampledImageView) allocation failed");
 		return ERROR_ALLOCATION_FAILED;
 	}
 	setResourceView(std::move(resourceView));
@@ -950,30 +939,29 @@ Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& pCre
 
 void SampledImageView::destroyApiObjects()
 {
-	if (mImageView)
+	if (m_imageView)
 	{
-		vkDestroyImageView( GetDevice()->GetVkDevice(), mImageView, nullptr);
-		mImageView.Reset();
+		vkDestroyImageView( GetDevice()->GetVkDevice(), m_imageView, nullptr);
+		m_imageView.Reset();
 	}
 }
 
-Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCreateInfo& pCreateInfo)
+Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCreateInfo& createInfo)
 {
 	VkSamplerYcbcrConversionCreateInfo vkci{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO };
-	vkci.format = ToVkEnum(pCreateInfo.format);
-	vkci.ycbcrModel = ToVkYcbcrModelConversion(pCreateInfo.ycbcrModel);
-	vkci.ycbcrRange = ToVkYcbcrRange(pCreateInfo.ycbcrRange);
-	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.xChromaOffset = ToVkChromaLocation(pCreateInfo.xChromaOffset);
-	vkci.yChromaOffset = ToVkChromaLocation(pCreateInfo.yChromaOffset);
-	vkci.chromaFilter = ToVkEnum(pCreateInfo.filter);
-	vkci.forceExplicitReconstruction = pCreateInfo.forceExplicitReconstruction ? VK_TRUE : VK_FALSE;
+	vkci.format                      = ToVkEnum(createInfo.format);
+	vkci.ycbcrModel                  = ToVkYcbcrModelConversion(createInfo.ycbcrModel);
+	vkci.ycbcrRange                  = ToVkYcbcrRange(createInfo.ycbcrRange);
+	vkci.components                  = ToVkComponentMapping(createInfo.components);
+	vkci.xChromaOffset               = ToVkChromaLocation(createInfo.xChromaOffset);
+	vkci.yChromaOffset               = ToVkChromaLocation(createInfo.yChromaOffset);
+	vkci.chromaFilter                = ToVkEnum(createInfo.filter);
+	vkci.forceExplicitReconstruction = createInfo.forceExplicitReconstruction ? VK_TRUE : VK_FALSE;
 
-	VkResult vkres = vkCreateSamplerYcbcrConversion(GetDevice()->GetVkDevice(), &vkci, nullptr, &mSamplerYcbcrConversion);
-	//Print("Created sampler ycbcr conversion: " + mSamplerYcbcrConversion.Get());
+	VkResult vkres = vkCreateSamplerYcbcrConversion(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_samplerYcbcrConversion);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateSamplerYcbcrConversion failed: " + ToString(vkres));
+		Fatal("vkCreateSamplerYcbcrConversion failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -982,56 +970,52 @@ Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCrea
 
 void SamplerYcbcrConversion::destroyApiObjects()
 {
-	if (mSamplerYcbcrConversion)
+	if (m_samplerYcbcrConversion)
 	{
-		vkDestroySamplerYcbcrConversion(GetDevice()->GetVkDevice(), mSamplerYcbcrConversion, nullptr);
-		mSamplerYcbcrConversion.Reset();
+		vkDestroySamplerYcbcrConversion(GetDevice()->GetVkDevice(), m_samplerYcbcrConversion, nullptr);
+		m_samplerYcbcrConversion.Reset();
 	}
 }
 
-StorageImageViewCreateInfo StorageImageViewCreateInfo::GuessFromImage(Image* pImage)
+StorageImageViewCreateInfo StorageImageViewCreateInfo::GuessFromImage(Image* image)
 {
 	StorageImageViewCreateInfo ci = {};
-	ci.pImage = pImage;
-	ci.imageViewType = pImage->GuessImageViewType();
-	ci.format = pImage->GetFormat();
+	ci.image = image;
+	ci.imageViewType = image->GuessImageViewType();
+	ci.format = image->GetFormat();
 	ci.mipLevel = 0;
-	ci.mipLevelCount = pImage->GetMipLevelCount();
+	ci.mipLevelCount = image->GetMipLevelCount();
 	ci.arrayLayer = 0;
-	ci.arrayLayerCount = pImage->GetArrayLayerCount();
+	ci.arrayLayerCount = image->GetArrayLayerCount();
 	ci.components = {};
 	ci.ownership = Ownership::Reference;
 	return ci;
 }
 
-Result StorageImageView::createApiObjects(const StorageImageViewCreateInfo& pCreateInfo)
+Result StorageImageView::createApiObjects(const StorageImageViewCreateInfo& createInfo)
 {
-	VkImageViewCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-	vkci.flags = 0;
-	vkci.image = pCreateInfo.pImage->GetVkImage();
-	vkci.viewType = ToVkImageViewType(pCreateInfo.imageViewType);
-	vkci.format = ToVkEnum(pCreateInfo.format);
-	vkci.components = ToVkComponentMapping(pCreateInfo.components);
-	vkci.subresourceRange.aspectMask = pCreateInfo.pImage->GetVkImageAspectFlags();
-	vkci.subresourceRange.baseMipLevel = pCreateInfo.mipLevel;
-	vkci.subresourceRange.levelCount = pCreateInfo.mipLevelCount;
-	vkci.subresourceRange.baseArrayLayer = pCreateInfo.arrayLayer;
-	vkci.subresourceRange.layerCount = pCreateInfo.arrayLayerCount;
-
-	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mImageView);
+	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+	vkci.flags                           = 0;
+	vkci.image                           = createInfo.image->GetVkImage();
+	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.format                          = ToVkEnum(createInfo.format);
+	vkci.components                      = ToVkComponentMapping(createInfo.components);
+	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
+	vkci.subresourceRange.baseMipLevel   = createInfo.mipLevel;
+	vkci.subresourceRange.levelCount     = createInfo.mipLevelCount;
+	vkci.subresourceRange.baseArrayLayer = createInfo.arrayLayer;
+	vkci.subresourceRange.layerCount     = createInfo.arrayLayerCount;
+	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_imageView);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateImageView(StorageImageView) failed: " + ToString(vkres));
+		Fatal("vkCreateImageView(StorageImageView) failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
-	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(mImageView, VK_IMAGE_LAYOUT_GENERAL));
+	std::unique_ptr<internal::ImageResourceView> resourceView(new internal::ImageResourceView(m_imageView, VK_IMAGE_LAYOUT_GENERAL));
 	if (!resourceView)
 	{
-		ASSERT_MSG(false, "internal::ImageResourceView(StorageImageView) allocation failed");
+		Fatal("internal::ImageResourceView(StorageImageView) allocation failed");
 		return ERROR_ALLOCATION_FAILED;
 	}
 	setResourceView(std::move(resourceView));
@@ -1041,192 +1025,16 @@ Result StorageImageView::createApiObjects(const StorageImageViewCreateInfo& pCre
 
 void StorageImageView::destroyApiObjects()
 {
-	if (mImageView)
+	if (m_imageView)
 	{
-		vkDestroyImageView(GetDevice()->GetVkDevice(), mImageView, nullptr);
-		mImageView.Reset();
+		vkDestroyImageView(GetDevice()->GetVkDevice(), m_imageView, nullptr);
+		m_imageView.Reset();
 	}
 }
 
 #pragma endregion
 
 #pragma region Texture
-
-Result Texture::create(const TextureCreateInfo& pCreateInfo)
-{
-	// Copy in case view types and formats are specified:
-	//   - if an image is supplied, then the next section
-	//     will overwrite all the image related fields with
-	//     values from the supplied image.
-	//   - if an image is NOT supplied, then nothing gets
-	//     overwritten.
-	//
-	m_createInfo = pCreateInfo;
-
-	if (!IsNull(pCreateInfo.pImage)) 
-	{
-		m_image = pCreateInfo.pImage;
-		m_createInfo.imageType = m_image->GetType();
-		m_createInfo.width = m_image->GetWidth();
-		m_createInfo.height = m_image->GetHeight();
-		m_createInfo.depth = m_image->GetDepth();
-		m_createInfo.imageFormat = m_image->GetFormat();
-		m_createInfo.sampleCount = m_image->GetSampleCount();
-		m_createInfo.mipLevelCount = m_image->GetMipLevelCount();
-		m_createInfo.arrayLayerCount = m_image->GetArrayLayerCount();
-		m_createInfo.usageFlags = m_image->GetUsageFlags();
-		m_createInfo.memoryUsage = m_image->GetMemoryUsage();
-		m_createInfo.initialState = m_image->GetInitialState();
-		m_createInfo.RTVClearValue = m_image->GetRTVClearValue();
-		m_createInfo.DSVClearValue = m_image->GetDSVClearValue();
-		m_createInfo.concurrentMultiQueueUsage = m_image->GetConcurrentMultiQueueUsageEnabled();
-	}
-
-	// Yes, m_createInfo will self overwrite in the following function call.
-	Result ppxres = DeviceObject<TextureCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) return ppxres;
-
-	return SUCCESS;
-}
-
-Result Texture::createApiObjects(const TextureCreateInfo& pCreateInfo)
-{
-	// Image
-	if (IsNull(pCreateInfo.pImage))
-	{
-		if (pCreateInfo.usageFlags.bits.colorAttachment && pCreateInfo.usageFlags.bits.depthStencilAttachment)
-		{
-			ASSERT_MSG(false, "texture cannot be both color attachment and depth stencil attachment");
-			return ERROR_INVALID_CREATE_ARGUMENT;
-		}
-
-		ImageCreateInfo ci = {};
-		ci.type = pCreateInfo.imageType;
-		ci.width = pCreateInfo.width;
-		ci.height = pCreateInfo.height;
-		ci.depth = pCreateInfo.depth;
-		ci.format = pCreateInfo.imageFormat;
-		ci.sampleCount = pCreateInfo.sampleCount;
-		ci.mipLevelCount = pCreateInfo.mipLevelCount;
-		ci.arrayLayerCount = pCreateInfo.arrayLayerCount;
-		ci.usageFlags = pCreateInfo.usageFlags;
-		ci.memoryUsage = pCreateInfo.memoryUsage;
-		ci.initialState = pCreateInfo.initialState;
-		ci.RTVClearValue = pCreateInfo.RTVClearValue;
-		ci.DSVClearValue = pCreateInfo.DSVClearValue;
-		ci.ApiObject = nullptr;
-		ci.ownership = pCreateInfo.ownership;
-		ci.concurrentMultiQueueUsage = pCreateInfo.concurrentMultiQueueUsage;
-		ci.createFlags = pCreateInfo.imageCreateFlags;
-
-		Result ppxres = GetDevice()->CreateImage(ci, &m_image);
-		if (Failed(ppxres))
-		{
-			ASSERT_MSG(false, "texture create image failed");
-			return ppxres;
-		}
-	}
-
-	if (pCreateInfo.usageFlags.bits.sampled)
-	{
-		SampledImageViewCreateInfo ci = SampledImageViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.sampledImageViewType != IMAGE_VIEW_TYPE_UNDEFINED) 
-		{
-			ci.imageViewType = pCreateInfo.sampledImageViewType;
-		}
-		ci.pYcbcrConversion = pCreateInfo.pSampledImageYcbcrConversion;
-
-		Result ppxres = GetDevice()->CreateSampledImageView(ci, &m_sampledImageView);
-		if (Failed(ppxres)) 
-		{
-			ASSERT_MSG(false, "texture create sampled image view failed");
-			return ppxres;
-		}
-	}
-
-	if (pCreateInfo.usageFlags.bits.colorAttachment)
-	{
-		RenderTargetViewCreateInfo ci = RenderTargetViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.renderTargetViewFormat != Format::Undefined)
-		{
-			ci.format = pCreateInfo.renderTargetViewFormat;
-		}
-
-		Result ppxres = GetDevice()->CreateRenderTargetView(ci, &m_renderTargetView);
-		if (Failed(ppxres))
-		{
-			ASSERT_MSG(false, "texture create render target view failed");
-			return ppxres;
-		}
-	}
-
-	if (pCreateInfo.usageFlags.bits.depthStencilAttachment)
-	{
-		DepthStencilViewCreateInfo ci = DepthStencilViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.depthStencilViewFormat != Format::Undefined)
-		{
-			ci.format = pCreateInfo.depthStencilViewFormat;
-		}
-
-		Result ppxres = GetDevice()->CreateDepthStencilView(ci, &m_depthStencilView);
-		if (Failed(ppxres))
-		{
-			ASSERT_MSG(false, "texture create depth stencil view failed");
-			return ppxres;
-		}
-	}
-
-	if (pCreateInfo.usageFlags.bits.storage)
-	{
-		StorageImageViewCreateInfo ci = StorageImageViewCreateInfo::GuessFromImage(m_image);
-		if (pCreateInfo.storageImageViewFormat != Format::Undefined)
-		{
-			ci.format = pCreateInfo.storageImageViewFormat;
-		}
-
-		Result ppxres = GetDevice()->CreateStorageImageView(ci, &m_storageImageView);
-		if (Failed(ppxres))
-		{
-			ASSERT_MSG(false, "texture create storage image view failed");
-			return ppxres;
-		}
-	}
-
-	return SUCCESS;
-}
-
-void Texture::destroyApiObjects()
-{
-	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != Ownership::Reference))
-	{
-		GetDevice()->DestroySampledImageView(m_sampledImageView);
-		m_sampledImageView.Reset();
-	}
-
-	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != Ownership::Reference))
-	{
-		GetDevice()->DestroyRenderTargetView(m_renderTargetView);
-		m_renderTargetView.Reset();
-	}
-
-	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != Ownership::Reference))
-	{
-		GetDevice()->DestroyDepthStencilView(m_depthStencilView);
-		m_depthStencilView.Reset();
-	}
-
-	if (m_storageImageView && (m_storageImageView->GetOwnership() != Ownership::Reference))
-	{
-		GetDevice()->DestroyStorageImageView(m_storageImageView);
-		m_storageImageView.Reset();
-	}
-
-	if (m_image && (m_image->GetOwnership() != Ownership::Reference))
-	{
-		GetDevice()->DestroyImage(m_image);
-		m_image.Reset();
-	}
-}
 
 ImageType Texture::GetImageType() const
 {
@@ -1298,391 +1106,556 @@ Format Texture::GetStorageImageViewFormat() const
 	return m_storageImageView ? m_storageImageView->GetFormat() : Format::Undefined;
 }
 
+Result Texture::createApiObjects(const TextureCreateInfo& createInfo)
+{
+	// Copy in case view types and formats are specified:
+	// - if an image is supplied, then the next section will overwrite all the image related fields with values from the supplied image.
+	// - if an image is NOT supplied, then nothing gets overwritten.
+	m_createInfo = createInfo;
+
+	if (!IsNull(createInfo.image))
+	{
+		m_image = createInfo.image;
+		m_createInfo.imageType = m_image->GetType();
+		m_createInfo.width = m_image->GetWidth();
+		m_createInfo.height = m_image->GetHeight();
+		m_createInfo.depth = m_image->GetDepth();
+		m_createInfo.imageFormat = m_image->GetFormat();
+		m_createInfo.sampleCount = m_image->GetSampleCount();
+		m_createInfo.mipLevelCount = m_image->GetMipLevelCount();
+		m_createInfo.arrayLayerCount = m_image->GetArrayLayerCount();
+		m_createInfo.usageFlags = m_image->GetUsageFlags();
+		m_createInfo.memoryUsage = m_image->GetMemoryUsage();
+		m_createInfo.initialState = m_image->GetInitialState();
+		m_createInfo.RTVClearValue = m_image->GetRTVClearValue();
+		m_createInfo.DSVClearValue = m_image->GetDSVClearValue();
+		m_createInfo.concurrentMultiQueueUsage = m_image->GetConcurrentMultiQueueUsageEnabled();
+	}
+
+	// Image
+	if (IsNull(createInfo.image))
+	{
+		if (createInfo.usageFlags.bits.colorAttachment && createInfo.usageFlags.bits.depthStencilAttachment)
+		{
+			Fatal("texture cannot be both color attachment and depth stencil attachment");
+			return ERROR_INVALID_CREATE_ARGUMENT;
+		}
+
+		ImageCreateInfo ci = {};
+		ci.type = createInfo.imageType;
+		ci.width = createInfo.width;
+		ci.height = createInfo.height;
+		ci.depth = createInfo.depth;
+		ci.format = createInfo.imageFormat;
+		ci.sampleCount = createInfo.sampleCount;
+		ci.mipLevelCount = createInfo.mipLevelCount;
+		ci.arrayLayerCount = createInfo.arrayLayerCount;
+		ci.usageFlags = createInfo.usageFlags;
+		ci.memoryUsage = createInfo.memoryUsage;
+		ci.initialState = createInfo.initialState;
+		ci.RTVClearValue = createInfo.RTVClearValue;
+		ci.DSVClearValue = createInfo.DSVClearValue;
+		ci.ApiObject = nullptr;
+		ci.ownership = createInfo.ownership;
+		ci.concurrentMultiQueueUsage = createInfo.concurrentMultiQueueUsage;
+		ci.createFlags = createInfo.imageCreateFlags;
+		Result ppxres = GetDevice()->CreateImage(ci, &m_image);
+		if (Failed(ppxres))
+		{
+			Fatal("texture create image failed");
+			return ppxres;
+		}
+	}
+
+	if (createInfo.usageFlags.bits.sampled)
+	{
+		SampledImageViewCreateInfo ci = SampledImageViewCreateInfo::GuessFromImage(m_image);
+		if (createInfo.sampledImageViewType != ImageViewType::Undefined)
+		{
+			ci.imageViewType = createInfo.sampledImageViewType;
+		}
+		ci.ycbcrConversion = createInfo.sampledImageYcbcrConversion;
+
+		Result ppxres = GetDevice()->CreateSampledImageView(ci, &m_sampledImageView);
+		if (Failed(ppxres))
+		{
+			Fatal("texture create sampled image view failed");
+			return ppxres;
+		}
+	}
+
+	if (createInfo.usageFlags.bits.colorAttachment)
+	{
+		RenderTargetViewCreateInfo ci = RenderTargetViewCreateInfo::GuessFromImage(m_image);
+		if (createInfo.renderTargetViewFormat != Format::Undefined)
+		{
+			ci.format = createInfo.renderTargetViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateRenderTargetView(ci, &m_renderTargetView);
+		if (Failed(ppxres))
+		{
+			Fatal("texture create render target view failed");
+			return ppxres;
+		}
+	}
+
+	if (createInfo.usageFlags.bits.depthStencilAttachment)
+	{
+		DepthStencilViewCreateInfo ci = DepthStencilViewCreateInfo::GuessFromImage(m_image);
+		if (createInfo.depthStencilViewFormat != Format::Undefined)
+		{
+			ci.format = createInfo.depthStencilViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateDepthStencilView(ci, &m_depthStencilView);
+		if (Failed(ppxres))
+		{
+			Fatal("texture create depth stencil view failed");
+			return ppxres;
+		}
+	}
+
+	if (createInfo.usageFlags.bits.storage)
+	{
+		StorageImageViewCreateInfo ci = StorageImageViewCreateInfo::GuessFromImage(m_image);
+		if (createInfo.storageImageViewFormat != Format::Undefined)
+		{
+			ci.format = createInfo.storageImageViewFormat;
+		}
+
+		Result ppxres = GetDevice()->CreateStorageImageView(ci, &m_storageImageView);
+		if (Failed(ppxres))
+		{
+			Fatal("texture create storage image view failed");
+			return ppxres;
+		}
+	}
+
+	return SUCCESS;
+}
+
+void Texture::destroyApiObjects()
+{
+	auto device = GetDevice();
+
+	if (m_sampledImageView && (m_sampledImageView->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroySampledImageView(m_sampledImageView);
+		m_sampledImageView.Reset();
+	}
+
+	if (m_renderTargetView && (m_renderTargetView->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyRenderTargetView(m_renderTargetView);
+		m_renderTargetView.Reset();
+	}
+
+	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyDepthStencilView(m_depthStencilView);
+		m_depthStencilView.Reset();
+	}
+
+	if (m_storageImageView && (m_storageImageView->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyStorageImageView(m_storageImageView);
+		m_storageImageView.Reset();
+	}
+
+	if (m_image && (m_image->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyImage(m_image);
+		m_image.Reset();
+	}
+}
+
 #pragma endregion
 
 #pragma region RenderPass
 
 void RenderPassCreateInfo::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetClearValues[i] = value;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i) 
+		renderTargetClearValues[i] = value;
 }
 
 void RenderPassCreateInfo2::SetAllRenderTargetUsageFlags(const ImageUsageFlags& flags)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetUsageFlags[i] = flags;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i) 
+		renderTargetUsageFlags[i] = flags;
 }
 
 void RenderPassCreateInfo2::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetClearValues[i] = value;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetClearValues[i] = value;
 }
 
 void RenderPassCreateInfo2::SetAllRenderTargetLoadOp(AttachmentLoadOp op)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetLoadOps[i] = op;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetLoadOps[i] = op;
 }
 
 void RenderPassCreateInfo2::SetAllRenderTargetStoreOp(AttachmentStoreOp op)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetStoreOps[i] = op;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetStoreOps[i] = op;
 }
 
 void RenderPassCreateInfo2::SetAllRenderTargetToClear()
 {
-	SetAllRenderTargetLoadOp(ATTACHMENT_LOAD_OP_CLEAR);
+	SetAllRenderTargetLoadOp(AttachmentLoadOp::Clear);
 }
 
 void RenderPassCreateInfo3::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetClearValues[i] = value;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetClearValues[i] = value;
 }
 
 void RenderPassCreateInfo3::SetAllRenderTargetLoadOp(AttachmentLoadOp op)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetLoadOps[i] = op;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetLoadOps[i] = op;
 }
 
 void RenderPassCreateInfo3::SetAllRenderTargetStoreOp(AttachmentStoreOp op)
 {
-	for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-		this->renderTargetStoreOps[i] = op;
-	}
+	for (uint32_t i = 0; i < renderTargetCount; ++i)
+		renderTargetStoreOps[i] = op;
 }
 
 void RenderPassCreateInfo3::SetAllRenderTargetToClear()
 {
-	SetAllRenderTargetLoadOp(ATTACHMENT_LOAD_OP_CLEAR);
+	SetAllRenderTargetLoadOp(AttachmentLoadOp::Clear);
 }
 
 namespace internal
 {
-
 	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo& obj)
 	{
-		this->version = CREATE_INFO_VERSION_1;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->depthStencilState = obj.depthStencilState;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
-		this->multiViewState = obj.multiViewState;
+		version = CREATE_INFO_VERSION_1;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		depthStencilState = obj.depthStencilState;
+		shadingRatePattern = obj.shadingRatePattern;
+		multiViewState = obj.multiViewState;
 
 		// Views
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V1.pRenderTargetViews[i] = obj.pRenderTargetViews[i];
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+		{
+			V1.renderTargetViews[i] = obj.renderTargetViews[i];
 		}
-		this->V1.pDepthStencilView = obj.pDepthStencilView;
+		V1.depthStencilView = obj.depthStencilView;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetClearValues[i] = obj.renderTargetClearValues[i];
+		for (uint32_t i = 0; i < this->renderTargetCount; ++i)
+		{
+			renderTargetClearValues[i] = obj.renderTargetClearValues[i];
 		}
-		this->depthStencilClearValue = obj.depthStencilClearValue;
+		depthStencilClearValue = obj.depthStencilClearValue;
 	}
 
 	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo2& obj)
 	{
-		this->version = CREATE_INFO_VERSION_2;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
+		version = CREATE_INFO_VERSION_2;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		shadingRatePattern = obj.shadingRatePattern;
 
 		// Formats
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V2.renderTargetFormats[i] = obj.renderTargetFormats[i];
-		}
-		this->V2.depthStencilFormat = obj.depthStencilFormat;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V2.renderTargetFormats[i] = obj.renderTargetFormats[i];
+		V2.depthStencilFormat = obj.depthStencilFormat;
 
 		// Sample count
-		this->V2.sampleCount = obj.sampleCount;
+		V2.sampleCount = obj.sampleCount;
 
 		// Usage flags
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V2.renderTargetUsageFlags[i] = obj.renderTargetUsageFlags[i];
-		}
-		this->V2.depthStencilUsageFlags = obj.depthStencilUsageFlags;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V2.renderTargetUsageFlags[i] = obj.renderTargetUsageFlags[i];
+		V2.depthStencilUsageFlags = obj.depthStencilUsageFlags;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetClearValues[i] = obj.renderTargetClearValues[i];
-		}
-		this->depthStencilClearValue = obj.depthStencilClearValue;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			renderTargetClearValues[i] = obj.renderTargetClearValues[i];
+		depthStencilClearValue = obj.depthStencilClearValue;
 
 		// Load/store ops
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetLoadOps[i] = obj.renderTargetLoadOps[i];
-			this->renderTargetStoreOps[i] = obj.renderTargetStoreOps[i];
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+		{
+			renderTargetLoadOps[i] = obj.renderTargetLoadOps[i];
+			renderTargetStoreOps[i] = obj.renderTargetStoreOps[i];
 		}
-		this->depthLoadOp = obj.depthLoadOp;
-		this->depthStoreOp = obj.depthStoreOp;
-		this->stencilLoadOp = obj.stencilLoadOp;
-		this->stencilStoreOp = obj.stencilStoreOp;
+		depthLoadOp = obj.depthLoadOp;
+		depthStoreOp = obj.depthStoreOp;
+		stencilLoadOp = obj.stencilLoadOp;
+		stencilStoreOp = obj.stencilStoreOp;
 
 		// Initial states
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V2.renderTargetInitialStates[i] = obj.renderTargetInitialStates[i];
-		}
-		this->V2.depthStencilInitialState = obj.depthStencilInitialState;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V2.renderTargetInitialStates[i] = obj.renderTargetInitialStates[i];
+		V2.depthStencilInitialState = obj.depthStencilInitialState;
 
 		// MultiView
-		this->arrayLayerCount = obj.arrayLayerCount;
-		this->multiViewState = obj.multiViewState;
+		arrayLayerCount = obj.arrayLayerCount;
+		multiViewState = obj.multiViewState;
 	}
 
 	RenderPassCreateInfo::RenderPassCreateInfo(const vkr::RenderPassCreateInfo3& obj)
 	{
-		this->version = CREATE_INFO_VERSION_3;
-		this->width = obj.width;
-		this->height = obj.height;
-		this->renderTargetCount = obj.renderTargetCount;
-		this->depthStencilState = obj.depthStencilState;
-		this->pShadingRatePattern = obj.pShadingRatePattern;
+		version = CREATE_INFO_VERSION_3;
+		width = obj.width;
+		height = obj.height;
+		renderTargetCount = obj.renderTargetCount;
+		depthStencilState = obj.depthStencilState;
+		shadingRatePattern = obj.shadingRatePattern;
 
 		// Images
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->V3.pRenderTargetImages[i] = obj.pRenderTargetImages[i];
-		}
-		this->V3.pDepthStencilImage = obj.pDepthStencilImage;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			V3.renderTargetImages[i] = obj.renderTargetImages[i];
+		V3.depthStencilImage = obj.depthStencilImage;
 
 		// Clear values
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetClearValues[i] = obj.renderTargetClearValues[i];
-		}
-		this->depthStencilClearValue = obj.depthStencilClearValue;
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+			renderTargetClearValues[i] = obj.renderTargetClearValues[i];
+		depthStencilClearValue = obj.depthStencilClearValue;
 
 		// Load/store ops
-		for (uint32_t i = 0; i < this->renderTargetCount; ++i) {
-			this->renderTargetLoadOps[i] = obj.renderTargetLoadOps[i];
-			this->renderTargetStoreOps[i] = obj.renderTargetStoreOps[i];
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+		{
+			renderTargetLoadOps[i] = obj.renderTargetLoadOps[i];
+			renderTargetStoreOps[i] = obj.renderTargetStoreOps[i];
 		}
-		this->depthLoadOp = obj.depthLoadOp;
-		this->depthStoreOp = obj.depthStoreOp;
-		this->stencilLoadOp = obj.stencilLoadOp;
-		this->stencilStoreOp = obj.stencilStoreOp;
+		depthLoadOp = obj.depthLoadOp;
+		depthStoreOp = obj.depthStoreOp;
+		stencilLoadOp = obj.stencilLoadOp;
+		stencilStoreOp = obj.stencilStoreOp;
 
 		// MultiView
-		this->arrayLayerCount = obj.arrayLayerCount;
-		this->multiViewState = obj.multiViewState;
+		arrayLayerCount = obj.arrayLayerCount;
+		multiViewState = obj.multiViewState;
 	}
-
 } // namespace internal
 
-// -------------------------------------------------------------------------------------------------
-// RenderPass
-// -------------------------------------------------------------------------------------------------
-Result RenderPass::createImagesAndViewsV1(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createImagesAndViewsV1(const internal::RenderPassCreateInfo& createInfo)
 {
 	// Copy RTV and images
-	for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-		RenderTargetViewPtr rtv = pCreateInfo.V1.pRenderTargetViews[i];
+	for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+	{
+		RenderTargetViewPtr rtv = createInfo.V1.renderTargetViews[i];
 		if (!rtv)
 		{
-			ASSERT_MSG(false, "RTV << " + std::to_string(i) + " is null");
+			Fatal("RTV << " + std::to_string(i) + " is null");
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
 		}
 		if (!rtv->GetImage())
 		{
-			ASSERT_MSG(false, "image << " + std::to_string(i) + " is null");
+			Fatal("image << " + std::to_string(i) + " is null");
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
 		}
 
-		mRenderTargetViews.push_back(rtv);
-		mRenderTargetImages.push_back(rtv->GetImage());
+		m_renderTargetViews.push_back(rtv);
+		m_renderTargetImages.push_back(rtv->GetImage());
 
-		mHasLoadOpClear |= (rtv->GetLoadOp() == ATTACHMENT_LOAD_OP_CLEAR);
+		m_hasLoadOpClear |= (rtv->GetLoadOp() == AttachmentLoadOp::Clear);
 	}
 	// Copy DSV and image
-	if (!IsNull(pCreateInfo.V1.pDepthStencilView)) {
-		DepthStencilViewPtr dsv = pCreateInfo.V1.pDepthStencilView;
+	if (!IsNull(createInfo.V1.depthStencilView))
+	{
+		DepthStencilViewPtr dsv = createInfo.V1.depthStencilView;
 
-		mDepthStencilView = dsv;
-		mDepthStencilImage = dsv->GetImage();
+		m_depthStencilView = dsv;
+		m_depthStencilImage = dsv->GetImage();
 
-		mHasLoadOpClear |= (dsv->GetDepthLoadOp() == ATTACHMENT_LOAD_OP_CLEAR);
-		mHasLoadOpClear |= (dsv->GetStencilLoadOp() == ATTACHMENT_LOAD_OP_CLEAR);
+		m_hasLoadOpClear |= (dsv->GetDepthLoadOp() == AttachmentLoadOp::Clear);
+		m_hasLoadOpClear |= (dsv->GetStencilLoadOp() == AttachmentLoadOp::Clear);
 	}
 
 	return SUCCESS;
 }
 
-Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createImagesAndViewsV2(const internal::RenderPassCreateInfo& createInfo)
 {
 	// Create images
 	{
 		// RTV images
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
 			ResourceState initialState = ResourceState::RenderTarget;
-			if (pCreateInfo.V2.renderTargetInitialStates[i] != ResourceState::Undefined) {
-				initialState = pCreateInfo.V2.renderTargetInitialStates[i];
+			if (createInfo.V2.renderTargetInitialStates[i] != ResourceState::Undefined)
+			{
+				initialState = createInfo.V2.renderTargetInitialStates[i];
 			}
 			ImageCreateInfo imageCreateInfo = {};
 			imageCreateInfo.type = ImageType::Image2D;
-			imageCreateInfo.width = pCreateInfo.width;
-			imageCreateInfo.height = pCreateInfo.height;
+			imageCreateInfo.width = createInfo.width;
+			imageCreateInfo.height = createInfo.height;
 			imageCreateInfo.depth = 1;
-			imageCreateInfo.format = pCreateInfo.V2.renderTargetFormats[i];
-			imageCreateInfo.sampleCount = pCreateInfo.V2.sampleCount;
+			imageCreateInfo.format = createInfo.V2.renderTargetFormats[i];
+			imageCreateInfo.sampleCount = createInfo.V2.sampleCount;
 			imageCreateInfo.mipLevelCount = 1;
-			imageCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
-			imageCreateInfo.usageFlags = pCreateInfo.V2.renderTargetUsageFlags[i];
+			imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
+			imageCreateInfo.usageFlags = createInfo.V2.renderTargetUsageFlags[i];
 			imageCreateInfo.memoryUsage = MemoryUsage::GPUOnly;
 			imageCreateInfo.initialState = ResourceState::RenderTarget;
-			imageCreateInfo.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
-			imageCreateInfo.ownership = pCreateInfo.ownership;
+			imageCreateInfo.RTVClearValue = createInfo.renderTargetClearValues[i];
+			imageCreateInfo.ownership = createInfo.ownership;
 
 			ImagePtr image;
-			Result         ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "RTV image create failed");
+			Result ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
+			if (Failed(ppxres))
+			{
+				Fatal("RTV image create failed");
 				return ppxres;
 			}
 
-			mRenderTargetImages.push_back(image);
+			m_renderTargetImages.push_back(image);
 		}
 
 		// DSV image
-		if (pCreateInfo.V2.depthStencilFormat != Format::Undefined) {
+		if (createInfo.V2.depthStencilFormat != Format::Undefined)
+		{
 			ResourceState initialState = ResourceState::DepthStencilWrite;
-			if (pCreateInfo.V2.depthStencilInitialState != ResourceState::Undefined) {
-				initialState = pCreateInfo.V2.depthStencilInitialState;
+			if (createInfo.V2.depthStencilInitialState != ResourceState::Undefined)
+			{
+				initialState = createInfo.V2.depthStencilInitialState;
 			}
 
 			ImageCreateInfo imageCreateInfo = {};
 			imageCreateInfo.type = ImageType::Image2D;
-			imageCreateInfo.width = pCreateInfo.width;
-			imageCreateInfo.height = pCreateInfo.height;
+			imageCreateInfo.width = createInfo.width;
+			imageCreateInfo.height = createInfo.height;
 			imageCreateInfo.depth = 1;
-			imageCreateInfo.format = pCreateInfo.V2.depthStencilFormat;
-			imageCreateInfo.sampleCount = pCreateInfo.V2.sampleCount;
+			imageCreateInfo.format = createInfo.V2.depthStencilFormat;
+			imageCreateInfo.sampleCount = createInfo.V2.sampleCount;
 			imageCreateInfo.mipLevelCount = 1;
-			imageCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
-			imageCreateInfo.usageFlags = pCreateInfo.V2.depthStencilUsageFlags;
+			imageCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
+			imageCreateInfo.usageFlags = createInfo.V2.depthStencilUsageFlags;
 			imageCreateInfo.memoryUsage = MemoryUsage::GPUOnly;
 			imageCreateInfo.initialState = initialState;
-			imageCreateInfo.DSVClearValue = pCreateInfo.depthStencilClearValue;
-			imageCreateInfo.ownership = pCreateInfo.ownership;
+			imageCreateInfo.DSVClearValue = createInfo.depthStencilClearValue;
+			imageCreateInfo.ownership = createInfo.ownership;
 
 			ImagePtr image;
-			Result         ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "DSV image create failed");
+			Result ppxres = GetDevice()->CreateImage(imageCreateInfo, &image);
+			if (Failed(ppxres))
+			{
+				Fatal("DSV image create failed");
 				return ppxres;
 			}
 
-			mDepthStencilImage = image;
+			m_depthStencilImage = image;
 		}
 	}
 
 	// Create views
 	{
 		// RTVs
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-			ImagePtr image = mRenderTargetImages[i];
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
+			ImagePtr image = m_renderTargetImages[i];
 
 			RenderTargetViewCreateInfo rtvCreateInfo = {};
-			rtvCreateInfo.pImage = image;
-			rtvCreateInfo.imageViewType = IMAGE_VIEW_TYPE_2D;
-			rtvCreateInfo.format = pCreateInfo.V2.renderTargetFormats[i];
+			rtvCreateInfo.image = image;
+			rtvCreateInfo.imageViewType = ImageViewType::ImageView2D;
+			rtvCreateInfo.format = createInfo.V2.renderTargetFormats[i];
 			rtvCreateInfo.mipLevel = 0;
 			rtvCreateInfo.mipLevelCount = 1;
 			rtvCreateInfo.arrayLayer = 0;
-			rtvCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
+			rtvCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
 			rtvCreateInfo.components = {};
-			rtvCreateInfo.loadOp = pCreateInfo.renderTargetLoadOps[i];
-			rtvCreateInfo.storeOp = pCreateInfo.renderTargetStoreOps[i];
-			rtvCreateInfo.ownership = pCreateInfo.ownership;
+			rtvCreateInfo.loadOp = createInfo.renderTargetLoadOps[i];
+			rtvCreateInfo.storeOp = createInfo.renderTargetStoreOps[i];
+			rtvCreateInfo.ownership = createInfo.ownership;
 
 			RenderTargetViewPtr rtv;
-			Result                    ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "RTV create failed");
+			Result ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
+			if (Failed(ppxres))
+			{
+				Fatal("RTV create failed");
 				return ppxres;
 			}
 
-			mRenderTargetViews.push_back(rtv);
+			m_renderTargetViews.push_back(rtv);
 
-			mHasLoadOpClear |= (rtvCreateInfo.loadOp == ATTACHMENT_LOAD_OP_CLEAR);
+			m_hasLoadOpClear |= (rtvCreateInfo.loadOp == AttachmentLoadOp::Clear);
 		}
 
 		// DSV
-		if (pCreateInfo.V2.depthStencilFormat != Format::Undefined) {
-			ImagePtr image = mDepthStencilImage;
+		if (createInfo.V2.depthStencilFormat != Format::Undefined)
+		{
+			ImagePtr image = m_depthStencilImage;
 
 			DepthStencilViewCreateInfo dsvCreateInfo = {};
-			dsvCreateInfo.pImage = image;
-			dsvCreateInfo.imageViewType = IMAGE_VIEW_TYPE_2D;
-			dsvCreateInfo.format = pCreateInfo.V2.depthStencilFormat;
+			dsvCreateInfo.image = image;
+			dsvCreateInfo.imageViewType = ImageViewType::ImageView2D;
+			dsvCreateInfo.format = createInfo.V2.depthStencilFormat;
 			dsvCreateInfo.mipLevel = 0;
 			dsvCreateInfo.mipLevelCount = 1;
 			dsvCreateInfo.arrayLayer = 0;
-			dsvCreateInfo.arrayLayerCount = pCreateInfo.arrayLayerCount;
+			dsvCreateInfo.arrayLayerCount = createInfo.arrayLayerCount;
 			dsvCreateInfo.components = {};
-			dsvCreateInfo.depthLoadOp = pCreateInfo.depthLoadOp;
-			dsvCreateInfo.depthStoreOp = pCreateInfo.depthStoreOp;
-			dsvCreateInfo.stencilLoadOp = pCreateInfo.stencilLoadOp;
-			dsvCreateInfo.stencilStoreOp = pCreateInfo.stencilStoreOp;
-			dsvCreateInfo.ownership = pCreateInfo.ownership;
+			dsvCreateInfo.depthLoadOp = createInfo.depthLoadOp;
+			dsvCreateInfo.depthStoreOp = createInfo.depthStoreOp;
+			dsvCreateInfo.stencilLoadOp = createInfo.stencilLoadOp;
+			dsvCreateInfo.stencilStoreOp = createInfo.stencilStoreOp;
+			dsvCreateInfo.ownership = createInfo.ownership;
 
 			DepthStencilViewPtr dsv;
-			Result                    ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "RTV create failed");
+			Result ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
+			if (Failed(ppxres))
+			{
+				Fatal("RTV create failed");
 				return ppxres;
 			}
 
-			mDepthStencilView = dsv;
+			m_depthStencilView = dsv;
 
-			mHasLoadOpClear |= (dsvCreateInfo.depthLoadOp == ATTACHMENT_LOAD_OP_CLEAR);
-			mHasLoadOpClear |= (dsvCreateInfo.stencilLoadOp == ATTACHMENT_LOAD_OP_CLEAR);
+			m_hasLoadOpClear |= (dsvCreateInfo.depthLoadOp == AttachmentLoadOp::Clear);
+			m_hasLoadOpClear |= (dsvCreateInfo.stencilLoadOp == AttachmentLoadOp::Clear);
 		}
 	}
 
 	return SUCCESS;
 }
 
-Result RenderPass::createImagesAndViewsV3(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createImagesAndViewsV3(const internal::RenderPassCreateInfo& createInfo)
 {
 	// Copy images
 	{
 		// Copy RTV images
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-			ImagePtr image = pCreateInfo.V3.pRenderTargetImages[i];
-			if (!image) {
-				ASSERT_MSG(false, "image << " + std::to_string(i) + " is null");
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
+			ImagePtr image = createInfo.V3.renderTargetImages[i];
+			if (!image)
+			{
+				Fatal("image << " + std::to_string(i) + " is null");
 				return ERROR_UNEXPECTED_NULL_ARGUMENT;
 			}
 
-			mRenderTargetImages.push_back(image);
+			m_renderTargetImages.push_back(image);
 		}
 		// Copy DSV image
-		if (!IsNull(pCreateInfo.V3.pDepthStencilImage)) {
-			mDepthStencilImage = pCreateInfo.V3.pDepthStencilImage;
+		if (!IsNull(createInfo.V3.depthStencilImage)) 
+		{
+			m_depthStencilImage = createInfo.V3.depthStencilImage;
 		}
 	}
 
 	// Create views
 	{
 		// RTVs
-		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
-			ImagePtr image = mRenderTargetImages[i];
+		for (uint32_t i = 0; i < createInfo.renderTargetCount; ++i)
+		{
+			ImagePtr image = m_renderTargetImages[i];
 
 			RenderTargetViewCreateInfo rtvCreateInfo = {};
-			rtvCreateInfo.pImage = image;
+			rtvCreateInfo.image = image;
 			rtvCreateInfo.imageViewType = image->GuessImageViewType();
 			rtvCreateInfo.format = image->GetFormat();
 			rtvCreateInfo.mipLevel = 0;
@@ -1690,28 +1663,30 @@ Result RenderPass::createImagesAndViewsV3(const internal::RenderPassCreateInfo& 
 			rtvCreateInfo.arrayLayer = 0;
 			rtvCreateInfo.arrayLayerCount = image->GetArrayLayerCount();
 			rtvCreateInfo.components = {};
-			rtvCreateInfo.loadOp = pCreateInfo.renderTargetLoadOps[i];
-			rtvCreateInfo.storeOp = pCreateInfo.renderTargetStoreOps[i];
-			rtvCreateInfo.ownership = pCreateInfo.ownership;
+			rtvCreateInfo.loadOp = createInfo.renderTargetLoadOps[i];
+			rtvCreateInfo.storeOp = createInfo.renderTargetStoreOps[i];
+			rtvCreateInfo.ownership = createInfo.ownership;
 
 			RenderTargetViewPtr rtv;
-			Result                    ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "RTV create failed");
+			Result ppxres = GetDevice()->CreateRenderTargetView(rtvCreateInfo, &rtv);
+			if (Failed(ppxres))
+			{
+				Fatal("RTV create failed");
 				return ppxres;
 			}
 
-			mRenderTargetViews.push_back(rtv);
+			m_renderTargetViews.push_back(rtv);
 
-			mHasLoadOpClear |= (rtvCreateInfo.loadOp == ATTACHMENT_LOAD_OP_CLEAR);
+			m_hasLoadOpClear |= (rtvCreateInfo.loadOp == AttachmentLoadOp::Clear);
 		}
 
 		// DSV
-		if (mDepthStencilImage) {
-			ImagePtr image = mDepthStencilImage;
+		if (m_depthStencilImage)
+		{
+			ImagePtr image = m_depthStencilImage;
 
 			DepthStencilViewCreateInfo dsvCreateInfo = {};
-			dsvCreateInfo.pImage = image;
+			dsvCreateInfo.image = image;
 			dsvCreateInfo.imageViewType = image->GuessImageViewType();
 			dsvCreateInfo.format = image->GetFormat();
 			dsvCreateInfo.mipLevel = 0;
@@ -1719,107 +1694,120 @@ Result RenderPass::createImagesAndViewsV3(const internal::RenderPassCreateInfo& 
 			dsvCreateInfo.arrayLayer = 0;
 			dsvCreateInfo.arrayLayerCount = image->GetArrayLayerCount();
 			dsvCreateInfo.components = {};
-			dsvCreateInfo.depthLoadOp = pCreateInfo.depthLoadOp;
-			dsvCreateInfo.depthStoreOp = pCreateInfo.depthStoreOp;
-			dsvCreateInfo.stencilLoadOp = pCreateInfo.stencilLoadOp;
-			dsvCreateInfo.stencilStoreOp = pCreateInfo.stencilStoreOp;
-			dsvCreateInfo.ownership = pCreateInfo.ownership;
+			dsvCreateInfo.depthLoadOp = createInfo.depthLoadOp;
+			dsvCreateInfo.depthStoreOp = createInfo.depthStoreOp;
+			dsvCreateInfo.stencilLoadOp = createInfo.stencilLoadOp;
+			dsvCreateInfo.stencilStoreOp = createInfo.stencilStoreOp;
+			dsvCreateInfo.ownership = createInfo.ownership;
 
 			DepthStencilViewPtr dsv;
-			Result                    ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "DSV create failed");
+			Result ppxres = GetDevice()->CreateDepthStencilView(dsvCreateInfo, &dsv);
+			if (Failed(ppxres))
+			{
+				Fatal("DSV create failed");
 				return ppxres;
 			}
 
-			mDepthStencilView = dsv;
+			m_depthStencilView = dsv;
 
-			mHasLoadOpClear |= (dsvCreateInfo.depthLoadOp == ATTACHMENT_LOAD_OP_CLEAR);
-			mHasLoadOpClear |= (dsvCreateInfo.stencilLoadOp == ATTACHMENT_LOAD_OP_CLEAR);
+			m_hasLoadOpClear |= (dsvCreateInfo.depthLoadOp == AttachmentLoadOp::Clear);
+			m_hasLoadOpClear |= (dsvCreateInfo.stencilLoadOp == AttachmentLoadOp::Clear);
 		}
 	}
 
 	return SUCCESS;
 }
 
-Result RenderPass::create(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createApiObjects(const internal::RenderPassCreateInfo& createInfo)
 {
-	mRenderArea = { 0, 0, pCreateInfo.width, pCreateInfo.height };
-	mViewport = { 0.0f, 0.0f, static_cast<float>(pCreateInfo.width), static_cast<float>(pCreateInfo.height), 0.0f, 1.0f };
+	m_renderArea = { 0, 0, createInfo.width, createInfo.height };
+	m_viewport = { 0.0f, 0.0f, static_cast<float>(createInfo.width), static_cast<float>(createInfo.height), 0.0f, 1.0f };
 
-	switch (pCreateInfo.version) {
+	switch (createInfo.version)
+	{
 	default: return ERROR_INVALID_CREATE_ARGUMENT; break;
 
-	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_1: {
-		Result ppxres = createImagesAndViewsV1(pCreateInfo);
-		if (Failed(ppxres)) {
-			return ppxres;
-		}
-	} break;
+	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_1: 
+		{
+			Result ppxres = createImagesAndViewsV1(createInfo);
+			if (Failed(ppxres)) return ppxres;
+		} break;
 
-	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_2: {
-		Result ppxres = createImagesAndViewsV2(pCreateInfo);
-		if (Failed(ppxres)) {
-			return ppxres;
-		}
-	} break;
+	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_2:
+		{
+			Result ppxres = createImagesAndViewsV2(createInfo);
+			if (Failed(ppxres)) return ppxres;
+		} break;
 
-	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_3: {
-		Result ppxres = createImagesAndViewsV3(pCreateInfo);
-		if (Failed(ppxres)) {
-			return ppxres;
-		}
-	} break;
+	case internal::RenderPassCreateInfo::CREATE_INFO_VERSION_3:
+		{
+			Result ppxres = createImagesAndViewsV3(createInfo);
+			if (Failed(ppxres)) return ppxres;
+		} break;
 	}
 
-	Result ppxres = DeviceObject<internal::RenderPassCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
+	Result ppxres = createRenderPass(createInfo);
+	if (Failed(ppxres)) return ppxres;
 
-	return SUCCESS;
-}
-
-Result RenderPass::createApiObjects(const internal::RenderPassCreateInfo& pCreateInfo)
-{
-	Result ppxres = createRenderPass(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	ppxres = createFramebuffer(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
+	ppxres = createFramebuffer(createInfo);
+	if (Failed(ppxres)) return ppxres;
 
 	return SUCCESS;
 }
 
 void RenderPass::destroyApiObjects()
 {
-	if (mFramebuffer) {
-		vkDestroyFramebuffer(
-			GetDevice()->GetVkDevice(),
-			mFramebuffer,
-			nullptr);
-		mFramebuffer.Reset();
+	auto device = GetDevice();
+	for (uint32_t i = 0; i < m_createInfo.renderTargetCount; ++i)
+	{
+		RenderTargetViewPtr& rtv = m_renderTargetViews[i];
+		if (rtv && (rtv->GetOwnership() != Ownership::Reference))
+		{
+			device->DestroyRenderTargetView(rtv);
+			rtv.Reset();
+		}
+
+		ImagePtr& image = m_renderTargetImages[i];
+		if (image && (image->GetOwnership() != Ownership::Reference))
+		{
+			device->DestroyImage(image);
+			image.Reset();
+		}
+	}
+	m_renderTargetViews.clear();
+	m_renderTargetImages.clear();
+
+	if (m_depthStencilView && (m_depthStencilView->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyDepthStencilView(m_depthStencilView);
+		m_depthStencilView.Reset();
 	}
 
-	if (mRenderPass) {
-		vkDestroyRenderPass(
-			GetDevice()->GetVkDevice(),
-			mRenderPass,
-			nullptr);
-		mRenderPass.Reset();
+	if (m_depthStencilImage && (m_depthStencilImage->GetOwnership() != Ownership::Reference))
+	{
+		device->DestroyImage(m_depthStencilImage);
+		m_depthStencilImage.Reset();
+	}
+
+	if (m_framebuffer)
+	{
+		vkDestroyFramebuffer(device->GetVkDevice(), m_framebuffer, nullptr);
+		m_framebuffer.Reset();
+	}
+
+	if (m_renderPass)
+	{
+		vkDestroyRenderPass(device->GetVkDevice(), m_renderPass, nullptr);
+		m_renderPass.Reset();
 	}
 }
 
-Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& createInfo)
 {
-	bool hasDepthSencil = mDepthStencilView ? true : false;
+	bool hasDepthSencil = m_depthStencilView ? true : false;
 
 	uint32_t      depthStencilAttachment = -1;
-	size_t        rtvCount = CountU32(mRenderTargetViews);
+	size_t        rtvCount = CountU32(m_renderTargetViews);
 	VkImageLayout depthStencillayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	// Determine layout for depth/stencil
@@ -1829,10 +1817,10 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 		VkPipelineStageFlags     stageMask = 0;
 		VkAccessFlags            accessMask = 0;
 
-		Result ppxres = ToVkBarrierDst(pCreateInfo.depthStencilState, CommandType::COMMAND_TYPE_GRAPHICS, features, stageMask, accessMask, depthStencillayout);
+		Result ppxres = ToVkBarrierDst(createInfo.depthStencilState, CommandType::COMMAND_TYPE_GRAPHICS, features, stageMask, accessMask, depthStencillayout);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "failed to determine layout for depth stencil state");
+			Fatal("failed to determine layout for depth stencil state");
 			return ppxres;
 		}
 	}
@@ -1842,7 +1830,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 	{
 		for (uint32_t i = 0; i < rtvCount; ++i)
 		{
-			RenderTargetViewPtr rtv = mRenderTargetViews[i];
+			RenderTargetViewPtr rtv = m_renderTargetViews[i];
 
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
@@ -1860,7 +1848,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 
 		if (hasDepthSencil)
 		{
-			DepthStencilViewPtr dsv = mDepthStencilView;
+			DepthStencilViewPtr dsv = m_depthStencilView;
 
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
@@ -1880,7 +1868,8 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 
 	std::vector<VkAttachmentReference> colorRefs;
 	{
-		for (uint32_t i = 0; i < rtvCount; ++i) {
+		for (uint32_t i = 0; i < rtvCount; ++i)
+		{
 			VkAttachmentReference ref = {};
 			ref.attachment = i;
 			ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1927,46 +1916,42 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 	bool hasMultiView = GetDevice()->HasMultiView();
 
 	VkRenderPassMultiviewCreateInfo multiviewInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO };
-	if (pCreateInfo.multiViewState.viewMask > 0)
+	if (createInfo.multiViewState.viewMask > 0)
 	{
 		ASSERT_MSG(hasMultiView, "Multiview not supported on the device");
 		multiviewInfo.subpassCount = 1;
-		multiviewInfo.pViewMasks = &pCreateInfo.multiViewState.viewMask;
+		multiviewInfo.pViewMasks = &createInfo.multiViewState.viewMask;
 		multiviewInfo.correlationMaskCount = 1;
-		multiviewInfo.pCorrelationMasks = &pCreateInfo.multiViewState.correlationMask;
+		multiviewInfo.pCorrelationMasks = &createInfo.multiViewState.correlationMask;
 
 		vkci.pNext = &multiviewInfo;
 	}
 
-	if (!IsNull(pCreateInfo.pShadingRatePattern))
+	if (!IsNull(createInfo.shadingRatePattern))
 	{
-		SampleCount shadingRateSampleCount = pCreateInfo.pShadingRatePattern->GetSampleCount();
+		SampleCount shadingRateSampleCount = createInfo.shadingRatePattern->GetSampleCount();
 		for (uint32_t i = 0; i < rtvCount; ++i)
 		{
-			ASSERT_MSG(
-				mRenderTargetViews[i]->GetSampleCount() == shadingRateSampleCount,
-				"The sample count for each render target must match the sample count of the shading rate pattern.");
+			ASSERT_MSG(m_renderTargetViews[i]->GetSampleCount() == shadingRateSampleCount, "The sample count for each render target must match the sample count of the shading rate pattern.");
 		}
 		if (hasDepthSencil)
 		{
-			ASSERT_MSG(
-				mDepthStencilView->GetSampleCount() == shadingRateSampleCount,
-				"The sample count of the depth attachment must match the sample count of the shading rate pattern.");
+			ASSERT_MSG(m_depthStencilView->GetSampleCount() == shadingRateSampleCount, "The sample count of the depth attachment must match the sample count of the shading rate pattern.");
 		}
-		auto     modifiedCreateInfo = pCreateInfo.pShadingRatePattern->GetModifiedRenderPassCreateInfo(vkci);
-		VkResult vkres = vkCreateRenderPass2KHR(GetDevice()->GetVkDevice(), modifiedCreateInfo.get(), nullptr, &mRenderPass);
+		auto modifiedCreateInfo = createInfo.shadingRatePattern->GetModifiedRenderPassCreateInfo(vkci);
+		VkResult vkres = vkCreateRenderPass2KHR(GetDevice()->GetVkDevice(), modifiedCreateInfo.get(), nullptr, &m_renderPass);
 		if (vkres != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vkCreateRenderPass failed: " + ToString(vkres));
+			Fatal("vkCreateRenderPass failed: " + ToString(vkres));
 			return ERROR_API_FAILURE;
 		}
 	}
 	else
 	{
-		VkResult vkres = vkCreateRenderPass(GetDevice()->GetVkDevice(), &vkci, nullptr, &mRenderPass);
+		VkResult vkres = vkCreateRenderPass(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_renderPass);
 		if (vkres != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vkCreateRenderPass failed: " + ToString(vkres));
+			Fatal("vkCreateRenderPass failed: " + ToString(vkres));
 			return ERROR_API_FAILURE;
 		}
 	}
@@ -1974,33 +1959,33 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& pCreat
 	return SUCCESS;
 }
 
-Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& pCreateInfo)
+Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& createInfo)
 {
-	bool hasDepthSencil = mDepthStencilView ? true : false;
+	bool hasDepthSencil = m_depthStencilView ? true : false;
 
-	size_t rtvCount = CountU32(mRenderTargetViews);
+	size_t rtvCount = CountU32(m_renderTargetViews);
 
 	std::vector<VkImageView> attachments;
 	for (uint32_t i = 0; i < rtvCount; ++i)
 	{
-		RenderTargetViewPtr rtv = mRenderTargetViews[i];
+		RenderTargetViewPtr rtv = m_renderTargetViews[i];
 		attachments.push_back(rtv.Get()->GetVkImageView());
 	}
 
 	if (hasDepthSencil)
 	{
-		DepthStencilViewPtr dsv = mDepthStencilView;
+		DepthStencilViewPtr dsv = m_depthStencilView;
 		attachments.push_back(dsv.Get()->GetVkImageView());
 	}
 
-	if (!IsNull(pCreateInfo.pShadingRatePattern))
+	if (!IsNull(createInfo.shadingRatePattern))
 	{
-		if (pCreateInfo.pShadingRatePattern->GetShadingRateMode() == SHADING_RATE_FDM)
+		if (createInfo.shadingRatePattern->GetShadingRateMode() == SHADING_RATE_FDM)
 		{
 			if (rtvCount > 0)
 			{
 				// Check that all or none of the render targets and depth-stencil attachments are subsampled.
-				bool subsampled = mRenderTargetViews[0]->GetImage()->GetCreateFlags().bits.subsampledFormat;
+				bool subsampled = m_renderTargetViews[0]->GetImage()->GetCreateFlags().bits.subsampledFormat;
 				if (!subsampled)
 				{
 					ASSERT_MSG(GetDevice()->GetShadingRateCapabilities().fdm.supportsNonSubsampledImages, "Non-subsampled render target images with FDM shading rate are not supported.");
@@ -2010,7 +1995,7 @@ Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& pCrea
 				// Check that all the attachments are subsampled.
 				for (uint32_t i = 0; i < rtvCount; ++i)
 				{
-					RenderTargetViewPtr rtv = mRenderTargetViews[i];
+					RenderTargetViewPtr rtv = m_renderTargetViews[i];
 					if (subsampled)
 					{
 						ASSERT_MSG(rtv->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render target image 0 is subsampled, but render target " + std::to_string(i) + " is not subsampled.");
@@ -2024,105 +2009,66 @@ Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& pCrea
 				{
 					if (subsampled)
 					{
-						ASSERT_MSG(mDepthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render targets are subsampled, but depth-stencil image is not subsampled.");
+						ASSERT_MSG(m_depthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render targets are subsampled, but depth-stencil image is not subsampled.");
 					}
 					else
 					{
-						ASSERT_MSG(!mDepthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render targets are subsampled, but depth-stencil image is not subsampled.");
+						ASSERT_MSG(!m_depthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat, "Render targets are subsampled, but depth-stencil image is not subsampled.");
 					}
 				}
 			}
-			else if (hasDepthSencil && !mDepthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat) 
+			else if (hasDepthSencil && !m_depthStencilView->GetImage()->GetCreateFlags().bits.subsampledFormat) 
 			{
 				// No render targets, only depth/stencil which is not subsampled.
 				ASSERT_MSG(GetDevice()->GetShadingRateCapabilities().fdm.supportsNonSubsampledImages, "Non-subsampled depth-stencil image with FDM shading rate are not supported.");
 			}
 		}
-		attachments.push_back(pCreateInfo.pShadingRatePattern->GetAttachmentImageView());
+		attachments.push_back(createInfo.shadingRatePattern->GetAttachmentImageView());
 	}
 	VkFramebufferCreateInfo vkci = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
 	vkci.flags = 0;
-	vkci.renderPass = mRenderPass;
+	vkci.renderPass = m_renderPass;
 	vkci.attachmentCount = CountU32(attachments);
 	vkci.pAttachments = DataPtr(attachments);
-	vkci.width = pCreateInfo.width;
-	vkci.height = pCreateInfo.height;
+	vkci.width = createInfo.width;
+	vkci.height = createInfo.height;
 	vkci.layers = 1;
 
-	VkResult vkres = vkCreateFramebuffer(GetDevice()->GetVkDevice(), &vkci, nullptr, &mFramebuffer);
+	VkResult vkres = vkCreateFramebuffer(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_framebuffer);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateFramebuffer failed: " + ToString(vkres));
+		Fatal("vkCreateFramebuffer failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
 	return SUCCESS;
 }
 
-void RenderPass::destroy()
+Result RenderPass::GetRenderTargetView(uint32_t index, RenderTargetView** view) const
 {
-	for (uint32_t i = 0; i < m_createInfo.renderTargetCount; ++i) {
-		RenderTargetViewPtr& rtv = mRenderTargetViews[i];
-		if (rtv && (rtv->GetOwnership() != Ownership::Reference)) {
-			GetDevice()->DestroyRenderTargetView(rtv);
-			rtv.Reset();
-		}
-
-		ImagePtr& image = mRenderTargetImages[i];
-		if (image && (image->GetOwnership() != Ownership::Reference)) {
-			GetDevice()->DestroyImage(image);
-			image.Reset();
-		}
-	}
-	mRenderTargetViews.clear();
-	mRenderTargetImages.clear();
-
-	if (mDepthStencilView && (mDepthStencilView->GetOwnership() != Ownership::Reference)) {
-		GetDevice()->DestroyDepthStencilView(mDepthStencilView);
-		mDepthStencilView.Reset();
-	}
-
-	if (mDepthStencilImage && (mDepthStencilImage->GetOwnership() != Ownership::Reference)) {
-		GetDevice()->DestroyImage(mDepthStencilImage);
-		mDepthStencilImage.Reset();
-	}
-
-	DeviceObject<internal::RenderPassCreateInfo>::destroy();
-}
-
-Result RenderPass::GetRenderTargetView(uint32_t index, RenderTargetView** ppView) const
-{
-	if (!IsIndexInRange(index, mRenderTargetViews)) {
-		return ERROR_OUT_OF_RANGE;
-	}
-	*ppView = mRenderTargetViews[index];
+	if (!IsIndexInRange(index, m_renderTargetViews)) return ERROR_OUT_OF_RANGE;
+	*view = m_renderTargetViews[index];
 	return SUCCESS;
 }
 
-Result RenderPass::GetDepthStencilView(DepthStencilView** ppView) const
+Result RenderPass::GetDepthStencilView(DepthStencilView** view) const
 {
-	if (!mDepthStencilView) {
-		return ERROR_ELEMENT_NOT_FOUND;
-	}
-	*ppView = mDepthStencilView;
+	if (!m_depthStencilView)  return ERROR_ELEMENT_NOT_FOUND;
+	*view = m_depthStencilView;
 	return SUCCESS;
 }
 
-Result RenderPass::GetRenderTargetImage(uint32_t index, Image** ppImage) const
+Result RenderPass::GetRenderTargetImage(uint32_t index, Image** image) const
 {
-	if (!IsIndexInRange(index, mRenderTargetImages)) {
-		return ERROR_OUT_OF_RANGE;
-	}
-	*ppImage = mRenderTargetImages[index];
+	if (!IsIndexInRange(index, m_renderTargetImages)) return ERROR_OUT_OF_RANGE;
+	*image = m_renderTargetImages[index];
 	return SUCCESS;
 }
 
-Result RenderPass::GetDepthStencilImage(Image** ppImage) const
+Result RenderPass::GetDepthStencilImage(Image** image) const
 {
-	if (!mDepthStencilImage) {
-		return ERROR_ELEMENT_NOT_FOUND;
-	}
-	*ppImage = mDepthStencilImage;
+	if (!m_depthStencilImage) return ERROR_ELEMENT_NOT_FOUND;
+	*image = m_depthStencilImage;
 	return SUCCESS;
 }
 
@@ -2154,11 +2100,13 @@ ImagePtr RenderPass::GetDepthStencilImage() const
 	return object;
 }
 
-uint32_t RenderPass::GetRenderTargetImageIndex(const Image* pImage) const
+uint32_t RenderPass::GetRenderTargetImageIndex(const Image* image) const
 {
 	uint32_t index = UINT32_MAX;
-	for (uint32_t i = 0; i < CountU32(mRenderTargetImages); ++i) {
-		if (mRenderTargetImages[i] == pImage) {
+	for (uint32_t i = 0; i < CountU32(m_renderTargetImages); ++i)
+	{
+		if (m_renderTargetImages[i] == image) 
+		{
 			index = i;
 			break;
 		}
@@ -2166,75 +2114,52 @@ uint32_t RenderPass::GetRenderTargetImageIndex(const Image* pImage) const
 	return index;
 }
 
-Result RenderPass::DisownRenderTargetView(uint32_t index, RenderTargetView** ppView)
+Result RenderPass::DisownRenderTargetView(uint32_t index, RenderTargetView** view)
 {
-	if (IsIndexInRange(index, mRenderTargetViews)) {
-		return ERROR_OUT_OF_RANGE;
-	}
-	if (mRenderTargetViews[index]->GetOwnership() == Ownership::Restricted) {
-		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
-	}
+	if (IsIndexInRange(index, m_renderTargetViews)) return ERROR_OUT_OF_RANGE;
 
-	mRenderTargetViews[index]->SetOwnership(Ownership::Reference);
+	if (m_renderTargetViews[index]->GetOwnership() == Ownership::Restricted) return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 
-	if (!IsNull(ppView)) {
-		*ppView = mRenderTargetViews[index];
-	}
+	m_renderTargetViews[index]->SetOwnership(Ownership::Reference);
+
+	if (!IsNull(view)) *view = m_renderTargetViews[index];
 	return SUCCESS;
 }
 
-Result RenderPass::DisownDepthStencilView(DepthStencilView** ppView)
+Result RenderPass::DisownDepthStencilView(DepthStencilView** view)
 {
-	if (!mDepthStencilView) {
-		return ERROR_ELEMENT_NOT_FOUND;
-	}
-	if (mDepthStencilView->GetOwnership() == Ownership::Restricted) {
-		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
-	}
+	if (!m_depthStencilView) return ERROR_ELEMENT_NOT_FOUND; 
+	if (m_depthStencilView->GetOwnership() == Ownership::Restricted) return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 
-	mDepthStencilView->SetOwnership(Ownership::Reference);
+	m_depthStencilView->SetOwnership(Ownership::Reference);
 
-	if (!IsNull(ppView)) {
-		*ppView = mDepthStencilView;
-	}
+	if (!IsNull(view)) *view = m_depthStencilView;
 	return SUCCESS;
 }
 
-Result RenderPass::DisownRenderTargetImage(uint32_t index, Image** ppImage)
+Result RenderPass::DisownRenderTargetImage(uint32_t index, Image** image)
 {
-	if (IsIndexInRange(index, mRenderTargetImages)) {
-		return ERROR_OUT_OF_RANGE;
-	}
-	if (mRenderTargetImages[index]->GetOwnership() == Ownership::Restricted) {
-		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
-	}
+	if (IsIndexInRange(index, m_renderTargetImages)) return ERROR_OUT_OF_RANGE;
+	if (m_renderTargetImages[index]->GetOwnership() == Ownership::Restricted) return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
 
-	mRenderTargetImages[index]->SetOwnership(Ownership::Reference);
+	m_renderTargetImages[index]->SetOwnership(Ownership::Reference);
 
-	if (!IsNull(ppImage)) {
-		*ppImage = mRenderTargetImages[index];
-	}
+	if (!IsNull(image)) *image = m_renderTargetImages[index];
 	return SUCCESS;
 }
 
-Result RenderPass::DisownDepthStencilImage(Image** ppImage)
+Result RenderPass::DisownDepthStencilImage(Image** image)
 {
-	if (!mDepthStencilImage) {
-		return ERROR_ELEMENT_NOT_FOUND;
-	}
-	if (mDepthStencilImage->GetOwnership() == Ownership::Restricted) {
-		return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
-	}
+	if (!m_depthStencilImage) return ERROR_ELEMENT_NOT_FOUND;
+	if (m_depthStencilImage->GetOwnership() == Ownership::Restricted) return ERROR_GRFX_OBJECT_OWNERSHIP_IS_RESTRICTED;
+	
+	m_depthStencilImage->SetOwnership(Ownership::Reference);
 
-	mDepthStencilImage->SetOwnership(Ownership::Reference);
-
-	if (!IsNull(ppImage)) {
-		*ppImage = mDepthStencilImage;
-	}
+	if (!IsNull(image)) *image = m_depthStencilImage;
 	return SUCCESS;
 }
 
-VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCount, const VkFormat* pRenderTargetFormats, VkFormat depthStencilFormat, VkSampleCountFlagBits sampleCount, uint32_t viewMask, uint32_t correlationMask, VkRenderPass* pRenderPass, ShadingRateMode shadingRateMode)
+VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCount, const VkFormat* renderTargetFormats, VkFormat depthStencilFormat, VkSampleCountFlagBits sampleCount, uint32_t viewMask, uint32_t correlationMask, VkRenderPass* renderPass, ShadingRateMode shadingRateMode)
 {
 	bool hasDepthSencil = (depthStencilFormat != VK_FORMAT_UNDEFINED);
 
@@ -2242,17 +2167,19 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 	std::vector<VkAttachmentDescription> attachmentDescs;
 	{
-		for (uint32_t i = 0; i < renderTargetCount; ++i) {
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+		{
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
-			desc.format = pRenderTargetFormats[i];
+			desc.format = renderTargetFormats[i];
 			desc.samples = sampleCount;
 			desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 			attachmentDescs.push_back(desc);
 		}
 
-		if (hasDepthSencil) {
+		if (hasDepthSencil)
+		{
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
 			desc.format = depthStencilFormat;
@@ -2267,7 +2194,8 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 	std::vector<VkAttachmentReference> colorRefs;
 	{
-		for (uint32_t i = 0; i < renderTargetCount; ++i) {
+		for (uint32_t i = 0; i < renderTargetCount; ++i)
+		{
 			VkAttachmentReference ref = {};
 			ref.attachment = i;
 			ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2276,7 +2204,8 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 	}
 
 	VkAttachmentReference depthStencilRef = {};
-	if (hasDepthSencil) {
+	if (hasDepthSencil)
+	{
 		depthStencilRef.attachment = depthStencilAttachment;
 		depthStencilRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	}
@@ -2312,7 +2241,8 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 	vkci.pDependencies = &subpassDependencies;
 	// Callers responsibiltiy to only set viewmask if it is required
 	VkRenderPassMultiviewCreateInfo multiviewInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO };
-	if (viewMask > 0) {
+	if (viewMask > 0)
+	{
 		multiviewInfo.subpassCount = 1;
 		multiviewInfo.pViewMasks = &viewMask;
 		multiviewInfo.correlationMaskCount = 1;
@@ -2321,26 +2251,16 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 		vkci.pNext = &multiviewInfo;
 	}
 
-	if (shadingRateMode != SHADING_RATE_NONE) {
-		auto     modifiedCreateInfo = ShadingRatePattern::GetModifiedRenderPassCreateInfo(device, shadingRateMode, vkci);
-		VkResult vkres = vkCreateRenderPass2KHR(
-			device->GetVkDevice(),
-			modifiedCreateInfo.get(),
-			nullptr,
-			pRenderPass);
-		if (vkres != VK_SUCCESS) {
-			return vkres;
-		}
+	if (shadingRateMode != SHADING_RATE_NONE)
+	{
+		auto modifiedCreateInfo = ShadingRatePattern::GetModifiedRenderPassCreateInfo(device, shadingRateMode, vkci);
+		VkResult vkres = vkCreateRenderPass2KHR(device->GetVkDevice(), modifiedCreateInfo.get(), nullptr, renderPass);
+		if (vkres != VK_SUCCESS) return vkres;
 	}
-	else {
-		VkResult vkres = vkCreateRenderPass(
-			device->GetVkDevice(),
-			&vkci,
-			nullptr,
-			pRenderPass);
-		if (vkres != VK_SUCCESS) {
-			return vkres;
-		}
+	else
+	{
+		VkResult vkres = vkCreateRenderPass(device->GetVkDevice(), &vkci, nullptr, renderPass);
+		if (vkres != VK_SUCCESS) return vkres;
 	}
 
 	return VK_SUCCESS;
@@ -2438,7 +2358,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i)
 		{
 			TextureCreateInfo ci = {};
-			ci.pImage = nullptr;
+			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
 			ci.width = pCreateInfo.width;
 			ci.height = pCreateInfo.height;
@@ -2451,7 +2371,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = pCreateInfo.V1.renderTargetInitialStates[i];
 			ci.RTVClearValue = pCreateInfo.renderTargetClearValues[i];
-			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
@@ -2472,7 +2392,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 		// DSV image
 		if (pCreateInfo.V1.depthStencilFormat != Format::Undefined) {
 			TextureCreateInfo ci = {};
-			ci.pImage = nullptr;
+			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
 			ci.width = pCreateInfo.width;
 			ci.height = pCreateInfo.height;
@@ -2485,7 +2405,7 @@ Result DrawPass::CreateTexturesV1(const internal::DrawPassCreateInfo& pCreateInf
 			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = pCreateInfo.V1.depthStencilInitialState;
 			ci.DSVClearValue = pCreateInfo.depthStencilClearValue;
-			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
@@ -2513,7 +2433,7 @@ Result DrawPass::CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInf
 		// Create render target textures
 		for (uint32_t i = 0; i < pCreateInfo.renderTargetCount; ++i) {
 			TextureCreateInfo ci = {};
-			ci.pImage = pCreateInfo.V2.pRenderTargetImages[i];
+			ci.image = pCreateInfo.V2.pRenderTargetImages[i];
 
 			TexturePtr texture;
 			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
@@ -2528,7 +2448,7 @@ Result DrawPass::CreateTexturesV2(const internal::DrawPassCreateInfo& pCreateInf
 		// DSV image
 		if (!IsNull(pCreateInfo.V2.pDepthStencilImage)) {
 			TextureCreateInfo ci = {};
-			ci.pImage = pCreateInfo.V2.pDepthStencilImage;
+			ci.image = pCreateInfo.V2.pDepthStencilImage;
 
 			TexturePtr texture;
 			Result           ppxres = GetDevice()->CreateTexture(ci, &texture);
@@ -2596,29 +2516,29 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 
 	// Create render passes
 	for (uint32_t clearMask = 0; clearMask <= static_cast<uint32_t>(DRAW_PASS_CLEAR_FLAG_CLEAR_ALL); ++clearMask) {
-		AttachmentLoadOp renderTargetLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-		AttachmentLoadOp depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-		AttachmentLoadOp stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+		AttachmentLoadOp renderTargetLoadOp = AttachmentLoadOp::Load;
+		AttachmentLoadOp depthLoadOp = AttachmentLoadOp::Load;
+		AttachmentLoadOp stencilLoadOp = AttachmentLoadOp::Load;
 
 		if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_RENDER_TARGETS) != 0) {
-			renderTargetLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+			renderTargetLoadOp = AttachmentLoadOp::Clear;
 		}
 		if (mDepthStencilTexture) {
 			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_DEPTH) != 0) {
 				if (GetFormatDescription(mDepthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_DEPTH) {
-					depthLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+					depthLoadOp = AttachmentLoadOp::Clear;
 				}
 			}
 			if ((clearMask & DRAW_PASS_CLEAR_FLAG_CLEAR_STENCIL) != 0) {
 				if (GetFormatDescription(mDepthStencilTexture->GetImageFormat())->aspect & FORMAT_ASPECT_STENCIL) {
-					stencilLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+					stencilLoadOp = AttachmentLoadOp::Clear;
 				}
 			}
 		}
 
 		// If the the depth/stencil state has READ for either depth or stecil then skip creating any LOAD_OP_CLEAR render passes for it. Not skipping will result in API errors.
 		bool skip = false;
-		if (depthLoadOp == ATTACHMENT_LOAD_OP_CLEAR) {
+		if (depthLoadOp == AttachmentLoadOp::Clear) {
 			switch (pCreateInfo.depthStencilState) {
 			default: break;
 			case ResourceState::DepthStencilRead:
@@ -2627,7 +2547,7 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 			} break;
 			}
 		}
-		if (stencilLoadOp == ATTACHMENT_LOAD_OP_CLEAR) {
+		if (stencilLoadOp == AttachmentLoadOp::Clear) {
 			switch (pCreateInfo.depthStencilState) {
 			default: break;
 			case ResourceState::DepthStencilRead:
@@ -2650,23 +2570,23 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& pCreateInf
 			if (!mRenderTargetTextures[i]) {
 				continue;
 			}
-			rpCreateInfo.pRenderTargetImages[i] = mRenderTargetTextures[i]->GetImage();
+			rpCreateInfo.renderTargetImages[i] = mRenderTargetTextures[i]->GetImage();
 			rpCreateInfo.renderTargetClearValues[i] = mRenderTargetTextures[i]->GetImage()->GetRTVClearValue();
 			rpCreateInfo.renderTargetLoadOps[i] = renderTargetLoadOp;
-			rpCreateInfo.renderTargetStoreOps[i] = ATTACHMENT_STORE_OP_STORE;
+			rpCreateInfo.renderTargetStoreOps[i] = AttachmentStoreOp::Store;
 		}
 
 		if (mDepthStencilTexture) {
-			rpCreateInfo.pDepthStencilImage = mDepthStencilTexture->GetImage();
+			rpCreateInfo.depthStencilImage = mDepthStencilTexture->GetImage();
 			rpCreateInfo.depthStencilClearValue = mDepthStencilTexture->GetImage()->GetDSVClearValue();
 			rpCreateInfo.depthLoadOp = depthLoadOp;
-			rpCreateInfo.depthStoreOp = ATTACHMENT_STORE_OP_STORE;
+			rpCreateInfo.depthStoreOp = AttachmentStoreOp::Store;
 			rpCreateInfo.stencilLoadOp = stencilLoadOp;
-			rpCreateInfo.stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+			rpCreateInfo.stencilStoreOp = AttachmentStoreOp::Store;
 		}
 
 		if (!IsNull(pCreateInfo.pShadingRatePattern) && pCreateInfo.pShadingRatePattern->GetShadingRateMode() != SHADING_RATE_NONE) {
-			rpCreateInfo.pShadingRatePattern = pCreateInfo.pShadingRatePattern;
+			rpCreateInfo.shadingRatePattern = pCreateInfo.pShadingRatePattern;
 		}
 
 		Pass pass = {};

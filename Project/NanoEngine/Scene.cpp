@@ -2363,8 +2363,8 @@ namespace scene {
 		//
 		{
 			vkr::SampledImageViewCreateInfo createInfo = {};
-			createInfo.pImage = pGrfxImage;
-			createInfo.imageViewType = vkr::IMAGE_VIEW_TYPE_2D;
+			createInfo.image = pGrfxImage;
+			createInfo.imageViewType = vkr::ImageViewType::ImageView2D;
 			createInfo.format = pGrfxImage->GetFormat();
 			createInfo.sampleCount = vkr::SampleCount::Sample1;
 			createInfo.mipLevel = 0;

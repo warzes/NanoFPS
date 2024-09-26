@@ -899,7 +899,7 @@ Result VulkanSwapChain::GetRenderPass(uint32_t imageIndex, AttachmentLoadOp load
 	{
 		return ERROR_OUT_OF_RANGE;
 	}
-	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	if (loadOp == AttachmentLoadOp::Clear)
 	{
 		*ppRenderPass = m_clearRenderPasses[imageIndex];
 	}
@@ -915,7 +915,7 @@ Result VulkanSwapChain::GetRenderTargetView(uint32_t imageIndex, AttachmentLoadO
 	{
 		return ERROR_OUT_OF_RANGE;
 	}
-	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	if (loadOp == AttachmentLoadOp::Clear)
 	{
 		*ppView = m_clearRenderTargets[imageIndex];
 	}
@@ -932,7 +932,7 @@ Result VulkanSwapChain::GetDepthStencilView(uint32_t imageIndex, AttachmentLoadO
 	{
 		return ERROR_OUT_OF_RANGE;
 	}
-	if (loadOp == ATTACHMENT_LOAD_OP_CLEAR)
+	if (loadOp == AttachmentLoadOp::Clear)
 	{
 		*ppView = m_clearDepthStencilViews[imageIndex];
 	}
@@ -1040,19 +1040,19 @@ Result VulkanSwapChain::createRenderPasses()
 	uint32_t imageCount = CountU32(m_colorImages);
 	ASSERT_MSG((imageCount > 0), "No color images found for swapchain renderpasses");
 
-	// Create render passes with ATTACHMENT_LOAD_OP_CLEAR for render target.
+	// Create render passes with AttachmentLoadOp::Clear for render target.
 	for (size_t i = 0; i < imageCount; ++i)
 	{
 		RenderPassCreateInfo rpCreateInfo = {};
 		rpCreateInfo.width = m_createInfo.width;
 		rpCreateInfo.height = m_createInfo.height;
 		rpCreateInfo.renderTargetCount = 1;
-		rpCreateInfo.pRenderTargetViews[0] = m_clearRenderTargets[i];
-		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_clearDepthStencilViews[i];
+		rpCreateInfo.renderTargetViews[0] = m_clearRenderTargets[i];
+		rpCreateInfo.depthStencilView = m_depthImages.empty() ? nullptr : m_clearDepthStencilViews[i];
 		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		rpCreateInfo.ownership = Ownership::Restricted;
-		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
+		rpCreateInfo.shadingRatePattern = m_createInfo.shadingRatePattern;
 		rpCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
 		RenderPassPtr renderPass;
@@ -1065,19 +1065,19 @@ Result VulkanSwapChain::createRenderPasses()
 		m_clearRenderPasses.push_back(renderPass);
 	}
 
-	// Create render passes with ATTACHMENT_LOAD_OP_LOAD for render target.
+	// Create render passes with AttachmentLoadOp::Load for render target.
 	for (size_t i = 0; i < imageCount; ++i)
 	{
 		RenderPassCreateInfo rpCreateInfo = {};
 		rpCreateInfo.width = m_createInfo.width;
 		rpCreateInfo.height = m_createInfo.height;
 		rpCreateInfo.renderTargetCount = 1;
-		rpCreateInfo.pRenderTargetViews[0] = m_loadRenderTargets[i];
-		rpCreateInfo.pDepthStencilView = m_depthImages.empty() ? nullptr : m_loadDepthStencilViews[i];
+		rpCreateInfo.renderTargetViews[0] = m_loadRenderTargets[i];
+		rpCreateInfo.depthStencilView = m_depthImages.empty() ? nullptr : m_loadDepthStencilViews[i];
 		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		rpCreateInfo.ownership = Ownership::Restricted;
-		rpCreateInfo.pShadingRatePattern = m_createInfo.shadingRatePattern;
+		rpCreateInfo.shadingRatePattern = m_createInfo.shadingRatePattern;
 
 		RenderPassPtr renderPass;
 		auto ppxres = m_render.GetRenderDevice().CreateRenderPass(rpCreateInfo, &renderPass);
@@ -1122,7 +1122,7 @@ Result VulkanSwapChain::createRenderTargets()
 	{
 		auto imagePtr = m_colorImages[i];
 		RenderTargetViewCreateInfo rtvCreateInfo = RenderTargetViewCreateInfo::GuessFromImage(imagePtr);
-		rtvCreateInfo.loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+		rtvCreateInfo.loadOp = AttachmentLoadOp::Clear;
 		rtvCreateInfo.ownership = Ownership::Restricted;
 		rtvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
@@ -1135,7 +1135,7 @@ Result VulkanSwapChain::createRenderTargets()
 		}
 		m_clearRenderTargets.push_back(rtv);
 
-		rtvCreateInfo.loadOp = ATTACHMENT_LOAD_OP_LOAD;
+		rtvCreateInfo.loadOp = AttachmentLoadOp::Load;
 		ppxres = m_render.GetRenderDevice().CreateRenderTargetView(rtvCreateInfo, &rtv);
 		if (Failed(ppxres))
 		{
@@ -1148,8 +1148,8 @@ Result VulkanSwapChain::createRenderTargets()
 		{
 			auto depthImage = m_depthImages[i];
 			DepthStencilViewCreateInfo dsvCreateInfo = DepthStencilViewCreateInfo::GuessFromImage(depthImage);
-			dsvCreateInfo.depthLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
-			dsvCreateInfo.stencilLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+			dsvCreateInfo.depthLoadOp = AttachmentLoadOp::Clear;
+			dsvCreateInfo.stencilLoadOp = AttachmentLoadOp::Clear;
 			dsvCreateInfo.ownership = Ownership::Restricted;
 			dsvCreateInfo.arrayLayerCount = m_createInfo.arrayLayerCount;
 
@@ -1163,8 +1163,8 @@ Result VulkanSwapChain::createRenderTargets()
 
 			m_clearDepthStencilViews.push_back(clearDsv);
 
-			dsvCreateInfo.depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-			dsvCreateInfo.stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
+			dsvCreateInfo.depthLoadOp = AttachmentLoadOp::Load;
+			dsvCreateInfo.stencilLoadOp = AttachmentLoadOp::Load;
 			DepthStencilViewPtr loadDsv;
 			ppxres = m_render.GetRenderDevice().CreateDepthStencilView(dsvCreateInfo, &loadDsv);
 			if (Failed(ppxres))
@@ -1480,7 +1480,7 @@ Result ImGuiImpl::initApiObjects()
 		ASSERT_MSG(!pApp->GetSettings()->grfx.enableImGuiDynamicRendering, "This version of ImGui does not have dynamic rendering support");
 #endif
 
-		RenderPassPtr renderPass = m_render.GetSwapChain().GetRenderPass(0, ATTACHMENT_LOAD_OP_LOAD);
+		RenderPassPtr renderPass = m_render.GetSwapChain().GetRenderPass(0, AttachmentLoadOp::Load);
 		ASSERT_MSG(!renderPass.IsNull(), "[imgui:vk] failed to get swapchain renderpass");
 
 		init_info.RenderPass = renderPass->GetVkRenderPass();

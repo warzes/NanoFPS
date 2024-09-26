@@ -148,8 +148,8 @@ bool Example_012::Setup()
 		createInfo.depthStencilUsageFlags.bits.depthStencilAttachment = true;
 		createInfo.depthStencilUsageFlags.bits.sampled = true;
 		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
-		createInfo.depthLoadOp = vkr::ATTACHMENT_LOAD_OP_CLEAR;
-		createInfo.depthStoreOp = vkr::ATTACHMENT_STORE_OP_STORE;
+		createInfo.depthLoadOp = vkr::AttachmentLoadOp::Clear;
+		createInfo.depthStoreOp = vkr::AttachmentStoreOp::Store;
 		createInfo.depthStencilInitialState = vkr::ResourceState::PixelShaderResource;
 
 		CHECKED_CALL(device.CreateRenderPass(createInfo, &mShadowRenderPass));

@@ -346,27 +346,27 @@ private:
 
 struct DepthStencilViewCreateInfo final
 {
-	Image*            pImage = nullptr;
-	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Image*            image = nullptr;
+	ImageViewType     imageViewType = ImageViewType::Undefined;
 	Format            format = Format::Undefined;
 	uint32_t          mipLevel = 0;
 	uint32_t          mipLevelCount = 0;
 	uint32_t          arrayLayer = 0;
 	uint32_t          arrayLayerCount = 0;
 	ComponentMapping  components = {};
-	AttachmentLoadOp  depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_STORE;
-	AttachmentLoadOp  stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	AttachmentLoadOp  depthLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp depthStoreOp = AttachmentStoreOp::Store;
+	AttachmentLoadOp  stencilLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp stencilStoreOp = AttachmentStoreOp::Store;
 	Ownership         ownership = Ownership::Reference;
 
-	static DepthStencilViewCreateInfo GuessFromImage(Image* pImage);
+	static DepthStencilViewCreateInfo GuessFromImage(Image* image);
 };
 
 class DepthStencilView final : public DeviceObject<DepthStencilViewCreateInfo>, public ImageView
 {
 public:
-	ImagePtr          GetImage() const { return m_createInfo.pImage; }
+	ImagePtr          GetImage() const { return m_createInfo.image; }
 	Format            GetFormat() const { return m_createInfo.format; }
 	SampleCount       GetSampleCount() const { return GetImage()->GetSampleCount(); }
 	uint32_t          GetMipLevel() const { return m_createInfo.mipLevel; }
@@ -375,57 +375,55 @@ public:
 	AttachmentStoreOp GetDepthStoreOp() const { return m_createInfo.depthStoreOp; }
 	AttachmentLoadOp  GetStencilLoadOp() const { return m_createInfo.stencilLoadOp; }
 	AttachmentStoreOp GetStencilStoreOp() const { return m_createInfo.stencilStoreOp; }
-
-	VkImageViewPtr GetVkImageView() const { return mImageView; }
+	VkImageViewPtr    GetVkImageView() const { return m_imageView; }
 
 private:
-	Result createApiObjects(const DepthStencilViewCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const DepthStencilViewCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkImageViewPtr mImageView;
+	VkImageViewPtr m_imageView;
 };
 
-struct RenderTargetViewCreateInfo
+struct RenderTargetViewCreateInfo final
 {
-	Image*            pImage = nullptr;
-	ImageViewType     imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Image*            image = nullptr;
+	ImageViewType     imageViewType = ImageViewType::Undefined;
 	Format            format = Format::Undefined;
 	uint32_t          mipLevel = 0;
 	uint32_t          mipLevelCount = 0;
 	uint32_t          arrayLayer = 0;
 	uint32_t          arrayLayerCount = 0;
 	ComponentMapping  components = {};
-	AttachmentLoadOp  loadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp storeOp = ATTACHMENT_STORE_OP_STORE;
+	AttachmentLoadOp  loadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp storeOp = AttachmentStoreOp::Store;
 	Ownership         ownership = Ownership::Reference;
 
-	static RenderTargetViewCreateInfo GuessFromImage(Image* pImage);
+	static RenderTargetViewCreateInfo GuessFromImage(Image* image);
 };
 
 class RenderTargetView final : public DeviceObject<RenderTargetViewCreateInfo>, public ImageView
 {
 public:
-	ImagePtr          GetImage() const { return m_createInfo.pImage; }
+	ImagePtr          GetImage() const { return m_createInfo.image; }
 	Format            GetFormat() const { return m_createInfo.format; }
 	SampleCount       GetSampleCount() const { return GetImage()->GetSampleCount(); }
 	uint32_t          GetMipLevel() const { return m_createInfo.mipLevel; }
-	uint32_t         GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	uint32_t          GetArrayLayer() const { return m_createInfo.arrayLayer; }
 	AttachmentLoadOp  GetLoadOp() const { return m_createInfo.loadOp; }
 	AttachmentStoreOp GetStoreOp() const { return m_createInfo.storeOp; }
-
-	VkImageViewPtr GetVkImageView() const { return mImageView; }
+	VkImageViewPtr    GetVkImageView() const { return m_imageView; }
 
 private:
-	Result createApiObjects(const RenderTargetViewCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const RenderTargetViewCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkImageViewPtr mImageView;
+	VkImageViewPtr m_imageView;
 };
 
-struct SampledImageViewCreateInfo
+struct SampledImageViewCreateInfo final
 {
-	Image*                  pImage = nullptr;
-	ImageViewType           imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Image*                  image = nullptr;
+	ImageViewType           imageViewType = ImageViewType::Undefined;
 	Format                  format = Format::Undefined;
 	SampleCount             sampleCount = SampleCount::Sample1;
 	uint32_t                mipLevel = 0;
@@ -433,16 +431,16 @@ struct SampledImageViewCreateInfo
 	uint32_t                arrayLayer = 0;
 	uint32_t                arrayLayerCount = 0;
 	ComponentMapping        components = {};
-	SamplerYcbcrConversion* pYcbcrConversion = nullptr; // Leave null if not required.
+	SamplerYcbcrConversion* ycbcrConversion = nullptr; // Leave null if not required.
 	Ownership               ownership = Ownership::Reference;
 
-	static SampledImageViewCreateInfo GuessFromImage(Image* pImage);
+	static SampledImageViewCreateInfo GuessFromImage(Image* image);
 };
 
 class SampledImageView final : public DeviceObject<SampledImageViewCreateInfo>, public ImageView
 {
 public:
-	ImagePtr                GetImage() const { return m_createInfo.pImage; }
+	ImagePtr                GetImage() const { return m_createInfo.image; }
 	ImageViewType           GetImageViewType() const { return m_createInfo.imageViewType; }
 	Format                  GetFormat() const { return m_createInfo.format; }
 	SampleCount             GetSampleCount() const { return GetImage()->GetSampleCount(); }
@@ -451,25 +449,24 @@ public:
 	uint32_t                GetArrayLayer() const { return m_createInfo.arrayLayer; }
 	uint32_t                GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
 	const ComponentMapping& GetComponents() const { return m_createInfo.components; }
-
-	VkImageViewPtr GetVkImageView() const { return mImageView; }
+	VkImageViewPtr          GetVkImageView() const { return m_imageView; }
 
 private:
-	Result createApiObjects(const SampledImageViewCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const SampledImageViewCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkImageViewPtr mImageView;
+	VkImageViewPtr m_imageView;
 };
 
 // SamplerYcbcrConversionCreateInfo defines a color model conversion for a texture, sampler, or sampled image.
 struct SamplerYcbcrConversionCreateInfo final
 {
 	Format               format = Format::Undefined;
-	YcbcrModelConversion ycbcrModel = YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-	YcbcrRange           ycbcrRange = YCBCR_RANGE_ITU_FULL;
+	YcbcrModelConversion ycbcrModel = YcbcrModelConversion::RGBIdentity;
+	YcbcrRange           ycbcrRange = YcbcrRange::ITU_FULL;
 	ComponentMapping     components = {};
-	ChromaLocation       xChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
-	ChromaLocation       yChromaOffset = CHROMA_LOCATION_COSITED_EVEN;
+	ChromaLocation       xChromaOffset = ChromaLocation::CositedEven;
+	ChromaLocation       yChromaOffset = ChromaLocation::CositedEven;
 	Filter               filter = Filter::Linear;
 	bool                 forceExplicitReconstruction = false;
 };
@@ -477,19 +474,19 @@ struct SamplerYcbcrConversionCreateInfo final
 class SamplerYcbcrConversion final : public DeviceObject<SamplerYcbcrConversionCreateInfo>
 {
 public:
-	VkSamplerYcbcrConversionPtr GetVkSamplerYcbcrConversion() const { return mSamplerYcbcrConversion; }
+	VkSamplerYcbcrConversionPtr GetVkSamplerYcbcrConversion() const { return m_samplerYcbcrConversion; }
 
 private:
-	Result createApiObjects(const SamplerYcbcrConversionCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const SamplerYcbcrConversionCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkSamplerYcbcrConversionPtr mSamplerYcbcrConversion;
+	VkSamplerYcbcrConversionPtr m_samplerYcbcrConversion;
 };
 
-struct StorageImageViewCreateInfo
+struct StorageImageViewCreateInfo final
 {
-	Image* pImage = nullptr;
-	ImageViewType    imageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+	Image*           image = nullptr;
+	ImageViewType    imageViewType = ImageViewType::Undefined;
 	Format           format = Format::Undefined;
 	uint32_t         mipLevel = 0;
 	uint32_t         mipLevelCount = 0;
@@ -498,28 +495,27 @@ struct StorageImageViewCreateInfo
 	ComponentMapping components = {};
 	Ownership        ownership = Ownership::Reference;
 
-	static StorageImageViewCreateInfo GuessFromImage(Image* pImage);
+	static StorageImageViewCreateInfo GuessFromImage(Image* image);
 };
 
 class StorageImageView final : public DeviceObject<StorageImageViewCreateInfo>, public ImageView
 {
 public:
-	ImagePtr      GetImage() const { return m_createInfo.pImage; }
-	ImageViewType GetImageViewType() const { return m_createInfo.imageViewType; }
-	Format        GetFormat() const { return m_createInfo.format; }
-	SampleCount   GetSampleCount() const { return GetImage()->GetSampleCount(); }
-	uint32_t      GetMipLevel() const { return m_createInfo.mipLevel; }
-	uint32_t      GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
-	uint32_t      GetArrayLayer() const { return m_createInfo.arrayLayer; }
-	uint32_t      GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
-
-	VkImageViewPtr GetVkImageView() const { return mImageView; }
+	ImagePtr       GetImage() const { return m_createInfo.image; }
+	ImageViewType  GetImageViewType() const { return m_createInfo.imageViewType; }
+	Format         GetFormat() const { return m_createInfo.format; }
+	SampleCount    GetSampleCount() const { return GetImage()->GetSampleCount(); }
+	uint32_t       GetMipLevel() const { return m_createInfo.mipLevel; }
+	uint32_t       GetMipLevelCount() const { return m_createInfo.mipLevelCount; }
+	uint32_t       GetArrayLayer() const { return m_createInfo.arrayLayer; }
+	uint32_t       GetArrayLayerCount() const { return m_createInfo.arrayLayerCount; }
+	VkImageViewPtr GetVkImageView() const { return m_imageView; }
 
 private:
-	Result createApiObjects(const StorageImageViewCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const StorageImageViewCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkImageViewPtr mImageView;
+	VkImageViewPtr m_imageView;
 };
 
 #pragma endregion
@@ -528,7 +524,7 @@ private:
 
 struct TextureCreateInfo final
 {
-	Image*                  pImage = nullptr;
+	Image*                  image = nullptr;
 	ImageType               imageType = ImageType::Image2D;
 	uint32_t                width = 0;
 	uint32_t                height = 0;
@@ -539,21 +535,21 @@ struct TextureCreateInfo final
 	uint32_t                arrayLayerCount = 1;
 	ImageUsageFlags         usageFlags = ImageUsageFlags::SampledImage();
 	MemoryUsage             memoryUsage = MemoryUsage::GPUOnly;
-	ResourceState           initialState = ResourceState::General;            // This may not be the best choice
-	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                   // Optimized RTV clear value
-	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                   // Optimized DSV clear value
-	ImageViewType           sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED; // Guesses from image if UNDEFINED
-	Format                  sampledImageViewFormat = Format::Undefined;        // Guesses from image if UNDEFINED
-	SamplerYcbcrConversion* pSampledImageYcbcrConversion = nullptr;           // Leave null if not Ycbcr, or not using sampled image.
-	Format                  renderTargetViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
-	Format                  depthStencilViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
-	Format                  storageImageViewFormat = Format::Undefined;         // Guesses from image if UNDEFINED
+	ResourceState           initialState = ResourceState::General;           // This may not be the best choice
+	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                  // Optimized RTV clear value
+	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                  // Optimized DSV clear value
+	ImageViewType           sampledImageViewType = ImageViewType::Undefined; // Guesses from image if UNDEFINED
+	Format                  sampledImageViewFormat = Format::Undefined;      // Guesses from image if UNDEFINED
+	SamplerYcbcrConversion* sampledImageYcbcrConversion = nullptr;           // Leave null if not Ycbcr, or not using sampled image.
+	Format                  renderTargetViewFormat = Format::Undefined;      // Guesses from image if UNDEFINED
+	Format                  depthStencilViewFormat = Format::Undefined;      // Guesses from image if UNDEFINED
+	Format                  storageImageViewFormat = Format::Undefined;      // Guesses from image if UNDEFINED
 	Ownership               ownership = Ownership::Reference;
 	bool                    concurrentMultiQueueUsage = false;
 	ImageCreateFlags        imageCreateFlags = {};
 };
 
-class Texture : public DeviceObject<TextureCreateInfo>
+class Texture final : public DeviceObject<TextureCreateInfo>
 {
 	friend class RenderDevice;
 public:
@@ -580,9 +576,8 @@ public:
 	StorageImageViewPtr GetStorageImageView() const { return m_storageImageView; }
 
 private:
-	Result create(const TextureCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const TextureCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const TextureCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
 	ImagePtr            m_image;
 	SampledImageViewPtr m_sampledImageView;
@@ -590,7 +585,6 @@ private:
 	DepthStencilViewPtr m_depthStencilView;
 	StorageImageViewPtr m_storageImageView;
 };
-
 
 #pragma endregion
 
@@ -604,17 +598,16 @@ struct RenderPassCreateInfo final
 	uint32_t               arrayLayerCount = 1;
 	uint32_t               renderTargetCount = 0;
 	MultiViewState         multiViewState = {};
-	RenderTargetView*      pRenderTargetViews[MaxRenderTargets] = {};
-	DepthStencilView*      pDepthStencilView = nullptr;
+	RenderTargetView*      renderTargetViews[MaxRenderTargets] = {};
+	DepthStencilView*      depthStencilView = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	Ownership              ownership = Ownership::Reference;
 
-	// If `pShadingRatePattern` is not null, then the pipeline targeting this
-	// RenderPass must use the same shading rate mode
+	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
 	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
-	ShadingRatePatternPtr pShadingRatePattern = nullptr;
+	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
 	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
 };
@@ -635,19 +628,18 @@ struct RenderPassCreateInfo2 final
 	ImageUsageFlags        depthStencilUsageFlags = {};
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
-	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
-	AttachmentLoadOp       depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
-	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { AttachmentLoadOp::Load };
+	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { AttachmentStoreOp::Store };
+	AttachmentLoadOp       depthLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp      depthStoreOp = AttachmentStoreOp::Store;
+	AttachmentLoadOp       stencilLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp      stencilStoreOp = AttachmentStoreOp::Store;
 	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { ResourceState::Undefined };
 	ResourceState          depthStencilInitialState = ResourceState::Undefined;
 	Ownership              ownership = Ownership::Reference;
 
-	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
-	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
-	ShadingRatePatternPtr pShadingRatePattern = nullptr;
+	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode (`GraphicsPipelineCreateInfo.shadingRateMode`).
+	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
 	void SetAllRenderTargetUsageFlags(const ImageUsageFlags& flags);
 	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
@@ -664,22 +656,21 @@ struct RenderPassCreateInfo3 final
 	uint32_t               renderTargetCount = 0;
 	uint32_t               arrayLayerCount = 1;
 	MultiViewState         multiViewState = {};
-	Image*                 pRenderTargetImages[MaxRenderTargets] = {};
-	Image*                 pDepthStencilImage = nullptr;
+	Image*                 renderTargetImages[MaxRenderTargets] = {};
+	Image*                 depthStencilImage = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
 	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
-	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
-	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
-	AttachmentLoadOp       depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp      depthStoreOp = ATTACHMENT_STORE_OP_STORE;
-	AttachmentLoadOp       stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-	AttachmentStoreOp      stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { AttachmentLoadOp::Load };
+	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { AttachmentStoreOp::Store };
+	AttachmentLoadOp       depthLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp      depthStoreOp = AttachmentStoreOp::Store;
+	AttachmentLoadOp       stencilLoadOp = AttachmentLoadOp::Load;
+	AttachmentStoreOp      stencilStoreOp = AttachmentStoreOp::Store;
 	Ownership              ownership = Ownership::Reference;
 
-	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode
-	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
-	ShadingRatePatternPtr pShadingRatePattern = nullptr;
+	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode (`GraphicsPipelineCreateInfo.shadingRateMode`).
+	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
 	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
 	void SetAllRenderTargetLoadOp(AttachmentLoadOp op);
@@ -689,7 +680,7 @@ struct RenderPassCreateInfo3 final
 
 namespace internal
 {
-	struct RenderPassCreateInfo
+	struct RenderPassCreateInfo final
 	{
 		enum CreateInfoVersion
 		{
@@ -707,13 +698,13 @@ namespace internal
 		uint32_t            arrayLayerCount = 1;
 		MultiViewState      multiViewState = {};
 		ResourceState       depthStencilState = ResourceState::DepthStencilWrite;
-		ShadingRatePattern* pShadingRatePattern = nullptr;
+		ShadingRatePattern* shadingRatePattern = nullptr;
 
 		// Data unique to RenderPassCreateInfo
 		struct
 		{
-			RenderTargetView* pRenderTargetViews[MaxRenderTargets] = {};
-			DepthStencilView* pDepthStencilView = nullptr;
+			RenderTargetView* renderTargetViews[MaxRenderTargets] = {};
+			DepthStencilView* depthStencilView = nullptr;
 		} V1;
 
 		// Data unique to RenderPassCreateInfo2
@@ -731,8 +722,8 @@ namespace internal
 		// Data unique to RenderPassCreateInfo3
 		struct
 		{
-			Image* pRenderTargetImages[MaxRenderTargets] = {};
-			Image* pDepthStencilImage = nullptr;
+			Image* renderTargetImages[MaxRenderTargets] = {};
+			Image* depthStencilImage = nullptr;
 		} V3;
 
 		// Clear values
@@ -740,45 +731,44 @@ namespace internal
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		// Load/store ops
-		AttachmentLoadOp  renderTargetLoadOps[MaxRenderTargets] = { ATTACHMENT_LOAD_OP_LOAD };
-		AttachmentStoreOp renderTargetStoreOps[MaxRenderTargets] = { ATTACHMENT_STORE_OP_STORE };
-		AttachmentLoadOp  depthLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-		AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_STORE;
-		AttachmentLoadOp  stencilLoadOp = ATTACHMENT_LOAD_OP_LOAD;
-		AttachmentStoreOp stencilStoreOp = ATTACHMENT_STORE_OP_STORE;
+		AttachmentLoadOp  renderTargetLoadOps[MaxRenderTargets] = { AttachmentLoadOp::Load };
+		AttachmentStoreOp renderTargetStoreOps[MaxRenderTargets] = { AttachmentStoreOp::Store };
+		AttachmentLoadOp  depthLoadOp = AttachmentLoadOp::Load;
+		AttachmentStoreOp depthStoreOp = AttachmentStoreOp::Store;
+		AttachmentLoadOp  stencilLoadOp = AttachmentLoadOp::Load;
+		AttachmentStoreOp stencilStoreOp = AttachmentStoreOp::Store;
 
-		RenderPassCreateInfo() {}
+		RenderPassCreateInfo() = default;
 		RenderPassCreateInfo(const vkr::RenderPassCreateInfo& obj);
 		RenderPassCreateInfo(const vkr::RenderPassCreateInfo2& obj);
 		RenderPassCreateInfo(const vkr::RenderPassCreateInfo3& obj);
 	};
-
 }
 
 class RenderPass final: public DeviceObject<internal::RenderPassCreateInfo>
 {
 	friend class RenderDevice;
 public:
-	const Rect& GetRenderArea() const { return mRenderArea; }
-	const Rect& GetScissor() const { return mRenderArea; }
-	const Viewport& GetViewport() const { return mViewport; }
+	const Rect&     GetRenderArea() const { return m_renderArea; }
+	const Rect&     GetScissor() const { return m_renderArea; }
+	const Viewport& GetViewport() const { return m_viewport; }
 
 	uint32_t GetRenderTargetCount() const { return m_createInfo.renderTargetCount; }
-	bool     HasDepthStencil() const { return mDepthStencilImage ? true : false; }
+	bool     HasDepthStencil() const { return m_depthStencilImage ? true : false; }
 
-	Result GetRenderTargetView(uint32_t index, RenderTargetView** ppView) const;
-	Result GetDepthStencilView(DepthStencilView** ppView) const;
+	Result GetRenderTargetView(uint32_t index, RenderTargetView** view) const;
+	Result GetDepthStencilView(DepthStencilView** view) const;
 
-	Result GetRenderTargetImage(uint32_t index, Image** ppImage) const;
-	Result GetDepthStencilImage(Image** ppImage) const;
+	Result GetRenderTargetImage(uint32_t index, Image** image) const;
+	Result GetDepthStencilImage(Image** image) const;
 
 	// This only applies to RenderPass objects created using RenderPassCreateInfo2.
 	// These functions will set 'isExternal' to true resulting in these objects NOT getting destroyed when the encapsulating RenderPass object is destroyed.
 	// Calling these fuctions on RenderPass objects created using using RenderPassCreateInfo will still return a valid object if the index or DSV object exists.
-	Result DisownRenderTargetView(uint32_t index, RenderTargetView** ppView);
-	Result DisownDepthStencilView(DepthStencilView** ppView);
-	Result DisownRenderTargetImage(uint32_t index, Image** ppImage);
-	Result DisownDepthStencilImage(Image** ppImage);
+	Result DisownRenderTargetView(uint32_t index, RenderTargetView** view);
+	Result DisownDepthStencilView(DepthStencilView** view);
+	Result DisownRenderTargetImage(uint32_t index, Image** image);
+	Result DisownDepthStencilImage(Image** image);
 
 	// Convenience functions returns empty ptr if index is out of range or DSV object does not exist.
 	RenderTargetViewPtr GetRenderTargetView(uint32_t index) const;
@@ -786,50 +776,38 @@ public:
 	ImagePtr            GetRenderTargetImage(uint32_t index) const;
 	ImagePtr            GetDepthStencilImage() const;
 
-	// Returns index of pImage otherwise returns UINT32_MAX
-	uint32_t GetRenderTargetImageIndex(const Image* pImage) const;
+	// Returns index of image otherwise returns UINT32_MAX
+	uint32_t GetRenderTargetImageIndex(const Image* image) const;
 
-	// Returns true if render targets or depth stencil contains ATTACHMENT_LOAD_OP_CLEAR
-	bool HasLoadOpClear() const { return mHasLoadOpClear; }
+	// Returns true if render targets or depth stencil contains AttachmentLoadOp::Clear
+	bool HasLoadOpClear() const { return m_hasLoadOpClear; }
 
-	VkRenderPassPtr  GetVkRenderPass() const { return mRenderPass; }
-	VkFramebufferPtr GetVkFramebuffer() const { return mFramebuffer; }
+	VkRenderPassPtr  GetVkRenderPass() const { return m_renderPass; }
+	VkFramebufferPtr GetVkFramebuffer() const { return m_framebuffer; }
 
 private:
-	Result create(const internal::RenderPassCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const internal::RenderPassCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
-	void   destroy() final;
+	Result createApiObjects(const internal::RenderPassCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	Result createImagesAndViewsV1(const internal::RenderPassCreateInfo& pCreateInfo);
-	Result createImagesAndViewsV2(const internal::RenderPassCreateInfo& pCreateInfo);
-	Result createImagesAndViewsV3(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createImagesAndViewsV1(const internal::RenderPassCreateInfo& createInfo);
+	Result createImagesAndViewsV2(const internal::RenderPassCreateInfo& createInfo);
+	Result createImagesAndViewsV3(const internal::RenderPassCreateInfo& createInfo);
 
-	Result createRenderPass(const internal::RenderPassCreateInfo& pCreateInfo);
-	Result createFramebuffer(const internal::RenderPassCreateInfo& pCreateInfo);
+	Result createRenderPass(const internal::RenderPassCreateInfo& createInfo);
+	Result createFramebuffer(const internal::RenderPassCreateInfo& createInfo);
 
-	VkRenderPassPtr  mRenderPass;
-	VkFramebufferPtr mFramebuffer;
-
-	Rect                             mRenderArea = {};
-	Viewport                         mViewport = {};
-	std::vector<RenderTargetViewPtr> mRenderTargetViews;
-	DepthStencilViewPtr              mDepthStencilView;
-	std::vector<ImagePtr>            mRenderTargetImages;
-	ImagePtr                         mDepthStencilImage;
-	bool                             mHasLoadOpClear = false;
+	VkRenderPassPtr                  m_renderPass;
+	VkFramebufferPtr                 m_framebuffer;
+	Rect                             m_renderArea = {};
+	Viewport                         m_viewport = {};
+	std::vector<RenderTargetViewPtr> m_renderTargetViews;
+	DepthStencilViewPtr              m_depthStencilView;
+	std::vector<ImagePtr>            m_renderTargetImages;
+	ImagePtr                         m_depthStencilImage;
+	bool                             m_hasLoadOpClear = false;
 };
 
-VkResult CreateTransientRenderPass(
-	RenderDevice* device,
-	uint32_t              renderTargetCount,
-	const VkFormat* pRenderTargetFormats,
-	VkFormat              depthStencilFormat,
-	VkSampleCountFlagBits sampleCount,
-	uint32_t              viewMask,
-	uint32_t              correlationMask,
-	VkRenderPass* pRenderPass,
-	ShadingRateMode shadingRateMode = SHADING_RATE_NONE);
+VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCount, const VkFormat* pRenderTargetFormats, VkFormat depthStencilFormat, VkSampleCountFlagBits sampleCount, uint32_t viewMask, uint32_t correlationMask, VkRenderPass* renderPass, ShadingRateMode shadingRateMode = SHADING_RATE_NONE);
 
 #pragma endregion
 

@@ -99,7 +99,7 @@ bool Example_018::Setup()
 			renderingInfo.renderArea = { 0, 0, GetRender().GetSwapChain().GetWidth(), GetRender().GetSwapChain().GetHeight() };
 			renderingInfo.renderTargetCount = 1;
 			// There will be an explicit clear inside a renderpass.
-			renderingInfo.pRenderTargetViews[0] = GetRender().GetSwapChain().GetRenderTargetView(imageIndex, vkr::AttachmentLoadOp::ATTACHMENT_LOAD_OP_LOAD);
+			renderingInfo.pRenderTargetViews[0] = GetRender().GetSwapChain().GetRenderTargetView(imageIndex, vkr::AttachmentLoadOp::Load);
 			renderingInfo.pDepthStencilView = GetRender().GetSwapChain().GetDepthStencilView(imageIndex);
 
 			float4x4 P = glm::perspective(glm::radians(60.0f), GetWindowAspect(), 0.001f, 10000.0f);
@@ -160,7 +160,7 @@ void Example_018::Render()
 		renderingInfo.flags.bits.resuming = true;
 		renderingInfo.renderArea = { 0, 0, swapChain.GetWidth(), swapChain.GetHeight() };
 		renderingInfo.renderTargetCount = 1;
-		renderingInfo.pRenderTargetViews[0] = swapChain.GetRenderTargetView(imageIndex, vkr::AttachmentLoadOp::ATTACHMENT_LOAD_OP_LOAD);
+		renderingInfo.pRenderTargetViews[0] = swapChain.GetRenderTargetView(imageIndex, vkr::AttachmentLoadOp::Load);
 		renderingInfo.pDepthStencilView = swapChain.GetDepthStencilView(imageIndex);
 
 		//float t = GetElapsedSeconds();

@@ -107,11 +107,11 @@ bool Example_004::Setup()
 			createInfo.width                  = pRenderTargetImage->GetWidth();
 			createInfo.height                 = pRenderTargetImage->GetHeight();
 			createInfo.renderTargetCount      = 1;
-			createInfo.pRenderTargetImages[0] = pRenderTargetImage;
-			createInfo.renderTargetLoadOps[0] = vkr::ATTACHMENT_LOAD_OP_LOAD;
-			createInfo.pDepthStencilImage     = pDepthStencilimage;
-			createInfo.depthLoadOp            = vkr::ATTACHMENT_LOAD_OP_LOAD;
-			createInfo.stencilLoadOp          = vkr::ATTACHMENT_LOAD_OP_LOAD;
+			createInfo.renderTargetImages[0]  = pRenderTargetImage;
+			createInfo.renderTargetLoadOps[0] = vkr::AttachmentLoadOp::Load;
+			createInfo.depthStencilImage      = pDepthStencilimage;
+			createInfo.depthLoadOp            = vkr::AttachmentLoadOp::Load;
+			createInfo.stencilLoadOp          = vkr::AttachmentLoadOp::Load;
 
 			vkr::RenderPassPtr renderPass = nullptr;
 			CHECKED_CALL(device.CreateRenderPass(createInfo, &renderPass));

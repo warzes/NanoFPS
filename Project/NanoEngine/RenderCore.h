@@ -231,17 +231,17 @@ constexpr auto SEMANTIC_NAME_CUSTOM = "CUSTOM";
 
 #pragma region Enums
 
-enum AttachmentLoadOp
+enum class AttachmentLoadOp : uint8_t
 {
-	ATTACHMENT_LOAD_OP_LOAD = 0,
-	ATTACHMENT_LOAD_OP_CLEAR,
-	ATTACHMENT_LOAD_OP_DONT_CARE,
+	Load,
+	Clear,
+	DontCare,
 };
 
-enum AttachmentStoreOp
+enum class AttachmentStoreOp : uint8_t
 {
-	ATTACHMENT_STORE_OP_STORE = 0,
-	ATTACHMENT_STORE_OP_DONT_CARE,
+	Store,
+	DontCare,
 };
 
 enum BlendFactor
@@ -366,12 +366,12 @@ enum BufferUsageFlagBits
 	BUFFER_USAGE_SHADER_DEVICE_ADDRESS = 0x00002000,
 };
 
-enum ChromaLocation
+enum class ChromaLocation : uint8_t
 {
 	// Specifies that downsampled chroma samples are aligned with even luma sample coordinates.
-	CHROMA_LOCATION_COSITED_EVEN = 0,
+	CositedEven,
 	// Specifies that downsampled chroma samples are located between even luma sample coordinates and the next higher odd luma sample coordinate.
-	CHROMA_LOCATION_MIDPOINT = 1,
+	Midpoint,
 };
 
 enum ColorComponentFlagBits
@@ -403,15 +403,15 @@ enum CommandType
 	COMMAND_TYPE_PRESENT = 4,
 };
 
-enum ComponentSwizzle
+enum class ComponentSwizzle : uint8_t
 {
-	COMPONENT_SWIZZLE_IDENTITY = 0,
-	COMPONENT_SWIZZLE_ZERO = 1,
-	COMPONENT_SWIZZLE_ONE = 2,
-	COMPONENT_SWIZZLE_R = 3,
-	COMPONENT_SWIZZLE_G = 4,
-	COMPONENT_SWIZZLE_B = 5,
-	COMPONENT_SWIZZLE_A = 6,
+	Identity,
+	Zero,
+	One,
+	R,
+	G,
+	B,
+	A,
 };
 
 enum CullMode
@@ -496,16 +496,16 @@ enum ImageUsageFlagBits
 	IMAGE_USAGE_FRAGMENT_DENSITY_MAP = 0x00000200,
 };
 
-enum ImageViewType
+enum class ImageViewType : uint8_t
 {
-	IMAGE_VIEW_TYPE_UNDEFINED = 0,
-	IMAGE_VIEW_TYPE_1D = 1,
-	IMAGE_VIEW_TYPE_2D = 2,
-	IMAGE_VIEW_TYPE_3D = 3,
-	IMAGE_VIEW_TYPE_CUBE = 4,
-	IMAGE_VIEW_TYPE_1D_ARRAY = 5,
-	IMAGE_VIEW_TYPE_2D_ARRAY = 6,
-	IMAGE_VIEW_TYPE_CUBE_ARRAY = 7,
+	Undefined,
+	ImageView1D,
+	ImageView2D,
+	ImageView3D,
+	Cube,
+	ImageView1DArray,
+	ImageView2DArray,
+	CubeArray,
 };
 
 enum class IndexType : uint8_t
@@ -732,24 +732,24 @@ enum VertexSemantic
 	VERTEX_SEMANTIC_TEXCOORD22 = VERTEX_SEMANTIC_TEXCOORD21 + 1,
 };
 
-enum YcbcrModelConversion
+enum class YcbcrModelConversion : uint8_t
 {
 	// Specifies that the color space for the image is RGB, and should be kept that way without conversion.
-	YCBCR_MODEL_CONVERSION_RGB_IDENTITY = 0,
+	RGBIdentity,
 	// Specifies that the color space for the image is YCbCr, and should be range expanded from a compressed format.
-	YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY = 1,
+	YCBCRIdentity,
 	// Specifies that the color model is YCbCr, but should be converted to RGB based on BT.709 for shader operations.
-	YCBCR_MODEL_CONVERSION_YCBCR_709 = 2,
+	YCBCR709,
 	// Specifies that the color model is YCbCr, but should be converted to RGB based on BT.601 for shader operations.
-	YCBCR_MODEL_CONVERSION_YCBCR_601 = 3,
+	YCBCR601,
 	// Specifies that the color model is YCbCr, but should be converted to RGB based on BT.2020 for shader operations.
-	YCBCR_MODEL_CONVERSION_YCBCR_2020 = 4,
+	YCBCR2020,
 };
 
-enum YcbcrRange
+enum class YcbcrRange : uint8_t
 {
-	YCBCR_RANGE_ITU_FULL = 0,
-	YCBCR_RANGE_ITU_NARROW = 1,
+	ITU_FULL,
+	ITU_NARROW,
 };
 
 enum CompileResult
@@ -1485,10 +1485,10 @@ struct Extent2D final
 
 struct ComponentMapping final
 {
-	ComponentSwizzle r = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle g = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle b = COMPONENT_SWIZZLE_IDENTITY;
-	ComponentSwizzle a = COMPONENT_SWIZZLE_IDENTITY;
+	ComponentSwizzle r = ComponentSwizzle::Identity;
+	ComponentSwizzle g = ComponentSwizzle::Identity;
+	ComponentSwizzle b = ComponentSwizzle::Identity;
+	ComponentSwizzle a = ComponentSwizzle::Identity;
 };
 
 struct DepthStencilClearValue final

@@ -896,9 +896,9 @@ VkAttachmentLoadOp ToVkAttachmentLoadOp(AttachmentLoadOp value)
 {
 	switch (value) {
 	default: break;
-	case ATTACHMENT_LOAD_OP_LOAD: return VK_ATTACHMENT_LOAD_OP_LOAD; break;
-	case ATTACHMENT_LOAD_OP_CLEAR: return VK_ATTACHMENT_LOAD_OP_CLEAR; break;
-	case ATTACHMENT_LOAD_OP_DONT_CARE: return VK_ATTACHMENT_LOAD_OP_DONT_CARE; break;
+	case AttachmentLoadOp::Load: return VK_ATTACHMENT_LOAD_OP_LOAD; break;
+	case AttachmentLoadOp::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR; break;
+	case AttachmentLoadOp::DontCare: return VK_ATTACHMENT_LOAD_OP_DONT_CARE; break;
 	}
 	return InvalidValue<VkAttachmentLoadOp>();
 }
@@ -907,8 +907,8 @@ VkAttachmentStoreOp ToVkAttachmentStoreOp(AttachmentStoreOp value)
 {
 	switch (value) {
 	default: break;
-	case ATTACHMENT_STORE_OP_STORE: return VK_ATTACHMENT_STORE_OP_STORE; break;
-	case ATTACHMENT_STORE_OP_DONT_CARE: return VK_ATTACHMENT_STORE_OP_DONT_CARE; break;
+	case AttachmentStoreOp::Store: return VK_ATTACHMENT_STORE_OP_STORE; break;
+	case AttachmentStoreOp::DontCare: return VK_ATTACHMENT_STORE_OP_DONT_CARE; break;
 	}
 	return InvalidValue<VkAttachmentStoreOp>();
 }
@@ -1042,8 +1042,8 @@ VkChromaLocation ToVkChromaLocation(ChromaLocation value)
 {
 	switch (value) {
 	default: break;
-	case CHROMA_LOCATION_COSITED_EVEN: return VK_CHROMA_LOCATION_COSITED_EVEN;
-	case CHROMA_LOCATION_MIDPOINT: return VK_CHROMA_LOCATION_MIDPOINT;
+	case ChromaLocation::CositedEven: return VK_CHROMA_LOCATION_COSITED_EVEN;
+	case ChromaLocation::Midpoint: return VK_CHROMA_LOCATION_MIDPOINT;
 	}
 	return InvalidValue<VkChromaLocation>();
 }
@@ -1096,13 +1096,13 @@ VkComponentSwizzle ToVkComponentSwizzle(ComponentSwizzle value)
 {
 	switch (value) {
 	default: break;
-	case COMPONENT_SWIZZLE_IDENTITY: return VK_COMPONENT_SWIZZLE_IDENTITY; break;
-	case COMPONENT_SWIZZLE_ZERO: return VK_COMPONENT_SWIZZLE_ZERO; break;
-	case COMPONENT_SWIZZLE_ONE: return VK_COMPONENT_SWIZZLE_ONE; break;
-	case COMPONENT_SWIZZLE_R: return VK_COMPONENT_SWIZZLE_R; break;
-	case COMPONENT_SWIZZLE_G: return VK_COMPONENT_SWIZZLE_G; break;
-	case COMPONENT_SWIZZLE_B: return VK_COMPONENT_SWIZZLE_B; break;
-	case COMPONENT_SWIZZLE_A: return VK_COMPONENT_SWIZZLE_A; break;
+	case ComponentSwizzle::Identity: return VK_COMPONENT_SWIZZLE_IDENTITY; break;
+	case ComponentSwizzle::Zero: return VK_COMPONENT_SWIZZLE_ZERO; break;
+	case ComponentSwizzle::One: return VK_COMPONENT_SWIZZLE_ONE; break;
+	case ComponentSwizzle::R: return VK_COMPONENT_SWIZZLE_R; break;
+	case ComponentSwizzle::G: return VK_COMPONENT_SWIZZLE_G; break;
+	case ComponentSwizzle::B: return VK_COMPONENT_SWIZZLE_B; break;
+	case ComponentSwizzle::A: return VK_COMPONENT_SWIZZLE_A; break;
 	}
 	return InvalidValue<VkComponentSwizzle>();
 }
@@ -1347,13 +1347,13 @@ VkImageViewType ToVkImageViewType(ImageViewType value)
 {
 	switch (value) {
 	default: break;
-	case IMAGE_VIEW_TYPE_1D: return VK_IMAGE_VIEW_TYPE_1D; break;
-	case IMAGE_VIEW_TYPE_2D: return VK_IMAGE_VIEW_TYPE_2D; break;
-	case IMAGE_VIEW_TYPE_3D: return VK_IMAGE_VIEW_TYPE_3D; break;
-	case IMAGE_VIEW_TYPE_CUBE: return VK_IMAGE_VIEW_TYPE_CUBE; break;
-	case IMAGE_VIEW_TYPE_1D_ARRAY: return VK_IMAGE_VIEW_TYPE_1D_ARRAY; break;
-	case IMAGE_VIEW_TYPE_2D_ARRAY: return VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
-	case IMAGE_VIEW_TYPE_CUBE_ARRAY: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; break;
+	case ImageViewType::ImageView1D: return VK_IMAGE_VIEW_TYPE_1D; break;
+	case ImageViewType::ImageView2D: return VK_IMAGE_VIEW_TYPE_2D; break;
+	case ImageViewType::ImageView3D: return VK_IMAGE_VIEW_TYPE_3D; break;
+	case ImageViewType::Cube: return VK_IMAGE_VIEW_TYPE_CUBE; break;
+	case ImageViewType::ImageView1DArray: return VK_IMAGE_VIEW_TYPE_1D_ARRAY; break;
+	case ImageViewType::ImageView2DArray: return VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
+	case ImageViewType::CubeArray: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; break;
 	}
 	return InvalidValue<VkImageViewType>();
 }
@@ -1816,11 +1816,11 @@ VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion valu
 {
 	switch (value) {
 	default: break;
-	case YCBCR_MODEL_CONVERSION_RGB_IDENTITY: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
-	case YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY;
-	case YCBCR_MODEL_CONVERSION_YCBCR_709: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
-	case YCBCR_MODEL_CONVERSION_YCBCR_601: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
-	case YCBCR_MODEL_CONVERSION_YCBCR_2020: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
+	case YcbcrModelConversion::RGBIdentity: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+	case YcbcrModelConversion::YCBCRIdentity: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY;
+	case YcbcrModelConversion::YCBCR709: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709;
+	case YcbcrModelConversion::YCBCR601: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_601;
+	case YcbcrModelConversion::YCBCR2020: return VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_2020;
 	}
 	return InvalidValue<VkSamplerYcbcrModelConversion>();
 }
@@ -1829,8 +1829,8 @@ VkSamplerYcbcrRange ToVkYcbcrRange(YcbcrRange value)
 {
 	switch (value) {
 	default: break;
-	case YCBCR_RANGE_ITU_FULL: return VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-	case YCBCR_RANGE_ITU_NARROW: return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
+	case YcbcrRange::ITU_FULL: return VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+	case YcbcrRange::ITU_NARROW: return VK_SAMPLER_YCBCR_RANGE_ITU_NARROW;
 	}
 	return InvalidValue<VkSamplerYcbcrRange>();
 }
@@ -5654,7 +5654,7 @@ namespace vkrUtil
 		TexturePtr targetTexture;
 		{
 			TextureCreateInfo ci = {};
-			ci.pImage = nullptr;
+			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
 			ci.width = pBitmap->GetWidth();
 			ci.height = pBitmap->GetHeight();
@@ -5669,9 +5669,9 @@ namespace vkrUtil
 			ci.initialState = options.mInitialState;
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
-			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
-			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
+			ci.sampledImageYcbcrConversion = options.mYcbcrConversion;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
 			ci.storageImageViewFormat = Format::Undefined;
@@ -5741,7 +5741,7 @@ namespace vkrUtil
 		TexturePtr targetTexture;
 		{
 			TextureCreateInfo ci = {};
-			ci.pImage = nullptr;
+			ci.image = nullptr;
 			ci.imageType = ImageType::Image2D;
 			ci.width = pMip0->GetWidth();
 			ci.height = pMip0->GetHeight();
@@ -5756,9 +5756,9 @@ namespace vkrUtil
 			ci.initialState = options.mInitialState;
 			ci.RTVClearValue = { {0, 0, 0, 0} };
 			ci.DSVClearValue = { 1.0f, 0xFF };
-			ci.sampledImageViewType = IMAGE_VIEW_TYPE_UNDEFINED;
+			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
-			ci.pSampledImageYcbcrConversion = options.mYcbcrConversion;
+			ci.sampledImageYcbcrConversion = options.mYcbcrConversion;
 			ci.renderTargetViewFormat = Format::Undefined;
 			ci.depthStencilViewFormat = Format::Undefined;
 			ci.storageImageViewFormat = Format::Undefined;

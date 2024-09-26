@@ -188,9 +188,9 @@ public:
 	// Convenience functions - returns empty object if index is invalid
 	ImagePtr            GetColorImage(uint32_t imageIndex) const;
 	ImagePtr            GetDepthImage(uint32_t imageIndex) const;
-	RenderPassPtr       GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
-	RenderTargetViewPtr GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
-	DepthStencilViewPtr GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp = ATTACHMENT_LOAD_OP_CLEAR) const;
+	RenderPassPtr       GetRenderPass(uint32_t imageIndex, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear) const;
+	RenderTargetViewPtr GetRenderTargetView(uint32_t imageIndex, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear) const;
+	DepthStencilViewPtr GetDepthStencilView(uint32_t imageIndex, AttachmentLoadOp loadOp = AttachmentLoadOp::Clear) const;
 
 	Result AcquireNextImage(
 		uint64_t   timeout,    // Nanoseconds
