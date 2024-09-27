@@ -1,6 +1,7 @@
 #pragma 
 
 #include "World.h"
+#include "PerFrame.h"
 
 namespace game
 {
@@ -90,7 +91,6 @@ private:
 	bool setupShadowRenderPass();
 	bool setupShadowInfo();
 	bool setupLight();
-	bool setupPerFrameData();
 	bool setupCamera();
 	void updateCamera(PerspCamera* camera);
 
@@ -100,22 +100,8 @@ private:
 	void updateUniformBuffer();
 
 	PerspCamera m_perspCamera;
-	ArcballCamera m_arcballCamera;
-	PerspCamera* m_currentCamera;
 	std::set<KeyCode> m_pressedKeys;
 	game::Player m_oldPlayer;
-
-	struct PerFrame
-	{
-		uint32_t Frame(vkr::VulkanSwapChain& swapChain);
-		vkr::SubmitInfo SetupSubmitInfo();
-
-		vkr::CommandBufferPtr cmd;
-		vkr::SemaphorePtr     imageAcquiredSemaphore;
-		vkr::FencePtr         imageAcquiredFence;
-		vkr::SemaphorePtr     renderCompleteSemaphore;
-		vkr::FencePtr         renderCompleteFence;
-	};
 
 	struct Entity
 	{
@@ -136,7 +122,7 @@ private:
 		const vkr::DescriptorSetLayout* pShadowSetLayout,
 		Entity* pEntity);
 
-	std::vector<PerFrame>  mPerFrame;
+	std::vector<VulkanPerFrameData> mPerFrame;
 
 	vkr::DescriptorPoolPtr      m_descriptorPool;
 

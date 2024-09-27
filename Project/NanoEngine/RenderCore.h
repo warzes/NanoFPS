@@ -1608,45 +1608,45 @@ std::string ToString(VkResult value);
 std::string ToString(VkDescriptorType value);
 std::string ToString(VkPresentModeKHR value);
 
-VkAttachmentLoadOp            ToVkAttachmentLoadOp(AttachmentLoadOp value);
-VkAttachmentStoreOp           ToVkAttachmentStoreOp(AttachmentStoreOp value);
-VkBlendFactor                 ToVkBlendFactor(BlendFactor value);
-VkBlendOp                     ToVkBlendOp(BlendOp value);
+VkAttachmentLoadOp            ToVkEnum(AttachmentLoadOp value);
+VkAttachmentStoreOp           ToVkEnum(AttachmentStoreOp value);
+VkBlendFactor                 ToVkEnum(BlendFactor value);
+VkBlendOp                     ToVkEnum(BlendOp value);
 VkBorderColor                 ToVkEnum(BorderColor value);
 VkBufferUsageFlags            ToVkBufferUsageFlags(const BufferUsageFlags& value);
-VkChromaLocation              ToVkChromaLocation(ChromaLocation value);
+VkChromaLocation              ToVkEnum(ChromaLocation value);
 VkClearColorValue             ToVkClearColorValue(const RenderTargetClearValue& value);
 VkClearDepthStencilValue      ToVkClearDepthStencilValue(const DepthStencilClearValue& value);
 VkColorComponentFlags         ToVkColorComponentFlags(const ColorComponentFlags& value);
 VkCompareOp                   ToVkEnum(CompareOp value);
-VkComponentSwizzle            ToVkComponentSwizzle(ComponentSwizzle value);
+VkComponentSwizzle            ToVkEnum(ComponentSwizzle value);
 VkComponentMapping            ToVkComponentMapping(const ComponentMapping& value);
-VkCullModeFlagBits            ToVkCullMode(CullMode value);
+VkCullModeFlagBits            ToVkEnum(CullMode value);
 VkDescriptorBindingFlags      ToVkDescriptorBindingFlags(const DescriptorBindingFlags& value);
-VkDescriptorType              ToVkDescriptorType(DescriptorType value);
+VkDescriptorType              ToVkEnum(DescriptorType value);
 VkFilter                      ToVkEnum(Filter value);
 VkFormat                      ToVkEnum(Format value);
-VkFrontFace                   ToVkFrontFace(FrontFace value);
+VkFrontFace                   ToVkEnum(FrontFace value);
 VkImageType                   ToVkEnum(ImageType value);
 VkImageUsageFlags             ToVkImageUsageFlags(const ImageUsageFlags& value);
-VkImageViewType               ToVkImageViewType(ImageViewType value);
-VkIndexType                   ToVkIndexType(IndexType value);
-VkLogicOp                     ToVkLogicOp(LogicOp value);
-VkPipelineStageFlagBits       ToVkPipelineStage(PipelineStage value);
-VkPolygonMode                 ToVkPolygonMode(PolygonMode value);
-VkPresentModeKHR              ToVkPresentMode(PresentMode value);
-VkPrimitiveTopology           ToVkPrimitiveTopology(PrimitiveTopology value);
+VkImageViewType               ToVkEnum(ImageViewType value);
+VkIndexType                   ToVkEnum(IndexType value);
+VkLogicOp                     ToVkEnum(LogicOp value);
+VkPipelineStageFlagBits       ToVkEnum(PipelineStage value);
+VkPolygonMode                 ToVkEnum(PolygonMode value);
+VkPresentModeKHR              ToVkEnum(PresentMode value);
+VkPrimitiveTopology           ToVkEnum(PrimitiveTopology value);
 VkQueryType                   ToVkEnum(QueryType value);
 VkSamplerAddressMode          ToVkEnum(SamplerAddressMode value);
 VkSamplerMipmapMode           ToVkEnum(SamplerMipmapMode value);
 VkSamplerReductionMode        ToVkEnum(SamplerReductionMode value);
-VkSampleCountFlagBits         ToVkSampleCount(SampleCount value);
+VkSampleCountFlagBits         ToVkEnum(SampleCount value);
 VkShaderStageFlags            ToVkShaderStageFlags(const ShaderStageFlags& value);
-VkStencilOp                   ToVkStencilOp(StencilOp value);
-VkTessellationDomainOrigin    ToVkTessellationDomainOrigin(TessellationDomainOrigin value);
-VkVertexInputRate             ToVkVertexInputRate(VertexInputRate value);
-VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion value);
-VkSamplerYcbcrRange           ToVkYcbcrRange(YcbcrRange value);
+VkStencilOp                   ToVkEnum(StencilOp value);
+VkTessellationDomainOrigin    ToVkEnum(TessellationDomainOrigin value);
+VkVertexInputRate             ToVkEnum(VertexInputRate value);
+VkSamplerYcbcrModelConversion ToVkEnum(YcbcrModelConversion value);
+VkSamplerYcbcrRange           ToVkEnum(YcbcrRange value);
 
 Result ToVkBarrierSrc(
 	ResourceState                   state,
@@ -1736,9 +1736,6 @@ struct TriMeshVertexDataCompressed
 class TriMeshOptions
 {
 public:
-	TriMeshOptions() {}
-	~TriMeshOptions() {}
-	// clang-format off
 	//! Enable/disable indices
 	TriMeshOptions& Indices(bool value = true) { mEnableIndices = value; return *this; }
 	//! Enable/disable vertex colors
@@ -1763,7 +1760,6 @@ public:
 	TriMeshOptions& InvertTexCoordsV() { mInvertTexCoordsV = true; return *this; }
 	//! Inverts winding order of ONLY indices
 	TriMeshOptions& InvertWinding() { mInvertWinding = true; return *this; }
-	// clang-format on
 private:
 	bool   mEnableIndices = false;
 	bool   mEnableVertexColors = false;
@@ -1900,8 +1896,6 @@ struct WireMeshVertexData
 class WireMeshOptions
 {
 public:
-	WireMeshOptions() {}
-	~WireMeshOptions() {}
 	//! Enable/disable indices
 	WireMeshOptions& Indices(bool value = true) { mEnableIndices = value; return *this; }
 	//! Enable/disable vertex colors
@@ -2070,12 +2064,9 @@ private:
 	GeometryCreateInfo& AddAttribute(VertexSemantic semantic, Format format);
 };
 
-//! @class Geometry
-//!
-//! Implementation Notes:
-//!   - Recommended to avoid modifying the index/vertex buffers directly and to use
-//!     the Append* functions instead (for smaller geometries especially)
-//!
+// Implementation Notes:
+//   - Recommended to avoid modifying the index/vertex buffers directly and to use
+//     the Append* functions instead (for smaller geometries especially)
 class Geometry
 {
 	template <typename T>

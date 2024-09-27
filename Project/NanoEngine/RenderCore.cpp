@@ -892,7 +892,7 @@ std::string ToString(VkPresentModeKHR value)
 	return string_VkPresentModeKHR(value);
 }
 
-VkAttachmentLoadOp ToVkAttachmentLoadOp(AttachmentLoadOp value)
+VkAttachmentLoadOp ToVkEnum(AttachmentLoadOp value)
 {
 	switch (value) {
 	default: break;
@@ -903,7 +903,7 @@ VkAttachmentLoadOp ToVkAttachmentLoadOp(AttachmentLoadOp value)
 	return InvalidValue<VkAttachmentLoadOp>();
 }
 
-VkAttachmentStoreOp ToVkAttachmentStoreOp(AttachmentStoreOp value)
+VkAttachmentStoreOp ToVkEnum(AttachmentStoreOp value)
 {
 	switch (value) {
 	default: break;
@@ -913,7 +913,7 @@ VkAttachmentStoreOp ToVkAttachmentStoreOp(AttachmentStoreOp value)
 	return InvalidValue<VkAttachmentStoreOp>();
 }
 
-VkBlendFactor ToVkBlendFactor(BlendFactor value)
+VkBlendFactor ToVkEnum(BlendFactor value)
 {
 	switch (value) {
 	default: break;
@@ -940,7 +940,7 @@ VkBlendFactor ToVkBlendFactor(BlendFactor value)
 	return InvalidValue<VkBlendFactor>();
 }
 
-VkBlendOp ToVkBlendOp(BlendOp value)
+VkBlendOp ToVkEnum(BlendOp value)
 {
 	switch (value) {
 	default: break;
@@ -1038,7 +1038,7 @@ VkBufferUsageFlags ToVkBufferUsageFlags(const BufferUsageFlags& value)
 	return flags;
 }
 
-VkChromaLocation ToVkChromaLocation(ChromaLocation value)
+VkChromaLocation ToVkEnum(ChromaLocation value)
 {
 	switch (value) {
 	default: break;
@@ -1092,7 +1092,7 @@ VkCompareOp ToVkEnum(CompareOp value)
 	return InvalidValue<VkCompareOp>();
 }
 
-VkComponentSwizzle ToVkComponentSwizzle(ComponentSwizzle value)
+VkComponentSwizzle ToVkEnum(ComponentSwizzle value)
 {
 	switch (value) {
 	default: break;
@@ -1110,14 +1110,14 @@ VkComponentSwizzle ToVkComponentSwizzle(ComponentSwizzle value)
 VkComponentMapping ToVkComponentMapping(const ComponentMapping& value)
 {
 	VkComponentMapping res = {};
-	res.r = ToVkComponentSwizzle(value.r);
-	res.g = ToVkComponentSwizzle(value.g);
-	res.b = ToVkComponentSwizzle(value.b);
-	res.a = ToVkComponentSwizzle(value.a);
+	res.r = ToVkEnum(value.r);
+	res.g = ToVkEnum(value.g);
+	res.b = ToVkEnum(value.b);
+	res.a = ToVkEnum(value.a);
 	return res;
 }
 
-VkCullModeFlagBits ToVkCullMode(CullMode value)
+VkCullModeFlagBits ToVkEnum(CullMode value)
 {
 	switch (value) {
 	default: break;
@@ -1140,7 +1140,7 @@ VkDescriptorBindingFlags ToVkDescriptorBindingFlags(const DescriptorBindingFlags
 	return flags;
 }
 
-VkDescriptorType ToVkDescriptorType(DescriptorType value)
+VkDescriptorType ToVkEnum(DescriptorType value)
 {
 	switch (value) {
 	default: break;
@@ -1305,7 +1305,7 @@ VkFormat ToVkEnum(Format value)
 	return VK_FORMAT_UNDEFINED;
 }
 
-VkFrontFace ToVkFrontFace(FrontFace value)
+VkFrontFace ToVkEnum(FrontFace value)
 {
 	switch (value) {
 	default: break;
@@ -1343,7 +1343,7 @@ VkImageUsageFlags ToVkImageUsageFlags(const ImageUsageFlags& value)
 	return flags;
 }
 
-VkImageViewType ToVkImageViewType(ImageViewType value)
+VkImageViewType ToVkEnum(ImageViewType value)
 {
 	switch (value) {
 	default: break;
@@ -1358,7 +1358,7 @@ VkImageViewType ToVkImageViewType(ImageViewType value)
 	return InvalidValue<VkImageViewType>();
 }
 
-VkIndexType ToVkIndexType(IndexType value)
+VkIndexType ToVkEnum(IndexType value)
 {
 	switch (value) {
 	default: break;
@@ -1369,7 +1369,7 @@ VkIndexType ToVkIndexType(IndexType value)
 	return InvalidValue<VkIndexType>();
 }
 
-VkLogicOp ToVkLogicOp(LogicOp value)
+VkLogicOp ToVkEnum(LogicOp value)
 {
 	switch (value) {
 	default: break;
@@ -1393,7 +1393,7 @@ VkLogicOp ToVkLogicOp(LogicOp value)
 	return InvalidValue<VkLogicOp>();
 }
 
-VkPipelineStageFlagBits ToVkPipelineStage(PipelineStage value)
+VkPipelineStageFlagBits ToVkEnum(PipelineStage value)
 {
 	switch (value) {
 	default: break;
@@ -1403,7 +1403,7 @@ VkPipelineStageFlagBits ToVkPipelineStage(PipelineStage value)
 	return InvalidValue<VkPipelineStageFlagBits>();
 }
 
-VkPolygonMode ToVkPolygonMode(PolygonMode value)
+VkPolygonMode ToVkEnum(PolygonMode value)
 {
 	switch (value) {
 	default: break;
@@ -1414,7 +1414,7 @@ VkPolygonMode ToVkPolygonMode(PolygonMode value)
 	return InvalidValue<VkPolygonMode>();
 }
 
-VkPresentModeKHR ToVkPresentMode(PresentMode value)
+VkPresentModeKHR ToVkEnum(PresentMode value)
 {
 	switch (value) {
 	default: break;
@@ -1425,7 +1425,7 @@ VkPresentModeKHR ToVkPresentMode(PresentMode value)
 	return InvalidValue<VkPresentModeKHR>();
 }
 
-VkPrimitiveTopology ToVkPrimitiveTopology(PrimitiveTopology value)
+VkPrimitiveTopology ToVkEnum(PrimitiveTopology value)
 {
 	switch (value) {
 	default: break;
@@ -1485,7 +1485,7 @@ VkSamplerReductionMode vkr::ToVkEnum(SamplerReductionMode value)
 	return InvalidValue<VkSamplerReductionMode>();
 }
 
-VkSampleCountFlagBits ToVkSampleCount(SampleCount value)
+VkSampleCountFlagBits ToVkEnum(SampleCount value)
 {
 	switch (value) {
 	default: break;
@@ -1512,7 +1512,7 @@ VkShaderStageFlags ToVkShaderStageFlags(const ShaderStageFlags& value)
 	return flags;
 }
 
-VkStencilOp ToVkStencilOp(StencilOp value)
+VkStencilOp ToVkEnum(StencilOp value)
 {
 	switch (value) {
 	default: break;
@@ -1528,7 +1528,7 @@ VkStencilOp ToVkStencilOp(StencilOp value)
 	return InvalidValue<VkStencilOp>();
 }
 
-VkTessellationDomainOrigin ToVkTessellationDomainOrigin(TessellationDomainOrigin value)
+VkTessellationDomainOrigin ToVkEnum(TessellationDomainOrigin value)
 {
 	switch (value) {
 	default: break;
@@ -1538,7 +1538,7 @@ VkTessellationDomainOrigin ToVkTessellationDomainOrigin(TessellationDomainOrigin
 	return InvalidValue<VkTessellationDomainOrigin>();
 }
 
-VkVertexInputRate ToVkVertexInputRate(VertexInputRate value)
+VkVertexInputRate ToVkEnum(VertexInputRate value)
 {
 	switch (value) {
 	default: break;
@@ -1812,7 +1812,7 @@ VmaMemoryUsage ToVmaMemoryUsage(MemoryUsage value)
 	return VMA_MEMORY_USAGE_UNKNOWN;
 }
 
-VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion value)
+VkSamplerYcbcrModelConversion ToVkEnum(YcbcrModelConversion value)
 {
 	switch (value) {
 	default: break;
@@ -1825,7 +1825,7 @@ VkSamplerYcbcrModelConversion ToVkYcbcrModelConversion(YcbcrModelConversion valu
 	return InvalidValue<VkSamplerYcbcrModelConversion>();
 }
 
-VkSamplerYcbcrRange ToVkYcbcrRange(YcbcrRange value)
+VkSamplerYcbcrRange ToVkEnum(YcbcrRange value)
 {
 	switch (value) {
 	default: break;

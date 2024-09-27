@@ -599,7 +599,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			}
 
 			// Present mode
-			VkPresentModeKHR presentMode = ToVkPresentMode(createInfo.presentMode);
+			VkPresentModeKHR presentMode = ToVkEnum(createInfo.presentMode);
 			if (presentMode == InvalidValue<VkPresentModeKHR>())
 			{
 				ASSERT_MSG(false, "Invalid swapchain present mode");

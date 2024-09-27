@@ -4,7 +4,7 @@ class GameApplication;
 
 struct PlayerCreateInfo final
 {
-	glm::vec3 position = glm::vec3(0.0f);
+	glm::vec3 position = glm::vec3(0.0f, 2.0f, -5.0f);
 };
 
 class Player final
@@ -15,7 +15,16 @@ public:
 
 	void Update(float deltaTime);
 
-	bool IsAlive() const; // pretty self-explanatory; true iff player has not been hit by drone
+	bool IsAlive() const;
+
+	void ComputeCameraOrientation();
+
+	glm::vec3 GetPos();
+	void SetPos(const glm::vec3& pos);
+
+	glm::vec3 GetCameraLook();
+	glm::vec3 GetCameraSide();
+	glm::vec3 GetCameraUp();
 
 private:
 	void controlMouseInput(float deltaTime);      // turns mouse motion into camera angles

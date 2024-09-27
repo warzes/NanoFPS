@@ -91,6 +91,9 @@
     <ClCompile Include="World.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="PerFrame.cpp">
+      <Filter>game\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -182,6 +185,9 @@
     <ClInclude Include="World.h">
       <Filter>game</Filter>
     </ClInclude>
+    <ClInclude Include="PerFrame.h">
+      <Filter>game\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="examples">
@@ -189,6 +195,9 @@
     </Filter>
     <Filter Include="game">
       <UniqueIdentifier>{c6d647a1-c52c-43b7-9e12-36a141c56c8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\Core">
+      <UniqueIdentifier>{150feeb2-f5be-470d-bbd8-22cc6990bace}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

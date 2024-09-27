@@ -74,9 +74,11 @@ bool GameApplication::Setup()
 	if (!setupShadowRenderPass()) return false;
 	if (!setupShadowInfo()) return false;
 	if (!setupLight()) return false;
-	if (!setupPerFrameData()) return false;
 
-	//m_currentCamera->LookAt(float3(5, 7, 7), float3(0, 1, 0));
+	VulkanPerFrameData perFrame;
+	if (!perFrame.Setup(device)) return false;
+	mPerFrame.emplace_back(perFrame);
+
 	updateLight();
 
 	if (m_cursorVisible) GetInput().SetCursorMode(CursorMode::Disabled);
@@ -86,6 +88,10 @@ bool GameApplication::Setup()
 
 void GameApplication::Shutdown()
 {
+	for (size_t i = 0; i < mPerFrame.size(); i++)
+	{
+		mPerFrame[i].Shutdown();
+	}
 	m_world.Shutdown();
 	mPerFrame.clear();
 	// TODO: очистка
@@ -104,7 +110,7 @@ void GameApplication::Render()
 
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
-	PerFrame& frame = mPerFrame[0];
+	auto& frame = mPerFrame[0];
 
 	uint32_t imageIndex = frame.Frame(swapChain);
 
@@ -180,13 +186,13 @@ void GameApplication::Render()
 						ImGui::Columns(2);
 						ImGui::Text("Camera position");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_currentCamera->GetEyePosition()[0], m_currentCamera->GetEyePosition()[1], m_currentCamera->GetEyePosition()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_perspCamera.GetEyePosition()[0], m_perspCamera.GetEyePosition()[1], m_perspCamera.GetEyePosition()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Camera looking at");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_currentCamera->GetTarget()[0], m_currentCamera->GetTarget()[1], m_currentCamera->GetTarget()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_perspCamera.GetTarget()[0], m_perspCamera.GetTarget()[1], m_perspCamera.GetTarget()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Separator();
@@ -219,7 +225,6 @@ void GameApplication::Render()
 					ImGui::Separator();
 					ImGui::Checkbox("Use PCF Shadows", &mUsePCF);
 				}
-
 				render.DrawImGui(frame.cmd);
 			}
 			frame.cmd->EndRenderPass();
@@ -241,7 +246,7 @@ void GameApplication::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, Mo
 	float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
 	float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
 	m_oldPlayer.Turn(-deltaAzimuth, deltaAltitude);
-	updateCamera(m_currentCamera);
+	updateCamera(&m_perspCamera);
 }
 
 void GameApplication::KeyDown(KeyCode key)
@@ -304,15 +309,11 @@ bool GameApplication::setupCamera()
 	// Cameras
 	{
 		m_perspCamera = PerspCamera(60.0f, GetWindowAspect());
-		m_arcballCamera = ArcballCamera(60.0f, GetWindowAspect());
-
 		mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
 	}
 
 	m_oldPlayer.Setup();
-	m_currentCamera = &m_arcballCamera;
 	updateCamera(&m_perspCamera);
-	updateCamera(&m_arcballCamera);
 	return true;
 }
 
@@ -352,7 +353,7 @@ bool GameApplication::setupEntities()
 	// Setup entities
 	{
 		vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices().VertexColors().Normals();
-		vkr::TriMesh        mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
+		vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
 		setupEntity(mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout, &mGroundPlane);
 		mEntities.push_back(&mGroundPlane);
 
@@ -586,33 +587,6 @@ bool GameApplication::setupLight()
 	return true;
 }
 
-bool GameApplication::setupPerFrameData()
-{
-	auto& device = GetRenderDevice();
-
-	// Per frame data
-	{
-		PerFrame frame = {};
-
-		CHECKED_CALL_AND_RETURN_FALSE(device.GetGraphicsQueue()->CreateCommandBuffer(&frame.cmd));
-
-		vkr::SemaphoreCreateInfo semaCreateInfo = {};
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSemaphore(semaCreateInfo, &frame.imageAcquiredSemaphore));
-
-		vkr::FenceCreateInfo fenceCreateInfo = {};
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateFence(fenceCreateInfo, &frame.imageAcquiredFence));
-
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSemaphore(semaCreateInfo, &frame.renderCompleteSemaphore));
-
-		fenceCreateInfo = { true }; // Create signaled
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateFence(fenceCreateInfo, &frame.renderCompleteFence));
-
-		mPerFrame.push_back(frame);
-	}
-
-	return true;
-}
-
 void GameApplication::updateCamera(PerspCamera* camera)
 {
 	float3 cameraPosition(0, 0, 0);
@@ -621,33 +595,6 @@ void GameApplication::updateCamera(PerspCamera* camera)
 
 	camera->LookAt(cameraPosition, m_oldPlayer.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
 	camera->SetPerspective(60.f, GetWindowAspect());
-}
-
-uint32_t GameApplication::PerFrame::Frame(vkr::VulkanSwapChain& swapChain)
-{
-	// Wait for and reset render complete fence
-	CHECKED_CALL(renderCompleteFence->WaitAndReset());
-
-	uint32_t imageIndex = UINT32_MAX;
-	CHECKED_CALL(swapChain.AcquireNextImage(UINT64_MAX, imageAcquiredSemaphore, imageAcquiredFence, &imageIndex));
-
-	// Wait for and reset image acquired fence
-	CHECKED_CALL(imageAcquiredFence->WaitAndReset());
-
-	return imageIndex;
-}
-
-vkr::SubmitInfo GameApplication::PerFrame::SetupSubmitInfo()
-{
-	vkr::SubmitInfo submitInfo      = {};
-	submitInfo.commandBufferCount   = 1;
-	submitInfo.ppCommandBuffers     = &cmd;
-	submitInfo.waitSemaphoreCount   = 1;
-	submitInfo.ppWaitSemaphores     = &imageAcquiredSemaphore;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.ppSignalSemaphores   = &renderCompleteSemaphore;
-	submitInfo.pFence               = renderCompleteFence;
-	return submitInfo;
 }
 
 void GameApplication::updateLight()
@@ -695,14 +642,6 @@ void GameApplication::processInput()
 		return;
 	}
 
-	if (m_pressedKeys.count(KEY_1) > 0) {
-		m_currentCamera = &m_perspCamera;
-	}
-
-	if (m_pressedKeys.count(KEY_2) > 0) {
-		m_currentCamera = &m_arcballCamera;
-	}
-
 	if (m_pressedKeys.count(KEY_LEFT) > 0) {
 		m_oldPlayer.Turn(-m_oldPlayer.GetRateOfTurn(), 0);
 	}
@@ -719,7 +658,7 @@ void GameApplication::processInput()
 		m_oldPlayer.Turn(0, m_oldPlayer.GetRateOfTurn());
 	}
 
-	updateCamera(m_currentCamera);
+	updateCamera(&m_perspCamera);
 }
 
 void GameApplication::updateUniformBuffer()
@@ -752,10 +691,12 @@ void GameApplication::updateUniformBuffer()
 		scene.ModelMatrix = M;
 		scene.NormalMatrix = glm::inverseTranspose(M);
 		scene.Ambient = float4(0.3f);
-		scene.CameraViewProjectionMatrix = m_currentCamera->GetViewProjectionMatrix();
+		scene.CameraViewProjectionMatrix = m_perspCamera.GetViewProjectionMatrix();
 		scene.LightPosition = float4(mLightPosition, 0);
 		scene.LightViewProjectionMatrix = mLightCamera.GetViewProjectionMatrix();
 		scene.UsePCF = uint4(mUsePCF);
+
+		auto t = m_world.GetVP();
 
 		pEntity->drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
 
@@ -769,7 +710,7 @@ void GameApplication::updateUniformBuffer()
 	// Update light uniform buffer
 	{
 		float4x4        T = glm::translate(mLightPosition);
-		const float4x4& PV = m_currentCamera->GetViewProjectionMatrix();
+		const float4x4& PV = m_perspCamera.GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
 
 		mLight.drawUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);

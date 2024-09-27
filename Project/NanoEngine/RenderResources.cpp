@@ -558,7 +558,7 @@ Result Image::createApiObjects(const ImageCreateInfo& createInfo)
 			vkci.extent = extent;
 			vkci.mipLevels = createInfo.mipLevelCount;
 			vkci.arrayLayers = createInfo.arrayLayerCount;
-			vkci.samples = ToVkSampleCount(createInfo.sampleCount);
+			vkci.samples = ToVkEnum(createInfo.sampleCount);
 			vkci.tiling = createInfo.memoryUsage == MemoryUsage::GPUToCPU ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 			vkci.usage = ToVkImageUsageFlags(createInfo.usageFlags);
 			vkci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -790,7 +790,7 @@ Result DepthStencilView::createApiObjects(const DepthStencilViewCreateInfo& crea
 	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vkci.flags                           = 0;
 	vkci.image                           = createInfo.image->GetVkImage();
-	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.viewType                        = ToVkEnum(createInfo.imageViewType);
 	vkci.format                          = ToVkEnum(createInfo.format);
 	vkci.components                      = ToVkComponentMapping(createInfo.components);
 	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
@@ -847,7 +847,7 @@ Result RenderTargetView::createApiObjects(const RenderTargetViewCreateInfo& crea
 	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vkci.flags                           = 0;
 	vkci.image                           = createInfo.image->GetVkImage();
-	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.viewType                        = ToVkEnum(createInfo.imageViewType);
 	vkci.format                          = ToVkEnum(createInfo.format);
 	vkci.components                      = ToVkComponentMapping(createInfo.components);
 	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
@@ -903,7 +903,7 @@ Result SampledImageView::createApiObjects(const SampledImageViewCreateInfo& crea
 	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vkci.flags                           = 0;
 	vkci.image                           = createInfo.image->GetVkImage();
-	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.viewType                        = ToVkEnum(createInfo.imageViewType);
 	vkci.format                          = ToVkEnum(createInfo.format);
 	vkci.components                      = ToVkComponentMapping(createInfo.components);
 	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
@@ -950,11 +950,11 @@ Result SamplerYcbcrConversion::createApiObjects(const SamplerYcbcrConversionCrea
 {
 	VkSamplerYcbcrConversionCreateInfo vkci{ VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO };
 	vkci.format                      = ToVkEnum(createInfo.format);
-	vkci.ycbcrModel                  = ToVkYcbcrModelConversion(createInfo.ycbcrModel);
-	vkci.ycbcrRange                  = ToVkYcbcrRange(createInfo.ycbcrRange);
+	vkci.ycbcrModel                  = ToVkEnum(createInfo.ycbcrModel);
+	vkci.ycbcrRange                  = ToVkEnum(createInfo.ycbcrRange);
 	vkci.components                  = ToVkComponentMapping(createInfo.components);
-	vkci.xChromaOffset               = ToVkChromaLocation(createInfo.xChromaOffset);
-	vkci.yChromaOffset               = ToVkChromaLocation(createInfo.yChromaOffset);
+	vkci.xChromaOffset               = ToVkEnum(createInfo.xChromaOffset);
+	vkci.yChromaOffset               = ToVkEnum(createInfo.yChromaOffset);
 	vkci.chromaFilter                = ToVkEnum(createInfo.filter);
 	vkci.forceExplicitReconstruction = createInfo.forceExplicitReconstruction ? VK_TRUE : VK_FALSE;
 
@@ -997,7 +997,7 @@ Result StorageImageView::createApiObjects(const StorageImageViewCreateInfo& crea
 	VkImageViewCreateInfo vkci           = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vkci.flags                           = 0;
 	vkci.image                           = createInfo.image->GetVkImage();
-	vkci.viewType                        = ToVkImageViewType(createInfo.imageViewType);
+	vkci.viewType                        = ToVkEnum(createInfo.imageViewType);
 	vkci.format                          = ToVkEnum(createInfo.format);
 	vkci.components                      = ToVkComponentMapping(createInfo.components);
 	vkci.subresourceRange.aspectMask     = createInfo.image->GetVkImageAspectFlags();
@@ -1835,9 +1835,9 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& create
 			VkAttachmentDescription desc = {};
 			desc.flags = 0;
 			desc.format = ToVkEnum(rtv->GetFormat());
-			desc.samples = ToVkSampleCount(rtv->GetSampleCount());
-			desc.loadOp = ToVkAttachmentLoadOp(rtv->GetLoadOp());
-			desc.storeOp = ToVkAttachmentStoreOp(rtv->GetStoreOp());
+			desc.samples = ToVkEnum(rtv->GetSampleCount());
+			desc.loadOp = ToVkEnum(rtv->GetLoadOp());
+			desc.storeOp = ToVkEnum(rtv->GetStoreOp());
 			desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			desc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1854,10 +1854,10 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& create
 			desc.flags = 0;
 			desc.format = ToVkEnum(dsv->GetFormat());
 			desc.samples = VK_SAMPLE_COUNT_1_BIT;
-			desc.loadOp = ToVkAttachmentLoadOp(dsv->GetDepthLoadOp());
-			desc.storeOp = ToVkAttachmentStoreOp(dsv->GetDepthStoreOp());
-			desc.stencilLoadOp = ToVkAttachmentLoadOp(dsv->GetStencilLoadOp());
-			desc.stencilStoreOp = ToVkAttachmentStoreOp(dsv->GetStencilStoreOp());
+			desc.loadOp = ToVkEnum(dsv->GetDepthLoadOp());
+			desc.storeOp = ToVkEnum(dsv->GetDepthStoreOp());
+			desc.stencilLoadOp = ToVkEnum(dsv->GetStencilLoadOp());
+			desc.stencilStoreOp = ToVkEnum(dsv->GetStencilStoreOp());
 			desc.initialLayout = depthStencillayout;
 			desc.finalLayout = depthStencillayout;
 
@@ -2836,7 +2836,7 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 		VkBufferView* pTexelBufferView = nullptr;
 		VkDescriptorBufferInfo* pBufferInfo = nullptr;
 
-		VkDescriptorType descriptorType = ToVkDescriptorType(srcWrite.type);
+		VkDescriptorType descriptorType = ToVkEnum(srcWrite.type);
 		switch (descriptorType)
 		{
 		default:
@@ -3071,7 +3071,7 @@ Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo
 
 		VkDescriptorSetLayoutBinding vkBinding = {};
 		vkBinding.binding = baseBinding.binding;
-		vkBinding.descriptorType = ToVkDescriptorType(baseBinding.type);
+		vkBinding.descriptorType = ToVkEnum(baseBinding.type);
 		vkBinding.descriptorCount = baseBinding.arrayCount;
 		vkBinding.stageFlags = ToVkShaderStageFlags(baseBinding.shaderVisibility);
 		if (baseBinding.immutableSamplers.size() == 0)
@@ -4221,7 +4221,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& crea
 #endif
 	{
 		// Create temporary render pass
-		VkResult vkres = CreateTransientRenderPass(GetDevice(), CountU32(renderTargetFormats), DataPtr(renderTargetFormats), depthStencilFormat, ToVkSampleCount(createInfo.rasterState.rasterizationSamples), createInfo.multiViewState.viewMask, createInfo.multiViewState.correlationMask,
+		VkResult vkres = CreateTransientRenderPass(GetDevice(), CountU32(renderTargetFormats), DataPtr(renderTargetFormats), depthStencilFormat, ToVkEnum(createInfo.rasterState.rasterizationSamples), createInfo.multiViewState.viewMask, createInfo.multiViewState.correlationMask,
 			&renderPass, createInfo.shadingRateMode);
 		if (vkres != VK_SUCCESS)
 		{
@@ -4384,7 +4384,7 @@ Result GraphicsPipeline::initializeVertexInput(const GraphicsPipelineCreateInfo&
 		VkVertexInputBindingDescription vkBinding = {};
 		vkBinding.binding = binding.GetBinding();
 		vkBinding.stride = binding.GetStride();
-		vkBinding.inputRate = ToVkVertexInputRate(binding.GetInputRate());
+		vkBinding.inputRate = ToVkEnum(binding.GetInputRate());
 		vkBindings.push_back(vkBinding);
 	}
 
@@ -4400,7 +4400,7 @@ Result GraphicsPipeline::initializeVertexInput(const GraphicsPipelineCreateInfo&
 Result GraphicsPipeline::initializeInputAssembly(const GraphicsPipelineCreateInfo& createInfo, VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.topology = ToVkPrimitiveTopology(createInfo.inputAssemblyState.topology);
+	stateCreateInfo.topology = ToVkEnum(createInfo.inputAssemblyState.topology);
 	stateCreateInfo.primitiveRestartEnable = createInfo.inputAssemblyState.primitiveRestartEnable ? VK_TRUE : VK_FALSE;
 
 	return SUCCESS;
@@ -4408,7 +4408,7 @@ Result GraphicsPipeline::initializeInputAssembly(const GraphicsPipelineCreateInf
 
 Result GraphicsPipeline::initializeTessellation(const GraphicsPipelineCreateInfo& createInfo, VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo, VkPipelineTessellationStateCreateInfo& stateCreateInfo)
 {
-	domainOriginStateCreateInfo.domainOrigin = ToVkTessellationDomainOrigin(createInfo.tessellationState.domainOrigin);
+	domainOriginStateCreateInfo.domainOrigin = ToVkEnum(createInfo.tessellationState.domainOrigin);
 
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.patchControlPoints = createInfo.tessellationState.patchControlPoints;
@@ -4432,9 +4432,9 @@ Result GraphicsPipeline::initializeRasterization(const GraphicsPipelineCreateInf
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.depthClampEnable = createInfo.rasterState.depthClampEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.rasterizerDiscardEnable = createInfo.rasterState.rasterizeDiscardEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.polygonMode = ToVkPolygonMode(createInfo.rasterState.polygonMode);
-	stateCreateInfo.cullMode = ToVkCullMode(createInfo.rasterState.cullMode);
-	stateCreateInfo.frontFace = ToVkFrontFace(createInfo.rasterState.frontFace);
+	stateCreateInfo.polygonMode = ToVkEnum(createInfo.rasterState.polygonMode);
+	stateCreateInfo.cullMode = ToVkEnum(createInfo.rasterState.cullMode);
+	stateCreateInfo.frontFace = ToVkEnum(createInfo.rasterState.frontFace);
 	stateCreateInfo.depthBiasEnable = createInfo.rasterState.depthBiasEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.depthBiasConstantFactor = createInfo.rasterState.depthBiasConstantFactor;
 	stateCreateInfo.depthBiasClamp = createInfo.rasterState.depthBiasClamp;
@@ -4456,7 +4456,7 @@ Result GraphicsPipeline::initializeRasterization(const GraphicsPipelineCreateInf
 Result GraphicsPipeline::initializeMultisample(const GraphicsPipelineCreateInfo& createInfo, VkPipelineMultisampleStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.rasterizationSamples = ToVkSampleCount(createInfo.rasterState.rasterizationSamples);
+	stateCreateInfo.rasterizationSamples = ToVkEnum(createInfo.rasterState.rasterizationSamples);
 	stateCreateInfo.sampleShadingEnable = VK_FALSE;
 	stateCreateInfo.minSampleShading = 0.0f;
 	stateCreateInfo.pSampleMask = nullptr;
@@ -4474,16 +4474,16 @@ Result GraphicsPipeline::initializeDepthStencil(const GraphicsPipelineCreateInfo
 	stateCreateInfo.depthCompareOp = ToVkEnum(createInfo.depthStencilState.depthCompareOp);
 	stateCreateInfo.depthBoundsTestEnable = createInfo.depthStencilState.depthBoundsTestEnable ? VK_TRUE : VK_FALSE;
 	stateCreateInfo.stencilTestEnable = createInfo.depthStencilState.stencilTestEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.front.failOp = ToVkStencilOp(createInfo.depthStencilState.front.failOp);
-	stateCreateInfo.front.passOp = ToVkStencilOp(createInfo.depthStencilState.front.passOp);
-	stateCreateInfo.front.depthFailOp = ToVkStencilOp(createInfo.depthStencilState.front.depthFailOp);
+	stateCreateInfo.front.failOp = ToVkEnum(createInfo.depthStencilState.front.failOp);
+	stateCreateInfo.front.passOp = ToVkEnum(createInfo.depthStencilState.front.passOp);
+	stateCreateInfo.front.depthFailOp = ToVkEnum(createInfo.depthStencilState.front.depthFailOp);
 	stateCreateInfo.front.compareOp = ToVkEnum(createInfo.depthStencilState.front.compareOp);
 	stateCreateInfo.front.compareMask = createInfo.depthStencilState.front.compareMask;
 	stateCreateInfo.front.writeMask = createInfo.depthStencilState.front.writeMask;
 	stateCreateInfo.front.reference = createInfo.depthStencilState.front.reference;
-	stateCreateInfo.back.failOp = ToVkStencilOp(createInfo.depthStencilState.back.failOp);
-	stateCreateInfo.back.passOp = ToVkStencilOp(createInfo.depthStencilState.back.passOp);
-	stateCreateInfo.back.depthFailOp = ToVkStencilOp(createInfo.depthStencilState.back.depthFailOp);
+	stateCreateInfo.back.failOp = ToVkEnum(createInfo.depthStencilState.back.failOp);
+	stateCreateInfo.back.passOp = ToVkEnum(createInfo.depthStencilState.back.passOp);
+	stateCreateInfo.back.depthFailOp = ToVkEnum(createInfo.depthStencilState.back.depthFailOp);
 	stateCreateInfo.back.compareOp = ToVkEnum(createInfo.depthStencilState.back.compareOp);
 	stateCreateInfo.back.compareMask = createInfo.depthStencilState.back.compareMask;
 	stateCreateInfo.back.writeMask = createInfo.depthStencilState.back.writeMask;
@@ -4502,12 +4502,12 @@ Result GraphicsPipeline::initializeColorBlend(const GraphicsPipelineCreateInfo& 
 
 		VkPipelineColorBlendAttachmentState vkAttachment = {};
 		vkAttachment.blendEnable = attachment.blendEnable ? VK_TRUE : VK_FALSE;
-		vkAttachment.srcColorBlendFactor = ToVkBlendFactor(attachment.srcColorBlendFactor);
-		vkAttachment.dstColorBlendFactor = ToVkBlendFactor(attachment.dstColorBlendFactor);
-		vkAttachment.colorBlendOp = ToVkBlendOp(attachment.colorBlendOp);
-		vkAttachment.srcAlphaBlendFactor = ToVkBlendFactor(attachment.srcAlphaBlendFactor);
-		vkAttachment.dstAlphaBlendFactor = ToVkBlendFactor(attachment.dstAlphaBlendFactor);
-		vkAttachment.alphaBlendOp = ToVkBlendOp(attachment.alphaBlendOp);
+		vkAttachment.srcColorBlendFactor = ToVkEnum(attachment.srcColorBlendFactor);
+		vkAttachment.dstColorBlendFactor = ToVkEnum(attachment.dstColorBlendFactor);
+		vkAttachment.colorBlendOp = ToVkEnum(attachment.colorBlendOp);
+		vkAttachment.srcAlphaBlendFactor = ToVkEnum(attachment.srcAlphaBlendFactor);
+		vkAttachment.dstAlphaBlendFactor = ToVkEnum(attachment.dstAlphaBlendFactor);
+		vkAttachment.alphaBlendOp = ToVkEnum(attachment.alphaBlendOp);
 		vkAttachment.colorWriteMask = ToVkColorComponentFlags(attachment.colorWriteMask);
 
 		vkAttachments.push_back(vkAttachment);
@@ -4515,7 +4515,7 @@ Result GraphicsPipeline::initializeColorBlend(const GraphicsPipelineCreateInfo& 
 
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.logicOpEnable = createInfo.colorBlendState.logicOpEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.logicOp = ToVkLogicOp(createInfo.colorBlendState.logicOp);
+	stateCreateInfo.logicOp = ToVkEnum(createInfo.colorBlendState.logicOp);
 	stateCreateInfo.attachmentCount = CountU32(vkAttachments);
 	stateCreateInfo.pAttachments = DataPtr(vkAttachments);
 	stateCreateInfo.blendConstants[0] = createInfo.colorBlendState.blendConstants[0];
@@ -5368,8 +5368,8 @@ void CommandBuffer::BeginRenderingImpl(const RenderingInfo* pRenderingInfo)
 		colorAttachment.imageView = rtv.Get()->GetVkImageView();
 		colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
-		colorAttachment.loadOp = ToVkAttachmentLoadOp(rtv->GetLoadOp());
-		colorAttachment.storeOp = ToVkAttachmentStoreOp(rtv->GetStoreOp());
+		colorAttachment.loadOp = ToVkEnum(rtv->GetLoadOp());
+		colorAttachment.storeOp = ToVkEnum(rtv->GetStoreOp());
 		colorAttachment.clearValue.color = ToVkClearColorValue(pRenderingInfo->RTVClearValues[i]);
 		colorAttachmentDescs.push_back(colorAttachment);
 	}
@@ -5387,8 +5387,8 @@ void CommandBuffer::BeginRenderingImpl(const RenderingInfo* pRenderingInfo)
 		depthAttachment.imageView = dsv.Get()->GetVkImageView();
 		depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		depthAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
-		depthAttachment.loadOp = ToVkAttachmentLoadOp(dsv->GetDepthLoadOp());
-		depthAttachment.storeOp = ToVkAttachmentStoreOp(dsv->GetDepthStoreOp());
+		depthAttachment.loadOp = ToVkEnum(dsv->GetDepthLoadOp());
+		depthAttachment.storeOp = ToVkEnum(dsv->GetDepthStoreOp());
 		depthAttachment.clearValue.depthStencil = ToVkClearDepthStencilValue(pRenderingInfo->DSVClearValue);
 		vkri.pDepthAttachment = &depthAttachment;
 	}
@@ -6022,7 +6022,7 @@ void CommandBuffer::BindIndexBuffer(const IndexBufferView* pView)
 		mCommandBuffer,
 		pView->pBuffer->GetVkBuffer(),
 		static_cast<VkDeviceSize>(pView->offset),
-		ToVkIndexType(pView->indexType));
+		ToVkEnum(pView->indexType));
 }
 
 void CommandBuffer::BindVertexBuffers(uint32_t viewCount, const VertexBufferView* pViews)
@@ -6338,7 +6338,7 @@ void CommandBuffer::WriteTimestamp(
 	ASSERT_MSG(queryIndex <= pQuery->GetCount(), "invalid query index");
 	vkCmdWriteTimestamp(
 		mCommandBuffer,
-		ToVkPipelineStage(pipelineStage),
+		ToVkEnum(pipelineStage),
 		pQuery->GetVkQueryPool(),
 		queryIndex);
 }
