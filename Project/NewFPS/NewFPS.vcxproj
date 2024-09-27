@@ -124,6 +124,7 @@
     <ClCompile Include="025_BasicMaterial.cpp" />
     <ClCompile Include="026_Text.cpp" />
     <ClCompile Include="027_Mipmap.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerFrame.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="025_BasicMaterial.h" />
     <ClInclude Include="026_Text.h" />
     <ClInclude Include="027_Mipmap.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="PerFrame.h" />
     <ClInclude Include="Player.h" />

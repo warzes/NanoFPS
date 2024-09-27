@@ -1,7 +1,8 @@
 #pragma 
 
-#include "World.h"
 #include "PerFrame.h"
+#include "World.h"
+#include "Entity.h"
 
 namespace game
 {
@@ -92,7 +93,7 @@ private:
 	bool setupShadowInfo();
 	bool setupLight();
 	bool setupCamera();
-	void updateCamera(PerspCamera* camera);
+	void updateCamera();
 
 	void updateLight();
 	void processInput();
@@ -102,26 +103,7 @@ private:
 	PerspCamera m_perspCamera;
 	std::set<KeyCode> m_pressedKeys;
 	game::Player m_oldPlayer;
-
-	struct Entity
-	{
-		float3           translate = float3(0, 0, 0);
-		float3           rotate = float3(0, 0, 0);
-		float3           scale = float3(1, 1, 1);
-		vkr::MeshPtr          mesh;
-		vkr::DescriptorSetPtr drawDescriptorSet;
-		vkr::BufferPtr        drawUniformBuffer;
-		vkr::DescriptorSetPtr shadowDescriptorSet;
-		vkr::BufferPtr        shadowUniformBuffer;
-	};
-
-	void setupEntity(
-		const vkr::TriMesh& mesh,
-		vkr::DescriptorPool* pDescriptorPool,
-		const vkr::DescriptorSetLayout* pDrawSetLayout,
-		const vkr::DescriptorSetLayout* pShadowSetLayout,
-		Entity* pEntity);
-
+	
 	std::vector<VulkanPerFrameData> mPerFrame;
 
 	vkr::DescriptorPoolPtr      m_descriptorPool;
@@ -129,10 +111,10 @@ private:
 	vkr::DescriptorSetLayoutPtr m_drawObjectSetLayout;
 	vkr::PipelineInterfacePtr   mDrawObjectPipelineInterface;
 	vkr::GraphicsPipelinePtr    mDrawObjectPipeline;
-	Entity                 mGroundPlane;
-	Entity                 mCube;
-	Entity                 mKnob;
-	std::vector<Entity*>   mEntities;
+	GameEntity                 mGroundPlane;
+	GameEntity                 mCube;
+	GameEntity                 mKnob;
+	std::vector<GameEntity*>   mEntities;
 
 
 	vkr::DescriptorSetLayoutPtr m_shadowSetLayout;
@@ -145,7 +127,7 @@ private:
 	vkr::DescriptorSetLayoutPtr mLightSetLayout;
 	vkr::PipelineInterfacePtr   mLightPipelineInterface;
 	vkr::GraphicsPipelinePtr    mLightPipeline;
-	Entity                 mLight;
+	GameEntity                 mLight;
 	float3                 mLightPosition = float3(0, 5, 5);
 	PerspCamera            mLightCamera;
 	bool                   mUsePCF = false;

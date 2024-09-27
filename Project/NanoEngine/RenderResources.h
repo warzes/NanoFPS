@@ -2268,7 +2268,7 @@ private:
 
 #pragma region Queue
 
-struct SubmitInfo
+struct SubmitInfo final
 {
 	uint32_t                          commandBufferCount = 0;
 	const CommandBuffer* const* ppCommandBuffers = nullptr;

@@ -93,7 +93,6 @@ void GameApplication::Shutdown()
 		mPerFrame[i].Shutdown();
 	}
 	m_world.Shutdown();
-	mPerFrame.clear();
 	// TODO: очистка
 }
 
@@ -111,7 +110,6 @@ void GameApplication::Render()
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
 	auto& frame = mPerFrame[0];
-
 	uint32_t imageIndex = frame.Frame(swapChain);
 
 	// Build command buffer
@@ -132,7 +130,7 @@ void GameApplication::Render()
 				frame.cmd->BindGraphicsPipeline(mShadowPipeline);
 				for (size_t i = 0; i < mEntities.size(); ++i)
 				{
-					Entity* pEntity = mEntities[i];
+					GameEntity* pEntity = mEntities[i];
 
 					frame.cmd->BindGraphicsDescriptorSets(mShadowPipelineInterface, 1, &pEntity->shadowDescriptorSet);
 					frame.cmd->BindIndexBuffer(pEntity->mesh);
@@ -163,7 +161,7 @@ void GameApplication::Render()
 				frame.cmd->BindGraphicsPipeline(mDrawObjectPipeline);
 				for (size_t i = 0; i < mEntities.size(); ++i)
 				{
-					Entity* pEntity = mEntities[i];
+					GameEntity* pEntity = mEntities[i];
 
 					frame.cmd->BindGraphicsDescriptorSets(mDrawObjectPipelineInterface, 1, &pEntity->drawDescriptorSet);
 					frame.cmd->BindIndexBuffer(pEntity->mesh);
@@ -246,7 +244,7 @@ void GameApplication::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, Mo
 	float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
 	float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
 	m_oldPlayer.Turn(-deltaAzimuth, deltaAltitude);
-	updateCamera(&m_perspCamera);
+	updateCamera();
 }
 
 void GameApplication::KeyDown(KeyCode key)
@@ -259,61 +257,13 @@ void GameApplication::KeyUp(KeyCode key)
 	m_pressedKeys.erase(key);
 }
 
-void GameApplication::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, const vkr::DescriptorSetLayout* pShadowSetLayout, Entity* pEntity)
-{
-	vkr::Geometry geo;
-	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
-	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &pEntity->mesh));
-
-	// Draw uniform buffer
-	vkr::BufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
-	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
-	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->drawUniformBuffer));
-
-	// Shadow uniform buffer
-	bufferCreateInfo = {};
-	bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
-	bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-	bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
-	CHECKED_CALL(GetRenderDevice().CreateBuffer(bufferCreateInfo, &pEntity->shadowUniformBuffer));
-
-	// Draw descriptor set
-	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(pDescriptorPool, pDrawSetLayout, &pEntity->drawDescriptorSet));
-
-	// Shadow descriptor set
-	CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(pDescriptorPool, pShadowSetLayout, &pEntity->shadowDescriptorSet));
-
-	// Update draw descriptor set
-	vkr::WriteDescriptor write = {};
-	write.binding = 0;
-	write.type = vkr::DescriptorType::UniformBuffer;
-	write.bufferOffset = 0;
-	write.bufferRange = WHOLE_SIZE;
-	write.buffer = pEntity->drawUniformBuffer;
-	CHECKED_CALL(pEntity->drawDescriptorSet->UpdateDescriptors(1, &write));
-
-	// Update shadow descriptor set
-	write = {};
-	write.binding = 0;
-	write.type = vkr::DescriptorType::UniformBuffer;
-	write.bufferOffset = 0;
-	write.bufferRange = WHOLE_SIZE;
-	write.buffer = pEntity->shadowUniformBuffer;
-	CHECKED_CALL(pEntity->shadowDescriptorSet->UpdateDescriptors(1, &write));
-}
-
 bool GameApplication::setupCamera()
 {
-	// Cameras
-	{
-		m_perspCamera = PerspCamera(60.0f, GetWindowAspect());
-		mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
-	}
+	m_perspCamera = PerspCamera(60.0f, GetWindowAspect());
+	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
 
 	m_oldPlayer.Setup();
-	updateCamera(&m_perspCamera);
+	updateCamera();
 	return true;
 }
 
@@ -352,18 +302,21 @@ bool GameApplication::setupEntities()
 {
 	// Setup entities
 	{
-		vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices().VertexColors().Normals();
+		vkr::TriMeshOptions options = vkr::TriMeshOptions()
+			.Indices()
+			.VertexColors()
+			.Normals();
 		vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
-		setupEntity(mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout, &mGroundPlane);
+		mGroundPlane.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
 		mEntities.push_back(&mGroundPlane);
 
 		mesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), vkr::TriMeshOptions(options).ObjectColor(float3(0.5f, 0.5f, 0.7f)));
-		setupEntity(mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout, &mCube);
+		mCube.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
 		mCube.translate = float3(-2, 1, 0);
 		mEntities.push_back(&mCube);
 
 		mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 0.2f)));
-		setupEntity(mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout, &mKnob);
+		mKnob.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
 		mKnob.translate = float3(2, 1, 0);
 		mKnob.rotate = float3(0, glm::radians(180.0f), 0);
 		mKnob.scale = float3(2, 2, 2);
@@ -502,7 +455,7 @@ bool GameApplication::setupShadowInfo()
 
 		for (size_t i = 0; i < mEntities.size(); ++i)
 		{
-			Entity* pEntity = mEntities[i];
+			GameEntity* pEntity = mEntities[i];
 			CHECKED_CALL_AND_RETURN_FALSE(pEntity->drawDescriptorSet->UpdateDescriptors(2, writes));
 		}
 	}
@@ -587,14 +540,11 @@ bool GameApplication::setupLight()
 	return true;
 }
 
-void GameApplication::updateCamera(PerspCamera* camera)
+void GameApplication::updateCamera()
 {
-	float3 cameraPosition(0, 0, 0);
-	if (camera == &m_perspCamera) cameraPosition = m_oldPlayer.GetLocation();
-	else cameraPosition = m_oldPlayer.GetLocation() + float3(0, 1, -5);
-
-	camera->LookAt(cameraPosition, m_oldPlayer.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
-	camera->SetPerspective(60.f, GetWindowAspect());
+	float3 cameraPosition= m_oldPlayer.GetLocation();
+	m_perspCamera.LookAt(cameraPosition, m_oldPlayer.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
+	m_perspCamera.SetPerspective(60.f, GetWindowAspect());
 }
 
 void GameApplication::updateLight()
@@ -658,7 +608,7 @@ void GameApplication::processInput()
 		m_oldPlayer.Turn(0, m_oldPlayer.GetRateOfTurn());
 	}
 
-	updateCamera(&m_perspCamera);
+	updateCamera();
 }
 
 void GameApplication::updateUniformBuffer()
@@ -666,10 +616,11 @@ void GameApplication::updateUniformBuffer()
 	// Update uniform buffers
 	for (size_t i = 0; i < mEntities.size(); ++i)
 	{
-		Entity* pEntity = mEntities[i];
+		GameEntity* pEntity = mEntities[i];
 
 		float4x4 T = glm::translate(pEntity->translate);
-		float4x4 R = glm::rotate(pEntity->rotate.z, float3(0, 0, 1)) *
+		float4x4 R = 
+			glm::rotate(pEntity->rotate.z, float3(0, 0, 1)) *
 			glm::rotate(pEntity->rotate.y, float3(0, 1, 0)) *
 			glm::rotate(pEntity->rotate.x, float3(1, 0, 0));
 		float4x4 S = glm::scale(pEntity->scale);

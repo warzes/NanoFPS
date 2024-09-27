@@ -94,6 +94,9 @@
     <ClCompile Include="PerFrame.cpp">
       <Filter>game\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -187,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="PerFrame.h">
       <Filter>game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
