@@ -265,17 +265,17 @@ void Example_024::SetupCommon()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mOpaqueDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mOpaqueDescriptorSetLayout, &mOpaqueDescriptorSet));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mShaderGlobalsBuffer;
+		write.buffer = mShaderGlobalsBuffer;
 		CHECKED_CALL(mOpaqueDescriptorSet->UpdateDescriptors(1, &write));
 	}
 
@@ -358,27 +358,27 @@ void Example_024::SetupCommon()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mCompositeDescriptorSetLayout));
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mCompositeDescriptorSetLayout, &mCompositeDescriptorSet));
 
 		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		writes[0].pSampler = mNearestSampler;
+		writes[0].type = vkr::DescriptorType::Sampler;
+		writes[0].sampler = mNearestSampler;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[1].pImageView = mOpaquePass->GetRenderTargetTexture(0)->GetSampledImageView();
+		writes[1].type = vkr::DescriptorType::SampledImage;
+		writes[1].imageView = mOpaquePass->GetRenderTargetTexture(0)->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_TEXTURE_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[2].pImageView = mTransparencyTexture->GetSampledImageView();
+		writes[2].type = vkr::DescriptorType::SampledImage;
+		writes[2].imageView = mTransparencyTexture->GetSampledImageView();
 
 		CHECKED_CALL(mCompositeDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -724,10 +724,10 @@ void Example_024::SetupBufferBuckets()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.buckets.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.buckets.gatherDescriptorSetLayout, &mBuffer.buckets.gatherDescriptorSet));
@@ -735,25 +735,25 @@ void Example_024::SetupBufferBuckets()
 		std::array<vkr::WriteDescriptor, 4> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mShaderGlobalsBuffer;
+		writes[0].buffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[1].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
+		writes[1].type = vkr::DescriptorType::SampledImage;
+		writes[1].imageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_UAV_0_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[2].pImageView = mBuffer.buckets.countTexture->GetStorageImageView();
+		writes[2].type = vkr::DescriptorType::StorageImage;
+		writes[2].imageView = mBuffer.buckets.countTexture->GetStorageImageView();
 
 		writes[3].binding = CUSTOM_UAV_1_REGISTER;
 		writes[3].arrayIndex = 0;
-		writes[3].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[3].pImageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
+		writes[3].type = vkr::DescriptorType::StorageImage;
+		writes[3].imageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
 
 		CHECKED_CALL(mBuffer.buckets.gatherDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -797,9 +797,9 @@ void Example_024::SetupBufferBuckets()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.buckets.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.buckets.combineDescriptorSetLayout, &mBuffer.buckets.combineDescriptorSet));
@@ -807,20 +807,20 @@ void Example_024::SetupBufferBuckets()
 		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mShaderGlobalsBuffer;
+		writes[0].buffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_UAV_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[1].pImageView = mBuffer.buckets.countTexture->GetStorageImageView();
+		writes[1].type = vkr::DescriptorType::StorageImage;
+		writes[1].imageView = mBuffer.buckets.countTexture->GetStorageImageView();
 
 		writes[2].binding = CUSTOM_UAV_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[2].pImageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
+		writes[2].type = vkr::DescriptorType::StorageImage;
+		writes[2].imageView = mBuffer.buckets.fragmentTexture->GetStorageImageView();
 
 		CHECKED_CALL(mBuffer.buckets.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -940,11 +940,11 @@ void Example_024::SetupBufferLinkedLists()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DescriptorType::RWStructuredBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DescriptorType::RWStructuredBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.lists.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.lists.gatherDescriptorSetLayout, &mBuffer.lists.gatherDescriptorSet));
@@ -952,34 +952,34 @@ void Example_024::SetupBufferLinkedLists()
 		std::array<vkr::WriteDescriptor, 5> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mShaderGlobalsBuffer;
+		writes[0].buffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[1].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
+		writes[1].type = vkr::DescriptorType::SampledImage;
+		writes[1].imageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_UAV_0_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[2].pImageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
+		writes[2].type = vkr::DescriptorType::StorageImage;
+		writes[2].imageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
 
 		writes[3].binding = CUSTOM_UAV_1_REGISTER;
-		writes[3].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[3].type = vkr::DescriptorType::RWStructuredBuffer;
 		writes[3].bufferOffset = 0;
 		writes[3].bufferRange = WHOLE_SIZE;
 		writes[3].structuredElementCount = fragmentBufferElementCount;
-		writes[3].pBuffer = mBuffer.lists.fragmentBuffer;
+		writes[3].buffer = mBuffer.lists.fragmentBuffer;
 
 		writes[4].binding = CUSTOM_UAV_2_REGISTER;
-		writes[4].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[4].type = vkr::DescriptorType::RWStructuredBuffer;
 		writes[4].bufferOffset = 0;
 		writes[4].bufferRange = WHOLE_SIZE;
 		writes[4].structuredElementCount = 1;
-		writes[4].pBuffer = mBuffer.lists.atomicCounter;
+		writes[4].buffer = mBuffer.lists.atomicCounter;
 
 		CHECKED_CALL(mBuffer.lists.gatherDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -1023,10 +1023,10 @@ void Example_024::SetupBufferLinkedLists()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_0_REGISTER, vkr::DescriptorType::StorageImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_1_REGISTER, vkr::DescriptorType::RWStructuredBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_UAV_2_REGISTER, vkr::DescriptorType::RWStructuredBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mBuffer.lists.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mBuffer.lists.combineDescriptorSetLayout, &mBuffer.lists.combineDescriptorSet));
@@ -1034,29 +1034,29 @@ void Example_024::SetupBufferLinkedLists()
 		std::array<vkr::WriteDescriptor, 4> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mShaderGlobalsBuffer;
+		writes[0].buffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_UAV_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		writes[1].pImageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
+		writes[1].type = vkr::DescriptorType::StorageImage;
+		writes[1].imageView = mBuffer.lists.linkedListHeadTexture->GetStorageImageView();
 
 		writes[2].binding = CUSTOM_UAV_1_REGISTER;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[2].type = vkr::DescriptorType::RWStructuredBuffer;
 		writes[2].bufferOffset = 0;
 		writes[2].bufferRange = WHOLE_SIZE;
 		writes[2].structuredElementCount = fragmentBufferElementCount;
-		writes[2].pBuffer = mBuffer.lists.fragmentBuffer;
+		writes[2].buffer = mBuffer.lists.fragmentBuffer;
 
 		writes[3].binding = CUSTOM_UAV_2_REGISTER;
-		writes[3].type = vkr::DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER;
+		writes[3].type = vkr::DescriptorType::RWStructuredBuffer;
 		writes[3].bufferOffset = 0;
 		writes[3].bufferRange = WHOLE_SIZE;
 		writes[3].structuredElementCount = 1;
-		writes[3].pBuffer = mBuffer.lists.atomicCounter;
+		writes[3].buffer = mBuffer.lists.atomicCounter;
 
 		CHECKED_CALL(mBuffer.lists.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -1331,10 +1331,10 @@ void Example_024::SetupDepthPeeling()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDepthPeeling.layerDescriptorSetLayout));
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_DEPTH_TEXTURES_COUNT; ++i) {
@@ -1343,24 +1343,24 @@ void Example_024::SetupDepthPeeling()
 			std::array<vkr::WriteDescriptor, 4> writes = {};
 
 			writes[0].binding = SHADER_GLOBALS_REGISTER;
-			writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writes[0].type = vkr::DescriptorType::UniformBuffer;
 			writes[0].bufferOffset = 0;
 			writes[0].bufferRange = WHOLE_SIZE;
-			writes[0].pBuffer = mShaderGlobalsBuffer;
+			writes[0].buffer = mShaderGlobalsBuffer;
 
 			writes[1].binding = CUSTOM_SAMPLER_0_REGISTER;
-			writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			writes[1].pSampler = mNearestSampler;
+			writes[1].type = vkr::DescriptorType::Sampler;
+			writes[1].sampler = mNearestSampler;
 
 			writes[2].binding = CUSTOM_TEXTURE_0_REGISTER;
 			writes[2].arrayIndex = 0;
-			writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			writes[2].pImageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
+			writes[2].type = vkr::DescriptorType::SampledImage;
+			writes[2].imageView = mOpaquePass->GetDepthStencilTexture()->GetSampledImageView();
 
 			writes[3].binding = CUSTOM_TEXTURE_1_REGISTER;
 			writes[3].arrayIndex = 0;
-			writes[3].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			writes[3].pImageView = mDepthPeeling.depthTextures[(i + 1) % DEPTH_PEELING_DEPTH_TEXTURES_COUNT]->GetSampledImageView();
+			writes[3].type = vkr::DescriptorType::SampledImage;
+			writes[3].imageView = mDepthPeeling.depthTextures[(i + 1) % DEPTH_PEELING_DEPTH_TEXTURES_COUNT]->GetSampledImageView();
 
 			CHECKED_CALL(mDepthPeeling.layerDescriptorSets[i]->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 		}
@@ -1415,9 +1415,9 @@ void Example_024::SetupDepthPeeling()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, DEPTH_PEELING_LAYERS_COUNT, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, DEPTH_PEELING_LAYERS_COUNT, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDepthPeeling.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mDepthPeeling.combineDescriptorSetLayout, &mDepthPeeling.combineDescriptorSet));
@@ -1425,20 +1425,20 @@ void Example_024::SetupDepthPeeling()
 		std::array<vkr::WriteDescriptor, 2 + DEPTH_PEELING_LAYERS_COUNT> writes = {};
 
 		writes[0].binding = SHADER_GLOBALS_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mShaderGlobalsBuffer;
+		writes[0].buffer = mShaderGlobalsBuffer;
 
 		writes[1].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		writes[1].pSampler = mNearestSampler;
+		writes[1].type = vkr::DescriptorType::Sampler;
+		writes[1].sampler = mNearestSampler;
 
 		for (uint32_t i = 0; i < DEPTH_PEELING_LAYERS_COUNT; ++i) {
 			writes[2 + i].binding = CUSTOM_TEXTURE_0_REGISTER;
 			writes[2 + i].arrayIndex = i;
-			writes[2 + i].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			writes[2 + i].pImageView = mDepthPeeling.layerTextures[i]->GetSampledImageView();
+			writes[2 + i].type = vkr::DescriptorType::SampledImage;
+			writes[2 + i].imageView = mDepthPeeling.layerTextures[i]->GetSampledImageView();
 		}
 
 		CHECKED_CALL(mDepthPeeling.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
@@ -1545,17 +1545,17 @@ void Example_024::SetupUnsortedOver()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mUnsortedOver.descriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mUnsortedOver.descriptorSetLayout, &mUnsortedOver.descriptorSet));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mShaderGlobalsBuffer;
+		write.buffer = mShaderGlobalsBuffer;
 		CHECKED_CALL(mUnsortedOver.descriptorSet->UpdateDescriptors(1, &write));
 	}
 
@@ -1725,17 +1725,17 @@ void Example_024::SetupWeightedAverage()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedAverage.gatherDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedAverage.gatherDescriptorSetLayout, &mWeightedAverage.gatherDescriptorSet));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mShaderGlobalsBuffer;
+		write.buffer = mShaderGlobalsBuffer;
 		CHECKED_CALL(mWeightedAverage.gatherDescriptorSet->UpdateDescriptors(1, &write));
 	}
 
@@ -1813,9 +1813,9 @@ void Example_024::SetupWeightedAverage()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_SAMPLER_0_REGISTER, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_0_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ CUSTOM_TEXTURE_1_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedAverage.combineDescriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedAverage.combineDescriptorSetLayout, &mWeightedAverage.combineDescriptorSet));
@@ -1823,18 +1823,18 @@ void Example_024::SetupWeightedAverage()
 		std::array<vkr::WriteDescriptor, 3> writes = {};
 
 		writes[0].binding = CUSTOM_SAMPLER_0_REGISTER;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		writes[0].pSampler = mNearestSampler;
+		writes[0].type = vkr::DescriptorType::Sampler;
+		writes[0].sampler = mNearestSampler;
 
 		writes[1].binding = CUSTOM_TEXTURE_0_REGISTER;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[1].pImageView = mWeightedAverage.colorTexture->GetSampledImageView();
+		writes[1].type = vkr::DescriptorType::SampledImage;
+		writes[1].imageView = mWeightedAverage.colorTexture->GetSampledImageView();
 
 		writes[2].binding = CUSTOM_TEXTURE_1_REGISTER;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[2].pImageView = mWeightedAverage.extraTexture->GetSampledImageView();
+		writes[2].type = vkr::DescriptorType::SampledImage;
+		writes[2].imageView = mWeightedAverage.extraTexture->GetSampledImageView();
 
 		CHECKED_CALL(mWeightedAverage.combineDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(writes.size()), writes.data()));
 	}
@@ -1970,17 +1970,17 @@ void Example_024::SetupWeightedSum()
 	// Descriptor
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ SHADER_GLOBALS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mWeightedSum.descriptorSetLayout));
 
 		CHECKED_CALL(GetRenderDevice().AllocateDescriptorSet(mDescriptorPool, mWeightedSum.descriptorSetLayout, &mWeightedSum.descriptorSet));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = SHADER_GLOBALS_REGISTER;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mShaderGlobalsBuffer;
+		write.buffer = mShaderGlobalsBuffer;
 		CHECKED_CALL(mWeightedSum.descriptorSet->UpdateDescriptors(1, &write));
 	}
 

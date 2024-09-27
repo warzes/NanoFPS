@@ -37,7 +37,6 @@ int main(
 	[[maybe_unused]] int   argc,
 	[[maybe_unused]] char* argv[])
 {
-
 	GameApplication app;
 	//Example_001 app;
 	//Example_002 app;

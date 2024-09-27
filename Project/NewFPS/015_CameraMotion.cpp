@@ -146,10 +146,10 @@ void Example_015::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreat
 
 	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
-	write.pBuffer = pEntity->UniformBuffer();
+	write.buffer = pEntity->UniformBuffer();
 	CHECKED_CALL(pEntity->DescriptorSet()->UpdateDescriptors(1, &write));
 }
 
@@ -167,10 +167,10 @@ void Example_015::setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCrea
 
 	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
-	write.pBuffer = pEntity->UniformBuffer();
+	write.buffer = pEntity->UniformBuffer();
 	CHECKED_CALL(pEntity->DescriptorSet()->UpdateDescriptors(1, &write));
 }
 
@@ -277,7 +277,7 @@ void Example_015::setupDescriptors()
 	CHECKED_CALL(GetRenderDevice().CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
 	vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-	layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+	layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 	CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 }
 

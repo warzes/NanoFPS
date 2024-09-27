@@ -84,15 +84,15 @@ bool Example_023::Setup()
 		{
 			vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
 			layoutCreateInfo.flags.bits.pushable = true;
-			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::UniformBuffer));
 			CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayoutBuffers));
 		}
 
 		// Descriptor set layout for textures and samplers
 		{
 			vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3));
-			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(4, vkr::DESCRIPTOR_TYPE_SAMPLER));
+			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::SampledImage, 3));
+			layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(4, vkr::DescriptorType::Sampler));
 			CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 		}
 
@@ -105,29 +105,29 @@ bool Example_023::Setup()
 			write = {};
 			write.binding = 1;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mSampledImageViews[0];
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mSampledImageViews[0];
 			CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
 			// Texture[1]
 			write = {};
 			write.binding = 1;
 			write.arrayIndex = 1;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mSampledImageViews[1];
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mSampledImageViews[1];
 			CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
 			// Texture[2]
 			write = {};
 			write.binding = 1;
 			write.arrayIndex = 2;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mSampledImageViews[2];
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mSampledImageViews[2];
 			CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
 
 			// Sampler
 			write = {};
 			write.binding = 4;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			write.pSampler = mSampler;
+			write.type = vkr::DescriptorType::Sampler;
+			write.sampler = mSampler;
 			CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
 		}
 	}

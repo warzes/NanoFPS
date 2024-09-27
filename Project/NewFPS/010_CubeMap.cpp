@@ -43,9 +43,9 @@ bool Example_010::Setup()
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 	}
 
@@ -334,21 +334,21 @@ void Example_010::setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreat
 
 	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
-	write.pBuffer = pEntity->uniformBuffer;
+	write.buffer = pEntity->uniformBuffer;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 
 	write = {};
 	write.binding = 1;
-	write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	write.pImageView = mCubeMapImageView;
+	write.type = vkr::DescriptorType::SampledImage;
+	write.imageView = mCubeMapImageView;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 
 	write = {};
 	write.binding = 2;
-	write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-	write.pSampler = mCubeMapSampler;
+	write.type = vkr::DescriptorType::Sampler;
+	write.sampler = mCubeMapSampler;
 	CHECKED_CALL(pEntity->descriptorSet->UpdateDescriptors(1, &write));
 }

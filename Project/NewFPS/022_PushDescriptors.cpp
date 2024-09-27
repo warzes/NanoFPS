@@ -77,9 +77,9 @@ bool Example_022::Setup()
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
 		layoutCreateInfo.flags.bits.pushable = true;
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(4, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::UniformBuffer));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::SampledImage, 3));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(4, vkr::DescriptorType::Sampler));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 	}
 

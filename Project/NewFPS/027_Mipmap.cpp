@@ -60,9 +60,9 @@ bool Example_027::Setup()
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::UniformBuffer));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::SampledImage));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DescriptorType::Sampler));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 
 		for (uint32_t i = 0; i < 2; ++i) {
@@ -70,22 +70,22 @@ bool Example_027::Setup()
 
 			vkr::WriteDescriptor write = {};
 			write.binding = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DescriptorType::UniformBuffer;
 			write.bufferOffset = 0;
 			write.bufferRange = WHOLE_SIZE;
-			write.pBuffer = mUniformBuffer[i];
+			write.buffer = mUniformBuffer[i];
 			CHECKED_CALL(mDescriptorSet[i]->UpdateDescriptors(1, &write));
 
 			write = {};
 			write.binding = 1;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mSampledImageView[i];
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mSampledImageView[i];
 			CHECKED_CALL(mDescriptorSet[i]->UpdateDescriptors(1, &write));
 
 			write = {};
 			write.binding = 2;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			write.pSampler = mSampler;
+			write.type = vkr::DescriptorType::Sampler;
+			write.sampler = mSampler;
 			CHECKED_CALL(mDescriptorSet[i]->UpdateDescriptors(1, &write));
 		}
 	}

@@ -427,23 +427,23 @@ enum ClearFlagBits
 	CLEAR_FLAG_STENCIL = 0x2,
 };
 
-enum DescriptorType
+enum class DescriptorType : uint8_t
 {
 	// NOTE: These *DO NOT* match the enums in Vulkan
-	DESCRIPTOR_TYPE_UNDEFINED = 0,
-	DESCRIPTOR_TYPE_SAMPLER = 1,  // Sampler
-	DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 2,  // Combined image and sampler
-	DESCRIPTOR_TYPE_SAMPLED_IMAGE = 3,  // RO image object
-	DESCRIPTOR_TYPE_STORAGE_IMAGE = 4,  // RW image object
-	DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER = 5,  // RO texel buffer object
-	DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER = 6,  // RW texel buffer object
-	DESCRIPTOR_TYPE_UNIFORM_BUFFER = 7,  // constant/uniform buffer object
-	DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER = 8,  // RW raw buffer object
-	DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER = 9,  // RO structured buffer object
-	DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER = 10, // RW structured buffer object
-	DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC = 11,
-	DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC = 12,
-	DESCRIPTOR_TYPE_INPUT_ATTACHMENT = 13,
+	Undefined,
+	Sampler,
+	CombinedImageSampler,
+	SampledImage,       // ro image object
+	StorageImage,       // rw image object
+	UniformTexelBuffer, // ro texel buffer object
+	StorageTexelBuffer, // rw texel buffer object
+	UniformBuffer,      // constant/uniform buffer object
+	RawStorageBuffer,   // rw raw buffer object
+	ROStructuredBuffer,
+	RWStructuredBuffer,
+	UniformBufferDynamic,
+	StorageBufferDynamic,
+	InputAttachment
 };
 
 enum DrawPassClearFlagBits
@@ -655,6 +655,7 @@ enum class SemaphoreType : uint8_t
 	Timeline
 };
 
+// TODO: сделать enum class
 enum ShaderStageBits
 {
 	SHADER_STAGE_UNDEFINED = 0x00000000,
@@ -1107,15 +1108,12 @@ struct DescriptorBindingFlags final
 		uint32_t flags;
 	};
 
-	DescriptorBindingFlags()
-		: flags(0) {}
-
-	DescriptorBindingFlags(uint32_t flags_)
-		: flags(flags_) {}
+	DescriptorBindingFlags() : flags(0) {}
+	DescriptorBindingFlags(uint32_t flags_) : flags(flags_) {}
 
 	DescriptorBindingFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 

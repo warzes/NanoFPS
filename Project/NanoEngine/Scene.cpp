@@ -648,18 +648,18 @@ namespace scene {
 		//
 		// clang-format off
 		std::vector<vkr::DescriptorBinding> bindings = {
-		vkr::DescriptorBinding{FRAME_PARAMS_REGISTER,            vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{CAMERA_PARAMS_REGISTER,           vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,       1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{INSTANCE_PARAMS_REGISTER,         vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{MATERIAL_PARAMS_REGISTER,         vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{BRDF_LUT_SAMPLER_REGISTER,        vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER,        vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{IBL_IRRADIANCE_SAMPLER_REGISTER,  vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{IBL_ENVIRONMENT_SAMPLER_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER,              1, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{IBL_IRRADIANCE_MAP_REGISTER,      vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{IBL_ENVIRONMENT_MAP_REGISTER,     vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{MATERIAL_SAMPLERS_REGISTER,       vkr::DESCRIPTOR_TYPE_SAMPLER,              MAX_MATERIAL_SAMPLERS, vkr::SHADER_STAGE_ALL},
-		vkr::DescriptorBinding{MATERIAL_TEXTURES_REGISTER,       vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,        MAX_MATERIAL_TEXTURES, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{FRAME_PARAMS_REGISTER,            vkr::DescriptorType::UniformBuffer,       1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{CAMERA_PARAMS_REGISTER,           vkr::DescriptorType::UniformBuffer,       1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{INSTANCE_PARAMS_REGISTER,         vkr::DescriptorType::ROStructuredBuffer, 1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_PARAMS_REGISTER,         vkr::DescriptorType::ROStructuredBuffer, 1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{BRDF_LUT_SAMPLER_REGISTER,        vkr::DescriptorType::Sampler,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER,        vkr::DescriptorType::SampledImage,        1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_IRRADIANCE_SAMPLER_REGISTER,  vkr::DescriptorType::Sampler,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_ENVIRONMENT_SAMPLER_REGISTER, vkr::DescriptorType::Sampler,              1, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_IRRADIANCE_MAP_REGISTER,      vkr::DescriptorType::SampledImage,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{IBL_ENVIRONMENT_MAP_REGISTER,     vkr::DescriptorType::SampledImage,        MAX_IBL_MAPS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_SAMPLERS_REGISTER,       vkr::DescriptorType::Sampler,              MAX_MATERIAL_SAMPLERS, vkr::SHADER_STAGE_ALL},
+		vkr::DescriptorBinding{MATERIAL_TEXTURES_REGISTER,       vkr::DescriptorType::SampledImage,        MAX_MATERIAL_TEXTURES, vkr::SHADER_STAGE_ALL},
 		};
 		// clang-format on
 
@@ -670,13 +670,13 @@ namespace scene {
 			for (const auto& binding : bindings) {
 				// clang-format off
 				switch (binding.type) {
-				case vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER: createInfo.uniformBuffer += binding.arrayCount; break;
-				case vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER: createInfo.structuredBuffer += binding.arrayCount; break;
-				case vkr::DESCRIPTOR_TYPE_SAMPLER: createInfo.sampler += binding.arrayCount; break;
-				case vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE: createInfo.sampledImage += binding.arrayCount; break;
+				case vkr::DescriptorType::UniformBuffer: createInfo.uniformBuffer += binding.arrayCount; break;
+				case vkr::DescriptorType::ROStructuredBuffer: createInfo.structuredBuffer += binding.arrayCount; break;
+				case vkr::DescriptorType::Sampler: createInfo.sampler += binding.arrayCount; break;
+				case vkr::DescriptorType::SampledImage: createInfo.sampledImage += binding.arrayCount; break;
 				default:
 					Warning("Found a descriptor binding with unsupported "
-						"type " + std::to_string(binding.type) + "; ignoring");
+						"type " + std::to_string((int)binding.type) + "; ignoring");
 					break;
 				}
 				// clang-format on
@@ -838,42 +838,42 @@ namespace scene {
 			vkr::WriteDescriptor write = {};
 			write.binding = FRAME_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DescriptorType::UniformBuffer;
 			write.bufferOffset = mFrameParamsOffset;
 			write.bufferRange = mFrameParamsPaddedSize;
-			write.pBuffer = mGpuConstantParamsBuffer;
+			write.buffer = mGpuConstantParamsBuffer;
 			writes.push_back(write);
 
 			// Camera
 			write = {};
 			write.binding = CAMERA_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.type = vkr::DescriptorType::UniformBuffer;
 			write.bufferOffset = mCameraParamsOffset;
 			write.bufferRange = mCameraParamsPaddedSize;
-			write.pBuffer = mGpuConstantParamsBuffer;
+			write.buffer = mGpuConstantParamsBuffer;
 			writes.push_back(write);
 
 			// Instances
 			write = {};
 			write.binding = INSTANCE_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
+			write.type = vkr::DescriptorType::ROStructuredBuffer;
 			write.bufferOffset = 0;
 			write.bufferRange = mTotalInstanceParamsPaddedSize;
 			write.structuredElementCount = MAX_DRAWABLE_INSTANCES;
-			write.pBuffer = mGpuInstanceParamsBuffer;
+			write.buffer = mGpuInstanceParamsBuffer;
 			writes.push_back(write);
 
 			// Materials
 			write = {};
 			write.binding = MATERIAL_PARAMS_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
+			write.type = vkr::DescriptorType::ROStructuredBuffer;
 			write.bufferOffset = 0;
 			write.bufferRange = mTotalMaterialParamsPaddedSize;
 			write.structuredElementCount = MAX_UNIQUE_MATERIALS;
-			write.pBuffer = mGpuMateriaParamsBuffer;
+			write.buffer = mGpuMateriaParamsBuffer;
 			writes.push_back(write);
 
 			auto ppxres = mDescriptorSet->UpdateDescriptors(CountU32(writes), DataPtr(writes));
@@ -893,16 +893,16 @@ namespace scene {
 			vkr::WriteDescriptor write = {};
 			write.binding = BRDF_LUT_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			write.pSampler = mDefaultBRDFLUTSampler;
+			write.type = vkr::DescriptorType::Sampler;
+			write.sampler = mDefaultBRDFLUTSampler;
 			writes.push_back(write);
 
 			// BRDFLUTTexture
 			write = {};
 			write.binding = BRDF_LUT_TEXTURE_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mDefaultBRDFLUTTexture->GetSampledImageView();
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mDefaultBRDFLUTTexture->GetSampledImageView();
 			writes.push_back(write);
 
 			auto ppxres = mDescriptorSet->UpdateDescriptors(CountU32(writes), DataPtr(writes));
@@ -924,16 +924,16 @@ namespace scene {
 			vkr::WriteDescriptor write = {};
 			write.binding = IBL_IRRADIANCE_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			write.pSampler = mDefaultIBLIrradianceSampler;
+			write.type = vkr::DescriptorType::Sampler;
+			write.sampler = mDefaultIBLIrradianceSampler;
 			writes.push_back(write);
 
 			// IBLEnvironmentSampler
 			write = {};
 			write.binding = IBL_ENVIRONMENT_SAMPLER_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			write.pSampler = mDefaultIBLEnvironmentSampler;
+			write.type = vkr::DescriptorType::Sampler;
+			write.sampler = mDefaultIBLEnvironmentSampler;
 			writes.push_back(write);
 
 			for (uint32_t i = 0; i < MAX_IBL_MAPS; ++i) {
@@ -941,16 +941,16 @@ namespace scene {
 				write = {};
 				write.binding = IBL_IRRADIANCE_MAP_REGISTER;
 				write.arrayIndex = i;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = mDefaultIBLTexture->GetSampledImageView();
+				write.type = vkr::DescriptorType::SampledImage;
+				write.imageView = mDefaultIBLTexture->GetSampledImageView();
 				writes.push_back(write);
 
 				// IBLEnvironmentMaps
 				write = {};
 				write.binding = IBL_ENVIRONMENT_MAP_REGISTER;
 				write.arrayIndex = i;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = mDefaultIBLTexture->GetSampledImageView();
+				write.type = vkr::DescriptorType::SampledImage;
+				write.imageView = mDefaultIBLTexture->GetSampledImageView();
 				writes.push_back(write);
 			}
 
@@ -972,8 +972,8 @@ namespace scene {
 				vkr::WriteDescriptor write = {};
 				write.binding = MATERIAL_SAMPLERS_REGISTER;
 				write.arrayIndex = i;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-				write.pSampler = mDefaultSampler;
+				write.type = vkr::DescriptorType::Sampler;
+				write.sampler = mDefaultSampler;
 				writes.push_back(write);
 			}
 
@@ -982,8 +982,8 @@ namespace scene {
 				vkr::WriteDescriptor write = {};
 				write.binding = MATERIAL_TEXTURES_REGISTER;
 				write.arrayIndex = i;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = mDefaultTexture->GetSampledImageView();
+				write.type = vkr::DescriptorType::SampledImage;
+				write.imageView = mDefaultTexture->GetSampledImageView();
 				writes.push_back(write);
 			}
 

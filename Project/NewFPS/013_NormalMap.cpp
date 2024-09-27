@@ -30,10 +30,10 @@ bool Example_013::Setup()
 	{
 		// Draw objects
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 3, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 3, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_PS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDrawObjectSetLayout));
 	}
 
@@ -113,7 +113,7 @@ bool Example_013::Setup()
 	{
 		// Descriptor set layt
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mLightSetLayout));
 
 		// Model
@@ -137,10 +137,10 @@ bool Example_013::Setup()
 		// Update descriptor set
 		vkr::WriteDescriptor write = {};
 		write.binding = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mLight.drawUniformBuffer;
+		write.buffer = mLight.drawUniformBuffer;
 		CHECKED_CALL(mLight.drawDescriptorSet->UpdateDescriptors(1, &write));
 
 		// Pipeline interface
@@ -355,19 +355,19 @@ void Example_013::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool* pDe
 	// Update draw descriptor set
 	vkr::WriteDescriptor writes[4] = {};
 	writes[0].binding = 0; // Uniform buffer
-	writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writes[0].type = vkr::DescriptorType::UniformBuffer;
 	writes[0].bufferOffset = 0;
 	writes[0].bufferRange = WHOLE_SIZE;
-	writes[0].pBuffer = pEntity->drawUniformBuffer;
+	writes[0].buffer = pEntity->drawUniformBuffer;
 	writes[1].binding = 1; // Albedo texture
-	writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	writes[1].pImageView = mAlbedoTextureView;
+	writes[1].type = vkr::DescriptorType::SampledImage;
+	writes[1].imageView = mAlbedoTextureView;
 	writes[2].binding = 2; // Normal map
-	writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	writes[2].pImageView = mNormalMapView;
+	writes[2].type = vkr::DescriptorType::SampledImage;
+	writes[2].imageView = mNormalMapView;
 	writes[3].binding = 3; // Sampler
-	writes[3].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-	writes[3].pSampler = mSampler;
+	writes[3].type = vkr::DescriptorType::Sampler;
+	writes[3].sampler = mSampler;
 
 	CHECKED_CALL(pEntity->drawDescriptorSet->UpdateDescriptors(4, writes));
 }

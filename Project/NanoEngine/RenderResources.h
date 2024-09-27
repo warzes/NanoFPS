@@ -4,7 +4,7 @@
 
 namespace vkr {
 
-#pragma region VulkanFence
+#pragma region Fence
 
 struct FenceCreateInfo final
 {
@@ -31,7 +31,7 @@ private:
 
 #pragma endregion
 
-#pragma region VulkanSemaphore
+#pragma region Semaphore
 
 struct SemaphoreCreateInfo final
 {
@@ -961,39 +961,39 @@ private:
 
 struct DescriptorBinding final
 {
-	uint32_t                binding = VALUE_IGNORED;
-	DescriptorType          type = DESCRIPTOR_TYPE_UNDEFINED;
-	uint32_t                arrayCount = 1; // WARNING: Not VkDescriptorSetLayoutBinding::descriptorCount
-	ShaderStageBits         shaderVisiblity = SHADER_STAGE_ALL; // Single value not set of flags (see note above)
-	DescriptorBindingFlags  flags;
-	std::vector<SamplerPtr> immutableSamplers;
-
-	DescriptorBinding() {}
-
+	DescriptorBinding() = default;
 	DescriptorBinding(
 		uint32_t               binding_,
 		DescriptorType         type_,
 		uint32_t               arrayCount_ = 1,
-		ShaderStageBits        shaderVisiblity_ = SHADER_STAGE_ALL,
+		ShaderStageBits        shaderVisibility_ = SHADER_STAGE_ALL,
 		DescriptorBindingFlags flags_ = 0)
-		: binding(binding_),
-		type(type_),
-		arrayCount(arrayCount_),
-		shaderVisiblity(shaderVisiblity_),
-		flags(flags_) {}
+		: binding(binding_)
+		, type(type_)
+		, arrayCount(arrayCount_)
+		, shaderVisibility(shaderVisibility_)
+		, flags(flags_) {
+	}
+
+	uint32_t                binding = VALUE_IGNORED;
+	DescriptorType          type = DescriptorType::Undefined;
+	uint32_t                arrayCount = 1; // WARNING: Not VkDescriptorSetLayoutBinding::descriptorCount
+	ShaderStageBits         shaderVisibility = SHADER_STAGE_ALL; // Single value not set of flags (see note above)
+	DescriptorBindingFlags  flags;
+	std::vector<SamplerPtr> immutableSamplers;
 };
 
-struct WriteDescriptor
+struct WriteDescriptor final
 {
-	uint32_t               binding = VALUE_IGNORED;
-	uint32_t               arrayIndex = 0;
-	DescriptorType         type = DESCRIPTOR_TYPE_UNDEFINED;
-	uint64_t               bufferOffset = 0;
-	uint64_t               bufferRange = 0;
-	uint32_t               structuredElementCount = 0;
-	const Buffer* pBuffer = nullptr;
-	const ImageView* pImageView = nullptr;
-	const Sampler* pSampler = nullptr;
+	uint32_t         binding = VALUE_IGNORED;
+	uint32_t         arrayIndex = 0;
+	DescriptorType   type = DescriptorType::Undefined;
+	uint64_t         bufferOffset = 0;
+	uint64_t         bufferRange = 0;
+	uint32_t         structuredElementCount = 0;
+	const Buffer*    buffer = nullptr;
+	const ImageView* imageView = nullptr;
+	const Sampler*   sampler = nullptr;
 };
 
 struct DescriptorPoolCreateInfo

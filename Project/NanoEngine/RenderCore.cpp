@@ -497,17 +497,17 @@ std::string ToString(DescriptorType value)
 {
 	switch (value) {
 	default: break;
-	case DESCRIPTOR_TYPE_SAMPLER: return "DESCRIPTOR_TYPE_SAMPLER"; break;
-	case DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return "DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER"; break;
-	case DESCRIPTOR_TYPE_SAMPLED_IMAGE: return "DESCRIPTOR_TYPE_SAMPLED_IMAGE"; break;
-	case DESCRIPTOR_TYPE_STORAGE_IMAGE: return "DESCRIPTOR_TYPE_STORAGE_IMAGE"; break;
-	case DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: return "DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER  "; break;
-	case DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: return "DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER  "; break;
-	case DESCRIPTOR_TYPE_UNIFORM_BUFFER: return "DESCRIPTOR_TYPE_UNIFORM_BUFFER"; break;
-	case DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER: return "DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER"; break;
-	case DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return "DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC"; break;
-	case DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return "DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC"; break;
-	case DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return "DESCRIPTOR_TYPE_INPUT_ATTACHMENT"; break;
+	case DescriptorType::Sampler: return "DescriptorType::Sampler"; break;
+	case DescriptorType::CombinedImageSampler: return "DescriptorType::CombinedImageSampler"; break;
+	case DescriptorType::SampledImage: return "DescriptorType::SampledImage"; break;
+	case DescriptorType::StorageImage: return "DescriptorType::StorageImage"; break;
+	case DescriptorType::UniformTexelBuffer: return "DescriptorType::UniformTexelBuffer  "; break;
+	case DescriptorType::StorageTexelBuffer: return "DescriptorType::StorageTexelBuffer  "; break;
+	case DescriptorType::UniformBuffer: return "DescriptorType::UniformBuffer"; break;
+	case DescriptorType::RawStorageBuffer: return "DescriptorType::RawStorageBuffer"; break;
+	case DescriptorType::UniformBufferDynamic: return "DescriptorType::UniformBufferDynamic"; break;
+	case DescriptorType::StorageBufferDynamic: return "DescriptorType::StorageBufferDynamic"; break;
+	case DescriptorType::InputAttachment: return "DescriptorType::InputAttachment"; break;
 	}
 	return "<unknown descriptor type>";
 }
@@ -1144,19 +1144,19 @@ VkDescriptorType ToVkDescriptorType(DescriptorType value)
 {
 	switch (value) {
 	default: break;
-	case DESCRIPTOR_TYPE_SAMPLER: return VK_DESCRIPTOR_TYPE_SAMPLER; break;
-	case DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; break;
-	case DESCRIPTOR_TYPE_SAMPLED_IMAGE: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
-	case DESCRIPTOR_TYPE_STORAGE_IMAGE: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
-	case DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
-	case DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
-	case DESCRIPTOR_TYPE_UNIFORM_BUFFER: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; break;
-	case DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
-	case DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
-	case DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
-	case DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC; break;
-	case DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC; break;
-	case DESCRIPTOR_TYPE_INPUT_ATTACHMENT: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT; break;
+	case DescriptorType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER; break;
+	case DescriptorType::CombinedImageSampler: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; break;
+	case DescriptorType::SampledImage: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; break;
+	case DescriptorType::StorageImage: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; break;
+	case DescriptorType::UniformTexelBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER; break;
+	case DescriptorType::StorageTexelBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER; break;
+	case DescriptorType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; break;
+	case DescriptorType::RawStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+	case DescriptorType::ROStructuredBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+	case DescriptorType::RWStructuredBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; break;
+	case DescriptorType::UniformBufferDynamic: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC; break;
+	case DescriptorType::StorageBufferDynamic: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC; break;
+	case DescriptorType::InputAttachment: return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT; break;
 	}
 	return InvalidValue<VkDescriptorType>();
 }
@@ -5145,10 +5145,10 @@ namespace vkrUtil
 
 			{ // Shader inputs
 				DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-				layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DESCRIPTOR_TYPE_STORAGE_IMAGE));
-				layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-				layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-				layoutCreateInfo.bindings.push_back(DescriptorBinding(3, DESCRIPTOR_TYPE_SAMPLER));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(0, DescriptorType::StorageImage));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(1, DescriptorType::UniformBuffer));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(2, DescriptorType::SampledImage));
+				layoutCreateInfo.bindings.push_back(DescriptorBinding(3, DescriptorType::Sampler));
 
 				CHECKED_CALL(pQueue->GetDevice()->CreateDescriptorSetLayout(layoutCreateInfo, &computeDescriptorSetLayout));
 
@@ -5156,16 +5156,16 @@ namespace vkrUtil
 
 				WriteDescriptor write = {};
 				write.binding = 1;
-				write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.type = DescriptorType::UniformBuffer;
 				write.bufferOffset = 0;
 				write.bufferRange = WHOLE_SIZE;
-				write.pBuffer = uniformBuffer;
+				write.buffer = uniformBuffer;
 				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 3;
-				write.type = DESCRIPTOR_TYPE_SAMPLER;
-				write.pSampler = sampler;
+				write.type = DescriptorType::Sampler;
+				write.sampler = sampler;
 				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
 			}
 		}
@@ -5246,8 +5246,8 @@ namespace vkrUtil
 
 				WriteDescriptor write = {};
 				write.binding = 0;
-				write.type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
-				write.pImageView = storageImageView;
+				write.type = DescriptorType::StorageImage;
+				write.imageView = storageImageView;
 				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
 			}
 
@@ -5260,8 +5260,8 @@ namespace vkrUtil
 
 				WriteDescriptor write = {};
 				write.binding = 2;
-				write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = sampledImageView;
+				write.type = DescriptorType::SampledImage;
+				write.imageView = sampledImageView;
 				CHECKED_CALL(computeDescriptorSet->UpdateDescriptors(1, &write));
 			}
 

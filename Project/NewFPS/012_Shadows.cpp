@@ -37,14 +37,14 @@ bool Example_012::Setup()
 	{
 		// Draw objects
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_PS });
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_PS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDrawObjectSetLayout));
 
 		// Shadow
 		layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mShadowSetLayout));
 	}
 
@@ -171,11 +171,11 @@ bool Example_012::Setup()
 
 		vkr::WriteDescriptor writes[2] = {};
 		writes[0].binding = 1; // Shadow texture
-		writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[0].pImageView = mShadowImageView;
+		writes[0].type = vkr::DescriptorType::SampledImage;
+		writes[0].imageView = mShadowImageView;
 		writes[1].binding = 2; // Shadow sampler
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		writes[1].pSampler = mShadowSampler;
+		writes[1].type = vkr::DescriptorType::Sampler;
+		writes[1].sampler = mShadowSampler;
 
 		for (size_t i = 0; i < mEntities.size(); ++i)
 		{
@@ -188,7 +188,7 @@ bool Example_012::Setup()
 	{
 		// Descriptor set layt
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mLightSetLayout));
 
 		// Model
@@ -212,10 +212,10 @@ bool Example_012::Setup()
 		// Update descriptor set
 		vkr::WriteDescriptor write = {};
 		write.binding = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mLight.drawUniformBuffer;
+		write.buffer = mLight.drawUniformBuffer;
 		CHECKED_CALL(mLight.drawDescriptorSet->UpdateDescriptors(1, &write));
 
 		// Pipeline interface
@@ -477,18 +477,18 @@ void Example_012::setupEntity(const vkr::TriMesh& mesh, vkr::DescriptorPool* pDe
 	// Update draw descriptor set
 	vkr::WriteDescriptor write = {};
 	write.binding = 0;
-	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
-	write.pBuffer = pEntity->drawUniformBuffer;
+	write.buffer = pEntity->drawUniformBuffer;
 	CHECKED_CALL(pEntity->drawDescriptorSet->UpdateDescriptors(1, &write));
 
 	// Update shadow descriptor set
 	write = {};
 	write.binding = 0;
-	write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
-	write.pBuffer = pEntity->shadowUniformBuffer;
+	write.buffer = pEntity->shadowUniformBuffer;
 	CHECKED_CALL(pEntity->shadowDescriptorSet->UpdateDescriptors(1, &write));
 }

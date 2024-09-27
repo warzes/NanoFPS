@@ -110,43 +110,43 @@ bool Example_019::Setup()
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 0,
-			/* type= */ vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			/* type= */ vkr::DescriptorType::UniformBuffer,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_ALL_GRAPHICS });
 
 		// Albedo
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 1,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DescriptorType::SampledImage,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 2,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DescriptorType::Sampler,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
 		// Normal
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 3,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DescriptorType::SampledImage,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 4,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DescriptorType::Sampler,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
 		// Metallic/Roughness
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 5,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+			/* type= */ vkr::DescriptorType::SampledImage,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{
 			/* binding= */ 6,
-			/* type= */ vkr::DESCRIPTOR_TYPE_SAMPLER,
+			/* type= */ vkr::DescriptorType::Sampler,
 			/* array_count= */ 1,
 			/* shader_visibility= */ vkr::SHADER_STAGE_PS });
 
@@ -251,18 +251,18 @@ void Example_019::Render()
 				auto* pDescriptorSet = renderable.pDescriptorSet;
 
 				write[0].binding = 0;
-				write[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write[0].type = vkr::DescriptorType::UniformBuffer;
 				write[0].bufferOffset = 0;
 				write[0].bufferRange = WHOLE_SIZE;
-				write[0].pBuffer = object.pUniformBuffer;
+				write[0].buffer = object.pUniformBuffer;
 
 				for (size_t i = 0; i < TEXTURE_COUNT; i++) {
 					write[1 + i * 2 + 0].binding = static_cast<uint32_t>(1 + i * 2 + 0);
-					write[1 + i * 2 + 0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-					write[1 + i * 2 + 0].pImageView = pMaterial->textures[i].pTexture;
+					write[1 + i * 2 + 0].type = vkr::DescriptorType::SampledImage;
+					write[1 + i * 2 + 0].imageView = pMaterial->textures[i].pTexture;
 					write[1 + i * 2 + 1].binding = static_cast<uint32_t>(1 + i * 2 + 1);
-					write[1 + i * 2 + 1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-					write[1 + i * 2 + 1].pSampler = pMaterial->textures[i].pSampler;
+					write[1 + i * 2 + 1].type = vkr::DescriptorType::Sampler;
+					write[1 + i * 2 + 1].sampler = pMaterial->textures[i].pSampler;
 				}
 				CHECKED_CALL(pDescriptorSet->UpdateDescriptors(static_cast<uint32_t>(write.size()), write.data()));
 			}
@@ -327,8 +327,8 @@ void Example_019::loadTexture(
 	auto& device = GetRenderDevice();
 
 	const auto& texture = *textureView.texture;
-	ASSERT_MSG(textureView.texture != nullptr, "vkr::Texture with no image are not supported.");
-	ASSERT_MSG(textureView.has_transform == false, "vkr::Texture transforms are not supported yet.");
+	ASSERT_MSG(textureView.texture != nullptr, "Texture with no image are not supported.");
+	ASSERT_MSG(textureView.has_transform == false, "Texture transforms are not supported yet.");
 	ASSERT_MSG(texture.image != nullptr, "image pointer is null.");
 	ASSERT_MSG(texture.image->uri != nullptr, "image uri is null.");
 

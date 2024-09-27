@@ -2861,20 +2861,20 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 			switch (descriptorType) {
 			default: break;
 			case VK_DESCRIPTOR_TYPE_SAMPLER: {
-				pImageInfo->sampler = srcWrite.pSampler->GetVkSampler();
+				pImageInfo->sampler = srcWrite.sampler->GetVkSampler();
 			} break;
 
 			case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-				pImageInfo->sampler = srcWrite.pSampler->GetVkSampler();
-				pImageInfo->imageView = srcWrite.pImageView->GetResourceView()->GetVkImageView();
-				pImageInfo->imageLayout = srcWrite.pImageView->GetResourceView()->GetVkImageLayout();
+				pImageInfo->sampler = srcWrite.sampler->GetVkSampler();
+				pImageInfo->imageView = srcWrite.imageView->GetResourceView()->GetVkImageView();
+				pImageInfo->imageLayout = srcWrite.imageView->GetResourceView()->GetVkImageLayout();
 			} break;
 
 			case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
 			case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
 			case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
-				pImageInfo->imageView = srcWrite.pImageView->GetResourceView()->GetVkImageView();
-				pImageInfo->imageLayout = srcWrite.pImageView->GetResourceView()->GetVkImageLayout();
+				pImageInfo->imageView = srcWrite.imageView->GetResourceView()->GetVkImageView();
+				pImageInfo->imageLayout = srcWrite.imageView->GetResourceView()->GetVkImageLayout();
 			} break;
 			}
 			// Increment count
@@ -2898,7 +2898,7 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 			ASSERT_MSG(mBufferCount < mBufferInfoStore.size(), "buffer count exceeds buffer store capacity");
 			pBufferInfo = &mBufferInfoStore[mBufferCount];
 			// Fill out info
-			pBufferInfo->buffer = srcWrite.pBuffer->GetVkBuffer();
+			pBufferInfo->buffer = srcWrite.buffer->GetVkBuffer();
 			pBufferInfo->offset = srcWrite.bufferOffset;
 			pBufferInfo->range = (srcWrite.bufferRange == WHOLE_SIZE) ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(srcWrite.bufferRange);
 			// Increment count
@@ -2936,8 +2936,8 @@ Result DescriptorSet::UpdateSampler(
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
-	write.type = DESCRIPTOR_TYPE_SAMPLER;
-	write.pSampler = pSampler;
+	write.type = DescriptorType::Sampler;
+	write.sampler = pSampler;
 
 	Result ppxres = UpdateDescriptors(1, &write);
 	if (Failed(ppxres)) {
@@ -2955,8 +2955,8 @@ Result DescriptorSet::UpdateSampledImage(
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
-	write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	write.pImageView = pImageView;
+	write.type = DescriptorType::SampledImage;
+	write.imageView = pImageView;
 
 	return UpdateDescriptors(1, &write);
 }
@@ -2969,8 +2969,8 @@ Result DescriptorSet::UpdateSampledImage(
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
-	write.type = DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	write.pImageView = pTexture->GetSampledImageView();
+	write.type = DescriptorType::SampledImage;
+	write.imageView = pTexture->GetSampledImageView();
 
 	return UpdateDescriptors(1, &write);
 }
@@ -2983,8 +2983,8 @@ Result DescriptorSet::UpdateStorageImage(
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
-	write.type = DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	write.pImageView = pTexture->GetStorageImageView();
+	write.type = DescriptorType::StorageImage;
+	write.imageView = pTexture->GetStorageImageView();
 
 	Result ppxres = UpdateDescriptors(1, &write);
 	if (Failed(ppxres)) {
@@ -3004,10 +3004,10 @@ Result DescriptorSet::UpdateUniformBuffer(
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
-	write.type = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	write.type = DescriptorType::UniformBuffer;
 	write.bufferOffset = offset;
 	write.bufferRange = range;
-	write.pBuffer = pBuffer;
+	write.buffer = pBuffer;
 
 	Result ppxres = UpdateDescriptors(1, &write);
 	if (Failed(ppxres)) {
@@ -3122,7 +3122,7 @@ Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo
 		vkBinding.binding = baseBinding.binding;
 		vkBinding.descriptorType = ToVkDescriptorType(baseBinding.type);
 		vkBinding.descriptorCount = baseBinding.arrayCount;
-		vkBinding.stageFlags = ToVkShaderStageFlags(baseBinding.shaderVisiblity);
+		vkBinding.stageFlags = ToVkShaderStageFlags(baseBinding.shaderVisibility);
 		if (baseBinding.immutableSamplers.size() == 0) {
 			vkBinding.pImmutableSamplers = nullptr;
 		}
@@ -5260,7 +5260,7 @@ void CommandBuffer::PushGraphicsUniformBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,          // pipelineBindPoint
 		pInterface,                           // pInterface
-		DESCRIPTOR_TYPE_UNIFORM_BUFFER, // descriptorType
+		DescriptorType::UniformBuffer, // descriptorType
 		binding,                              // binding
 		set,                                  // set
 		bufferOffset,                         // bufferOffset
@@ -5280,7 +5280,7 @@ void CommandBuffer::PushGraphicsStructuredBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,                // pipelineBindPoint
 		pInterface,                                 // pInterface
-		DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, // descriptorType
+		DescriptorType::ROStructuredBuffer, // descriptorType
 		binding,                                    // binding
 		set,                                        // set
 		bufferOffset,                               // bufferOffset
@@ -5300,7 +5300,7 @@ void CommandBuffer::PushGraphicsStorageBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,                // pipelineBindPoint
 		pInterface,                                 // pInterface
-		DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, // descriptorType
+		DescriptorType::RWStructuredBuffer, // descriptorType
 		binding,                                    // binding
 		set,                                        // set
 		bufferOffset,                               // bufferOffset
@@ -5319,7 +5319,7 @@ void CommandBuffer::PushGraphicsSampledImage(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,         // pipelineBindPoint
 		pInterface,                          // pInterface
-		DESCRIPTOR_TYPE_SAMPLED_IMAGE, // descriptorType
+		DescriptorType::SampledImage, // descriptorType
 		binding,                             // binding
 		set,                                 // set
 		0,                                   // bufferOffset
@@ -5338,7 +5338,7 @@ void CommandBuffer::PushGraphicsStorageImage(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,         // pipelineBindPoint
 		pInterface,                          // pInterface
-		DESCRIPTOR_TYPE_STORAGE_IMAGE, // descriptorType
+		DescriptorType::StorageImage, // descriptorType
 		binding,                             // binding
 		set,                                 // set
 		0,                                   // bufferOffset
@@ -5357,7 +5357,7 @@ void CommandBuffer::PushGraphicsSampler(
 	PushDescriptorImpl(
 		COMMAND_TYPE_GRAPHICS,   // pipelineBindPoint
 		pInterface,                    // pInterface
-		DESCRIPTOR_TYPE_SAMPLER, // descriptorType
+		DescriptorType::Sampler, // descriptorType
 		binding,                       // binding
 		set,                           // set
 		0,                             // bufferOffset
@@ -5377,7 +5377,7 @@ void CommandBuffer::PushComputeUniformBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,           // pipelineBindPoint
 		pInterface,                           // pInterface
-		DESCRIPTOR_TYPE_UNIFORM_BUFFER, // descriptorType
+		DescriptorType::UniformBuffer, // descriptorType
 		binding,                              // binding
 		set,                                  // set
 		bufferOffset,                         // bufferOffset
@@ -5397,7 +5397,7 @@ void CommandBuffer::PushComputeStructuredBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,                 // pipelineBindPoint
 		pInterface,                                 // pInterface
-		DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, // descriptorType
+		DescriptorType::ROStructuredBuffer, // descriptorType
 		binding,                                    // binding
 		set,                                        // set
 		bufferOffset,                               // bufferOffset
@@ -5417,7 +5417,7 @@ void CommandBuffer::PushComputeStorageBuffer(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,                 // pipelineBindPoint
 		pInterface,                                 // pInterface
-		DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER, // descriptorType
+		DescriptorType::RWStructuredBuffer, // descriptorType
 		binding,                                    // binding
 		set,                                        // set
 		bufferOffset,                               // bufferOffset
@@ -5436,7 +5436,7 @@ void CommandBuffer::PushComputeSampledImage(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,          // pipelineBindPoint
 		pInterface,                          // pInterface
-		DESCRIPTOR_TYPE_SAMPLED_IMAGE, // descriptorType
+		DescriptorType::SampledImage, // descriptorType
 		binding,                             // binding
 		set,                                 // set
 		0,                                   // bufferOffset
@@ -5455,7 +5455,7 @@ void CommandBuffer::PushComputeStorageImage(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,          // pipelineBindPoint
 		pInterface,                          // pInterface
-		DESCRIPTOR_TYPE_STORAGE_IMAGE, // descriptorType
+		DescriptorType::StorageImage, // descriptorType
 		binding,                             // binding
 		set,                                 // set
 		0,                                   // bufferOffset
@@ -5474,7 +5474,7 @@ void CommandBuffer::PushComputeSampler(
 	PushDescriptorImpl(
 		COMMAND_TYPE_COMPUTE,    // pipelineBindPoint
 		pInterface,                    // pInterface
-		DESCRIPTOR_TYPE_SAMPLER, // descriptorType
+		DescriptorType::Sampler, // descriptorType
 		binding,                       // binding
 		set,                           // set
 		0,                             // bufferOffset
@@ -5667,27 +5667,27 @@ void CommandBuffer::PushDescriptorImpl(
 	switch (descriptorType) {
 	default: ASSERT_MSG(false, "descriptor is not of pushable type binding=" + std::to_string(binding) + ", set=" + std::to_string(set)); break;
 
-	case DESCRIPTOR_TYPE_SAMPLER: {
+	case DescriptorType::Sampler: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 		imageInfo.sampler = pSampler->GetVkSampler();
 		pImageInfo = &imageInfo;
 	} break;
 
-	case DESCRIPTOR_TYPE_SAMPLED_IMAGE: {
+	case DescriptorType::SampledImage: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = pSampledImageView->GetVkImageView();
 		pImageInfo = &imageInfo;
 	} break;
 
-	case DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+	case DescriptorType::StorageImage: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		imageInfo.imageView = pStorageImageView->GetVkImageView();
 		pImageInfo = &imageInfo;
 	} break;
 
-	case DESCRIPTOR_TYPE_UNIFORM_BUFFER: {
+	case DescriptorType::UniformBuffer: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		bufferInfo.buffer = pBuffer->GetVkBuffer();
 		bufferInfo.offset = bufferOffset;
@@ -5695,9 +5695,9 @@ void CommandBuffer::PushDescriptorImpl(
 		pBufferInfo = &bufferInfo;
 	} break;
 
-	case DESCRIPTOR_TYPE_RAW_STORAGE_BUFFER:
-	case DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER:
-	case DESCRIPTOR_TYPE_RW_STRUCTURED_BUFFER: {
+	case DescriptorType::RawStorageBuffer:
+	case DescriptorType::ROStructuredBuffer:
+	case DescriptorType::RWStructuredBuffer: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		bufferInfo.buffer = pBuffer->GetVkBuffer();
 		bufferInfo.offset = bufferOffset;
@@ -7810,9 +7810,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 	// Descriptor set layout
 	{
 		std::vector<DescriptorBinding> bindings = {
-			{0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, SHADER_STAGE_ALL_GRAPHICS},
-			{1, DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, SHADER_STAGE_ALL_GRAPHICS},
-			{2, DESCRIPTOR_TYPE_SAMPLER, 1, SHADER_STAGE_ALL_GRAPHICS},
+			{0, DescriptorType::UniformBuffer, 1, SHADER_STAGE_ALL_GRAPHICS},
+			{1, DescriptorType::SampledImage, 1, SHADER_STAGE_ALL_GRAPHICS},
+			{2, DescriptorType::Sampler, 1, SHADER_STAGE_ALL_GRAPHICS},
 		};
 
 		DescriptorSetLayoutCreateInfo createInfo = {};

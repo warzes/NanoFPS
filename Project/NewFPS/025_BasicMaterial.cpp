@@ -127,8 +127,8 @@ bool Example_025::Setup()
 	// Scene data
 	{
 		vkr::DescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{SCENE_CONSTANTS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{LIGHT_DATA_REGISTER, vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{SCENE_CONSTANTS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{LIGHT_DATA_REGISTER, vkr::DescriptorType::ROStructuredBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(createInfo, &mSceneDataLayout));
 
 		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mSceneDataLayout, &mSceneDataSet));
@@ -161,20 +161,20 @@ bool Example_025::Setup()
 		vkr::WriteDescriptor write = {};
 		write.binding = SCENE_CONSTANTS_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mGpuSceneConstants;
+		write.buffer = mGpuSceneConstants;
 		CHECKED_CALL(mSceneDataSet->UpdateDescriptors(1, &write));
 
 		write = {};
 		write.binding = LIGHT_DATA_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_RO_STRUCTURED_BUFFER;
+		write.type = vkr::DescriptorType::ROStructuredBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
 		write.structuredElementCount = 1;
-		write.pBuffer = mGpuLightConstants;
+		write.buffer = mGpuLightConstants;
 		CHECKED_CALL(mSceneDataSet->UpdateDescriptors(1, &write));
 	}
 
@@ -184,9 +184,9 @@ bool Example_025::Setup()
 	// Env draw data
 	{
 		vkr::DescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{2, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{2, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(createInfo, &mEnvDrawLayout));
 
 		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mEnvDrawLayout, &mEnvDrawSet));
@@ -207,20 +207,20 @@ bool Example_025::Setup()
 		// Constants
 		writes[0].binding = 0;
 		writes[0].arrayIndex = 0;
-		writes[0].type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].type = vkr::DescriptorType::UniformBuffer;
 		writes[0].bufferOffset = 0;
 		writes[0].bufferRange = WHOLE_SIZE;
-		writes[0].pBuffer = mGpuEnvDrawConstants;
+		writes[0].buffer = mGpuEnvDrawConstants;
 		// IBL texture
 		writes[1].binding = 1;
 		writes[1].arrayIndex = 0;
-		writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		writes[1].pImageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
+		writes[1].type = vkr::DescriptorType::SampledImage;
+		writes[1].imageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
 		// Sampler
 		writes[2].binding = 2;
 		writes[2].arrayIndex = 0;
-		writes[2].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		writes[2].pSampler = mSampler;
+		writes[2].type = vkr::DescriptorType::Sampler;
+		writes[2].sampler = mSampler;
 
 		CHECKED_CALL(mEnvDrawSet->UpdateDescriptors(3, writes));
 	}
@@ -231,7 +231,7 @@ bool Example_025::Setup()
 	// MaterialData data
 	{
 		vkr::DescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{MATERIAL_CONSTANTS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{MATERIAL_CONSTANTS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(createInfo, &mMaterialDataLayout));
 
 		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mMaterialDataLayout, &mMaterialDataSet));
@@ -251,17 +251,17 @@ bool Example_025::Setup()
 		vkr::WriteDescriptor write = {};
 		write.binding = MATERIAL_CONSTANTS_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mGpuMaterialConstants;
+		write.buffer = mGpuMaterialConstants;
 		CHECKED_CALL(mMaterialDataSet->UpdateDescriptors(1, &write));
 	}
 
 	// Model data
 	{
 		vkr::DescriptorSetLayoutCreateInfo createInfo = {};
-		createInfo.bindings.push_back({ vkr::DescriptorBinding{MODEL_CONSTANTS_REGISTER, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+		createInfo.bindings.push_back({ vkr::DescriptorBinding{MODEL_CONSTANTS_REGISTER, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(createInfo, &mModelDataLayout));
 
 		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mModelDataLayout, &mModelDataSet));
@@ -281,10 +281,10 @@ bool Example_025::Setup()
 		vkr::WriteDescriptor write = {};
 		write.binding = MODEL_CONSTANTS_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mGpuModelConstants;
+		write.buffer = mGpuModelConstants;
 		CHECKED_CALL(mModelDataSet->UpdateDescriptors(1, &write));
 	}
 
@@ -686,16 +686,16 @@ void Example_025::Render()
 			vkr::WriteDescriptor write = {};
 			write.binding = IRR_MAP_TEXTURE_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mIBLResources[mCurrentIBLIndex].irradianceTexture->GetSampledImageView();
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mIBLResources[mCurrentIBLIndex].irradianceTexture->GetSampledImageView();
 			CHECKED_CALL(materialResources->UpdateDescriptors(1, &write));
 
 			// Environment map
 			write = {};
 			write.binding = ENV_MAP_TEXTURE_REGISTER;
 			write.arrayIndex = 0;
-			write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			write.pImageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
+			write.type = vkr::DescriptorType::SampledImage;
+			write.imageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
 			CHECKED_CALL(materialResources->UpdateDescriptors(1, &write));
 		}
 
@@ -703,8 +703,8 @@ void Example_025::Render()
 		vkr::WriteDescriptor write = {};
 		write.binding = 1;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
 		CHECKED_CALL(mEnvDrawSet->UpdateDescriptors(1, &write));
 	}
 
@@ -805,7 +805,7 @@ void Example_025::Render()
 				ImGui::Separator();
 
 				static const char* currentModelName = mMeshNames[0];
-				if (ImGui::BeginCombo("vkr::Geometry", currentModelName)) {
+				if (ImGui::BeginCombo("Geometry", currentModelName)) {
 					for (size_t i = 0; i < mMeshNames.size(); ++i) {
 						bool isSelected = (currentModelName == mMeshNames[i]);
 						if (ImGui::Selectable(mMeshNames[i], isSelected)) {
@@ -977,8 +977,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = ALBEDO_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = materialResources.albedoTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = materialResources.albedoTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -989,8 +989,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = ROUGHNESS_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = materialResources.roughnessTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = materialResources.roughnessTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1001,8 +1001,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = METALNESS_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = materialResources.metalnessTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = materialResources.metalnessTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1013,8 +1013,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = NORMAL_MAP_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = materialResources.normalMapTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = materialResources.normalMapTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1023,8 +1023,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = IRR_MAP_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = mIBLResources[mCurrentIBLIndex].irradianceTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = mIBLResources[mCurrentIBLIndex].irradianceTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1033,8 +1033,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = ENV_MAP_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = mIBLResources[mCurrentIBLIndex].environmentTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1043,8 +1043,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = BRDF_LUT_TEXTURE_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-		write.pImageView = mBRDFLUTTexture->GetSampledImageView();
+		write.type = vkr::DescriptorType::SampledImage;
+		write.imageView = mBRDFLUTTexture->GetSampledImageView();
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 
@@ -1053,8 +1053,8 @@ void Example_025::SetupMaterialResources(
 		vkr::WriteDescriptor write = {};
 		write.binding = CLAMPED_SAMPLER_REGISTER;
 		write.arrayIndex = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-		write.pSampler = mSampler;
+		write.type = vkr::DescriptorType::Sampler;
+		write.sampler = mSampler;
 		CHECKED_CALL(materialResources.set->UpdateDescriptors(1, &write));
 	}
 }
@@ -1063,14 +1063,14 @@ void Example_025::SetupMaterials()
 {
 	// Layout
 	vkr::DescriptorSetLayoutCreateInfo createInfo = {};
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{ALBEDO_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{ROUGHNESS_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{METALNESS_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{NORMAL_MAP_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{IRR_MAP_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{ENV_MAP_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
-	createInfo.bindings.push_back({ vkr::DescriptorBinding{CLAMPED_SAMPLER_REGISTER, vkr::DESCRIPTOR_TYPE_SAMPLER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{ALBEDO_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{ROUGHNESS_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{METALNESS_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{NORMAL_MAP_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{IRR_MAP_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{ENV_MAP_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{BRDF_LUT_TEXTURE_REGISTER, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
+	createInfo.bindings.push_back({ vkr::DescriptorBinding{CLAMPED_SAMPLER_REGISTER, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_ALL_GRAPHICS} });
 	CHECKED_CALL(GetRenderDevice().CreateDescriptorSetLayout(createInfo, &mMaterialResourcesLayout));
 
 	// Green metal rust

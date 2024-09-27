@@ -65,9 +65,9 @@ bool Example_017::Setup()
 	// Descriptor layout for graphics pipeline (vkr::Texture.hlsl)
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::UniformBuffer));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::SampledImage));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DescriptorType::Sampler));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mRenderLayout));
 	}
 
@@ -104,9 +104,9 @@ bool Example_017::Setup()
 	// Pipeline for graphics rendering.
 	{
 		vkr::ShaderModulePtr VS;
-		CHECKED_CALL(device.CreateShader("basic/shaders", "vkr::Texture.vs", &VS));
+		CHECKED_CALL(device.CreateShader("basic/shaders", "Texture.vs", &VS));
 		vkr::ShaderModulePtr PS;
-		CHECKED_CALL(device.CreateShader("basic/shaders", "vkr::Texture.ps", &PS));
+		CHECKED_CALL(device.CreateShader("basic/shaders", "Texture.ps", &PS));
 
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
@@ -149,8 +149,8 @@ bool Example_017::Setup()
 				vkr::WriteDescriptor write = {};
 				write.binding = 1;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = mModelTexture->GetSampledImageView();
+				write.type = vkr::DescriptorType::SampledImage;
+				write.imageView = mModelTexture->GetSampledImageView();
 
 				CHECKED_CALL(renderData.descriptorSet->UpdateDescriptors(1, &write));
 			}
@@ -160,8 +160,8 @@ bool Example_017::Setup()
 				vkr::WriteDescriptor write = {};
 				write.binding = 2;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-				write.pSampler = mLinearSampler;
+				write.type = vkr::DescriptorType::Sampler;
+				write.sampler = mLinearSampler;
 
 				CHECKED_CALL(renderData.descriptorSet->UpdateDescriptors(1, &write));
 			}
@@ -178,10 +178,10 @@ bool Example_017::Setup()
 				vkr::WriteDescriptor write = {};
 				write.binding = 0;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.type = vkr::DescriptorType::UniformBuffer;
 				write.bufferOffset = 0;
 				write.bufferRange = WHOLE_SIZE;
-				write.pBuffer = renderData.constants;
+				write.buffer = renderData.constants;
 
 				CHECKED_CALL(renderData.descriptorSet->UpdateDescriptors(1, &write));
 			}
@@ -263,8 +263,8 @@ void Example_017::setupComposition()
 	{
 		// Descriptor set layout
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::SampledImage));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::Sampler));
 
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mComposeLayout));
 	}
@@ -371,13 +371,13 @@ void Example_017::setupComposition()
 				vkr::WriteDescriptor writes[2] = {};
 				writes[0].binding = 0;
 				writes[0].arrayIndex = 0;
-				writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+				writes[0].type = vkr::DescriptorType::SampledImage;
 
 				writes[1].binding = 1;
-				writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-				writes[1].pSampler = mLinearSampler;
+				writes[1].type = vkr::DescriptorType::Sampler;
+				writes[1].sampler = mLinearSampler;
 
-				writes[0].pImageView = computeData.outputImageSampledView;
+				writes[0].imageView = computeData.outputImageSampledView;
 				CHECKED_CALL(composeData.descriptorSet->UpdateDescriptors(2, writes));
 			}
 		}
@@ -391,10 +391,10 @@ void Example_017::setupCompute()
 	// Descriptor layout for compute pipeline (ImageFilter.hlsl)
 	{
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DESCRIPTOR_TYPE_SAMPLER));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(3, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::StorageImage));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::UniformBuffer));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(2, vkr::DescriptorType::Sampler));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(3, vkr::DescriptorType::SampledImage));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mComputeLayout));
 	}
 
@@ -481,32 +481,32 @@ void Example_017::setupCompute()
 				vkr::WriteDescriptor write = {};
 				write.binding = 0;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_STORAGE_IMAGE;
-				write.pImageView = computeData.outputImageStorageView;
+				write.type = vkr::DescriptorType::StorageImage;
+				write.imageView = computeData.outputImageStorageView;
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 1;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.type = vkr::DescriptorType::UniformBuffer;
 				write.bufferOffset = 0;
 				write.bufferRange = WHOLE_SIZE;
-				write.pBuffer = computeData.constants;
+				write.buffer = computeData.constants;
 
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 2;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-				write.pSampler = mNearestSampler;
+				write.type = vkr::DescriptorType::Sampler;
+				write.sampler = mNearestSampler;
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 
 				write = {};
 				write.binding = 3;
 				write.arrayIndex = 0;
-				write.type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-				write.pImageView = sourceTexture->GetSampledImageView();
+				write.type = vkr::DescriptorType::SampledImage;
+				write.imageView = sourceTexture->GetSampledImageView();
 				CHECKED_CALL(computeData.descriptorSet->UpdateDescriptors(1, &write));
 			}
 		}
@@ -521,8 +521,8 @@ void Example_017::setupDrawToSwapchain()
 	{
 		// Descriptor set layout
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE));
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DESCRIPTOR_TYPE_SAMPLER));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(0, vkr::DescriptorType::SampledImage));
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding(1, vkr::DescriptorType::Sampler));
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDrawToSwapchainLayout));
 	}
 
@@ -556,12 +556,12 @@ void Example_017::setupDrawToSwapchain()
 			vkr::WriteDescriptor writes[2] = {};
 			writes[0].binding = 0;
 			writes[0].arrayIndex = 0;
-			writes[0].type = vkr::DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-			writes[0].pImageView = frameData.composeDrawPass->GetRenderTargetTexture(0)->GetSampledImageView();
+			writes[0].type = vkr::DescriptorType::SampledImage;
+			writes[0].imageView = frameData.composeDrawPass->GetRenderTargetTexture(0)->GetSampledImageView();
 
 			writes[1].binding = 1;
-			writes[1].type = vkr::DESCRIPTOR_TYPE_SAMPLER;
-			writes[1].pSampler = mLinearSampler;
+			writes[1].type = vkr::DescriptorType::Sampler;
+			writes[1].sampler = mLinearSampler;
 
 			CHECKED_CALL(drawData.descriptorSet->UpdateDescriptors(2, writes));
 		}

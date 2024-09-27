@@ -29,17 +29,17 @@ bool Example_007::Setup()
 		CHECKED_CALL(device.CreateDescriptorPool(poolCreateInfo, &mDescriptorPool));
 
 		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		CHECKED_CALL(device.CreateDescriptorSetLayout(layoutCreateInfo, &mDescriptorSetLayout));
 
 		CHECKED_CALL(device.AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &mDescriptorSet));
 
 		vkr::WriteDescriptor write = {};
 		write.binding = 0;
-		write.type = vkr::DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		write.type = vkr::DescriptorType::UniformBuffer;
 		write.bufferOffset = 0;
 		write.bufferRange = WHOLE_SIZE;
-		write.pBuffer = mUniformBuffer;
+		write.buffer = mUniformBuffer;
 		CHECKED_CALL(mDescriptorSet->UpdateDescriptors(1, &write));
 	}
 
