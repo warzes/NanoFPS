@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="001Triangle.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="002TriangleSpinning.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="003_SquateTextured.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="004_Cube.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="005_CubeTextured.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="006_ComputeFill.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="007_DrawIndexed.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="008_BasicGeometry.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="009_ObjGeometry.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="010_CubeMap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="011_CompressedTexture.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="012_Shadows.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="013_NormalMap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="014_ArcballCamera.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="016_ImguiAndInput.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="015_CameraMotion.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="017_AsyncCompute.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="018_DynamicRendering.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="019_gltf.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="020_GBuffer.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="021_PushConstants.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="022_PushDescriptors.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="023_PushDescriptorsBuffers.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="024_OIT.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="025_BasicMaterial.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="026_Text.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="027_Mipmap.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="001Triangle.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="002TriangleSpinning.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="003_SquateTextured.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="004_Cube.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="005_CubeTextured.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="006_ComputeFill.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="007_DrawIndexed.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="008_BasicGeometry.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="009_ObjGeometry.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="010_CubeMap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="011_CompressedTexture.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="012_Shadows.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="013_NormalMap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="014_ArcballCamera.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="016_ImguiAndInput.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="015_CameraMotion.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="017_AsyncCompute.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="018_DynamicRendering.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="019_gltf.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="020_GBuffer.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="021_PushConstants.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="022_PushDescriptors.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="023_PushDescriptorsBuffers.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="024_OIT.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="025_BasicMaterial.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="026_Text.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="027_Mipmap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="examples">
+      <UniqueIdentifier>{31337459-cc5f-4be3-a818-ad5eff566ffd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{B43BE32E-1B20-44EA-AFFF-266C0EA7AFF5}</ProjectGuid>
+    <ProjectGuid>{BF18AC2D-C73F-4537-B654-71B7F6A23563}</ProjectGuid>
     <RootNamespace>FPS</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -97,24 +97,68 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Entity.cpp" />
-    <ClCompile Include="GameApp.cpp" />
+    <ClCompile Include="001Triangle.cpp" />
+    <ClCompile Include="002TriangleSpinning.cpp" />
+    <ClCompile Include="003_SquateTextured.cpp" />
+    <ClCompile Include="004_Cube.cpp" />
+    <ClCompile Include="005_CubeTextured.cpp" />
+    <ClCompile Include="006_ComputeFill.cpp" />
+    <ClCompile Include="007_DrawIndexed.cpp" />
+    <ClCompile Include="008_BasicGeometry.cpp" />
+    <ClCompile Include="009_ObjGeometry.cpp" />
+    <ClCompile Include="010_CubeMap.cpp" />
+    <ClCompile Include="011_CompressedTexture.cpp" />
+    <ClCompile Include="012_Shadows.cpp" />
+    <ClCompile Include="013_NormalMap.cpp" />
+    <ClCompile Include="014_ArcballCamera.cpp" />
+    <ClCompile Include="016_ImguiAndInput.cpp" />
+    <ClCompile Include="015_CameraMotion.cpp" />
+    <ClCompile Include="017_AsyncCompute.cpp" />
+    <ClCompile Include="018_DynamicRendering.cpp" />
+    <ClCompile Include="019_gltf.cpp" />
+    <ClCompile Include="020_GBuffer.cpp" />
+    <ClCompile Include="021_PushConstants.cpp" />
+    <ClCompile Include="022_PushDescriptors.cpp" />
+    <ClCompile Include="023_PushDescriptorsBuffers.cpp" />
+    <ClCompile Include="024_OIT.cpp" />
+    <ClCompile Include="025_BasicMaterial.cpp" />
+    <ClCompile Include="026_Text.cpp" />
+    <ClCompile Include="027_Mipmap.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PerFrame.cpp" />
-    <ClCompile Include="Player.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Entity.h" />
-    <ClInclude Include="GameApp.h" />
-    <ClInclude Include="PerFrame.h" />
-    <ClInclude Include="Player.h" />
+    <ClInclude Include="001Triangle.h" />
+    <ClInclude Include="002TriangleSpinning.h" />
+    <ClInclude Include="003_SquateTextured.h" />
+    <ClInclude Include="004_Cube.h" />
+    <ClInclude Include="005_CubeTextured.h" />
+    <ClInclude Include="006_ComputeFill.h" />
+    <ClInclude Include="007_DrawIndexed.h" />
+    <ClInclude Include="008_BasicGeometry.h" />
+    <ClInclude Include="009_ObjGeometry.h" />
+    <ClInclude Include="010_CubeMap.h" />
+    <ClInclude Include="011_CompressedTexture.h" />
+    <ClInclude Include="012_Shadows.h" />
+    <ClInclude Include="013_NormalMap.h" />
+    <ClInclude Include="014_ArcballCamera.h" />
+    <ClInclude Include="016_ImguiAndInput.h" />
+    <ClInclude Include="015_CameraMotion.h" />
+    <ClInclude Include="017_AsyncCompute.h" />
+    <ClInclude Include="018_DynamicRendering.h" />
+    <ClInclude Include="019_gltf.h" />
+    <ClInclude Include="020_GBuffer.h" />
+    <ClInclude Include="021_PushConstants.h" />
+    <ClInclude Include="022_PushDescriptors.h" />
+    <ClInclude Include="023_PushDescriptorsBuffers.h" />
+    <ClInclude Include="024_OIT.h" />
+    <ClInclude Include="025_BasicMaterial.h" />
+    <ClInclude Include="026_Text.h" />
+    <ClInclude Include="027_Mipmap.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="World.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
