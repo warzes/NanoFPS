@@ -155,17 +155,13 @@ using StorageImageViewPtr = ObjPtr<StorageImageView>;
 using VkBufferPtr = VkHandlePtr<VkBuffer>;
 using VkCommandBufferPtr = VkHandlePtr<VkCommandBuffer>;
 using VkCommandPoolPtr = VkHandlePtr<VkCommandPool>;
-using VkDebugUtilsMessengerPtr = VkHandlePtr<VkDebugUtilsMessengerEXT>;
 using VkDescriptorPoolPtr = VkHandlePtr<VkDescriptorPool>;
 using VkDescriptorSetPtr = VkHandlePtr<VkDescriptorSet>;
 using VkDescriptorSetLayoutPtr = VkHandlePtr<VkDescriptorSetLayout>;
-using VkDevicePtr = VkHandlePtr<VkDevice>;
 using VkFencePtr = VkHandlePtr<VkFence>;
 using VkFramebufferPtr = VkHandlePtr<VkFramebuffer>;
 using VkImagePtr = VkHandlePtr<VkImage>;
 using VkImageViewPtr = VkHandlePtr<VkImageView>;
-using VkInstancePtr = VkHandlePtr<VkInstance>;
-using VkPhysicalDevicePtr = VkHandlePtr<VkPhysicalDevice>;
 using VkPipelinePtr = VkHandlePtr<VkPipeline>;
 using VkPipelineLayoutPtr = VkHandlePtr<VkPipelineLayout>;
 using VkQueryPoolPtr = VkHandlePtr<VkQueryPool>;
@@ -175,8 +171,6 @@ using VkSamplerPtr = VkHandlePtr<VkSampler>;
 using VkSamplerYcbcrConversionPtr = VkHandlePtr<VkSamplerYcbcrConversion>;
 using VkSemaphorePtr = VkHandlePtr<VkSemaphore>;
 using VkShaderModulePtr = VkHandlePtr<VkShaderModule>;
-using VkSurfacePtr = VkHandlePtr<VkSurfaceKHR>;
-using VkSwapchainPtr = VkHandlePtr<VkSwapchainKHR>;
 
 using VmaAllocationPtr = VkHandlePtr<VmaAllocation>;
 using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
@@ -202,7 +196,6 @@ constexpr auto MaxBoundDescriptorSets = 32u;
 
 constexpr auto RemainingArrayLayers = UINT32_MAX;
 #define ALL_SUBRESOURCES 0, RemainingMipLevels, 0, vkr::RemainingArrayLayers
-
 
 // Vulkan dynamic uniform/storage buffers requires that offsets are aligned to VkPhysicalDeviceLimits::minUniformBufferOffsetAlignment. Based on vulkan.gpuinfo.org, the range of this value [1, 256] Meaning that 256 should cover all offset cases.
 // D3D12 on most(all?) GPUs require that the minimum constant buffer size to be 256.
@@ -1028,7 +1021,7 @@ struct BufferUsageFlags final
 
 	BufferUsageFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1076,15 +1069,12 @@ struct ColorComponentFlags final
 		uint32_t flags;
 	};
 
-	ColorComponentFlags()
-		: flags(0) {}
-
-	ColorComponentFlags(uint32_t _flags)
-		: flags(_flags) {}
+	ColorComponentFlags() : flags(0) {}
+	ColorComponentFlags(uint32_t _flags) : flags(_flags) {}
 
 	ColorComponentFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1135,15 +1125,12 @@ struct DescriptorSetLayoutFlags final
 		uint32_t flags;
 	};
 
-	DescriptorSetLayoutFlags()
-		: flags(0) {}
-
-	DescriptorSetLayoutFlags(uint32_t flags_)
-		: flags(flags_) {}
+	DescriptorSetLayoutFlags() : flags(0) {}
+	DescriptorSetLayoutFlags(uint32_t flags_) : flags(flags_) {}
 
 	DescriptorSetLayoutFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1167,15 +1154,12 @@ struct DrawPassClearFlags final
 		uint32_t flags;
 	};
 
-	DrawPassClearFlags()
-		: flags(0) {}
-
-	DrawPassClearFlags(uint32_t flags_)
-		: flags(flags_) {}
+	DrawPassClearFlags() : flags(0) {}
+	DrawPassClearFlags(uint32_t flags_) : flags(flags_) {}
 
 	DrawPassClearFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1197,15 +1181,12 @@ struct BeginRenderingFlags final
 		uint32_t flags;
 	};
 
-	BeginRenderingFlags()
-		: flags(0) {}
-
-	BeginRenderingFlags(uint32_t flags_)
-		: flags(flags_) {}
+	BeginRenderingFlags() : flags(0) {}
+	BeginRenderingFlags(uint32_t flags_) : flags(flags_) {}
 
 	BeginRenderingFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1235,27 +1216,24 @@ struct ImageUsageFlags final
 		uint32_t flags;
 	};
 
-	ImageUsageFlags()
-		: flags(0) {}
-
-	ImageUsageFlags(uint32_t flags_)
-		: flags(flags_) {}
+	ImageUsageFlags() : flags(0) {}
+	ImageUsageFlags(uint32_t flags_) : flags(flags_) {}
 
 	ImageUsageFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
 	ImageUsageFlags& operator|=(const ImageUsageFlags& rhs)
 	{
-		this->flags |= rhs.flags;
+		flags |= rhs.flags;
 		return *this;
 	}
 
 	ImageUsageFlags& operator|=(uint32_t rhs)
 	{
-		this->flags |= rhs;
+		flags |= rhs;
 		return *this;
 	}
 
@@ -1278,27 +1256,24 @@ struct ImageCreateFlags final
 		uint32_t flags;
 	};
 
-	ImageCreateFlags()
-		: flags(0) {}
-
-	ImageCreateFlags(uint32_t flags_)
-		: flags(flags_) {}
+	ImageCreateFlags() : flags(0) {}
+	ImageCreateFlags(uint32_t flags_) : flags(flags_) {}
 
 	ImageCreateFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
 	ImageCreateFlags& operator|=(const ImageCreateFlags& rhs)
 	{
-		this->flags |= rhs.flags;
+		flags |= rhs.flags;
 		return *this;
 	}
 
 	ImageCreateFlags& operator|=(uint32_t rhs)
 	{
-		this->flags |= rhs;
+		flags |= rhs;
 		return *this;
 	}
 
@@ -1369,15 +1344,12 @@ struct ShaderStageFlags final
 		uint32_t flags;
 	};
 
-	ShaderStageFlags()
-		: flags(0) {}
-
-	ShaderStageFlags(uint32_t _flags)
-		: flags(_flags) {}
+	ShaderStageFlags() : flags(0) {}
+	ShaderStageFlags(uint32_t _flags) : flags(_flags) {}
 
 	ShaderStageFlags& operator=(uint32_t rhs)
 	{
-		this->flags = rhs;
+		flags = rhs;
 		return *this;
 	}
 
@@ -1413,12 +1385,9 @@ struct MultiViewState final
 class VertexBinding final
 {
 public:
-	VertexBinding() {}
-	VertexBinding(uint32_t binding, VertexInputRate inputRate)
-		: m_binding(binding), m_inputRate(inputRate) {}
-
-	VertexBinding(const VertexAttribute& attribute)
-		: m_binding(attribute.binding), m_inputRate(attribute.inputRate)
+	VertexBinding() = default;
+	VertexBinding(uint32_t binding, VertexInputRate inputRate) : m_binding(binding), m_inputRate(inputRate) {}
+	VertexBinding(const VertexAttribute& attribute) : m_binding(attribute.binding), m_inputRate(attribute.inputRate)
 	{
 		AppendAttribute(attribute);
 	}
@@ -1521,8 +1490,7 @@ struct Rect final
 struct Viewport final
 {
 	Viewport() = default;
-	Viewport(float x_, float y_, float width_, float height_, float minDepth_ = 0, float maxDepth_ = 1)
-		: x(x_), y(y_), width(width_), height(height_), minDepth(minDepth_), maxDepth(maxDepth_) {}
+	Viewport(float x_, float y_, float width_, float height_, float minDepth_ = 0, float maxDepth_ = 1) : x(x_), y(y_), width(width_), height(height_), minDepth(minDepth_), maxDepth(maxDepth_) {}
 
 	float x;
 	float y;
@@ -1560,7 +1528,7 @@ public:
 		m_ownership = ownership;
 	}
 protected:
-	virtual Result create(const CreatInfoT& createInfo)
+	Result create(const CreatInfoT& createInfo)
 	{
 		// Copy create info
 		m_createInfo = createInfo;
@@ -1575,13 +1543,13 @@ protected:
 		return SUCCESS;
 	}
 
-	virtual void destroy()
+	void destroy()
 	{
 		destroyApiObjects();
 	}
 
 	virtual Result createApiObjects(const CreatInfoT& createInfo) = 0;
-	virtual void   destroyApiObjects() = 0;
+	virtual void destroyApiObjects() = 0;
 
 	CreatInfoT m_createInfo = {};
 private:

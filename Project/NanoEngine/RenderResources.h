@@ -1859,7 +1859,7 @@ public:
 	
 private:
 	Result createApiObjects(const CommandPoolCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	void destroyApiObjects() final;
 
 	VkCommandPoolPtr mCommandPool;
 };
@@ -2348,7 +2348,6 @@ private:
 	Result createApiObjects(const internal::QueueCreateInfo& pCreateInfo) final;
 	void   destroyApiObjects() final;
 
-
 	struct CommandSet
 	{
 		CommandPoolPtr   commandPool;
@@ -2433,7 +2432,7 @@ public:
 
 protected:
 	Result createApiObjects(const FullscreenQuadCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	void destroyApiObjects() final;
 
 private:
 	PipelineInterfacePtr mPipelineInterface;
@@ -2527,8 +2526,6 @@ private:
 	TexturePtr                           mTexture;
 };
 
-// -------------------------------------------------------------------------------------------------
-
 struct TextDrawCreateInfo
 {
 	TextureFont* pFont = nullptr;
@@ -2540,8 +2537,7 @@ struct TextDrawCreateInfo
 	Format          depthStencilFormat = Format::Undefined;
 };
 
-class TextDraw
-	: public DeviceObject<TextDrawCreateInfo>
+class TextDraw : public DeviceObject<TextDrawCreateInfo>
 {
 public:
 	TextDraw() {}
