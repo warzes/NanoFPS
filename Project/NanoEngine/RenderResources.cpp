@@ -3909,6 +3909,47 @@ const MeshVertexBufferDescription* Mesh::GetVertexBufferDescription(uint32_t ind
 
 #pragma region Pipeline
 
+Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& createInfo)
+{
+	if (IsNull(createInfo.pipelineInterface))
+	{
+		Fatal("pipeline interface is null (compute pipeline)");
+		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
+	}
+
+	VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	ssci.flags = 0;
+	ssci.pSpecializationInfo = nullptr;
+	ssci.pName = createInfo.CS.entryPoint.c_str();
+	ssci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	ssci.module = createInfo.CS.module->GetVkShaderModule();
+
+	VkComputePipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+	vkci.flags = 0;
+	vkci.stage = ssci;
+	vkci.layout = createInfo.pipelineInterface->GetVkPipelineLayout();
+	vkci.basePipelineHandle = VK_NULL_HANDLE;
+	vkci.basePipelineIndex = 0;
+
+	VkResult vkres = vkCreateComputePipelines(GetDevice()->GetVkDevice(), VK_NULL_HANDLE, 1, &vkci, nullptr, &m_pipeline);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateComputePipelines failed: " + ToString(vkres));
+		return ERROR_API_FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+void ComputePipeline::destroyApiObjects()
+{
+	if (m_pipeline)
+	{
+		vkDestroyPipeline(GetDevice()->GetVkDevice(), m_pipeline, nullptr);
+		m_pipeline.Reset();
+	}
+}
+
 BlendAttachmentState BlendAttachmentState::BlendModeAdditive()
 {
 	BlendAttachmentState state = {};
@@ -3987,295 +4028,329 @@ BlendAttachmentState BlendAttachmentState::BlendModePremultAlpha()
 namespace internal
 {
 
-	void FillOutGraphicsPipelineCreateInfo(const GraphicsPipelineCreateInfo2& pSrcCreateInfo, GraphicsPipelineCreateInfo* pDstCreateInfo)
+	void FillOutGraphicsPipelineCreateInfo(const GraphicsPipelineCreateInfo2& srcCreateInfo, GraphicsPipelineCreateInfo* dstCreateInfo)
 	{
 		// Set to default values
-		*pDstCreateInfo = {};
+		*dstCreateInfo = {};
 
-		pDstCreateInfo->dynamicRenderPass = pSrcCreateInfo.dynamicRenderPass;
+		dstCreateInfo->dynamicRenderPass = srcCreateInfo.dynamicRenderPass;
 
 		// Shaders
-		pDstCreateInfo->VS = pSrcCreateInfo.VS;
-		pDstCreateInfo->PS = pSrcCreateInfo.PS;
+		dstCreateInfo->VS = srcCreateInfo.VS;
+		dstCreateInfo->PS = srcCreateInfo.PS;
 
 		// Vertex input
 		{
-			pDstCreateInfo->vertexInputState.bindingCount = pSrcCreateInfo.vertexInputState.bindingCount;
-			for (uint32_t i = 0; i < pDstCreateInfo->vertexInputState.bindingCount; ++i) {
-				pDstCreateInfo->vertexInputState.bindings[i] = pSrcCreateInfo.vertexInputState.bindings[i];
+			dstCreateInfo->vertexInputState.bindingCount = srcCreateInfo.vertexInputState.bindingCount;
+			for (uint32_t i = 0; i < dstCreateInfo->vertexInputState.bindingCount; ++i) {
+				dstCreateInfo->vertexInputState.bindings[i] = srcCreateInfo.vertexInputState.bindings[i];
 			}
 		}
 
 		// Input aasembly
 		{
-			pDstCreateInfo->inputAssemblyState.topology = pSrcCreateInfo.topology;
+			dstCreateInfo->inputAssemblyState.topology = srcCreateInfo.topology;
 		}
 
 		// Raster
 		{
-			pDstCreateInfo->rasterState.polygonMode = pSrcCreateInfo.polygonMode;
-			pDstCreateInfo->rasterState.cullMode = pSrcCreateInfo.cullMode;
-			pDstCreateInfo->rasterState.frontFace = pSrcCreateInfo.frontFace;
+			dstCreateInfo->rasterState.polygonMode = srcCreateInfo.polygonMode;
+			dstCreateInfo->rasterState.cullMode = srcCreateInfo.cullMode;
+			dstCreateInfo->rasterState.frontFace = srcCreateInfo.frontFace;
 		}
 
 		// Depth/stencil
 		{
-			pDstCreateInfo->depthStencilState.depthTestEnable = pSrcCreateInfo.depthReadEnable;
-			pDstCreateInfo->depthStencilState.depthWriteEnable = pSrcCreateInfo.depthWriteEnable;
-			pDstCreateInfo->depthStencilState.depthCompareOp = pSrcCreateInfo.depthCompareOp;
-			pDstCreateInfo->depthStencilState.depthBoundsTestEnable = false;
-			pDstCreateInfo->depthStencilState.minDepthBounds = 0.0f;
-			pDstCreateInfo->depthStencilState.maxDepthBounds = 1.0f;
-			pDstCreateInfo->depthStencilState.stencilTestEnable = false;
-			pDstCreateInfo->depthStencilState.front = {};
-			pDstCreateInfo->depthStencilState.back = {};
+			dstCreateInfo->depthStencilState.depthTestEnable = srcCreateInfo.depthReadEnable;
+			dstCreateInfo->depthStencilState.depthWriteEnable = srcCreateInfo.depthWriteEnable;
+			dstCreateInfo->depthStencilState.depthCompareOp = srcCreateInfo.depthCompareOp;
+			dstCreateInfo->depthStencilState.depthBoundsTestEnable = false;
+			dstCreateInfo->depthStencilState.minDepthBounds = 0.0f;
+			dstCreateInfo->depthStencilState.maxDepthBounds = 1.0f;
+			dstCreateInfo->depthStencilState.stencilTestEnable = false;
+			dstCreateInfo->depthStencilState.front = {};
+			dstCreateInfo->depthStencilState.back = {};
 		}
 
 		// Color blend
 		{
-			pDstCreateInfo->colorBlendState.blendAttachmentCount = pSrcCreateInfo.outputState.renderTargetCount;
-			for (uint32_t i = 0; i < pDstCreateInfo->colorBlendState.blendAttachmentCount; ++i) {
-				switch (pSrcCreateInfo.blendModes[i]) {
+			dstCreateInfo->colorBlendState.blendAttachmentCount = srcCreateInfo.outputState.renderTargetCount;
+			for (uint32_t i = 0; i < dstCreateInfo->colorBlendState.blendAttachmentCount; ++i)
+			{
+				switch (srcCreateInfo.blendModes[i])
+				{
 				default: break;
 
-				case BLEND_MODE_ADDITIVE: {
-					pDstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeAdditive();
+				case BLEND_MODE_ADDITIVE:
+				{
+					dstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeAdditive();
 				} break;
 
-				case BLEND_MODE_ALPHA: {
-					pDstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeAlpha();
+				case BLEND_MODE_ALPHA:
+				{
+					dstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeAlpha();
 				} break;
 
 				case BLEND_MODE_OVER: {
-					pDstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeOver();
+					dstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeOver();
 				} break;
 
 				case BLEND_MODE_UNDER: {
-					pDstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeUnder();
+					dstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModeUnder();
 				} break;
 
 				case BLEND_MODE_PREMULT_ALPHA: {
-					pDstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModePremultAlpha();
+					dstCreateInfo->colorBlendState.blendAttachments[i] = BlendAttachmentState::BlendModePremultAlpha();
 				} break;
 				}
-				pDstCreateInfo->colorBlendState.blendAttachments[i].colorWriteMask = ColorComponentFlags::RGBA();
+				dstCreateInfo->colorBlendState.blendAttachments[i].colorWriteMask = ColorComponentFlags::RGBA();
 			}
 		}
 
 		// Output
 		{
-			pDstCreateInfo->outputState.renderTargetCount = pSrcCreateInfo.outputState.renderTargetCount;
-			for (uint32_t i = 0; i < pDstCreateInfo->outputState.renderTargetCount; ++i) {
-				pDstCreateInfo->outputState.renderTargetFormats[i] = pSrcCreateInfo.outputState.renderTargetFormats[i];
+			dstCreateInfo->outputState.renderTargetCount = srcCreateInfo.outputState.renderTargetCount;
+			for (uint32_t i = 0; i < dstCreateInfo->outputState.renderTargetCount; ++i)
+			{
+				dstCreateInfo->outputState.renderTargetFormats[i] = srcCreateInfo.outputState.renderTargetFormats[i];
 			}
 
-			pDstCreateInfo->outputState.depthStencilFormat = pSrcCreateInfo.outputState.depthStencilFormat;
+			dstCreateInfo->outputState.depthStencilFormat = srcCreateInfo.outputState.depthStencilFormat;
 		}
 
 		// Shading rate mode
-		pDstCreateInfo->shadingRateMode = pSrcCreateInfo.shadingRateMode;
+		dstCreateInfo->shadingRateMode = srcCreateInfo.shadingRateMode;
 
 		// Pipeline internface
-		pDstCreateInfo->pipelineInterface = pSrcCreateInfo.pipelineInterface;
+		dstCreateInfo->pipelineInterface = srcCreateInfo.pipelineInterface;
 
 		// MultiView details
-		pDstCreateInfo->multiViewState = pSrcCreateInfo.multiViewState;
+		dstCreateInfo->multiViewState = srcCreateInfo.multiViewState;
 	}
 
 } // namespace internal
 
-Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& pCreateInfo)
+Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& createInfo)
 {
-	if (IsNull(pCreateInfo.pipelineInterface))
+	if (IsNull(createInfo.pipelineInterface))
 	{
-		ASSERT_MSG(false, "pipeline interface is null (compute pipeline)");
+		Fatal("pipeline interface is null (graphics pipeline)");
 		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 	}
 
-	VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
-	ssci.flags = 0;
-	ssci.pSpecializationInfo = nullptr;
-	ssci.pName = pCreateInfo.CS.entryPoint.c_str();
-	ssci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-	ssci.module = pCreateInfo.CS.module->GetVkShaderModule();
+	VkGraphicsPipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
 
-	VkComputePipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	Result ppxres = initializeShaderStages(createInfo, shaderStages, vkci);
+
+	std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+	std::vector<VkVertexInputBindingDescription> vertexBindings;
+	VkPipelineVertexInputStateCreateInfo vertexInputState = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+
+	ppxres = initializeVertexInput(createInfo, vertexAttributes, vertexBindings, vertexInputState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+
+	ppxres = initializeInputAssembly(createInfo, inputAssemblyState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkPipelineTessellationDomainOriginStateCreateInfoKHR domainOriginStateCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO_KHR };
+	VkPipelineTessellationStateCreateInfo tessellationState = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO };
+
+	ppxres = initializeTessellation(createInfo, domainOriginStateCreateInfo, tessellationState);
+	if (Failed(ppxres)) return ppxres;
+
+	tessellationState.pNext = (createInfo.tessellationState.patchControlPoints > 0) ? &domainOriginStateCreateInfo : nullptr;
+
+	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+
+	ppxres = initializeViewports(createInfo, viewportState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkPipelineRasterizationDepthClipStateCreateInfoEXT depthClipStateCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT };
+	VkPipelineRasterizationStateCreateInfo rasterizationState = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+
+	ppxres = initializeRasterization(createInfo, depthClipStateCreateInfo, rasterizationState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkPipelineMultisampleStateCreateInfo multisampleState = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+	ppxres = initializeMultisample(createInfo, multisampleState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkPipelineDepthStencilStateCreateInfo depthStencilState = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+	ppxres = initializeDepthStencil(createInfo, depthStencilState);
+	if (Failed(ppxres)) return ppxres;
+
+	std::vector<VkPipelineColorBlendAttachmentState> attachments;
+	VkPipelineColorBlendStateCreateInfo colorBlendState = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+
+	ppxres = initializeColorBlend(createInfo, attachments, colorBlendState);
+	if (Failed(ppxres)) return ppxres;
+
+	std::vector<VkDynamicState> dynamicStatesArray;
+	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+	ppxres = initializeDynamicState(createInfo, dynamicStatesArray, dynamicState);
+	if (Failed(ppxres)) return ppxres;
+
+	VkRenderPassPtr renderPass = VK_NULL_HANDLE;
+	std::vector<VkFormat> renderTargetFormats;
+	for (uint32_t i = 0; i < createInfo.outputState.renderTargetCount; ++i)
+	{
+		renderTargetFormats.push_back(ToVkEnum(createInfo.outputState.renderTargetFormats[i]));
+	}
+	VkFormat depthStencilFormat = ToVkEnum(createInfo.outputState.depthStencilFormat);
+
+#if defined(VK_KHR_dynamic_rendering)
+	VkPipelineRenderingCreateInfo renderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+
+	if (createInfo.dynamicRenderPass)
+	{
+		renderingCreateInfo.viewMask = 0;
+		renderingCreateInfo.colorAttachmentCount = CountU32(renderTargetFormats);
+		renderingCreateInfo.pColorAttachmentFormats = DataPtr(renderTargetFormats);
+		renderingCreateInfo.depthAttachmentFormat = depthStencilFormat;
+		if (GetFormatDescription(createInfo.outputState.depthStencilFormat)->aspect & FORMAT_ASPECT_STENCIL)
+		{
+			renderingCreateInfo.stencilAttachmentFormat = depthStencilFormat;
+		}
+
+		vkci.pNext = &renderingCreateInfo;
+	}
+	else
+#endif
+	{
+		// Create temporary render pass
+		VkResult vkres = CreateTransientRenderPass(GetDevice(), CountU32(renderTargetFormats), DataPtr(renderTargetFormats), depthStencilFormat, ToVkSampleCount(createInfo.rasterState.rasterizationSamples), createInfo.multiViewState.viewMask, createInfo.multiViewState.correlationMask,
+			&renderPass, createInfo.shadingRateMode);
+		if (vkres != VK_SUCCESS)
+		{
+			Fatal("CreateTransientRenderPass failed: " + ToString(vkres));
+			return ERROR_API_FAILURE;
+		}
+	}
+
+	// Fill in pointers nad remaining values
 	vkci.flags = 0;
-	vkci.stage = ssci;
-	vkci.layout = pCreateInfo.pipelineInterface->GetVkPipelineLayout();
+	vkci.stageCount = CountU32(shaderStages);
+	vkci.pStages = DataPtr(shaderStages);
+	vkci.pVertexInputState = &vertexInputState;
+	vkci.pInputAssemblyState = &inputAssemblyState;
+	vkci.pTessellationState = &tessellationState;
+	vkci.pViewportState = &viewportState;
+	vkci.pRasterizationState = &rasterizationState;
+	vkci.pMultisampleState = &multisampleState;
+	vkci.pDepthStencilState = &depthStencilState;
+	vkci.pColorBlendState = &colorBlendState;
+	vkci.pDynamicState = &dynamicState;
+	vkci.layout = createInfo.pipelineInterface->GetVkPipelineLayout();
+	vkci.renderPass = renderPass;
+	vkci.subpass = 0; // One subpass to rule them all
 	vkci.basePipelineHandle = VK_NULL_HANDLE;
-	vkci.basePipelineIndex = 0;
+	vkci.basePipelineIndex = -1;
 
-	VkResult vkres = vkCreateComputePipelines(
-		GetDevice()->GetVkDevice(),
-		VK_NULL_HANDLE,
-		1,
-		&vkci,
-		nullptr,
-		&m_pipeline);
+	// [VRS] set pipeline shading rate
+	VkPipelineFragmentShadingRateStateCreateInfoKHR shadingRate = { VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR };
+	if (createInfo.shadingRateMode == ShadingRateMode::VRS)
+	{
+		shadingRate.fragmentSize = VkExtent2D{ 1, 1 };
+		shadingRate.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
+		shadingRate.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
+		InsertPNext(vkci, shadingRate);
+	}
+
+	VkResult vkres = vkCreateGraphicsPipelines(GetDevice()->GetVkDevice(), VK_NULL_HANDLE, 1, &vkci, nullptr, &m_pipeline);
+	// Destroy transient render pass
+	if (renderPass)
+	{
+		vkDestroyRenderPass(GetDevice()->GetVkDevice(), renderPass, nullptr);
+	}
+	// Process result
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateComputePipelines failed: " + ToString(vkres));
+		Fatal("vkCreateGraphicsPipelines failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
 	return SUCCESS;
 }
 
-void ComputePipeline::destroyApiObjects()
+void GraphicsPipeline::destroyApiObjects()
 {
-	if (m_pipeline) {
+	if (m_pipeline)
+	{
 		vkDestroyPipeline(GetDevice()->GetVkDevice(), m_pipeline, nullptr);
 		m_pipeline.Reset();
 	}
 }
 
-Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
-{
-	//// Checked binding range
-	// for (uint32_t i = 0; i < pCreateInfo.vertexInputState.attributeCount; ++i) {
-	//     const VertexAttribute& attribute = pCreateInfo.vertexInputState.attributes[i];
-	//     if (attribute.binding >= MAX_VERTEX_BINDINGS) {
-	//         ASSERT_MSG(false, "binding exceeds PPX_MAX_VERTEX_ATTRIBUTES");
-	//         return ERROR_GRFX_MAX_VERTEX_BINDING_EXCEEDED;
-	//     }
-	//     if (attribute.format == Format::Undefined) {
-	//         ASSERT_MSG(false, "vertex attribute format is undefined");
-	//         return ERROR_GRFX_VERTEX_ATTRIBUTE_FROMAT_UNDEFINED;
-	//     }
-	// }
-	//
-	//// Build input bindings
-	//{
-	//    // Collect attributes into bindings
-	//    for (uint32_t i = 0; i < pCreateInfo.vertexInputState.attributeCount; ++i) {
-	//        const VertexAttribute& attribute = pCreateInfo.vertexInputState.attributes[i];
-	//
-	//        auto it = std::find_if(
-	//            std::begin(mInputBindings),
-	//            std::end(mInputBindings),
-	//            [attribute](const VertexInputBinding& elem) -> bool {
-	//            bool isSame = attribute.binding == elem.binding;
-	//            return isSame; });
-	//        if (it != std::end(mInputBindings)) {
-	//            it->attributes.push_back(attribute);
-	//        }
-	//        else {
-	//            VertexInputBinding set = {attribute.binding};
-	//            mInputBindings.push_back(set);
-	//            mInputBindings.back().attributes.push_back(attribute);
-	//        }
-	//    }
-	//
-	//    // Calculate offsets and stride
-	//    for (auto& elem : mInputBindings) {
-	//        elem.CalculateOffsetsAndStride();
-	//    }
-	//
-	//    // Check classifactions
-	//    for (auto& elem : mInputBindings) {
-	//        uint32_t inputRateVertexCount   = 0;
-	//        uint32_t inputRateInstanceCount = 0;
-	//        for (auto& attr : elem.attributes) {
-	//            inputRateVertexCount += (attr.inputRate == VertexInputRate::Vertex) ? 1 : 0;
-	//            inputRateInstanceCount += (attr.inputRate == VERETX_INPUT_RATE_INSTANCE) ? 1 : 0;
-	//        }
-	//        // Cannot mix input rates
-	//        if ((inputRateInstanceCount > 0) && (inputRateVertexCount > 0)) {
-	//            ASSERT_MSG(false, "cannot mix vertex input rates in same binding");
-	//            return ERROR_GRFX_CANNOT_MIX_VERTEX_INPUT_RATES;
-	//        }
-	//    }
-	//}
-
-	if (IsNull(pCreateInfo.pipelineInterface)) {
-		ASSERT_MSG(false, "pipeline interface is null (graphics pipeline)");
-		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
-	}
-
-	//if (pCreateInfo.dynamicRenderPass && !GetDevice()->DynamicRenderingSupported()) {
-	//	ASSERT_MSG(false, "Cannot create a pipeline with dynamic render pass, dynamic rendering is not supported.");
-	//	return ERROR_GRFX_OPERATION_NOT_PERMITTED;
-	//}
-
-	Result ppxres = DeviceObject<GraphicsPipelineCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
-}
-
-Result GraphicsPipeline::initializeShaderStages(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
-	VkGraphicsPipelineCreateInfo& vkCreateInfo)
+Result GraphicsPipeline::initializeShaderStages(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, VkGraphicsPipelineCreateInfo& vkCreateInfo)
 {
 	// VS
-	if (!IsNull(pCreateInfo.VS.module))
+	if (!IsNull(createInfo.VS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.VS.module;
+		const ShaderModule* pModule = createInfo.VS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
 		ssci.pSpecializationInfo = nullptr;
-		ssci.pName = pCreateInfo.VS.entryPoint.c_str();
+		ssci.pName = createInfo.VS.entryPoint.c_str();
 		ssci.stage = VK_SHADER_STAGE_VERTEX_BIT;
 		ssci.module = pModule->GetVkShaderModule();
 		shaderStages.push_back(ssci);
 	}
 
 	// HS
-	if (!IsNull(pCreateInfo.HS.module))
+	if (!IsNull(createInfo.HS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.HS.module;
+		const ShaderModule* pModule = createInfo.HS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
 		ssci.pSpecializationInfo = nullptr;
-		ssci.pName = pCreateInfo.HS.entryPoint.c_str();
+		ssci.pName = createInfo.HS.entryPoint.c_str();
 		ssci.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 		ssci.module = pModule->GetVkShaderModule();
 		shaderStages.push_back(ssci);
 	}
 
 	// DS
-	if (!IsNull(pCreateInfo.DS.module))
+	if (!IsNull(createInfo.DS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.DS.module;
+		const ShaderModule* pModule = createInfo.DS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
 		ssci.pSpecializationInfo = nullptr;
-		ssci.pName = pCreateInfo.DS.entryPoint.c_str();
+		ssci.pName = createInfo.DS.entryPoint.c_str();
 		ssci.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
 		ssci.module = pModule->GetVkShaderModule();
 		shaderStages.push_back(ssci);
 	}
 
 	// GS
-	if (!IsNull(pCreateInfo.GS.module))
+	if (!IsNull(createInfo.GS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.GS.module;
+		const ShaderModule* pModule = createInfo.GS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
 		ssci.pSpecializationInfo = nullptr;
-		ssci.pName = pCreateInfo.GS.entryPoint.c_str();
+		ssci.pName = createInfo.GS.entryPoint.c_str();
 		ssci.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
 		ssci.module = pModule->GetVkShaderModule();
 		shaderStages.push_back(ssci);
 	}
 
 	// PS
-	if (!IsNull(pCreateInfo.PS.module))
+	if (!IsNull(createInfo.PS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.PS.module;
+		const ShaderModule* pModule = createInfo.PS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
 		ssci.pSpecializationInfo = nullptr;
-		ssci.pName = pCreateInfo.PS.entryPoint.c_str();
+		ssci.pName = createInfo.PS.entryPoint.c_str();
 		ssci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		ssci.module = pModule->GetVkShaderModule();
 		shaderStages.push_back(ssci);
@@ -4284,29 +4359,25 @@ Result GraphicsPipeline::initializeShaderStages(
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeVertexInput(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	std::vector<VkVertexInputAttributeDescription>& vkAttributes,
-	std::vector<VkVertexInputBindingDescription>& vkBindings,
-	VkPipelineVertexInputStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeVertexInput(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkVertexInputAttributeDescription>& vkAttributes, std::vector<VkVertexInputBindingDescription>& vkBindings, VkPipelineVertexInputStateCreateInfo& stateCreateInfo)
 {
 	// Fill out Vulkan attributes and bindings
-	for (uint32_t bindingIndex = 0; bindingIndex < pCreateInfo.vertexInputState.bindingCount; ++bindingIndex)
+	for (uint32_t bindingIndex = 0; bindingIndex < createInfo.vertexInputState.bindingCount; ++bindingIndex)
 	{
-		const VertexBinding& binding = pCreateInfo.vertexInputState.bindings[bindingIndex];
+		const VertexBinding& binding = createInfo.vertexInputState.bindings[bindingIndex];
 		// Iterate each attribute in the binding
 		const uint32_t attributeCount = binding.GetAttributeCount();
 		for (uint32_t attributeIndex = 0; attributeIndex < attributeCount; ++attributeIndex) 
 		{
 			// This should be safe since there's no modifications to the index
-			const VertexAttribute* pAttribute = nullptr;
-			binding.GetAttribute(attributeIndex, &pAttribute);
+			const VertexAttribute* attribute = nullptr;
+			binding.GetAttribute(attributeIndex, &attribute);
 
 			VkVertexInputAttributeDescription vkAttribute = {};
-			vkAttribute.location = pAttribute->location;
-			vkAttribute.binding = pAttribute->binding;
-			vkAttribute.format = ToVkEnum(pAttribute->format);
-			vkAttribute.offset = pAttribute->offset;
+			vkAttribute.location = attribute->location;
+			vkAttribute.binding = attribute->binding;
+			vkAttribute.format = ToVkEnum(attribute->format);
+			vkAttribute.offset = attribute->offset;
 			vkAttributes.push_back(vkAttribute);
 		}
 
@@ -4326,31 +4397,26 @@ Result GraphicsPipeline::initializeVertexInput(
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeInputAssembly(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeInputAssembly(const GraphicsPipelineCreateInfo& createInfo, VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.topology = ToVkPrimitiveTopology(pCreateInfo.inputAssemblyState.topology);
-	stateCreateInfo.primitiveRestartEnable = pCreateInfo.inputAssemblyState.primitiveRestartEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.topology = ToVkPrimitiveTopology(createInfo.inputAssemblyState.topology);
+	stateCreateInfo.primitiveRestartEnable = createInfo.inputAssemblyState.primitiveRestartEnable ? VK_TRUE : VK_FALSE;
 
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeTessellation(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo,
-	VkPipelineTessellationStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeTessellation(const GraphicsPipelineCreateInfo& createInfo, VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo, VkPipelineTessellationStateCreateInfo& stateCreateInfo)
 {
-	domainOriginStateCreateInfo.domainOrigin = ToVkTessellationDomainOrigin(pCreateInfo.tessellationState.domainOrigin);
+	domainOriginStateCreateInfo.domainOrigin = ToVkTessellationDomainOrigin(createInfo.tessellationState.domainOrigin);
 
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.patchControlPoints = pCreateInfo.tessellationState.patchControlPoints;
+	stateCreateInfo.patchControlPoints = createInfo.tessellationState.patchControlPoints;
 
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeViewports(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineViewportStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeViewports(const GraphicsPipelineCreateInfo& createInfo, VkPipelineViewportStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.viewportCount = 1;
@@ -4361,27 +4427,25 @@ Result GraphicsPipeline::initializeViewports(const GraphicsPipelineCreateInfo& p
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeRasterization(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo,
-	VkPipelineRasterizationStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeRasterization(const GraphicsPipelineCreateInfo& createInfo, VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo, VkPipelineRasterizationStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.depthClampEnable = pCreateInfo.rasterState.depthClampEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.rasterizerDiscardEnable = pCreateInfo.rasterState.rasterizeDiscardEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.polygonMode = ToVkPolygonMode(pCreateInfo.rasterState.polygonMode);
-	stateCreateInfo.cullMode = ToVkCullMode(pCreateInfo.rasterState.cullMode);
-	stateCreateInfo.frontFace = ToVkFrontFace(pCreateInfo.rasterState.frontFace);
-	stateCreateInfo.depthBiasEnable = pCreateInfo.rasterState.depthBiasEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.depthBiasConstantFactor = pCreateInfo.rasterState.depthBiasConstantFactor;
-	stateCreateInfo.depthBiasClamp = pCreateInfo.rasterState.depthBiasClamp;
-	stateCreateInfo.depthBiasSlopeFactor = pCreateInfo.rasterState.depthBiasSlopeFactor;
+	stateCreateInfo.depthClampEnable = createInfo.rasterState.depthClampEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.rasterizerDiscardEnable = createInfo.rasterState.rasterizeDiscardEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.polygonMode = ToVkPolygonMode(createInfo.rasterState.polygonMode);
+	stateCreateInfo.cullMode = ToVkCullMode(createInfo.rasterState.cullMode);
+	stateCreateInfo.frontFace = ToVkFrontFace(createInfo.rasterState.frontFace);
+	stateCreateInfo.depthBiasEnable = createInfo.rasterState.depthBiasEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.depthBiasConstantFactor = createInfo.rasterState.depthBiasConstantFactor;
+	stateCreateInfo.depthBiasClamp = createInfo.rasterState.depthBiasClamp;
+	stateCreateInfo.depthBiasSlopeFactor = createInfo.rasterState.depthBiasSlopeFactor;
 	stateCreateInfo.lineWidth = 1.0f;
 
 	// Handle depth clip enable
-	if (GetDevice()->HasDepthClipEnabled()) {
+	if (GetDevice()->HasDepthClipEnabled())
+	{
 		depthClipStateCreateInfo.flags = 0;
-		depthClipStateCreateInfo.depthClipEnable = pCreateInfo.rasterState.depthClipEnable;
+		depthClipStateCreateInfo.depthClipEnable = createInfo.rasterState.depthClipEnable;
 		// Set pNext
 		stateCreateInfo.pNext = &depthClipStateCreateInfo;
 	}
@@ -4389,12 +4453,10 @@ Result GraphicsPipeline::initializeRasterization(
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeMultisample(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	VkPipelineMultisampleStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeMultisample(const GraphicsPipelineCreateInfo& createInfo, VkPipelineMultisampleStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.rasterizationSamples = ToVkSampleCount(pCreateInfo.rasterState.rasterizationSamples);
+	stateCreateInfo.rasterizationSamples = ToVkSampleCount(createInfo.rasterState.rasterizationSamples);
 	stateCreateInfo.sampleShadingEnable = VK_FALSE;
 	stateCreateInfo.minSampleShading = 0.0f;
 	stateCreateInfo.pSampleMask = nullptr;
@@ -4404,60 +4466,39 @@ Result GraphicsPipeline::initializeMultisample(
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeDepthStencil(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	VkPipelineDepthStencilStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeDepthStencil(const GraphicsPipelineCreateInfo& createInfo, VkPipelineDepthStencilStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.depthTestEnable = pCreateInfo.depthStencilState.depthTestEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.depthWriteEnable = pCreateInfo.depthStencilState.depthWriteEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.depthCompareOp = ToVkEnum(pCreateInfo.depthStencilState.depthCompareOp);
-	stateCreateInfo.depthBoundsTestEnable = pCreateInfo.depthStencilState.depthBoundsTestEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.stencilTestEnable = pCreateInfo.depthStencilState.stencilTestEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.front.failOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.failOp);
-	stateCreateInfo.front.passOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.passOp);
-	stateCreateInfo.front.depthFailOp = ToVkStencilOp(pCreateInfo.depthStencilState.front.depthFailOp);
-	stateCreateInfo.front.compareOp = ToVkEnum(pCreateInfo.depthStencilState.front.compareOp);
-	stateCreateInfo.front.compareMask = pCreateInfo.depthStencilState.front.compareMask;
-	stateCreateInfo.front.writeMask = pCreateInfo.depthStencilState.front.writeMask;
-	stateCreateInfo.front.reference = pCreateInfo.depthStencilState.front.reference;
-	stateCreateInfo.back.failOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.failOp);
-	stateCreateInfo.back.passOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.passOp);
-	stateCreateInfo.back.depthFailOp = ToVkStencilOp(pCreateInfo.depthStencilState.back.depthFailOp);
-	stateCreateInfo.back.compareOp = ToVkEnum(pCreateInfo.depthStencilState.back.compareOp);
-	stateCreateInfo.back.compareMask = pCreateInfo.depthStencilState.back.compareMask;
-	stateCreateInfo.back.writeMask = pCreateInfo.depthStencilState.back.writeMask;
-	stateCreateInfo.back.reference = pCreateInfo.depthStencilState.back.reference;
-	stateCreateInfo.minDepthBounds = pCreateInfo.depthStencilState.minDepthBounds;
-	stateCreateInfo.maxDepthBounds = pCreateInfo.depthStencilState.maxDepthBounds;
+	stateCreateInfo.depthTestEnable = createInfo.depthStencilState.depthTestEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.depthWriteEnable = createInfo.depthStencilState.depthWriteEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.depthCompareOp = ToVkEnum(createInfo.depthStencilState.depthCompareOp);
+	stateCreateInfo.depthBoundsTestEnable = createInfo.depthStencilState.depthBoundsTestEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.stencilTestEnable = createInfo.depthStencilState.stencilTestEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.front.failOp = ToVkStencilOp(createInfo.depthStencilState.front.failOp);
+	stateCreateInfo.front.passOp = ToVkStencilOp(createInfo.depthStencilState.front.passOp);
+	stateCreateInfo.front.depthFailOp = ToVkStencilOp(createInfo.depthStencilState.front.depthFailOp);
+	stateCreateInfo.front.compareOp = ToVkEnum(createInfo.depthStencilState.front.compareOp);
+	stateCreateInfo.front.compareMask = createInfo.depthStencilState.front.compareMask;
+	stateCreateInfo.front.writeMask = createInfo.depthStencilState.front.writeMask;
+	stateCreateInfo.front.reference = createInfo.depthStencilState.front.reference;
+	stateCreateInfo.back.failOp = ToVkStencilOp(createInfo.depthStencilState.back.failOp);
+	stateCreateInfo.back.passOp = ToVkStencilOp(createInfo.depthStencilState.back.passOp);
+	stateCreateInfo.back.depthFailOp = ToVkStencilOp(createInfo.depthStencilState.back.depthFailOp);
+	stateCreateInfo.back.compareOp = ToVkEnum(createInfo.depthStencilState.back.compareOp);
+	stateCreateInfo.back.compareMask = createInfo.depthStencilState.back.compareMask;
+	stateCreateInfo.back.writeMask = createInfo.depthStencilState.back.writeMask;
+	stateCreateInfo.back.reference = createInfo.depthStencilState.back.reference;
+	stateCreateInfo.minDepthBounds = createInfo.depthStencilState.minDepthBounds;
+	stateCreateInfo.maxDepthBounds = createInfo.depthStencilState.maxDepthBounds;
 
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeColorBlend(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	std::vector<VkPipelineColorBlendAttachmentState>& vkAttachments,
-	VkPipelineColorBlendStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeColorBlend(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkPipelineColorBlendAttachmentState>& vkAttachments, VkPipelineColorBlendStateCreateInfo& stateCreateInfo)
 {
-	// auto& attachemnts = m_create_info.color_blend_attachment_states.GetStates();
-	//// Warn if colorWriteMask is zero
-	//{
-	//    uint32_t count = CountU32(attachemnts);
-	//    for (uint32_t i = 0; i < count; ++i) {
-	//        auto& attachment = attachemnts[i];
-	//        if (attachment.colorWriteMask == 0) {
-	//            std::string name = "<UNAMED>";
-	//            VKEX_LOG_RAW("\n*** VKEX WARNING: Graphics Pipeline Warning! ***");
-	//            VKEX_LOG_WARN("Function : " << __FUNCTION__);
-	//            VKEX_LOG_WARN("Mesage   : Color blend attachment state " << i << " has colorWriteMask=0x0, is this what you want?");
-	//            VKEX_LOG_RAW("");
-	//        }
-	//    }
-	//}
-
-	for (uint32_t i = 0; i < pCreateInfo.colorBlendState.blendAttachmentCount; ++i)
+	for (uint32_t i = 0; i < createInfo.colorBlendState.blendAttachmentCount; ++i)
 	{
-		const BlendAttachmentState& attachment = pCreateInfo.colorBlendState.blendAttachments[i];
+		const BlendAttachmentState& attachment = createInfo.colorBlendState.blendAttachments[i];
 
 		VkPipelineColorBlendAttachmentState vkAttachment = {};
 		vkAttachment.blendEnable = attachment.blendEnable ? VK_TRUE : VK_FALSE;
@@ -4473,26 +4514,21 @@ Result GraphicsPipeline::initializeColorBlend(
 	}
 
 	stateCreateInfo.flags = 0;
-	stateCreateInfo.logicOpEnable = pCreateInfo.colorBlendState.logicOpEnable ? VK_TRUE : VK_FALSE;
-	stateCreateInfo.logicOp = ToVkLogicOp(pCreateInfo.colorBlendState.logicOp);
+	stateCreateInfo.logicOpEnable = createInfo.colorBlendState.logicOpEnable ? VK_TRUE : VK_FALSE;
+	stateCreateInfo.logicOp = ToVkLogicOp(createInfo.colorBlendState.logicOp);
 	stateCreateInfo.attachmentCount = CountU32(vkAttachments);
 	stateCreateInfo.pAttachments = DataPtr(vkAttachments);
-	stateCreateInfo.blendConstants[0] = pCreateInfo.colorBlendState.blendConstants[0];
-	stateCreateInfo.blendConstants[1] = pCreateInfo.colorBlendState.blendConstants[1];
-	stateCreateInfo.blendConstants[2] = pCreateInfo.colorBlendState.blendConstants[2];
-	stateCreateInfo.blendConstants[3] = pCreateInfo.colorBlendState.blendConstants[3];
+	stateCreateInfo.blendConstants[0] = createInfo.colorBlendState.blendConstants[0];
+	stateCreateInfo.blendConstants[1] = createInfo.colorBlendState.blendConstants[1];
+	stateCreateInfo.blendConstants[2] = createInfo.colorBlendState.blendConstants[2];
+	stateCreateInfo.blendConstants[3] = createInfo.colorBlendState.blendConstants[3];
 
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeDynamicState(
-	const GraphicsPipelineCreateInfo& pCreateInfo,
-	std::vector<VkDynamicState>& dynamicStates,
-	VkPipelineDynamicStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeDynamicState(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo)
 {
-	// NOTE: Since D3D12 doesn't have line width other than 1.0, dynamic
-	//       line width is not supported.
-	//
+	// NOTE: Since D3D12 doesn't have line width other than 1.0, dynamic line width is not supported.
 	dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 	dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 	// dynamicStates.push_back(VK_DYNAMIC_STATE_LINE_WIDTH);
@@ -4528,304 +4564,138 @@ Result GraphicsPipeline::initializeDynamicState(
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCreateInfo)
+const DescriptorSetLayout* PipelineInterface::GetSetLayout(uint32_t setNumber) const
 {
-	VkGraphicsPipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
-
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	Result                                       ppxres = initializeShaderStages(pCreateInfo, shaderStages, vkci);
-
-	std::vector<VkVertexInputAttributeDescription> vertexAttributes;
-	std::vector<VkVertexInputBindingDescription>   vertexBindings;
-	VkPipelineVertexInputStateCreateInfo           vertexInputState = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-	//
-	ppxres = initializeVertexInput(pCreateInfo, vertexAttributes, vertexBindings, vertexInputState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
-	//
-	ppxres = initializeInputAssembly(pCreateInfo, inputAssemblyState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkPipelineTessellationDomainOriginStateCreateInfoKHR domainOriginStateCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO_KHR };
-	VkPipelineTessellationStateCreateInfo                tessellationState = { VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO };
-	//
-	ppxres = initializeTessellation(pCreateInfo, domainOriginStateCreateInfo, tessellationState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-	tessellationState.pNext = (pCreateInfo.tessellationState.patchControlPoints > 0) ? &domainOriginStateCreateInfo : nullptr;
-
-	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
-	//
-	ppxres = initializeViewports(pCreateInfo, viewportState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkPipelineRasterizationDepthClipStateCreateInfoEXT depthClipStateCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT };
-	VkPipelineRasterizationStateCreateInfo             rasterizationState = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
-	//
-	ppxres = initializeRasterization(pCreateInfo, depthClipStateCreateInfo, rasterizationState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkPipelineMultisampleStateCreateInfo multisampleState = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
-	//
-	ppxres = initializeMultisample(pCreateInfo, multisampleState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkPipelineDepthStencilStateCreateInfo depthStencilState = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-	//
-	ppxres = initializeDepthStencil(pCreateInfo, depthStencilState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	std::vector<VkPipelineColorBlendAttachmentState> attachments;
-	VkPipelineColorBlendStateCreateInfo              colorBlendState = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
-	//
-	ppxres = initializeColorBlend(pCreateInfo, attachments, colorBlendState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	std::vector<VkDynamicState>      dynamicStatesArray;
-	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-	//
-	ppxres = initializeDynamicState(pCreateInfo, dynamicStatesArray, dynamicState);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	VkRenderPassPtr       renderPass = VK_NULL_HANDLE;
-	std::vector<VkFormat> renderTargetFormats;
-	for (uint32_t i = 0; i < pCreateInfo.outputState.renderTargetCount; ++i) {
-		renderTargetFormats.push_back(ToVkEnum(pCreateInfo.outputState.renderTargetFormats[i]));
-	}
-	VkFormat depthStencilFormat = ToVkEnum(pCreateInfo.outputState.depthStencilFormat);
-
-#if defined(VK_KHR_dynamic_rendering)
-	VkPipelineRenderingCreateInfo renderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
-
-	if (pCreateInfo.dynamicRenderPass) {
-		renderingCreateInfo.viewMask = 0;
-		renderingCreateInfo.colorAttachmentCount = CountU32(renderTargetFormats);
-		renderingCreateInfo.pColorAttachmentFormats = DataPtr(renderTargetFormats);
-		renderingCreateInfo.depthAttachmentFormat = depthStencilFormat;
-		if (GetFormatDescription(pCreateInfo.outputState.depthStencilFormat)->aspect & FORMAT_ASPECT_STENCIL) {
-			renderingCreateInfo.stencilAttachmentFormat = depthStencilFormat;
-		}
-
-		vkci.pNext = &renderingCreateInfo;
-	}
-	else
-#endif
+	const DescriptorSetLayout* pLayout = nullptr;
+	for (uint32_t i = 0; i < m_createInfo.setCount; ++i)
 	{
-		// Create temporary render pass
-		//
-
-		VkResult vkres = CreateTransientRenderPass(
-			GetDevice(),
-			CountU32(renderTargetFormats),
-			DataPtr(renderTargetFormats),
-			depthStencilFormat,
-			ToVkSampleCount(pCreateInfo.rasterState.rasterizationSamples),
-			pCreateInfo.multiViewState.viewMask,
-			pCreateInfo.multiViewState.correlationMask,
-			&renderPass,
-			pCreateInfo.shadingRateMode);
-		if (vkres != VK_SUCCESS)
+		if (m_createInfo.sets[i].set == setNumber)
 		{
-			ASSERT_MSG(false, "CreateTransientRenderPass failed: " + ToString(vkres));
-			return ERROR_API_FAILURE;
+			pLayout = m_createInfo.sets[i].layout;
+			break;
 		}
 	}
+	return pLayout;
+}
 
-	// Fill in pointers nad remaining values
-	//
-	vkci.flags = 0;
-	vkci.stageCount = CountU32(shaderStages);
-	vkci.pStages = DataPtr(shaderStages);
-	vkci.pVertexInputState = &vertexInputState;
-	vkci.pInputAssemblyState = &inputAssemblyState;
-	vkci.pTessellationState = &tessellationState;
-	vkci.pViewportState = &viewportState;
-	vkci.pRasterizationState = &rasterizationState;
-	vkci.pMultisampleState = &multisampleState;
-	vkci.pDepthStencilState = &depthStencilState;
-	vkci.pColorBlendState = &colorBlendState;
-	vkci.pDynamicState = &dynamicState;
-	vkci.layout = pCreateInfo.pipelineInterface->GetVkPipelineLayout();
-	vkci.renderPass = renderPass;
-	vkci.subpass = 0; // One subpass to rule them all
-	vkci.basePipelineHandle = VK_NULL_HANDLE;
-	vkci.basePipelineIndex = -1;
-
-	// [VRS] set pipeline shading rate
-	VkPipelineFragmentShadingRateStateCreateInfoKHR shadingRate = { VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR };
-	if (pCreateInfo.shadingRateMode == ShadingRateMode::VRS)
+Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& createInfo)
+{
+	if (createInfo.setCount > MaxBoundDescriptorSets)
 	{
-		shadingRate.fragmentSize = VkExtent2D{ 1, 1 };
-		shadingRate.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
-		shadingRate.combinerOps[1] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR;
-		InsertPNext(vkci, shadingRate);
-	}
-
-	VkResult vkres = vkCreateGraphicsPipelines(
-		GetDevice()->GetVkDevice(),
-		VK_NULL_HANDLE,
-		1,
-		&vkci,
-		nullptr,
-		&m_pipeline);
-	// Destroy transient render pass
-	if (renderPass) {
-		vkDestroyRenderPass(
-			GetDevice()->GetVkDevice(),
-			renderPass,
-			nullptr);
-	}
-	// Process result
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreateGraphicsPipelines failed: " + ToString(vkres));
-		return ERROR_API_FAILURE;
-	}
-
-	return SUCCESS;
-}
-
-void GraphicsPipeline::destroyApiObjects()
-{
-	if (m_pipeline) {
-		vkDestroyPipeline(GetDevice()->GetVkDevice(), m_pipeline, nullptr);
-		m_pipeline.Reset();
-	}
-}
-
-Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
-{
-	if (pCreateInfo.setCount > MaxBoundDescriptorSets) {
-		ASSERT_MSG(false, "set count exceeds MAX_BOUND_DESCRIPTOR_SETS");
+		Fatal("set count exceeds MAX_BOUND_DESCRIPTOR_SETS");
 		return ERROR_LIMIT_EXCEEDED;
 	}
 
 	// If we have more than one set...we need to do some checks
-	if (pCreateInfo.setCount > 0) {
+	if (createInfo.setCount > 0)
+	{
 		// Paranoid clear
 		m_setNumbers.clear();
 		// Copy set numbers
 		std::vector<uint32_t> sortedSetNumbers;
-		for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
-			uint32_t set = pCreateInfo.sets[i].set;
+		for (uint32_t i = 0; i < createInfo.setCount; ++i)
+		{
+			uint32_t set = createInfo.sets[i].set;
 			sortedSetNumbers.push_back(set); // Sortable array
 			m_setNumbers.push_back(set);      // Preserves declared ordering
 		}
 		// Sort set numbers
 		std::sort(std::begin(sortedSetNumbers), std::end(sortedSetNumbers));
 		// Check for uniqueness
-		for (size_t i = 1; i < sortedSetNumbers.size(); ++i) {
+		for (size_t i = 1; i < sortedSetNumbers.size(); ++i)
+		{
 			uint32_t setB = sortedSetNumbers[i];
 			uint32_t setA = sortedSetNumbers[i - 1];
 			uint32_t diff = setB - setA;
-			if (diff == 0) {
-				ASSERT_MSG(false, "set numbers are not unique");
+			if (diff == 0)
+			{
+				Fatal("set numbers are not unique");
 				return ERROR_GRFX_NON_UNIQUE_SET;
 			}
 		}
 		// Check for consecutive ness
-		//
 		// Assume consecutive
 		m_hasConsecutiveSetNumbers = true;
-		for (size_t i = 1; i < m_setNumbers.size(); ++i) {
+		for (size_t i = 1; i < m_setNumbers.size(); ++i)
+		{
 			int32_t setB = static_cast<int32_t>(sortedSetNumbers[i]);
 			int32_t setA = static_cast<int32_t>(sortedSetNumbers[i - 1]);
 			int32_t diff = setB - setA;
-			if (diff != 1) {
+			if (diff != 1)
+			{
 				m_hasConsecutiveSetNumbers = false;
 				break;
 			}
 		}
 	}
 
-	// Check limit and make sure the push constants binding/set doesn't collide
-	// with an existing binding in the set layouts.
-	//
-	if (pCreateInfo.pushConstants.count > 0) {
-		if (pCreateInfo.pushConstants.count > MaxPushConstants) {
-			ASSERT_MSG(false, "push constants count (" + std::to_string(pCreateInfo.pushConstants.count) + ") exceeds MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
+	// Check limit and make sure the push constants binding/set doesn't collide with an existing binding in the set layouts.
+	if (createInfo.pushConstants.count > 0)
+	{
+		if (createInfo.pushConstants.count > MaxPushConstants)
+		{
+			Fatal("push constants count (" + std::to_string(createInfo.pushConstants.count) + ") exceeds MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 			return ERROR_LIMIT_EXCEEDED;
 		}
 
-		if (pCreateInfo.pushConstants.binding == VALUE_IGNORED) {
-			ASSERT_MSG(false, "push constants binding number is invalid");
+		if (createInfo.pushConstants.binding == VALUE_IGNORED)
+		{
+			Fatal("push constants binding number is invalid");
 			return ERROR_GRFX_INVALID_BINDING_NUMBER;
 		}
-		if (pCreateInfo.pushConstants.set == VALUE_IGNORED) {
-			ASSERT_MSG(false, "push constants set number is invalid");
+		if (createInfo.pushConstants.set == VALUE_IGNORED)
+		{
+			Fatal("push constants set number is invalid");
 			return ERROR_GRFX_INVALID_SET_NUMBER;
 		}
 
-		for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
-			auto& set = pCreateInfo.sets[i];
+		for (uint32_t i = 0; i < createInfo.setCount; ++i)
+		{
+			auto& set = createInfo.sets[i];
 			// Skip if set number doesn't match
-			if (set.set != pCreateInfo.pushConstants.set) {
+			if (set.set != createInfo.pushConstants.set) {
 				continue;
 			}
 			// See if the layout has a binding that's the same as the push constants binding
-			const uint32_t pushConstantsBinding = pCreateInfo.pushConstants.binding;
+			const uint32_t pushConstantsBinding = createInfo.pushConstants.binding;
 			auto& bindings = set.layout->GetBindings();
-			auto           it = std::find_if(
+			auto it = std::find_if(
 				bindings.begin(),
 				bindings.end(),
 				[pushConstantsBinding](const DescriptorBinding& elem) -> bool {
 					bool match = (elem.binding == pushConstantsBinding);
 					return match; });
 			// Error out if a match is found
-			if (it != bindings.end()) {
-				ASSERT_MSG(false, "push constants binding and set overlaps with a binding in set " + std::to_string(set.set));
+			if (it != bindings.end())
+			{
+				Fatal("push constants binding and set overlaps with a binding in set " + std::to_string(set.set));
 				return ERROR_GRFX_NON_UNIQUE_BINDING;
 			}
 		}
 	}
 
-	Result ppxres = DeviceObject<PipelineInterfaceCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
-}
-
-Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pCreateInfo)
-{
 	VkDescriptorSetLayout setLayouts[MaxBoundDescriptorSets] = { VK_NULL_HANDLE };
-	for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
-		setLayouts[i] = pCreateInfo.sets[i].layout->GetVkDescriptorSetLayout();
+	for (uint32_t i = 0; i < createInfo.setCount; ++i)
+	{
+		setLayouts[i] = createInfo.sets[i].layout->GetVkDescriptorSetLayout();
 	}
 
-	bool                hasPushConstants = (pCreateInfo.pushConstants.count > 0);
+	bool hasPushConstants = (createInfo.pushConstants.count > 0);
 	VkPushConstantRange pushConstantsRange = {};
-	if (hasPushConstants) {
-		const uint32_t sizeInBytes = pCreateInfo.pushConstants.count * sizeof(uint32_t);
+	if (hasPushConstants)
+	{
+		const uint32_t sizeInBytes = createInfo.pushConstants.count * sizeof(uint32_t);
 
 		// Double check device limits
 		auto& limits = GetDevice()->GetDeviceLimits();
 		if (sizeInBytes > limits.maxPushConstantsSize)
 		{
-			ASSERT_MSG(false, "push constants size in bytes (" + std::to_string(sizeInBytes) + ") exceeds VkPhysicalDeviceLimits::maxPushConstantsSize (" + std::to_string(limits.maxPushConstantsSize) + ")");
+			Fatal("push constants size in bytes (" + std::to_string(sizeInBytes) + ") exceeds VkPhysicalDeviceLimits::maxPushConstantsSize (" + std::to_string(limits.maxPushConstantsSize) + ")");
 			return ERROR_LIMIT_EXCEEDED;
 		}
 
 		// Save stage flags for use in command buffer
-		m_pushConstantShaderStageFlags = ToVkShaderStageFlags(pCreateInfo.pushConstants.shaderVisiblity);
+		m_pushConstantShaderStageFlags = ToVkShaderStageFlags(createInfo.pushConstants.shaderVisiblity);
 
 		// Fill out range
 		pushConstantsRange.stageFlags = m_pushConstantShaderStageFlags;
@@ -4835,18 +4705,15 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 
 	VkPipelineLayoutCreateInfo vkci = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 	vkci.flags = 0;
-	vkci.setLayoutCount = pCreateInfo.setCount;
+	vkci.setLayoutCount = createInfo.setCount;
 	vkci.pSetLayouts = setLayouts;
 	vkci.pushConstantRangeCount = hasPushConstants ? 1 : 0;
 	vkci.pPushConstantRanges = hasPushConstants ? &pushConstantsRange : nullptr;
 
-	VkResult vkres = vkCreatePipelineLayout(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&m_pipelineLayout);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreatePipelineLayout failed: " + ToString(vkres));
+	VkResult vkres = vkCreatePipelineLayout(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_pipelineLayout);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreatePipelineLayout failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -4855,22 +4722,11 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 
 void PipelineInterface::destroyApiObjects()
 {
-	if (m_pipelineLayout) {
+	if (m_pipelineLayout)
+	{
 		vkDestroyPipelineLayout(GetDevice()->GetVkDevice(), m_pipelineLayout, nullptr);
 		m_pipelineLayout.Reset();
 	}
-}
-
-const DescriptorSetLayout* PipelineInterface::GetSetLayout(uint32_t setNumber) const
-{
-	const DescriptorSetLayout* pLayout = nullptr;
-	for (uint32_t i = 0; i < m_createInfo.setCount; ++i) {
-		if (m_createInfo.sets[i].set == setNumber) {
-			pLayout = m_createInfo.sets[i].layout;
-			break;
-		}
-	}
-	return pLayout;
 }
 
 #pragma endregion

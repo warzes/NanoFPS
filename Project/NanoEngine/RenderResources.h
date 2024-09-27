@@ -1626,7 +1626,6 @@ public:
 	VkPipelinePtr GetVkPipeline() const { return m_pipeline; }
 
 private:
-	Result create(const GraphicsPipelineCreateInfo& createInfo) final;
 	Result createApiObjects(const GraphicsPipelineCreateInfo& createInfo) final;
 	void destroyApiObjects() final;
 
@@ -1680,8 +1679,7 @@ public:
 	VkShaderStageFlags GetPushConstantShaderStageFlags() const { return m_pushConstantShaderStageFlags; }
 
 private:
-	Result create(const PipelineInterfaceCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const PipelineInterfaceCreateInfo& pCreateInfo) final;
+	Result createApiObjects(const PipelineInterfaceCreateInfo& createInfo) final;
 	void destroyApiObjects() final;
 
 	VkPipelineLayoutPtr m_pipelineLayout;
