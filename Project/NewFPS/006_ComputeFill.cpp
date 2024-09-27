@@ -93,12 +93,12 @@ bool Example_006::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mComputeDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mComputeDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComputePipelineInterface));
 
 		vkr::ComputePipelineCreateInfo cpCreateInfo = {};
 		cpCreateInfo.CS = { mCS.Get(), "csmain" };
-		cpCreateInfo.pPipelineInterface = mComputePipelineInterface;
+		cpCreateInfo.pipelineInterface = mComputePipelineInterface;
 		CHECKED_CALL(device.CreateComputePipeline(cpCreateInfo, &mComputePipeline));
 	}
 
@@ -110,11 +110,11 @@ bool Example_006::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mGraphicsDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mGraphicsDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mGraphicsPipelineInterface));
 
-		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
-		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
+		mVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { mVS.Get(), "vsmain" };
@@ -130,7 +130,7 @@ bool Example_006::Setup()
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.pPipelineInterface = mGraphicsPipelineInterface;
+		gpCreateInfo.pipelineInterface = mGraphicsPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mGraphicsPipeline));
 	}
 

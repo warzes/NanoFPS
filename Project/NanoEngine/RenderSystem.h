@@ -20,7 +20,7 @@ struct InstanceCreateInfo final
 	uint32_t                 requireVulkanVersion{ VK_MAKE_VERSION(1, 3, 0) };
 	bool                     useValidationLayers{ false };
 
-	ShadingRateMode          supportShadingRateMode = SHADING_RATE_NONE; // TODO: возможно вынести в другой конфиг
+	ShadingRateMode          supportShadingRateMode = ShadingRateMode::None; // TODO: возможно вынести в другой конфиг
 
 	std::vector<const char*> instanceExtensions = {};
 
@@ -31,9 +31,9 @@ struct InstanceCreateInfo final
 	{
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
-		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,    // Variable rate shading -> ShadingRateMode::SHADING_RATE_VRS
-		//VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,   // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
-		//VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, // Fragment density map -> ShadingRateMode::SHADING_RATE_FDM
+		//VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,    // Variable rate shading -> ShadingRateMode::ShadingRateMode::VRS
+		//VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME,   // Fragment density map -> ShadingRateMode::ShadingRateMode::FDM
+		//VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME, // Fragment density map -> ShadingRateMode::ShadingRateMode::FDM
 		VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,      // Variable rate shading or Fragment density map
 		VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, // TODO: не забыть пофиксить RenderDevice::HasDepthClipEnabled() если изменю
 		VK_KHR_MULTIVIEW_EXTENSION_NAME, // RenderDevice::HasMultiView()

@@ -516,35 +516,35 @@ std::string ToString(VertexSemantic value)
 {
 	switch (value) {
 	default: break;
-	case VERTEX_SEMANTIC_POSITION: return "POSITION"; break;
-	case VERTEX_SEMANTIC_NORMAL: return "NORMAL"; break;
-	case VERTEX_SEMANTIC_COLOR: return "COLOR"; break;
-	case VERTEX_SEMANTIC_TANGENT: return "TANGENT"; break;
-	case VERTEX_SEMANTIC_BITANGENT: return "BITANGENT"; break;
-	case VERTEX_SEMANTIC_TEXCOORD: return "TEXCOORD"; break;
-	case VERTEX_SEMANTIC_TEXCOORD0: return "TEXCOORD0"; break;
-	case VERTEX_SEMANTIC_TEXCOORD1: return "TEXCOORD1"; break;
-	case VERTEX_SEMANTIC_TEXCOORD2: return "TEXCOORD2"; break;
-	case VERTEX_SEMANTIC_TEXCOORD3: return "TEXCOORD3"; break;
-	case VERTEX_SEMANTIC_TEXCOORD4: return "TEXCOORD4"; break;
-	case VERTEX_SEMANTIC_TEXCOORD5: return "TEXCOORD5"; break;
-	case VERTEX_SEMANTIC_TEXCOORD6: return "TEXCOORD6"; break;
-	case VERTEX_SEMANTIC_TEXCOORD7: return "TEXCOORD7"; break;
-	case VERTEX_SEMANTIC_TEXCOORD8: return "TEXCOORD8"; break;
-	case VERTEX_SEMANTIC_TEXCOORD9: return "TEXCOORD9"; break;
-	case VERTEX_SEMANTIC_TEXCOORD10: return "TEXCOORD10"; break;
-	case VERTEX_SEMANTIC_TEXCOORD11: return "TEXCOORD11"; break;
-	case VERTEX_SEMANTIC_TEXCOORD12: return "TEXCOORD12"; break;
-	case VERTEX_SEMANTIC_TEXCOORD13: return "TEXCOORD13"; break;
-	case VERTEX_SEMANTIC_TEXCOORD14: return "TEXCOORD14"; break;
-	case VERTEX_SEMANTIC_TEXCOORD15: return "TEXCOORD15"; break;
-	case VERTEX_SEMANTIC_TEXCOORD16: return "TEXCOORD16"; break;
-	case VERTEX_SEMANTIC_TEXCOORD17: return "TEXCOORD17"; break;
-	case VERTEX_SEMANTIC_TEXCOORD18: return "TEXCOORD18"; break;
-	case VERTEX_SEMANTIC_TEXCOORD19: return "TEXCOORD19"; break;
-	case VERTEX_SEMANTIC_TEXCOORD20: return "TEXCOORD20"; break;
-	case VERTEX_SEMANTIC_TEXCOORD21: return "TEXCOORD21"; break;
-	case VERTEX_SEMANTIC_TEXCOORD22: return "TEXCOORD22"; break;
+	case VertexSemantic::Position: return "POSITION"; break;
+	case VertexSemantic::Normal: return "NORMAL"; break;
+	case VertexSemantic::Color: return "COLOR"; break;
+	case VertexSemantic::Tangent: return "TANGENT"; break;
+	case VertexSemantic::Bitangent: return "BITANGENT"; break;
+	case VertexSemantic::Texcoord: return "TEXCOORD"; break;
+	case VertexSemantic::Texcoord0: return "TEXCOORD0"; break;
+	case VertexSemantic::Texcoord1: return "TEXCOORD1"; break;
+	case VertexSemantic::Texcoord2: return "TEXCOORD2"; break;
+	case VertexSemantic::Texcoord3: return "TEXCOORD3"; break;
+	case VertexSemantic::Texcoord4: return "TEXCOORD4"; break;
+	case VertexSemantic::Texcoord5: return "TEXCOORD5"; break;
+	case VertexSemantic::Texcoord6: return "TEXCOORD6"; break;
+	case VertexSemantic::Texcoord7: return "TEXCOORD7"; break;
+	case VertexSemantic::Texcoord8: return "TEXCOORD8"; break;
+	case VertexSemantic::Texcoord9: return "TEXCOORD9"; break;
+	case VertexSemantic::Texcoord10: return "TEXCOORD10"; break;
+	case VertexSemantic::Texcoord11: return "TEXCOORD11"; break;
+	case VertexSemantic::Texcoord12: return "TEXCOORD12"; break;
+	case VertexSemantic::Texcoord13: return "TEXCOORD13"; break;
+	case VertexSemantic::Texcoord14: return "TEXCOORD14"; break;
+	case VertexSemantic::Texcoord15: return "TEXCOORD15"; break;
+	case VertexSemantic::Texcoord16: return "TEXCOORD16"; break;
+	case VertexSemantic::Texcoord17: return "TEXCOORD17"; break;
+	case VertexSemantic::Texcoord18: return "TEXCOORD18"; break;
+	case VertexSemantic::Texcoord19: return "TEXCOORD19"; break;
+	case VertexSemantic::Texcoord20: return "TEXCOORD20"; break;
+	case VertexSemantic::Texcoord21: return "TEXCOORD21"; break;
+	case VertexSemantic::Texcoord22: return "TEXCOORD22"; break;
 	}
 	return "";
 }
@@ -576,35 +576,35 @@ Format VertexSemanticFormat(VertexSemantic value)
 {
 	switch (value) {
 	default: break;
-	case VERTEX_SEMANTIC_POSITION: return Format::R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_NORMAL: return Format::R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_COLOR: return Format::R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_TANGENT: return Format::R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_BITANGENT: return Format::R32G32B32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD0: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD1: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD2: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD3: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD4: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD5: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD6: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD7: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD8: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD9: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD10: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD11: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD12: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD13: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD14: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD15: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD16: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD17: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD18: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD19: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD20: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD21: return Format::R32G32_FLOAT; break;
-	case VERTEX_SEMANTIC_TEXCOORD22: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Position: return Format::R32G32B32_FLOAT; break;
+	case VertexSemantic::Normal: return Format::R32G32B32_FLOAT; break;
+	case VertexSemantic::Color: return Format::R32G32B32_FLOAT; break;
+	case VertexSemantic::Tangent: return Format::R32G32B32_FLOAT; break;
+	case VertexSemantic::Bitangent: return Format::R32G32B32_FLOAT; break;
+	case VertexSemantic::Texcoord: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord0: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord1: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord2: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord3: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord4: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord5: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord6: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord7: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord8: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord9: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord10: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord11: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord12: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord13: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord14: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord15: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord16: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord17: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord18: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord19: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord20: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord21: return Format::R32G32_FLOAT; break;
+	case VertexSemantic::Texcoord22: return Format::R32G32_FLOAT; break;
 	}
 	return Format::Undefined;
 }
@@ -1542,8 +1542,8 @@ VkVertexInputRate ToVkVertexInputRate(VertexInputRate value)
 {
 	switch (value) {
 	default: break;
-	case VERTEX_INPUT_RATE_VERTEX: return VK_VERTEX_INPUT_RATE_VERTEX; break;
-	case VERETX_INPUT_RATE_INSTANCE: return VK_VERTEX_INPUT_RATE_INSTANCE; break;
+	case VertexInputRate::Vertex: return VK_VERTEX_INPUT_RATE_VERTEX; break;
+	case VertexInputRate::Instance: return VK_VERTEX_INPUT_RATE_INSTANCE; break;
 	}
 	return InvalidValue<VkVertexInputRate>();
 }
@@ -3771,12 +3771,12 @@ public:
 			// clang-format off
 			switch (semantic) {
 			default: return Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC;
-			case VERTEX_SEMANTIC_POSITION: this->SetPositionBufferIndex(pGeom, i); break;
-			case VERTEX_SEMANTIC_NORMAL: this->SetNormalBufferIndex(pGeom, i); break;
-			case VERTEX_SEMANTIC_COLOR: this->SetColorBufferIndex(pGeom, i); break;
-			case VERTEX_SEMANTIC_TANGENT: this->SetTangentBufferIndex(pGeom, i); break;
-			case VERTEX_SEMANTIC_BITANGENT: this->SetBitangentBufferIndex(pGeom, i); break;
-			case VERTEX_SEMANTIC_TEXCOORD: this->SetTexCoordBufferIndex(pGeom, i); break;
+			case VertexSemantic::Position: this->SetPositionBufferIndex(pGeom, i); break;
+			case VertexSemantic::Normal: this->SetNormalBufferIndex(pGeom, i); break;
+			case VertexSemantic::Color: this->SetColorBufferIndex(pGeom, i); break;
+			case VertexSemantic::Tangent: this->SetTangentBufferIndex(pGeom, i); break;
+			case VertexSemantic::Bitangent: this->SetBitangentBufferIndex(pGeom, i); break;
+			case VertexSemantic::Texcoord: this->SetTexCoordBufferIndex(pGeom, i); break;
 			}
 			// clang-format on
 		}
@@ -3844,17 +3844,17 @@ public:
 			// clang-format off
 			switch (semantic) {
 			default: break;
-			case VERTEX_SEMANTIC_POSITION:
+			case VertexSemantic::Position:
 			{
 				const uint32_t n = this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.position);
 				ASSERT_MSG(n > 0, "position should always available");
 			}
 			break;
-			case VERTEX_SEMANTIC_NORMAL: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.normal); break;
-			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
-			case VERTEX_SEMANTIC_TANGENT: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.tangent); break;
-			case VERTEX_SEMANTIC_BITANGENT: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.bitangent); break;
-			case VERTEX_SEMANTIC_TEXCOORD: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.texCoord); break;
+			case VertexSemantic::Normal: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.normal); break;
+			case VertexSemantic::Color: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
+			case VertexSemantic::Tangent: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.tangent); break;
+			case VertexSemantic::Bitangent: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.bitangent); break;
+			case VertexSemantic::Texcoord: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.texCoord); break;
 			}
 			// clang-format on
 		}
@@ -3877,13 +3877,13 @@ public:
 			// clang-format off
 			switch (semantic) {
 			default: break;
-			case VERTEX_SEMANTIC_POSITION:
+			case VertexSemantic::Position:
 			{
 				const uint32_t n = this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.position);
 				ASSERT_MSG(n > 0, "position should always available");
 			}
 			break;
-			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
+			case VertexSemantic::Color: this->AppendDataToVertexBuffer(pGeom, kBufferIndex, vtx.color); break;
 			}
 			// clang-format on
 		}
@@ -3942,12 +3942,12 @@ public:
 
 			switch (semantic) {
 			default: return Result::ERROR_GEOMETRY_INVALID_VERTEX_SEMANTIC;
-			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
-			case VERTEX_SEMANTIC_NORMAL: this->SetNormalBufferIndex(pGeom, kNonPositionBufferIndex); break;
-			case VERTEX_SEMANTIC_COLOR: this->SetColorBufferIndex(pGeom, kNonPositionBufferIndex); break;
-			case VERTEX_SEMANTIC_TANGENT: this->SetTangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
-			case VERTEX_SEMANTIC_BITANGENT: this->SetBitangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
-			case VERTEX_SEMANTIC_TEXCOORD: this->SetTexCoordBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VertexSemantic::Position: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VertexSemantic::Normal: this->SetNormalBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VertexSemantic::Color: this->SetColorBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VertexSemantic::Tangent: this->SetTangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VertexSemantic::Bitangent: this->SetBitangentBufferIndex(pGeom, kNonPositionBufferIndex); break;
+			case VertexSemantic::Texcoord: this->SetTexCoordBufferIndex(pGeom, kNonPositionBufferIndex); break;
 			}
 		}
 
@@ -3966,12 +3966,12 @@ public:
 
 			switch (semantic) {
 			default: ASSERT_MSG(false, "should not have other sematic"); break;
-			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
-			case VERTEX_SEMANTIC_NORMAL: this->AppendDataToVertexBuffer(pGeom, this->GetNormalBufferIndex(pGeom), vtx.normal); break;
-			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
-			case VERTEX_SEMANTIC_TANGENT: this->AppendDataToVertexBuffer(pGeom, this->GetTangentBufferIndex(pGeom), vtx.tangent); break;
-			case VERTEX_SEMANTIC_BITANGENT: this->AppendDataToVertexBuffer(pGeom, this->GetBitangentBufferIndex(pGeom), vtx.bitangent); break;
-			case VERTEX_SEMANTIC_TEXCOORD: this->AppendDataToVertexBuffer(pGeom, this->GetTexCoordBufferIndex(pGeom), vtx.texCoord); break;
+			case VertexSemantic::Position: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VertexSemantic::Normal: this->AppendDataToVertexBuffer(pGeom, this->GetNormalBufferIndex(pGeom), vtx.normal); break;
+			case VertexSemantic::Color: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
+			case VertexSemantic::Tangent: this->AppendDataToVertexBuffer(pGeom, this->GetTangentBufferIndex(pGeom), vtx.tangent); break;
+			case VertexSemantic::Bitangent: this->AppendDataToVertexBuffer(pGeom, this->GetBitangentBufferIndex(pGeom), vtx.bitangent); break;
+			case VertexSemantic::Texcoord: this->AppendDataToVertexBuffer(pGeom, this->GetTexCoordBufferIndex(pGeom), vtx.texCoord); break;
 			}
 		}
 		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
@@ -3993,8 +3993,8 @@ public:
 
 			switch (semantic) {
 			default: ASSERT_MSG(false, "should not have other sematic"); break;
-			case VERTEX_SEMANTIC_POSITION: ASSERT_MSG(false, "position should be in binding 0"); break;
-			case VERTEX_SEMANTIC_COLOR: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
+			case VertexSemantic::Position: ASSERT_MSG(false, "position should be in binding 0"); break;
+			case VertexSemantic::Color: this->AppendDataToVertexBuffer(pGeom, this->GetColorBufferIndex(pGeom), vtx.color); break;
 			}
 		}
 		uint32_t endSize = this->GetVertexBufferSize(pGeom, kNonPositionBufferIndex);
@@ -4187,7 +4187,7 @@ GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Fo
 		attribute.format = format;
 		attribute.binding = VALUE_IGNORED; // Determined below
 		attribute.offset = APPEND_OFFSET_ALIGNED;
-		attribute.inputRate = VERTEX_INPUT_RATE_VERTEX;
+		attribute.inputRate = VertexInputRate::Vertex;
 		attribute.semantic = semantic;
 
 		switch (vertexAttributeLayout) {
@@ -4203,7 +4203,7 @@ GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Fo
 			vertexBindingCount += 1;
 			break;
 		case GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_POSITION_PLANAR:
-			if (semantic == VERTEX_SEMANTIC_POSITION) {
+			if (semantic == VertexSemantic::Position) {
 				attribute.binding = 0;
 				vertexBindings[0].AppendAttribute(attribute);
 			}
@@ -4223,37 +4223,37 @@ GeometryCreateInfo& GeometryCreateInfo::AddAttribute(VertexSemantic semantic, Fo
 
 GeometryCreateInfo& GeometryCreateInfo::AddPosition(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_POSITION, format);
+	AddAttribute(VertexSemantic::Position, format);
 	return *this;
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddNormal(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_NORMAL, format);
+	AddAttribute(VertexSemantic::Normal, format);
 	return *this;
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddColor(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_COLOR, format);
+	AddAttribute(VertexSemantic::Color, format);
 	return *this;
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddTexCoord(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_TEXCOORD, format);
+	AddAttribute(VertexSemantic::Texcoord, format);
 	return *this;
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddTangent(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_TANGENT, format);
+	AddAttribute(VertexSemantic::Tangent, format);
 	return *this;
 }
 
 GeometryCreateInfo& GeometryCreateInfo::AddBitangent(Format format)
 {
-	AddAttribute(VERTEX_SEMANTIC_BITANGENT, format);
+	AddAttribute(VertexSemantic::Bitangent, format);
 	return *this;
 }
 
@@ -5182,12 +5182,12 @@ namespace vkrUtil
 			PipelineInterfaceCreateInfo piCreateInfo = {};
 			piCreateInfo.setCount = 1;
 			piCreateInfo.sets[0].set = 0;
-			piCreateInfo.sets[0].pLayout = computeDescriptorSetLayout;
+			piCreateInfo.sets[0].layout = computeDescriptorSetLayout;
 			CHECKED_CALL(pQueue->GetDevice()->CreatePipelineInterface(piCreateInfo, &computePipelineInterface));
 
 			ComputePipelineCreateInfo cpCreateInfo = {};
 			cpCreateInfo.CS = { computeShader.Get(), "CSMain" };
-			cpCreateInfo.pPipelineInterface = computePipelineInterface;
+			cpCreateInfo.pipelineInterface = computePipelineInterface;
 			CHECKED_CALL(pQueue->GetDevice()->CreateComputePipeline(cpCreateInfo, &computePipeline));
 		}
 

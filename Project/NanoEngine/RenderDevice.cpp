@@ -43,7 +43,7 @@ bool RenderDevice::Setup(ShadingRateMode supportShadingRateMode)
 {
 	CHECKED_CALL(createGraphicsQueue(&m_graphicsQueue), "TODO: error text"); // TODO: error text
 	CHECKED_CALL(createComputeQueue(&m_computeQueue), "TODO: error text"); // TODO: error text
-	if (supportShadingRateMode != SHADING_RATE_NONE)
+	if (supportShadingRateMode != ShadingRateMode::None)
 	{
 		// TODO:
 	}
@@ -905,8 +905,8 @@ Result RenderDevice::AllocateDescriptorSet(DescriptorPool* pPool, const Descript
 	}
 
 	internal::DescriptorSetCreateInfo createInfo = {};
-	createInfo.pPool = pPool;
-	createInfo.pLayout = pLayout;
+	createInfo.pool = pPool;
+	createInfo.layout = pLayout;
 
 	return createObject(createInfo, mDescriptorSets, ppSet);
 }

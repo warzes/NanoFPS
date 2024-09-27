@@ -71,13 +71,13 @@ namespace e020
 			vkr::PipelineInterfaceCreateInfo createInfo = {};
 			createInfo.setCount = 4;
 			createInfo.sets[0].set = 0;
-			createInfo.sets[0].pLayout = pSceneDataLayout;
+			createInfo.sets[0].layout = pSceneDataLayout;
 			createInfo.sets[1].set = 1;
-			createInfo.sets[1].pLayout = Material::GetMaterialResourcesLayout();
+			createInfo.sets[1].layout = Material::GetMaterialResourcesLayout();
 			createInfo.sets[2].set = 2;
-			createInfo.sets[2].pLayout = Material::GetMaterialDataLayout();
+			createInfo.sets[2].layout = Material::GetMaterialDataLayout();
 			createInfo.sets[3].set = 3;
-			createInfo.sets[3].pLayout = sModelDataLayout;
+			createInfo.sets[3].layout = sModelDataLayout;
 
 			CHECKED_CALL(device.CreatePipelineInterface(createInfo, &sPipelineInterface));
 		}
@@ -90,7 +90,7 @@ namespace e020
 			vkr::ShaderModulePtr PS;
 			CHECKED_CALL(device.CreateShader("basic/shaders/gbuffer", "DeferredRender.ps", &PS));
 
-			const vkr::VertexInputRate inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+			const vkr::VertexInputRate inputRate = vkr::VertexInputRate::Vertex;
 			vkr::VertexDescription     vertexDescription;
 			// clang-format off
 			vertexDescription.AppendBinding(vkr::VertexAttribute{ vkr::SEMANTIC_NAME_POSITION , 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, inputRate });
@@ -110,7 +110,7 @@ namespace e020
 			gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
 			gpCreateInfo.depthReadEnable = true;
 			gpCreateInfo.depthWriteEnable = true;
-			gpCreateInfo.pPipelineInterface = sPipelineInterface;
+			gpCreateInfo.pipelineInterface = sPipelineInterface;
 			gpCreateInfo.outputState.depthStencilFormat = pDrawPass->GetDepthStencilTexture()->GetImage()->GetFormat();
 			// Render target
 			gpCreateInfo.outputState.renderTargetCount = pDrawPass->GetRenderTargetCount();

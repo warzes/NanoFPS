@@ -72,7 +72,7 @@ bool Example_013::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mDrawObjectSetLayout;
+		piCreateInfo.sets[0].layout = mDrawObjectSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mDrawObjectPipelineInterface));
 
 		// Pipeline
@@ -102,7 +102,7 @@ bool Example_013::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mDrawObjectPipelineInterface;
+		gpCreateInfo.pipelineInterface = mDrawObjectPipelineInterface;
 
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mDrawObjectPipeline));
 		device.DestroyShaderModule(VS);
@@ -147,7 +147,7 @@ bool Example_013::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mLightSetLayout;
+		piCreateInfo.sets[0].layout = mLightSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mLightPipelineInterface));
 
 		// Pipeline
@@ -173,7 +173,7 @@ bool Example_013::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mLightPipelineInterface;
+		gpCreateInfo.pipelineInterface = mLightPipelineInterface;
 
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mLightPipeline));
 		device.DestroyShaderModule(VS);

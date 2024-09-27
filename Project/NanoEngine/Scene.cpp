@@ -1295,7 +1295,7 @@ namespace scene {
 		mGpuBuffer(pGpuBuffer)
 	{
 		// Position
-		auto positionBinding = vkr::VertexBinding(0, vkr::VERTEX_INPUT_RATE_VERTEX);
+		auto positionBinding = vkr::VertexBinding(0, vkr::VertexInputRate::Vertex);
 		{
 			vkr::VertexAttribute attr = {};
 			attr.semanticName = "POSITION";
@@ -1303,8 +1303,8 @@ namespace scene {
 			attr.format = scene::kVertexPositionFormat;
 			attr.binding = scene::kVertexPositionBinding;
 			attr.offset = APPEND_OFFSET_ALIGNED;
-			attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-			attr.semantic = vkr::VERTEX_SEMANTIC_POSITION;
+			attr.inputRate = vkr::VertexInputRate::Vertex;
+			attr.semantic = vkr::VertexSemantic::Position;
 			positionBinding.AppendAttribute(attr);
 		}
 		mVertexBindings.push_back(positionBinding);
@@ -1314,7 +1314,7 @@ namespace scene {
 			return;
 		}
 
-		auto attributeBinding = vkr::VertexBinding(kVertexAttributeBinding, vkr::VERTEX_INPUT_RATE_VERTEX);
+		auto attributeBinding = vkr::VertexBinding(kVertexAttributeBinding, vkr::VertexInputRate::Vertex);
 		{
 			// TexCoord
 			if (availableVertexAttributes.bits.texCoords) {
@@ -1324,8 +1324,8 @@ namespace scene {
 				attr.format = scene::kVertexAttributeTexCoordFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = vkr::VERTEX_SEMANTIC_TEXCOORD;
+				attr.inputRate = vkr::VertexInputRate::Vertex;
+				attr.semantic = vkr::VertexSemantic::Texcoord;
 				attributeBinding.AppendAttribute(attr);
 			}
 
@@ -1337,8 +1337,8 @@ namespace scene {
 				attr.format = scene::kVertexAttributeNormalFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = vkr::VERTEX_SEMANTIC_NORMAL;
+				attr.inputRate = vkr::VertexInputRate::Vertex;
+				attr.semantic = vkr::VertexSemantic::Normal;
 				attributeBinding.AppendAttribute(attr);
 			}
 
@@ -1350,8 +1350,8 @@ namespace scene {
 				attr.format = scene::kVertexAttributeTagentFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = vkr::VERTEX_SEMANTIC_TANGENT;
+				attr.inputRate = vkr::VertexInputRate::Vertex;
+				attr.semantic = vkr::VertexSemantic::Tangent;
 				attributeBinding.AppendAttribute(attr);
 			}
 
@@ -1363,8 +1363,8 @@ namespace scene {
 				attr.format = scene::kVertexAttributeColorFormat;
 				attr.binding = scene::kVertexAttributeBinding;
 				attr.offset = APPEND_OFFSET_ALIGNED;
-				attr.inputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
-				attr.semantic = vkr::VERTEX_SEMANTIC_COLOR;
+				attr.inputRate = vkr::VertexInputRate::Vertex;
+				attr.semantic = vkr::VertexSemantic::Color;
 				attributeBinding.AppendAttribute(attr);
 			}
 		}

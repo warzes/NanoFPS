@@ -40,7 +40,7 @@ bool Example_009::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -58,7 +58,7 @@ bool Example_009::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mPipelineInterface;
+		gpCreateInfo.pipelineInterface = mPipelineInterface;
 
 		// Interleaved pipeline
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mInterleavedPipeline));

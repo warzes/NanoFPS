@@ -382,7 +382,7 @@ bool GameApplication::setupPipelines()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = m_drawObjectSetLayout;
+		piCreateInfo.sets[0].layout = m_drawObjectSetLayout;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreatePipelineInterface(piCreateInfo, &mDrawObjectPipelineInterface));
 
 		// Pipeline
@@ -408,7 +408,7 @@ bool GameApplication::setupPipelines()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mDrawObjectPipelineInterface;
+		gpCreateInfo.pipelineInterface = mDrawObjectPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mDrawObjectPipeline));
 		device.DestroyShaderModule(VS);
@@ -421,7 +421,7 @@ bool GameApplication::setupPipelines()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = m_shadowSetLayout;
+		piCreateInfo.sets[0].layout = m_shadowSetLayout;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreatePipelineInterface(piCreateInfo, &mShadowPipelineInterface));
 
 		// Pipeline
@@ -441,7 +441,7 @@ bool GameApplication::setupPipelines()
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
 		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
-		gpCreateInfo.pPipelineInterface = mShadowPipelineInterface;
+		gpCreateInfo.pipelineInterface = mShadowPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mShadowPipeline));
 		device.DestroyShaderModule(VS);
@@ -551,7 +551,7 @@ bool GameApplication::setupLight()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mLightSetLayout;
+		piCreateInfo.sets[0].layout = mLightSetLayout;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreatePipelineInterface(piCreateInfo, &mLightPipelineInterface));
 
 		// Pipeline
@@ -576,7 +576,7 @@ bool GameApplication::setupLight()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mLightPipelineInterface;
+		gpCreateInfo.pipelineInterface = mLightPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mLightPipeline));
 		device.DestroyShaderModule(VS);

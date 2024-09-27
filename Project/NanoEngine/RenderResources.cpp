@@ -1980,7 +1980,7 @@ Result RenderPass::createFramebuffer(const internal::RenderPassCreateInfo& creat
 
 	if (!IsNull(createInfo.shadingRatePattern))
 	{
-		if (createInfo.shadingRatePattern->GetShadingRateMode() == SHADING_RATE_FDM)
+		if (createInfo.shadingRatePattern->GetShadingRateMode() == ShadingRateMode::FDM)
 		{
 			if (rtvCount > 0)
 			{
@@ -2251,7 +2251,7 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 		vkci.pNext = &multiviewInfo;
 	}
 
-	if (shadingRateMode != SHADING_RATE_NONE)
+	if (shadingRateMode != ShadingRateMode::None)
 	{
 		auto modifiedCreateInfo = ShadingRatePattern::GetModifiedRenderPassCreateInfo(device, shadingRateMode, vkci);
 		VkResult vkres = vkCreateRenderPass2KHR(device->GetVkDevice(), modifiedCreateInfo.get(), nullptr, renderPass);
@@ -2610,7 +2610,7 @@ Result DrawPass::createApiObjects(const internal::DrawPassCreateInfo& createInfo
 			rpCreateInfo.stencilStoreOp = AttachmentStoreOp::Store;
 		}
 
-		if (!IsNull(createInfo.shadingRatePattern) && createInfo.shadingRatePattern->GetShadingRateMode() != SHADING_RATE_NONE)
+		if (!IsNull(createInfo.shadingRatePattern) && createInfo.shadingRatePattern->GetShadingRateMode() != ShadingRateMode::None)
 		{
 			rpCreateInfo.shadingRatePattern = createInfo.shadingRatePattern;
 		}
@@ -2754,33 +2754,35 @@ void DrawPass::PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, 
 
 #pragma region Descriptor
 
-Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& pCreateInfo)
+Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& createInfo)
 {
 	std::vector<VkDescriptorPoolSize> poolSizes;
-	if (pCreateInfo.sampler > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER               , pCreateInfo.sampler });
-	if (pCreateInfo.combinedImageSampler > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, pCreateInfo.combinedImageSampler });
-	if (pCreateInfo.sampledImage > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE         , pCreateInfo.sampledImage });
-	if (pCreateInfo.storageImage > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE         , pCreateInfo.storageImage });
-	if (pCreateInfo.uniformTexelBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER  , pCreateInfo.uniformTexelBuffer });
-	if (pCreateInfo.storageTexelBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER  , pCreateInfo.storageTexelBuffer });
-	if (pCreateInfo.uniformBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER        , pCreateInfo.uniformBuffer });
-	if (pCreateInfo.rawStorageBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER        , pCreateInfo.rawStorageBuffer });
-	if (pCreateInfo.uniformBufferDynamic > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, pCreateInfo.uniformBufferDynamic });
-	if (pCreateInfo.storageBufferDynamic > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, pCreateInfo.storageBufferDynamic });
-	if (pCreateInfo.inputAttachment > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT      , pCreateInfo.inputAttachment });
+	if (createInfo.sampler > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, createInfo.sampler });
+	if (createInfo.combinedImageSampler > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, createInfo.combinedImageSampler });
+	if (createInfo.sampledImage > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, createInfo.sampledImage });
+	if (createInfo.storageImage > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, createInfo.storageImage });
+	if (createInfo.uniformTexelBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, createInfo.uniformTexelBuffer });
+	if (createInfo.storageTexelBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, createInfo.storageTexelBuffer });
+	if (createInfo.uniformBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, createInfo.uniformBuffer });
+	if (createInfo.rawStorageBuffer > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, createInfo.rawStorageBuffer });
+	if (createInfo.uniformBufferDynamic > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, createInfo.uniformBufferDynamic });
+	if (createInfo.storageBufferDynamic > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, createInfo.storageBufferDynamic });
+	if (createInfo.inputAttachment > 0) poolSizes.push_back({ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, createInfo.inputAttachment });
 
-	if (pCreateInfo.structuredBuffer > 0)
+	if (createInfo.structuredBuffer > 0)
 	{
 		auto it = FindIf(
 			poolSizes,
 			[](const VkDescriptorPoolSize& elem) -> bool {
 				bool isSame = elem.type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 				return isSame; });
-		if (it != std::end(poolSizes)) {
-			it->descriptorCount += pCreateInfo.structuredBuffer;
+		if (it != std::end(poolSizes))
+		{
+			it->descriptorCount += createInfo.structuredBuffer;
 		}
-		else {
-			poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, pCreateInfo.structuredBuffer });
+		else
+		{
+			poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, createInfo.structuredBuffer });
 		}
 	}
 
@@ -2788,18 +2790,14 @@ Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& pCreateI
 	uint32_t flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
 	VkDescriptorPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-	vkci.flags = flags;
-	vkci.maxSets = MaxSetsPerPool;
-	vkci.poolSizeCount = CountU32(poolSizes);
-	vkci.pPoolSizes = DataPtr(poolSizes);
-
-	VkResult vkres = vkCreateDescriptorPool(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mDescriptorPool);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreateDescriptorPool failed: " + ToString(vkres));
+	vkci.flags                      = flags;
+	vkci.maxSets                    = MaxSetsPerPool;
+	vkci.poolSizeCount              = CountU32(poolSizes);
+	vkci.pPoolSizes                 = DataPtr(poolSizes);
+	VkResult vkres = vkCreateDescriptorPool(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_descriptorPool);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateDescriptorPool failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -2808,41 +2806,42 @@ Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& pCreateI
 
 void DescriptorPool::destroyApiObjects()
 {
-	if (mDescriptorPool) {
-		vkDestroyDescriptorPool(GetDevice()->GetVkDevice(), mDescriptorPool, nullptr);
-		mDescriptorPool.Reset();
+	if (m_descriptorPool)
+	{
+		vkDestroyDescriptorPool(GetDevice()->GetVkDevice(), m_descriptorPool, nullptr);
+		m_descriptorPool.Reset();
 	}
 }
 
-Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* pWrites)
+Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* writes)
 {
-	if (writeCount == 0) {
-		return ERROR_UNEXPECTED_COUNT_VALUE;
+	if (writeCount == 0)  return ERROR_UNEXPECTED_COUNT_VALUE;
+
+	if (CountU32(m_writeStore) < writeCount)
+	{
+		m_writeStore.resize(writeCount);
+		m_imageInfoStore.resize(writeCount);
+		m_bufferInfoStore.resize(writeCount);
+		m_texelBufferStore.resize(writeCount);
 	}
 
-	if (CountU32(mWriteStore) < writeCount)
+	m_imageCount = 0;
+	m_bufferCount = 0;
+	m_texelBufferCount = 0;
+	for (m_writeCount = 0; m_writeCount < writeCount; ++m_writeCount)
 	{
-		mWriteStore.resize(writeCount);
-		mImageInfoStore.resize(writeCount);
-		mBufferInfoStore.resize(writeCount);
-		mTexelBufferStore.resize(writeCount);
-	}
-
-	mImageCount = 0;
-	mBufferCount = 0;
-	mTexelBufferCount = 0;
-	for (mWriteCount = 0; mWriteCount < writeCount; ++mWriteCount)
-	{
-		const WriteDescriptor& srcWrite = pWrites[mWriteCount];
+		const WriteDescriptor& srcWrite = writes[m_writeCount];
 
 		VkDescriptorImageInfo* pImageInfo = nullptr;
 		VkBufferView* pTexelBufferView = nullptr;
 		VkDescriptorBufferInfo* pBufferInfo = nullptr;
 
 		VkDescriptorType descriptorType = ToVkDescriptorType(srcWrite.type);
-		switch (descriptorType) {
-		default: {
-			ASSERT_MSG(false, "unknown descriptor type: " + ToString(descriptorType));
+		switch (descriptorType)
+		{
+		default:
+		{
+			Fatal("unknown descriptor type: " + ToString(descriptorType));
 			return ERROR_GRFX_UNKNOWN_DESCRIPTOR_TYPE;
 		} break;
 
@@ -2852,19 +2851,22 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 		case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
 		case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
 		{
-			ASSERT_MSG(mImageCount < mImageInfoStore.size(), "image count exceeds image store capacity");
-			pImageInfo = &mImageInfoStore[mImageCount];
+			ASSERT_MSG(m_imageCount < m_imageInfoStore.size(), "image count exceeds image store capacity");
+			pImageInfo = &m_imageInfoStore[m_imageCount];
 			// Fill out info
 			pImageInfo->sampler = VK_NULL_HANDLE;
 			pImageInfo->imageView = VK_NULL_HANDLE;
 			pImageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			switch (descriptorType) {
+			switch (descriptorType)
+			{
 			default: break;
-			case VK_DESCRIPTOR_TYPE_SAMPLER: {
+			case VK_DESCRIPTOR_TYPE_SAMPLER:
+			{
 				pImageInfo->sampler = srcWrite.sampler->GetVkSampler();
 			} break;
 
-			case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
+			case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+			{
 				pImageInfo->sampler = srcWrite.sampler->GetVkSampler();
 				pImageInfo->imageView = srcWrite.imageView->GetResourceView()->GetVkImageView();
 				pImageInfo->imageLayout = srcWrite.imageView->GetResourceView()->GetVkImageLayout();
@@ -2872,43 +2874,46 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 
 			case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
 			case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-			case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
+			case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+			{
 				pImageInfo->imageView = srcWrite.imageView->GetResourceView()->GetVkImageView();
 				pImageInfo->imageLayout = srcWrite.imageView->GetResourceView()->GetVkImageLayout();
 			} break;
 			}
 			// Increment count
-			mImageCount += 1;
+			m_imageCount += 1;
 		} break;
 
 		case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-		case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER: {
-			ASSERT_MSG(false, "TEXEL BUFFER NOT IMPLEMENTED");
-			ASSERT_MSG(mTexelBufferCount < mImageInfoStore.size(), "texel buffer count exceeds texel buffer store capacity");
-			pTexelBufferView = &mTexelBufferStore[mTexelBufferCount];
+		case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+		{
+			Fatal("TEXEL BUFFER NOT IMPLEMENTED");
+			ASSERT_MSG(m_texelBufferCount < m_imageInfoStore.size(), "texel buffer count exceeds texel buffer store capacity");
+			pTexelBufferView = &m_texelBufferStore[m_texelBufferCount];
 			// Fill out info
 			// Increment count
-			mTexelBufferCount += 1;
+			m_texelBufferCount += 1;
 		} break;
 
 		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
 		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
 		case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
-			ASSERT_MSG(mBufferCount < mBufferInfoStore.size(), "buffer count exceeds buffer store capacity");
-			pBufferInfo = &mBufferInfoStore[mBufferCount];
+		case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+		{
+			ASSERT_MSG(m_bufferCount < m_bufferInfoStore.size(), "buffer count exceeds buffer store capacity");
+			pBufferInfo = &m_bufferInfoStore[m_bufferCount];
 			// Fill out info
 			pBufferInfo->buffer = srcWrite.buffer->GetVkBuffer();
 			pBufferInfo->offset = srcWrite.bufferOffset;
 			pBufferInfo->range = (srcWrite.bufferRange == WHOLE_SIZE) ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(srcWrite.bufferRange);
 			// Increment count
-			mBufferCount += 1;
+			m_bufferCount += 1;
 		} break;
 		}
 
-		VkWriteDescriptorSet& vkWrite = mWriteStore[mWriteCount];
+		VkWriteDescriptorSet& vkWrite = m_writeStore[m_writeCount];
 		vkWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-		vkWrite.dstSet = mDescriptorSet;
+		vkWrite.dstSet = m_descriptorSet;
 		vkWrite.dstBinding = srcWrite.binding;
 		vkWrite.dstArrayElement = srcWrite.arrayIndex;
 		vkWrite.descriptorCount = 1;
@@ -2918,88 +2923,56 @@ Result DescriptorSet::UpdateDescriptors(uint32_t writeCount, const WriteDescript
 		vkWrite.pTexelBufferView = pTexelBufferView;
 	}
 
-	vkUpdateDescriptorSets(
-		GetDevice()->GetVkDevice(),
-		mWriteCount,
-		mWriteStore.data(),
-		0,
-		nullptr);
+	vkUpdateDescriptorSets(GetDevice()->GetVkDevice(), m_writeCount, m_writeStore.data(), 0, nullptr);
 
 	return SUCCESS;
 }
 
-Result DescriptorSet::UpdateSampler(
-	uint32_t             binding,
-	uint32_t             arrayIndex,
-	const Sampler* pSampler)
+Result DescriptorSet::UpdateSampler(uint32_t binding, uint32_t arrayIndex, const Sampler* sampler)
 {
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
 	write.type = DescriptorType::Sampler;
-	write.sampler = pSampler;
+	write.sampler = sampler;
 
-	Result ppxres = UpdateDescriptors(1, &write);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
+	return UpdateDescriptors(1, &write);
 }
 
-Result DescriptorSet::UpdateSampledImage(
-	uint32_t                      binding,
-	uint32_t                      arrayIndex,
-	const SampledImageView* pImageView)
+Result DescriptorSet::UpdateSampledImage(uint32_t binding, uint32_t arrayIndex, const SampledImageView* imageView)
 {
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
 	write.type = DescriptorType::SampledImage;
-	write.imageView = pImageView;
+	write.imageView = imageView;
 
 	return UpdateDescriptors(1, &write);
 }
 
-Result DescriptorSet::UpdateSampledImage(
-	uint32_t             binding,
-	uint32_t             arrayIndex,
-	const Texture* pTexture)
+Result DescriptorSet::UpdateSampledImage(uint32_t binding, uint32_t arrayIndex, const Texture* texture)
 {
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
 	write.type = DescriptorType::SampledImage;
-	write.imageView = pTexture->GetSampledImageView();
+	write.imageView = texture->GetSampledImageView();
 
 	return UpdateDescriptors(1, &write);
 }
 
-Result DescriptorSet::UpdateStorageImage(
-	uint32_t             binding,
-	uint32_t             arrayIndex,
-	const Texture* pTexture)
+Result DescriptorSet::UpdateStorageImage(uint32_t binding, uint32_t arrayIndex, const Texture* texture)
 {
 	WriteDescriptor write = {};
 	write.binding = binding;
 	write.arrayIndex = arrayIndex;
 	write.type = DescriptorType::StorageImage;
-	write.imageView = pTexture->GetStorageImageView();
+	write.imageView = texture->GetStorageImageView();
 
-	Result ppxres = UpdateDescriptors(1, &write);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
+	return UpdateDescriptors(1, &write);
 }
 
-Result DescriptorSet::UpdateUniformBuffer(
-	uint32_t            binding,
-	uint32_t            arrayIndex,
-	const Buffer* pBuffer,
-	uint64_t            offset,
-	uint64_t            range)
+Result DescriptorSet::UpdateUniformBuffer(uint32_t binding, uint32_t arrayIndex, const Buffer* buffer, uint64_t offset, uint64_t range)
 {
 	WriteDescriptor write = {};
 	write.binding = binding;
@@ -3007,71 +2980,58 @@ Result DescriptorSet::UpdateUniformBuffer(
 	write.type = DescriptorType::UniformBuffer;
 	write.bufferOffset = offset;
 	write.bufferRange = range;
-	write.buffer = pBuffer;
+	write.buffer = buffer;
 
-	Result ppxres = UpdateDescriptors(1, &write);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
+	return UpdateDescriptors(1, &write);
 }
 
-Result DescriptorSet::createApiObjects(const internal::DescriptorSetCreateInfo& pCreateInfo)
+Result DescriptorSet::createApiObjects(const internal::DescriptorSetCreateInfo& createInfo)
 {
-	mDescriptorPool = pCreateInfo.pPool->GetVkDescriptorPool();
+	m_descriptorPool = createInfo.pool->GetVkDescriptorPool();
 
-	VkDescriptorSetLayout layout = pCreateInfo.pLayout->GetVkDescriptorSetLayout();
+	VkDescriptorSetLayout layout = createInfo.layout->GetVkDescriptorSetLayout();
 
 	VkDescriptorSetAllocateInfo vkai = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-	vkai.descriptorPool = mDescriptorPool;
+	vkai.descriptorPool = m_descriptorPool;
 	vkai.descriptorSetCount = 1;
 	vkai.pSetLayouts = &layout;
 
-	VkResult vkres = vkAllocateDescriptorSets(
-		GetDevice()->GetVkDevice(),
-		&vkai,
-		&mDescriptorSet);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkAllocateDescriptorSets failed: " + ToString(vkres));
+	VkResult vkres = vkAllocateDescriptorSets(GetDevice()->GetVkDevice(), &vkai, &m_descriptorSet);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkAllocateDescriptorSets failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
 	// Allocate 32 entries initially
 	const uint32_t count = 32;
-	mWriteStore.resize(count);
-	mImageInfoStore.resize(count);
-	mBufferInfoStore.resize(count);
-	mTexelBufferStore.resize(count);
+	m_writeStore.resize(count);
+	m_imageInfoStore.resize(count);
+	m_bufferInfoStore.resize(count);
+	m_texelBufferStore.resize(count);
 
 	return SUCCESS;
 }
 
 void DescriptorSet::destroyApiObjects()
 {
-	if (mDescriptorSet)
+	if (m_descriptorSet)
 	{
-		vkFreeDescriptorSets(
-			GetDevice()->GetVkDevice(),
-			mDescriptorPool,
-			1,
-			mDescriptorSet);
-
-		mDescriptorSet.Reset();
+		vkFreeDescriptorSets(GetDevice()->GetVkDevice(), m_descriptorPool, 1, m_descriptorSet);
+		m_descriptorSet.Reset();
 	}
 
-	if (mDescriptorPool) {
-		mDescriptorPool.Reset();
-	}
+	if (m_descriptorPool) m_descriptorPool.Reset();
 }
 
-Result DescriptorSetLayout::create(const DescriptorSetLayoutCreateInfo& pCreateInfo)
+Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo& createInfo)
 {
 	// Bail if there's any binding overlaps - overlaps are not permitted to make D3D12 and Vulkan agreeable. Even though we use descriptor arrays in Vulkan, we do not allow the subsequent bindings to be occupied, to keep descriptor binding register occupancy consistent between Vulkan and D3D12.
 	std::vector<RangeU32> ranges;
-	const size_t               bindingCount = pCreateInfo.bindings.size();
-	for (size_t i = 0; i < bindingCount; ++i) {
-		const DescriptorBinding& binding = pCreateInfo.bindings[i];
+	const size_t bindingCount = createInfo.bindings.size();
+	for (size_t i = 0; i < bindingCount; ++i)
+	{
+		const DescriptorBinding& binding = createInfo.bindings[i];
 
 		// Calculate range
 		RangeU32 range = {};
@@ -3079,13 +3039,14 @@ Result DescriptorSetLayout::create(const DescriptorSetLayoutCreateInfo& pCreateI
 		range.end = binding.binding + binding.arrayCount;
 
 		size_t rangeCount = ranges.size();
-		for (size_t j = 0; j < rangeCount; ++j) {
+		for (size_t j = 0; j < rangeCount; ++j)
+		{
 			bool overlaps = HasOverlapHalfOpen(range, ranges[j]);
-			if (overlaps) {
+			if (overlaps)
+			{
 				std::stringstream ss;
-				ss << "[DESCRIPTOR BINDING RANGE ALIASES]: "
-					<< "binding at entry " << i << " aliases with binding at entry " << j;
-				ASSERT_MSG(false, ss.str());
+				ss << "[DESCRIPTOR BINDING RANGE ALIASES]: " << "binding at entry " << i << " aliases with binding at entry " << j;
+				Fatal(ss.str());
 				return ERROR_RANGE_ALIASING_NOT_ALLOWED;
 			}
 		}
@@ -3093,44 +3054,36 @@ Result DescriptorSetLayout::create(const DescriptorSetLayoutCreateInfo& pCreateI
 		ranges.push_back(range);
 	}
 
-	Result ppxres = DeviceObject<DescriptorSetLayoutCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
-}
-
-Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo& pCreateInfo)
-{
 	// Make sure the device has VK_KHR_push_descriptors if pushable is turned on
-	if (pCreateInfo.flags.bits.pushable && (GetDevice()->GetMaxPushDescriptors() == 0))
+	if (createInfo.flags.bits.pushable && (GetDevice()->GetMaxPushDescriptors() == 0))
 	{
-		ASSERT_MSG(false, "Descriptor set layout create info has pushable flag but device does not support VK_KHR_push_descriptor");
+		Fatal("Descriptor set layout create info has pushable flag but device does not support VK_KHR_push_descriptor");
 		return ERROR_REQUIRED_FEATURE_UNAVAILABLE;
 	}
 
-	std::vector<std::vector<VkSampler>>       immutableSamplers;
+	std::vector<std::vector<VkSampler>> immutableSamplers;
 	std::vector<VkDescriptorSetLayoutBinding> vkBindings;
-	std::vector<VkDescriptorBindingFlags>     vkBindingFlags;
-	bool                                      hasBindingFlags = false;
-	for (size_t i = 0; i < pCreateInfo.bindings.size(); ++i)
+	std::vector<VkDescriptorBindingFlags> vkBindingFlags;
+	bool hasBindingFlags = false;
+	for (size_t i = 0; i < createInfo.bindings.size(); ++i)
 	{
-		const DescriptorBinding& baseBinding = pCreateInfo.bindings[i];
+		const DescriptorBinding& baseBinding = createInfo.bindings[i];
 
 		VkDescriptorSetLayoutBinding vkBinding = {};
 		vkBinding.binding = baseBinding.binding;
 		vkBinding.descriptorType = ToVkDescriptorType(baseBinding.type);
 		vkBinding.descriptorCount = baseBinding.arrayCount;
 		vkBinding.stageFlags = ToVkShaderStageFlags(baseBinding.shaderVisibility);
-		if (baseBinding.immutableSamplers.size() == 0) {
+		if (baseBinding.immutableSamplers.size() == 0)
+		{
 			vkBinding.pImmutableSamplers = nullptr;
 		}
 		else
 		{
 			ASSERT_MSG(baseBinding.arrayCount == baseBinding.immutableSamplers.size(), "Length of immutableSamplers must be 0 or descriptorCount.");
 			auto& bindingImmutableSamplers = immutableSamplers.emplace_back();
-			for (const auto& immutableSampler : baseBinding.immutableSamplers) {
+			for (const auto& immutableSampler : baseBinding.immutableSamplers)
+			{
 				bindingImmutableSamplers.push_back(immutableSampler->GetVkSampler());
 			}
 			vkBinding.pImmutableSamplers = DataPtr(bindingImmutableSamplers);
@@ -3140,7 +3093,8 @@ Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo
 		CHECKED_CALL(validateDescriptorBindingFlags(baseBinding.flags));
 		VkDescriptorBindingFlags vkBindingFlag = ToVkDescriptorBindingFlags(baseBinding.flags);
 		vkBindingFlags.push_back(vkBindingFlag);
-		if (baseBinding.flags != 0) {
+		if (baseBinding.flags != 0)
+		{
 			hasBindingFlags = true;
 		}
 	}
@@ -3150,26 +3104,26 @@ Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo
 	vkci.pBindings = DataPtr(vkBindings);
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT vkBindingWrapper = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT, nullptr };
-	if (hasBindingFlags) {
+	if (hasBindingFlags)
+	{
 		vkBindingWrapper.bindingCount = CountU32(vkBindingFlags);
 		vkBindingWrapper.pBindingFlags = DataPtr(vkBindingFlags);
 		vkci.pNext = &vkBindingWrapper;
 	}
 
-	if (pCreateInfo.flags.bits.pushable) {
+	if (createInfo.flags.bits.pushable)
+	{
 		vkci.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 	}
-	else {
+	else
+	{
 		vkci.flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	}
 
-	VkResult vkres = vkCreateDescriptorSetLayout(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mDescriptorSetLayout);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreateDescriptorSetLayout failed: " + ToString(vkres));
+	VkResult vkres = vkCreateDescriptorSetLayout(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_descriptorSetLayout);
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateDescriptorSetLayout failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -3178,27 +3132,26 @@ Result DescriptorSetLayout::createApiObjects(const DescriptorSetLayoutCreateInfo
 
 void DescriptorSetLayout::destroyApiObjects()
 {
-	if (mDescriptorSetLayout) {
-		vkDestroyDescriptorSetLayout(GetDevice()->GetVkDevice(), mDescriptorSetLayout, nullptr);
-		mDescriptorSetLayout.Reset();
+	if (m_descriptorSetLayout)
+	{
+		vkDestroyDescriptorSetLayout(GetDevice()->GetVkDevice(), m_descriptorSetLayout, nullptr);
+		m_descriptorSetLayout.Reset();
 	}
 }
 
 Result DescriptorSetLayout::validateDescriptorBindingFlags(const DescriptorBindingFlags& flags) const
 {
-	if (flags == 0) {
-		return SUCCESS;
-	}
+	if (flags == 0) return SUCCESS;
 
 	if (flags.bits.partiallyBound && !GetDevice()->PartialDescriptorBindingsSupported())
 	{
-		ASSERT_MSG(false, "Partial descriptor bindings aren't supported, but are enabled by flags!");
+		Fatal("Partial descriptor bindings aren't supported, but are enabled by flags!");
 		return ERROR_REQUIRED_FEATURE_UNAVAILABLE;
 	}
 
 	if (!GetDevice()->HasDescriptorIndexingFeatures())
 	{
-		ASSERT_MSG(false, "Descriptor indexing features aren't supported, binding flags must be 0!");
+		Fatal("Descriptor indexing features aren't supported, binding flags must be 0!");
 		return ERROR_REQUIRED_FEATURE_UNAVAILABLE;
 	}
 
@@ -3209,21 +3162,17 @@ Result DescriptorSetLayout::validateDescriptorBindingFlags(const DescriptorBindi
 
 #pragma region Shader
 
-Result ShaderModule::createApiObjects(const ShaderModuleCreateInfo& pCreateInfo)
+Result ShaderModule::createApiObjects(const ShaderModuleCreateInfo& createInfo)
 {
 	VkShaderModuleCreateInfo vkci = { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
 	vkci.flags = 0;
-	vkci.codeSize = static_cast<size_t>(pCreateInfo.size);
-	vkci.pCode = reinterpret_cast<const uint32_t*>(pCreateInfo.pCode);
+	vkci.codeSize = static_cast<size_t>(createInfo.size);
+	vkci.pCode = reinterpret_cast<const uint32_t*>(createInfo.code);
 
-	VkResult vkres = vkCreateShaderModule(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mShaderModule);
+	VkResult vkres = vkCreateShaderModule(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_shaderModule);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateShaderModule failed: " + ToString(vkres));
+		Fatal("vkCreateShaderModule failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -3232,14 +3181,10 @@ Result ShaderModule::createApiObjects(const ShaderModuleCreateInfo& pCreateInfo)
 
 void ShaderModule::destroyApiObjects()
 {
-	if (mShaderModule)
+	if (m_shaderModule)
 	{
-		vkDestroyShaderModule(
-			GetDevice()->GetVkDevice(),
-			mShaderModule,
-			nullptr);
-
-		mShaderModule.Reset();
+		vkDestroyShaderModule(GetDevice()->GetVkDevice(), m_shaderModule, nullptr);
+		m_shaderModule.Reset();
 	}
 }
 
@@ -3247,7 +3192,8 @@ void ShaderModule::destroyApiObjects()
 
 #pragma region ShadingRate
 
-namespace internal {
+namespace internal
+{
 
 	uint32_t FDMShadingRateEncoder::encodeFragmentDensityImpl(uint8_t xDensity, uint8_t yDensity)
 	{
@@ -3276,46 +3222,52 @@ namespace internal {
 		// Calculate the mapping from requested shading rates to supported shading rates.
 
 		// Initialize all shading rate values with UINT8_MAX to mark as unsupported.
-		std::fill(mMapRateToSupported.begin(), mMapRateToSupported.end(), UINT8_MAX);
+		std::fill(m_mapRateToSupported.begin(), m_mapRateToSupported.end(), UINT8_MAX);
 
 		// Supported shading rates map to themselves.
 		for (const auto& rate : capabilities.vrs.supportedRates) {
 			if ((rate.sampleCountMask & (uint32_t)sampleCount) != 0)
 			{
 				uint32_t encoded = rawEncode(rate.fragmentSize.width, rate.fragmentSize.height);
-				mMapRateToSupported[encoded] = encoded;
+				m_mapRateToSupported[encoded] = encoded;
 			}
 		}
 
 		// Calculate the mapping for unsupported shading rates.
-		for (uint32_t i = 0; i < 3; ++i) {
+		for (uint32_t i = 0; i < 3; ++i)
+		{
 			uint32_t width = 1u << i;
-			for (uint32_t j = 0; j < 3; ++j) {
+			for (uint32_t j = 0; j < 3; ++j)
+			{
 				uint32_t height = 1u << j;
 				uint32_t encoded = rawEncode(width, height);
-				if (mMapRateToSupported[encoded] == UINT8_MAX) {
+				if (m_mapRateToSupported[encoded] == UINT8_MAX)
+				{
 					// This shading rate is not supported. Find the largest supported shading rate where neither width nor height is greater than this fragment size.
 					// Ties are broken lexicographically, e.g. if 2x2, 1x4 and 4x1 are supported, then 2x4 will be mapped to 2x2 but 4x2 will map to 4x1.
 
 					ASSERT_MSG((width > 1) || (height > 1), "The 1x1 fragment size must always be supported");
 
-					if (width == 1) {
+					if (width == 1)
+					{
 						// Width is minimum, can only shrink height.
-						mMapRateToSupported[encoded] = mMapRateToSupported[rawEncode(width, height - 1)];
+						m_mapRateToSupported[encoded] = m_mapRateToSupported[rawEncode(width, height - 1)];
 					}
-					else if (height == 1) {
+					else if (height == 1)
+					{
 						// Height is minimum, can only shrink width.
-						mMapRateToSupported[encoded] = mMapRateToSupported[rawEncode(width - 1, height)];
+						m_mapRateToSupported[encoded] = m_mapRateToSupported[rawEncode(width - 1, height)];
 					}
-					else {
+					else
+					{
 						// mMapRateToSupported is correctly filled in for smaller values of i and j, so find the largest supported shading rate with smaller width...
-						uint8_t supportedSmallerWidth = mMapRateToSupported[rawEncode((i - 1) * 2, j * 2)];
+						uint8_t supportedSmallerWidth = m_mapRateToSupported[rawEncode((i - 1) * 2, j * 2)];
 
 						// ...and the largest supported shading rate with smaller height.
-						uint8_t supportedSmallerHeight = mMapRateToSupported[rawEncode(i * 2, (j - 1) * 2)];
+						uint8_t supportedSmallerHeight = m_mapRateToSupported[rawEncode(i * 2, (j - 1) * 2)];
 
 						// The largest supported shading rate
-						mMapRateToSupported[encoded] = std::max(supportedSmallerWidth, supportedSmallerHeight);
+						m_mapRateToSupported[encoded] = std::max(supportedSmallerWidth, supportedSmallerHeight);
 					}
 				}
 			}
@@ -3325,7 +3277,7 @@ namespace internal {
 	uint32_t VRSShadingRateEncoder::encodeFragmentSizeImpl(uint8_t fragmentWidth, uint8_t fragmentHeight) const
 	{
 		uint32_t encoded = rawEncode(fragmentWidth, fragmentHeight);
-		return mMapRateToSupported[encoded];
+		return m_mapRateToSupported[encoded];
 	}
 
 	uint32_t VRSShadingRateEncoder::EncodeFragmentDensity(uint8_t xDensity, uint8_t yDensity) const
@@ -3343,55 +3295,52 @@ namespace internal {
 std::unique_ptr<Bitmap> ShadingRatePattern::CreateBitmap() const
 {
 	auto bitmap = std::make_unique<Bitmap>();
-	CHECKED_CALL(Bitmap::Create(
-		GetAttachmentWidth(), GetAttachmentHeight(), GetBitmapFormat(), bitmap.get()));
+	CHECKED_CALL(Bitmap::Create(GetAttachmentWidth(), GetAttachmentHeight(), GetBitmapFormat(), bitmap.get()));
 	return bitmap;
 }
 
 Result ShadingRatePattern::LoadFromBitmap(Bitmap* bitmap)
 {
-	return vkrUtil::CopyBitmapToImage(GetDevice()->GetGraphicsQueue(), bitmap, mAttachmentImage, 0, 0, mAttachmentImage->GetInitialState(), mAttachmentImage->GetInitialState());
+	return vkrUtil::CopyBitmapToImage(GetDevice()->GetGraphicsQueue(), bitmap, m_attachmentImage, 0, 0, m_attachmentImage->GetInitialState(), m_attachmentImage->GetInitialState());
 }
 
 Bitmap::Format ShadingRatePattern::GetBitmapFormat() const
 {
-	switch (GetShadingRateMode()) {
-	case SHADING_RATE_FDM:
-		return Bitmap::FORMAT_RG_UINT8;
-	case SHADING_RATE_VRS:
-		return Bitmap::FORMAT_R_UINT8;
-	default:
-		return Bitmap::FORMAT_UNDEFINED;
+	switch (GetShadingRateMode())
+	{
+	case ShadingRateMode::FDM: return Bitmap::FORMAT_RG_UINT8;
+	case ShadingRateMode::VRS: return Bitmap::FORMAT_R_UINT8;
+	default: return Bitmap::FORMAT_UNDEFINED;
 	}
 }
 
 const ShadingRateEncoder* ShadingRatePattern::GetShadingRateEncoder() const
 {
-	return mShadingRateEncoder.get();
+	return m_shadingRateEncoder.get();
 }
 
-Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& pCreateInfo)
+Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& createInfo)
 {
-	mShadingRateMode = pCreateInfo.shadingRateMode;
-	mSampleCount = pCreateInfo.sampleCount;
+	m_shadingRateMode = createInfo.shadingRateMode;
+	m_sampleCount = createInfo.sampleCount;
 	const auto& capabilities = GetDevice()->GetShadingRateCapabilities();
 
 	ImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.usageFlags.bits.transferDst = true;
 	imageCreateInfo.ownership = Ownership::Exclusive;
 	Extent2D minTexelSize, maxTexelSize;
-	switch (pCreateInfo.shadingRateMode)
+	switch (createInfo.shadingRateMode)
 	{
-	case SHADING_RATE_FDM:
+	case ShadingRateMode::FDM:
 	{
 		minTexelSize = capabilities.fdm.minTexelSize;
 		maxTexelSize = capabilities.fdm.maxTexelSize;
 		imageCreateInfo.format = Format::R8G8_UNORM;
 		imageCreateInfo.usageFlags.bits.fragmentDensityMap = true;
 		imageCreateInfo.initialState = ResourceState::FragmentDensityMapAttachment;
-		mShadingRateEncoder = std::make_unique<internal::FDMShadingRateEncoder>();
+		m_shadingRateEncoder = std::make_unique<internal::FDMShadingRateEncoder>();
 	} break;
-	case SHADING_RATE_VRS:
+	case ShadingRateMode::VRS:
 	{
 		minTexelSize = capabilities.vrs.minTexelSize;
 		maxTexelSize = capabilities.vrs.maxTexelSize;
@@ -3400,43 +3349,41 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 		imageCreateInfo.initialState = ResourceState::FragmentShadingRateAttachment;
 
 		auto vrsShadingRateEncoder = std::make_unique<internal::VRSShadingRateEncoder>();
-		vrsShadingRateEncoder->Initialize(mSampleCount, capabilities);
-		mShadingRateEncoder = std::move(vrsShadingRateEncoder);
+		vrsShadingRateEncoder->Initialize(m_sampleCount, capabilities);
+		m_shadingRateEncoder = std::move(vrsShadingRateEncoder);
 	} break;
 	default:
-		ASSERT_MSG(false, "Cannot create ShadingRatePattern for ShadingRateMode");
+		Fatal("Cannot create ShadingRatePattern for ShadingRateMode");
 		return ERROR_FAILED;
 	}
 
-	if (pCreateInfo.texelSize.width == 0 && pCreateInfo.texelSize.height == 0) {
-		mTexelSize = minTexelSize;
+	if (createInfo.texelSize.width == 0 && createInfo.texelSize.height == 0)
+	{
+		m_texelSize = minTexelSize;
 	}
-	else {
-		mTexelSize = pCreateInfo.texelSize;
+	else
+	{
+		m_texelSize = createInfo.texelSize;
 	}
 
-	ASSERT_MSG(
-		mTexelSize.width >= minTexelSize.width,
-		"Texel width (" + std::to_string(mTexelSize.width) + ") must be >= the minimum texel width from capabilities (" + std::to_string(minTexelSize.width) + ")");
-	ASSERT_MSG(
-		mTexelSize.height >= minTexelSize.height,
-		"Texel height (" + std::to_string(mTexelSize.height) + ") must be >= the minimum texel height from capabilities (" + std::to_string(minTexelSize.height) + ")");
-	ASSERT_MSG(
-		mTexelSize.width <= maxTexelSize.width,
-		"Texel width (" + std::to_string(mTexelSize.width) + ") must be <= the maximum texel width from capabilities (" + std::to_string(maxTexelSize.width) + ")");
-	ASSERT_MSG(
-		mTexelSize.height <= maxTexelSize.height,
-		"Texel height (" + std::to_string(mTexelSize.height) + ") must be <= the maximum texel height from capabilities (" + std::to_string(maxTexelSize.height) + ")");
+	ASSERT_MSG(m_texelSize.width >= minTexelSize.width,
+		"Texel width (" + std::to_string(m_texelSize.width) + ") must be >= the minimum texel width from capabilities (" + std::to_string(minTexelSize.width) + ")");
+	ASSERT_MSG(m_texelSize.height >= minTexelSize.height,
+		"Texel height (" + std::to_string(m_texelSize.height) + ") must be >= the minimum texel height from capabilities (" + std::to_string(minTexelSize.height) + ")");
+	ASSERT_MSG(m_texelSize.width <= maxTexelSize.width,
+		"Texel width (" + std::to_string(m_texelSize.width) + ") must be <= the maximum texel width from capabilities (" + std::to_string(maxTexelSize.width) + ")");
+	ASSERT_MSG(m_texelSize.height <= maxTexelSize.height,
+		"Texel height (" + std::to_string(m_texelSize.height) + ") must be <= the maximum texel height from capabilities (" + std::to_string(maxTexelSize.height) + ")");
 
-	imageCreateInfo.width = (pCreateInfo.framebufferSize.width + mTexelSize.width - 1) / mTexelSize.width;
-	imageCreateInfo.height = (pCreateInfo.framebufferSize.height + mTexelSize.height - 1) / mTexelSize.height;
+	imageCreateInfo.width = (createInfo.framebufferSize.width + m_texelSize.width - 1) / m_texelSize.width;
+	imageCreateInfo.height = (createInfo.framebufferSize.height + m_texelSize.height - 1) / m_texelSize.height;
 	imageCreateInfo.depth = 1;
 
-	CHECKED_CALL(GetDevice()->CreateImage(imageCreateInfo, &mAttachmentImage));
+	CHECKED_CALL(GetDevice()->CreateImage(imageCreateInfo, &m_attachmentImage));
 
 	VkImageViewCreateInfo vkci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vkci.flags = 0;
-	vkci.image = mAttachmentImage->GetVkImage();
+	vkci.image = m_attachmentImage->GetVkImage();
 	vkci.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	vkci.format = ToVkEnum(imageCreateInfo.format);
 	vkci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -3445,14 +3392,10 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 	vkci.subresourceRange.baseArrayLayer = 0;
 	vkci.subresourceRange.layerCount = 1;
 
-	VkResult vkres = vkCreateImageView(
-		GetDevice()->GetVkDevice(),
-		&vkci,
-		nullptr,
-		&mAttachmentView);
+	VkResult vkres = vkCreateImageView(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_attachmentView);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateImageView(ShadingRatePatternView) failed: " + ToString(vkres));
+		Fatal("vkCreateImageView(ShadingRatePatternView) failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -3461,68 +3404,64 @@ Result ShadingRatePattern::createApiObjects(const ShadingRatePatternCreateInfo& 
 
 void ShadingRatePattern::destroyApiObjects()
 {
-	if (mAttachmentView)
+	if (m_attachmentView)
 	{
-		vkDestroyImageView(
-			GetDevice()->GetVkDevice(),
-			mAttachmentView,
-			nullptr);
-		mAttachmentView.Reset();
+		vkDestroyImageView(GetDevice()->GetVkDevice(), m_attachmentView, nullptr);
+		m_attachmentView.Reset();
 	}
-	if (mAttachmentImage)
+	if (m_attachmentImage)
 	{
-		GetDevice()->DestroyImage(mAttachmentImage);
-		mAttachmentImage.Reset();
+		GetDevice()->DestroyImage(m_attachmentImage);
+		m_attachmentImage.Reset();
 	}
 }
 
 std::shared_ptr<const VkRenderPassCreateInfo2> ShadingRatePattern::GetModifiedRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci)
 {
-	return CreateModifiedRenderPassCreateInfo()->Initialize(vkci).Get();
+	return createModifiedRenderPassCreateInfo()->Initialize(vkci).Get();
 }
 
 std::shared_ptr<const VkRenderPassCreateInfo2> ShadingRatePattern::GetModifiedRenderPassCreateInfo(const VkRenderPassCreateInfo2& vkci)
 {
-	return CreateModifiedRenderPassCreateInfo()->Initialize(vkci).Get();
+	return createModifiedRenderPassCreateInfo()->Initialize(vkci).Get();
 }
 
 std::shared_ptr<const VkRenderPassCreateInfo2> ShadingRatePattern::GetModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode, const VkRenderPassCreateInfo& vkci)
 {
-	return CreateModifiedRenderPassCreateInfo(device, mode)->Initialize(vkci).Get();
+	return createModifiedRenderPassCreateInfo(device, mode)->Initialize(vkci).Get();
 }
 
 std::shared_ptr<const VkRenderPassCreateInfo2> ShadingRatePattern::GetModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode, const VkRenderPassCreateInfo2& vkci)
 {
-	return CreateModifiedRenderPassCreateInfo(device, mode)->Initialize(vkci).Get();
+	return createModifiedRenderPassCreateInfo(device, mode)->Initialize(vkci).Get();
 }
 
-std::shared_ptr<ShadingRatePattern::ModifiedRenderPassCreateInfo> ShadingRatePattern::CreateModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode)
+std::shared_ptr<ShadingRatePattern::ModifiedRenderPassCreateInfo> ShadingRatePattern::createModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode)
 {
-	switch (mode) {
-	case SHADING_RATE_FDM:
-		return std::make_shared<ShadingRatePattern::FDMModifiedRenderPassCreateInfo>();
-	case SHADING_RATE_VRS:
-		return std::make_shared<ShadingRatePattern::VRSModifiedRenderPassCreateInfo>(device->GetShadingRateCapabilities());
-	default:
-		return nullptr;
+	switch (mode)
+	{
+	case ShadingRateMode::FDM: return std::make_shared<ShadingRatePattern::FDMModifiedRenderPassCreateInfo>();
+	case ShadingRateMode::VRS: return std::make_shared<ShadingRatePattern::VRSModifiedRenderPassCreateInfo>(device->GetShadingRateCapabilities());
+	default: return nullptr;
 	}
 }
 
 ShadingRatePattern::ModifiedRenderPassCreateInfo& ShadingRatePattern::ModifiedRenderPassCreateInfo::Initialize(const VkRenderPassCreateInfo& vkci)
 {
-	LoadVkRenderPassCreateInfo(vkci);
-	UpdateRenderPassForShadingRateImplementation();
+	loadVkRenderPassCreateInfo(vkci);
+	updateRenderPassForShadingRateImplementation();
 	return *this;
 }
 
 ShadingRatePattern::ModifiedRenderPassCreateInfo& ShadingRatePattern::ModifiedRenderPassCreateInfo::Initialize(const VkRenderPassCreateInfo2& vkci)
 {
-	LoadVkRenderPassCreateInfo2(vkci);
-	UpdateRenderPassForShadingRateImplementation();
+	loadVkRenderPassCreateInfo2(vkci);
+	updateRenderPassForShadingRateImplementation();
 	return *this;
 }
 
-namespace {
+namespace
+{
 
 	// Converts VkAttachmentDescription to VkAttachmentDescription2
 	VkAttachmentDescription2 ToVkAttachmentDescription2(const VkAttachmentDescription& attachment)
@@ -3568,7 +3507,8 @@ namespace {
 	void CopyArrayWithVectorStorage(uint32_t inCount, const T* inData, std::vector<T>& vec, uint32_t& outCount, T const*& outData)
 	{
 		vec.clear();
-		if (inCount == 0) {
+		if (inCount == 0)
+		{
 			outCount = 0;
 			outData = nullptr;
 		}
@@ -3583,12 +3523,14 @@ namespace {
 	void ConvertArrayWithVectorStorage(uint32_t inCount, const T1* inData, std::vector<T2>& vec, uint32_t& outCount, T2 const*& outData, Conv&& conv)
 	{
 		vec.clear();
-		if (inCount == 0) {
+		if (inCount == 0)
+		{
 			outCount = 0;
 			outData = nullptr;
 		}
 		vec.resize(inCount);
-		for (uint32_t i = 0; i < inCount; ++i) {
+		for (uint32_t i = 0; i < inCount; ++i)
+		{
 			vec[i] = conv(inData[i]);
 		}
 		outCount = CountU32(vec);
@@ -3597,19 +3539,19 @@ namespace {
 
 } // namespace
 
-void ShadingRatePattern::ModifiedRenderPassCreateInfo::LoadVkRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci)
+void ShadingRatePattern::ModifiedRenderPassCreateInfo::loadVkRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci)
 {
-	auto& vkci2 = mVkRenderPassCreateInfo2;
+	auto& vkci2 = m_vkRenderPassCreateInfo2;
 	vkci2.pNext = vkci.pNext;
 	vkci2.flags = vkci.flags;
 
-	ConvertArrayWithVectorStorage(vkci.attachmentCount, vkci.pAttachments, mAttachments, vkci2.attachmentCount, vkci2.pAttachments, &ToVkAttachmentDescription2);
-	ConvertArrayWithVectorStorage(vkci.subpassCount, vkci.pSubpasses, mSubpasses, vkci2.subpassCount, vkci2.pSubpasses, [this](const VkSubpassDescription& subpass) {
+	ConvertArrayWithVectorStorage(vkci.attachmentCount, vkci.pAttachments, m_attachments, vkci2.attachmentCount, vkci2.pAttachments, &ToVkAttachmentDescription2);
+	ConvertArrayWithVectorStorage(vkci.subpassCount, vkci.pSubpasses, m_subpasses, vkci2.subpassCount, vkci2.pSubpasses, [this](const VkSubpassDescription& subpass) {
 		VkSubpassDescription2 subpass2 = { VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2 };
 		subpass2.flags = subpass.flags;
 		subpass2.pipelineBindPoint = subpass.pipelineBindPoint;
 
-		auto& subpassAttachments = mSubpassAttachments.emplace_back();
+		auto& subpassAttachments = m_subpassAttachments.emplace_back();
 		ConvertArrayWithVectorStorage(subpass.inputAttachmentCount, subpass.pInputAttachments, subpassAttachments.inputAttachments, subpass2.inputAttachmentCount, subpass2.pInputAttachments, &ToVkAttachmentReference2);
 		ConvertArrayWithVectorStorage(subpass.colorAttachmentCount, subpass.pColorAttachments, subpassAttachments.colorAttachments, subpass2.colorAttachmentCount, subpass2.pColorAttachments, &ToVkAttachmentReference2);
 		if (!IsNull(subpass.pResolveAttachments)) {
@@ -3624,19 +3566,19 @@ void ShadingRatePattern::ModifiedRenderPassCreateInfo::LoadVkRenderPassCreateInf
 		CopyArrayWithVectorStorage(subpass.preserveAttachmentCount, subpass.pPreserveAttachments, subpassAttachments.preserveAttachments, subpass2.preserveAttachmentCount, subpass2.pPreserveAttachments);
 		return subpass2;
 		});
-	ConvertArrayWithVectorStorage(vkci.dependencyCount, vkci.pDependencies, mDependencies, vkci2.dependencyCount, vkci2.pDependencies, &ToVkSubpassDependency2);
+	ConvertArrayWithVectorStorage(vkci.dependencyCount, vkci.pDependencies, m_dependencies, vkci2.dependencyCount, vkci2.pDependencies, &ToVkSubpassDependency2);
 }
 
-void ShadingRatePattern::ModifiedRenderPassCreateInfo::LoadVkRenderPassCreateInfo2(const VkRenderPassCreateInfo2& vkci)
+void ShadingRatePattern::ModifiedRenderPassCreateInfo::loadVkRenderPassCreateInfo2(const VkRenderPassCreateInfo2& vkci)
 {
-	VkRenderPassCreateInfo2& vkci2 = mVkRenderPassCreateInfo2;
+	VkRenderPassCreateInfo2& vkci2 = m_vkRenderPassCreateInfo2;
 	vkci2 = vkci;
 
-	CopyArrayWithVectorStorage(vkci.attachmentCount, vkci.pAttachments, mAttachments, vkci2.attachmentCount, vkci2.pAttachments);
-	ConvertArrayWithVectorStorage(vkci.subpassCount, vkci.pSubpasses, mSubpasses, vkci2.subpassCount, vkci2.pSubpasses, [this](const VkSubpassDescription2& subpass) {
+	CopyArrayWithVectorStorage(vkci.attachmentCount, vkci.pAttachments, m_attachments, vkci2.attachmentCount, vkci2.pAttachments);
+	ConvertArrayWithVectorStorage(vkci.subpassCount, vkci.pSubpasses, m_subpasses, vkci2.subpassCount, vkci2.pSubpasses, [this](const VkSubpassDescription2& subpass) {
 		VkSubpassDescription2 subpass2 = subpass;
 
-		auto& subpassAttachments = mSubpassAttachments.emplace_back();
+		auto& subpassAttachments = m_subpassAttachments.emplace_back();
 		CopyArrayWithVectorStorage(subpass.inputAttachmentCount, subpass.pInputAttachments, subpassAttachments.inputAttachments, subpass2.inputAttachmentCount, subpass2.pInputAttachments);
 		CopyArrayWithVectorStorage(subpass.colorAttachmentCount, subpass.pColorAttachments, subpassAttachments.colorAttachments, subpass2.colorAttachmentCount, subpass2.pColorAttachments);
 		if (!IsNull(subpass.pResolveAttachments)) {
@@ -3651,12 +3593,12 @@ void ShadingRatePattern::ModifiedRenderPassCreateInfo::LoadVkRenderPassCreateInf
 		CopyArrayWithVectorStorage(subpass.preserveAttachmentCount, subpass.pPreserveAttachments, subpassAttachments.preserveAttachments, subpass2.preserveAttachmentCount, subpass2.pPreserveAttachments);
 		return subpass2;
 		});
-	CopyArrayWithVectorStorage(vkci.dependencyCount, vkci.pDependencies, mDependencies, vkci2.dependencyCount, vkci2.pDependencies);
+	CopyArrayWithVectorStorage(vkci.dependencyCount, vkci.pDependencies, m_dependencies, vkci2.dependencyCount, vkci2.pDependencies);
 }
 
-void ShadingRatePattern::FDMModifiedRenderPassCreateInfo::UpdateRenderPassForShadingRateImplementation()
+void ShadingRatePattern::FDMModifiedRenderPassCreateInfo::updateRenderPassForShadingRateImplementation()
 {
-	VkRenderPassCreateInfo2& vkci = mVkRenderPassCreateInfo2;
+	VkRenderPassCreateInfo2& vkci = m_vkRenderPassCreateInfo2;
 
 	VkAttachmentDescription2 densityMapDesc = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2 };
 	densityMapDesc.flags = 0;
@@ -3668,20 +3610,20 @@ void ShadingRatePattern::FDMModifiedRenderPassCreateInfo::UpdateRenderPassForSha
 	densityMapDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	densityMapDesc.initialLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
 	densityMapDesc.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-	mAttachments.push_back(densityMapDesc);
+	m_attachments.push_back(densityMapDesc);
 
-	mFdmInfo.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-	mFdmInfo.fragmentDensityMapAttachment.attachment = mAttachments.size() - 1;
+	m_fdmInfo.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+	m_fdmInfo.fragmentDensityMapAttachment.attachment = m_attachments.size() - 1;
 
-	InsertPNext(vkci, mFdmInfo);
+	InsertPNext(vkci, m_fdmInfo);
 
-	vkci.attachmentCount = CountU32(mAttachments);
-	vkci.pAttachments = DataPtr(mAttachments);
+	vkci.attachmentCount = CountU32(m_attachments);
+	vkci.pAttachments = DataPtr(m_attachments);
 }
 
-void ShadingRatePattern::VRSModifiedRenderPassCreateInfo::UpdateRenderPassForShadingRateImplementation()
+void ShadingRatePattern::VRSModifiedRenderPassCreateInfo::updateRenderPassForShadingRateImplementation()
 {
-	VkRenderPassCreateInfo2& vkci = mVkRenderPassCreateInfo2;
+	VkRenderPassCreateInfo2& vkci = m_vkRenderPassCreateInfo2;
 
 	VkAttachmentDescription2 vrsAttachmentDesc = { VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2 };
 	vrsAttachmentDesc.format = VK_FORMAT_R8_UINT;
@@ -3692,22 +3634,24 @@ void ShadingRatePattern::VRSModifiedRenderPassCreateInfo::UpdateRenderPassForSha
 	vrsAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	vrsAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
 	vrsAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
-	mAttachments.push_back(vrsAttachmentDesc);
+	m_attachments.push_back(vrsAttachmentDesc);
 
-	vkci.attachmentCount = CountU32(mAttachments);
-	vkci.pAttachments = DataPtr(mAttachments);
+	vkci.attachmentCount = CountU32(m_attachments);
+	vkci.pAttachments = DataPtr(m_attachments);
 
-	mVrsAttachmentRef.attachment = mAttachments.size() - 1;
-	mVrsAttachmentRef.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
+	m_vrsAttachmentRef.attachment = m_attachments.size() - 1;
+	m_vrsAttachmentRef.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
 
-	mVrsAttachmentInfo.pFragmentShadingRateAttachment = &mVrsAttachmentRef;
-	mVrsAttachmentInfo.shadingRateAttachmentTexelSize = {
-		mCapabilities.vrs.minTexelSize.width,
-		mCapabilities.vrs.minTexelSize.height,
+	m_vrsAttachmentInfo.pFragmentShadingRateAttachment = &m_vrsAttachmentRef;
+	m_vrsAttachmentInfo.shadingRateAttachmentTexelSize =
+	{
+		m_capabilities.vrs.minTexelSize.width,
+		m_capabilities.vrs.minTexelSize.height,
 	};
 
-	for (auto& subpass : mSubpasses) {
-		InsertPNext(subpass, mVrsAttachmentInfo);
+	for (auto& subpass : m_subpasses)
+	{
+		InsertPNext(subpass, m_vrsAttachmentInfo);
 	}
 }
 
@@ -3732,15 +3676,18 @@ void FillShadingRateRadial(ShadingRatePatternPtr pattern, float scale, Bitmap* b
 {
 	auto encoder = pattern->GetShadingRateEncoder();
 	scale /= std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight());
-	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j) {
+	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j)
+	{
 		float    y = scale * (2.0 * j - bitmap->GetHeight());
 		uint8_t* addr = bitmap->GetPixel8u(0, j);
-		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride()) {
+		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride())
+		{
 			float          x = scale * (2.0 * i - bitmap->GetWidth());
 			float          r2 = x * x + y * y;
 			uint32_t       encoded = encoder->EncodeFragmentSize(r2 + 1, r2 + 1);
 			const uint8_t* encodedBytes = reinterpret_cast<const uint8_t*>(&encoded);
-			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k) {
+			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k)
+			{
 				addr[k] = encodedBytes[k];
 			}
 		}
@@ -3751,14 +3698,17 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 {
 	auto encoder = pattern->GetShadingRateEncoder();
 	scale /= std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight());
-	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j) {
+	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j)
+	{
 		float    y = scale * (2.0 * j - bitmap->GetHeight());
 		uint8_t* addr = bitmap->GetPixel8u(0, j);
-		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride()) {
+		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride())
+		{
 			float          x = scale * (2.0 * i - bitmap->GetWidth());
 			uint32_t       encoded = encoder->EncodeFragmentSize(x * x + 1, y * y + 1);
 			const uint8_t* encodedBytes = reinterpret_cast<const uint8_t*>(&encoded);
-			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k) {
+			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k)
+			{
 				addr[k] = encodedBytes[k];
 			}
 		}
@@ -3771,126 +3721,114 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 
 MeshCreateInfo::MeshCreateInfo(const Geometry& geometry)
 {
-	this->indexType = geometry.GetIndexType();
-	this->indexCount = geometry.GetIndexCount();
-	this->vertexCount = geometry.GetVertexCount();
-	this->vertexBufferCount = geometry.GetVertexBufferCount();
-	this->memoryUsage = MemoryUsage::GPUOnly;
-	std::memset(&this->vertexBuffers, 0, MaxVertexBindings * sizeof(MeshVertexBufferDescription));
+	indexType = geometry.GetIndexType();
+	indexCount = geometry.GetIndexCount();
+	vertexCount = geometry.GetVertexCount();
+	vertexBufferCount = geometry.GetVertexBufferCount();
+	memoryUsage = MemoryUsage::GPUOnly;
+	std::memset(&vertexBuffers, 0, MaxVertexBindings * sizeof(MeshVertexBufferDescription));
 
 	const uint32_t bindingCount = geometry.GetVertexBindingCount();
-	for (uint32_t bindingIdx = 0; bindingIdx < bindingCount; ++bindingIdx) {
+	for (uint32_t bindingIdx = 0; bindingIdx < bindingCount; ++bindingIdx)
+	{
 		const uint32_t attrCount = geometry.GetVertexBinding(bindingIdx)->GetAttributeCount();
 
-		this->vertexBuffers[bindingIdx].attributeCount = attrCount;
-		for (uint32_t attrIdx = 0; attrIdx < attrCount; ++attrIdx) {
+		vertexBuffers[bindingIdx].attributeCount = attrCount;
+		for (uint32_t attrIdx = 0; attrIdx < attrCount; ++attrIdx)
+		{
 			const VertexAttribute* pAttribute = nullptr;
 			geometry.GetVertexBinding(bindingIdx)->GetAttribute(attrIdx, &pAttribute);
 
-			this->vertexBuffers[bindingIdx].attributes[attrIdx].format = pAttribute->format;
-			this->vertexBuffers[bindingIdx].attributes[attrIdx].stride = 0; // Calculated later
-			this->vertexBuffers[bindingIdx].attributes[attrIdx].vertexSemantic = pAttribute->semantic;
+			vertexBuffers[bindingIdx].attributes[attrIdx].format = pAttribute->format;
+			vertexBuffers[bindingIdx].attributes[attrIdx].stride = 0; // Calculated later
+			vertexBuffers[bindingIdx].attributes[attrIdx].vertexSemantic = pAttribute->semantic;
 		}
 
-		this->vertexBuffers[bindingIdx].vertexInputRate = VERTEX_INPUT_RATE_VERTEX;
+		vertexBuffers[bindingIdx].vertexInputRate = VertexInputRate::Vertex;
 	}
 }
 
-// -------------------------------------------------------------------------------------------------
-// Mesh
-// -------------------------------------------------------------------------------------------------
-Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
+Result Mesh::createApiObjects(const MeshCreateInfo& createInfo)
 {
 	// Bail if both index count and vertex count are 0
-	if ((pCreateInfo.indexCount == 0) && (pCreateInfo.vertexCount) == 0) {
-		return Result::ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION;
-	}
+	if ((createInfo.indexCount == 0) && (createInfo.vertexCount) == 0) return Result::ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION;
 	// Bail if vertexCount is not 0 but vertex buffer count is 0
-	if ((pCreateInfo.vertexCount > 0) && (pCreateInfo.vertexBufferCount == 0)) {
-		return Result::ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION;
-	}
+	if ((createInfo.vertexCount > 0) && (createInfo.vertexBufferCount == 0)) return Result::ERROR_GRFX_INVALID_GEOMETRY_CONFIGURATION;
 
 	// Index buffer
-	if (pCreateInfo.indexCount > 0) {
+	if (createInfo.indexCount > 0)
+	{
 		// Bail if index type doesn't make sense
-		if ((pCreateInfo.indexType != IndexType::Uint16) && (pCreateInfo.indexType != IndexType::Uint32)) {
-			return Result::ERROR_GRFX_INVALID_INDEX_TYPE;
-		}
+		if ((createInfo.indexType != IndexType::Uint16) && (createInfo.indexType != IndexType::Uint32)) return Result::ERROR_GRFX_INVALID_INDEX_TYPE;
 
-		BufferCreateInfo createInfo = {};
-		createInfo.size = pCreateInfo.indexCount * IndexTypeSize(pCreateInfo.indexType);
-		createInfo.usageFlags.bits.indexBuffer = true;
-		createInfo.usageFlags.bits.transferDst = true;
-		createInfo.memoryUsage = pCreateInfo.memoryUsage;
-		createInfo.initialState = ResourceState::General;
-		createInfo.ownership = Ownership::Reference;
+		BufferCreateInfo bci = {};
+		bci.size = createInfo.indexCount * IndexTypeSize(createInfo.indexType);
+		bci.usageFlags.bits.indexBuffer = true;
+		bci.usageFlags.bits.transferDst = true;
+		bci.memoryUsage = createInfo.memoryUsage;
+		bci.initialState = ResourceState::General;
+		bci.ownership = Ownership::Reference;
 
-		auto ppxres = GetDevice()->CreateBuffer(createInfo, &mIndexBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "create mesh index buffer failed");
+		auto ppxres = GetDevice()->CreateBuffer(bci, &m_indexBuffer);
+		if (Failed(ppxres))
+		{
+			Fatal("create mesh index buffer failed");
 			return ppxres;
 		}
 	}
 
 	// Vertex buffers
-	if (pCreateInfo.vertexCount > 0) {
-		mVertexBuffers.resize(pCreateInfo.vertexBufferCount);
+	if (createInfo.vertexCount > 0)
+	{
+		m_vertexBuffers.resize(createInfo.vertexBufferCount);
 
 		// Iterate through all the vertex buffer descriptions and create appropriately sized buffers
-		for (uint32_t vbIdx = 0; vbIdx < pCreateInfo.vertexBufferCount; ++vbIdx) {
+		for (uint32_t vbIdx = 0; vbIdx < createInfo.vertexBufferCount; ++vbIdx)
+		{
 			// Copy vertex buffer description
-			std::memcpy(&mVertexBuffers[vbIdx].second, &pCreateInfo.vertexBuffers[vbIdx], sizeof(MeshVertexBufferDescription));
+			std::memcpy(&m_vertexBuffers[vbIdx].second, &createInfo.vertexBuffers[vbIdx], sizeof(MeshVertexBufferDescription));
 
-			auto& vertexBufferDesc = mVertexBuffers[vbIdx].second;
+			auto& vertexBufferDesc = m_vertexBuffers[vbIdx].second;
 			// Bail if attribute count is 0
-			if (vertexBufferDesc.attributeCount == 0) {
-				return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_COUNT;
-			}
+			if (vertexBufferDesc.attributeCount == 0) return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_COUNT;
 
 			// Calculate vertex stride (if needed) and attribute offsets
-			bool calculateVertexStride = (mVertexBuffers[vbIdx].second.stride == 0);
-			for (uint32_t attrIdx = 0; attrIdx < vertexBufferDesc.attributeCount; ++attrIdx) {
+			bool calculateVertexStride = (m_vertexBuffers[vbIdx].second.stride == 0);
+			for (uint32_t attrIdx = 0; attrIdx < vertexBufferDesc.attributeCount; ++attrIdx)
+			{
 				auto& attr = vertexBufferDesc.attributes[attrIdx];
 				Format format = attr.format;
-				if (format == Format::Undefined) {
-					return Result::ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED;
-				}
+				if (format == Format::Undefined) return Result::ERROR_GRFX_VERTEX_ATTRIBUTE_FORMAT_UNDEFINED;
 
 				auto* pFormatDesc = GetFormatDescription(format);
 				// Bail if the format's size is zero
-				if (pFormatDesc->bytesPerTexel == 0) {
-					return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE;
-				}
+				if (pFormatDesc->bytesPerTexel == 0) return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE;
+
 				// Bail if the attribute stride is NOT 0 and less than the format size
-				if ((attr.stride != 0) && (attr.stride < pFormatDesc->bytesPerTexel)) {
-					return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE;
-				}
+				if ((attr.stride != 0) && (attr.stride < pFormatDesc->bytesPerTexel)) return Result::ERROR_GRFX_INVALID_VERTEX_ATTRIBUTE_STRIDE;
 
 				// Calculate stride if needed
-				if (attr.stride == 0) {
-					attr.stride = pFormatDesc->bytesPerTexel;
-				}
+				if (attr.stride == 0) attr.stride = pFormatDesc->bytesPerTexel;
 
 				// Set offset
-				attr.offset = mVertexBuffers[vbIdx].second.stride;
+				attr.offset = m_vertexBuffers[vbIdx].second.stride;
 
 				// Increment vertex stride
-				if (calculateVertexStride) {
-					mVertexBuffers[vbIdx].second.stride += attr.stride;
-				}
+				if (calculateVertexStride) m_vertexBuffers[vbIdx].second.stride += attr.stride;
 			}
 
-			BufferCreateInfo createInfo = {};
-			createInfo.size = pCreateInfo.vertexCount * mVertexBuffers[vbIdx].second.stride;
-			createInfo.usageFlags.bits.vertexBuffer = true;
-			createInfo.usageFlags.bits.transferDst = true;
-			createInfo.memoryUsage = pCreateInfo.memoryUsage;
-			createInfo.initialState = ResourceState::General;
-			createInfo.ownership = Ownership::Reference;
+			BufferCreateInfo bci = {};
+			bci.size = createInfo.vertexCount * m_vertexBuffers[vbIdx].second.stride;
+			bci.usageFlags.bits.vertexBuffer = true;
+			bci.usageFlags.bits.transferDst = true;
+			bci.memoryUsage = createInfo.memoryUsage;
+			bci.initialState = ResourceState::General;
+			bci.ownership = Ownership::Reference;
 
-			auto ppxres = GetDevice()->CreateBuffer(createInfo, &mVertexBuffers[vbIdx].first);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "create mesh vertex buffer failed");
+			auto ppxres = GetDevice()->CreateBuffer(bci, &m_vertexBuffers[vbIdx].first);
+			if (Failed(ppxres))
+			{
+				Fatal("create mesh vertex buffer failed");
 				return ppxres;
 			}
 		}
@@ -3899,27 +3837,28 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 	// Derived vertex bindings
 	{
 		uint32_t location = 0;
-		for (uint32_t bufferIndex = 0; bufferIndex < GetVertexBufferCount(); ++bufferIndex) {
+		for (uint32_t bufferIndex = 0; bufferIndex < GetVertexBufferCount(); ++bufferIndex)
+		{
 			auto pBufferDesc = GetVertexBufferDescription(bufferIndex);
 
 			VertexBinding binding = VertexBinding(bufferIndex, pBufferDesc->vertexInputRate);
 			binding.SetBinding(bufferIndex);
 
-			for (uint32_t attrIdx = 0; attrIdx < pBufferDesc->attributeCount; ++attrIdx) {
+			for (uint32_t attrIdx = 0; attrIdx < pBufferDesc->attributeCount; ++attrIdx)
+			{
 				auto& srcAttr = pBufferDesc->attributes[attrIdx];
 
 				std::string semanticName = SEMANTIC_NAME_CUSTOM;
-				// clang-format off
-				switch (srcAttr.vertexSemantic) {
+				switch (srcAttr.vertexSemantic)
+				{
 				default: break;
-				case VERTEX_SEMANTIC_POSITION: semanticName = SEMANTIC_NAME_POSITION;  break;
-				case VERTEX_SEMANTIC_NORMAL: semanticName = SEMANTIC_NAME_NORMAL;    break;
-				case VERTEX_SEMANTIC_COLOR: semanticName = SEMANTIC_NAME_COLOR;     break;
-				case VERTEX_SEMANTIC_TEXCOORD: semanticName = SEMANTIC_NAME_TEXCOORD;  break;
-				case VERTEX_SEMANTIC_TANGENT: semanticName = SEMANTIC_NAME_TANGENT;   break;
-				case VERTEX_SEMANTIC_BITANGENT: semanticName = SEMANTIC_NAME_BITANGENT; break;
+				case VertexSemantic::Position: semanticName = SEMANTIC_NAME_POSITION;  break;
+				case VertexSemantic::Normal: semanticName = SEMANTIC_NAME_NORMAL;    break;
+				case VertexSemantic::Color: semanticName = SEMANTIC_NAME_COLOR;     break;
+				case VertexSemantic::Texcoord: semanticName = SEMANTIC_NAME_TEXCOORD;  break;
+				case VertexSemantic::Tangent: semanticName = SEMANTIC_NAME_TANGENT;   break;
+				case VertexSemantic::Bitangent: semanticName = SEMANTIC_NAME_BITANGENT; break;
 				}
-				// clang-format on
 
 				VertexAttribute attr = {};
 				attr.semanticName = semanticName;
@@ -3937,7 +3876,7 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 
 			binding.SetStride(pBufferDesc->stride);
 
-			mDerivedVertexBindings.push_back(binding);
+			m_derivedVertexBindings.push_back(binding);
 		}
 	}
 
@@ -3946,32 +3885,24 @@ Result Mesh::createApiObjects(const MeshCreateInfo& pCreateInfo)
 
 void Mesh::destroyApiObjects()
 {
-	if (mIndexBuffer) {
-		GetDevice()->DestroyBuffer(mIndexBuffer);
-	}
+	if (m_indexBuffer) GetDevice()->DestroyBuffer(m_indexBuffer);
 
-	for (auto& elem : mVertexBuffers) {
-		GetDevice()->DestroyBuffer(elem.first);
-	}
-	mVertexBuffers.clear();
+	for (auto& elem : m_vertexBuffers)  GetDevice()->DestroyBuffer(elem.first);
+	m_vertexBuffers.clear();
 }
 
 BufferPtr Mesh::GetVertexBuffer(uint32_t index) const
 {
-	const uint32_t vertexBufferCount = CountU32(mVertexBuffers);
-	if (index >= vertexBufferCount) {
-		return nullptr;
-	}
-	return mVertexBuffers[index].first;
+	const uint32_t vertexBufferCount = CountU32(m_vertexBuffers);
+	if (index >= vertexBufferCount) return nullptr;
+	return m_vertexBuffers[index].first;
 }
 
 const MeshVertexBufferDescription* Mesh::GetVertexBufferDescription(uint32_t index) const
 {
-	const uint32_t vertexBufferCount = CountU32(mVertexBuffers);
-	if (index >= vertexBufferCount) {
-		return nullptr;
-	}
-	return &mVertexBuffers[index].second;
+	const uint32_t vertexBufferCount = CountU32(m_vertexBuffers);
+	if (index >= vertexBufferCount) return nullptr;
+	return &m_vertexBuffers[index].second;
 }
 
 #pragma endregion
@@ -4145,7 +4076,7 @@ namespace internal
 		pDstCreateInfo->shadingRateMode = pSrcCreateInfo.shadingRateMode;
 
 		// Pipeline internface
-		pDstCreateInfo->pPipelineInterface = pSrcCreateInfo.pPipelineInterface;
+		pDstCreateInfo->pipelineInterface = pSrcCreateInfo.pipelineInterface;
 
 		// MultiView details
 		pDstCreateInfo->multiViewState = pSrcCreateInfo.multiViewState;
@@ -4153,34 +4084,25 @@ namespace internal
 
 } // namespace internal
 
-Result ComputePipeline::create(const ComputePipelineCreateInfo& pCreateInfo)
+Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& pCreateInfo)
 {
-	if (IsNull(pCreateInfo.pPipelineInterface)) {
+	if (IsNull(pCreateInfo.pipelineInterface))
+	{
 		ASSERT_MSG(false, "pipeline interface is null (compute pipeline)");
 		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 	}
 
-	Result ppxres = DeviceObject<ComputePipelineCreateInfo>::create(pCreateInfo);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
-
-	return SUCCESS;
-}
-
-Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& pCreateInfo)
-{
 	VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 	ssci.flags = 0;
 	ssci.pSpecializationInfo = nullptr;
 	ssci.pName = pCreateInfo.CS.entryPoint.c_str();
 	ssci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-	ssci.module = pCreateInfo.CS.pModule->GetVkShaderModule();
+	ssci.module = pCreateInfo.CS.module->GetVkShaderModule();
 
 	VkComputePipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
 	vkci.flags = 0;
 	vkci.stage = ssci;
-	vkci.layout = pCreateInfo.pPipelineInterface->GetVkPipelineLayout();
+	vkci.layout = pCreateInfo.pipelineInterface->GetVkPipelineLayout();
 	vkci.basePipelineHandle = VK_NULL_HANDLE;
 	vkci.basePipelineIndex = 0;
 
@@ -4190,7 +4112,7 @@ Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& pCreat
 		1,
 		&vkci,
 		nullptr,
-		&mPipeline);
+		&m_pipeline);
 	if (vkres != VK_SUCCESS)
 	{
 		ASSERT_MSG(false, "vkCreateComputePipelines failed: " + ToString(vkres));
@@ -4202,9 +4124,9 @@ Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& pCreat
 
 void ComputePipeline::destroyApiObjects()
 {
-	if (mPipeline) {
-		vkDestroyPipeline(GetDevice()->GetVkDevice(), mPipeline, nullptr);
-		mPipeline.Reset();
+	if (m_pipeline) {
+		vkDestroyPipeline(GetDevice()->GetVkDevice(), m_pipeline, nullptr);
+		m_pipeline.Reset();
 	}
 }
 
@@ -4255,7 +4177,7 @@ Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
 	//        uint32_t inputRateVertexCount   = 0;
 	//        uint32_t inputRateInstanceCount = 0;
 	//        for (auto& attr : elem.attributes) {
-	//            inputRateVertexCount += (attr.inputRate == VERTEX_INPUT_RATE_VERTEX) ? 1 : 0;
+	//            inputRateVertexCount += (attr.inputRate == VertexInputRate::Vertex) ? 1 : 0;
 	//            inputRateInstanceCount += (attr.inputRate == VERETX_INPUT_RATE_INSTANCE) ? 1 : 0;
 	//        }
 	//        // Cannot mix input rates
@@ -4266,7 +4188,7 @@ Result GraphicsPipeline::create(const GraphicsPipelineCreateInfo& pCreateInfo)
 	//    }
 	//}
 
-	if (IsNull(pCreateInfo.pPipelineInterface)) {
+	if (IsNull(pCreateInfo.pipelineInterface)) {
 		ASSERT_MSG(false, "pipeline interface is null (graphics pipeline)");
 		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 	}
@@ -4290,9 +4212,9 @@ Result GraphicsPipeline::initializeShaderStages(
 	VkGraphicsPipelineCreateInfo& vkCreateInfo)
 {
 	// VS
-	if (!IsNull(pCreateInfo.VS.pModule))
+	if (!IsNull(pCreateInfo.VS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.VS.pModule;
+		const ShaderModule* pModule = pCreateInfo.VS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
@@ -4304,9 +4226,9 @@ Result GraphicsPipeline::initializeShaderStages(
 	}
 
 	// HS
-	if (!IsNull(pCreateInfo.HS.pModule))
+	if (!IsNull(pCreateInfo.HS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.HS.pModule;
+		const ShaderModule* pModule = pCreateInfo.HS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
@@ -4318,9 +4240,9 @@ Result GraphicsPipeline::initializeShaderStages(
 	}
 
 	// DS
-	if (!IsNull(pCreateInfo.DS.pModule))
+	if (!IsNull(pCreateInfo.DS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.DS.pModule;
+		const ShaderModule* pModule = pCreateInfo.DS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
@@ -4332,9 +4254,9 @@ Result GraphicsPipeline::initializeShaderStages(
 	}
 
 	// GS
-	if (!IsNull(pCreateInfo.GS.pModule))
+	if (!IsNull(pCreateInfo.GS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.GS.pModule;
+		const ShaderModule* pModule = pCreateInfo.GS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
@@ -4346,9 +4268,9 @@ Result GraphicsPipeline::initializeShaderStages(
 	}
 
 	// PS
-	if (!IsNull(pCreateInfo.PS.pModule))
+	if (!IsNull(pCreateInfo.PS.module))
 	{
-		const ShaderModule* pModule = pCreateInfo.PS.pModule;
+		const ShaderModule* pModule = pCreateInfo.PS.module;
 
 		VkPipelineShaderStageCreateInfo ssci = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		ssci.flags = 0;
@@ -4741,7 +4663,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCre
 	vkci.pDepthStencilState = &depthStencilState;
 	vkci.pColorBlendState = &colorBlendState;
 	vkci.pDynamicState = &dynamicState;
-	vkci.layout = pCreateInfo.pPipelineInterface->GetVkPipelineLayout();
+	vkci.layout = pCreateInfo.pipelineInterface->GetVkPipelineLayout();
 	vkci.renderPass = renderPass;
 	vkci.subpass = 0; // One subpass to rule them all
 	vkci.basePipelineHandle = VK_NULL_HANDLE;
@@ -4749,7 +4671,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCre
 
 	// [VRS] set pipeline shading rate
 	VkPipelineFragmentShadingRateStateCreateInfoKHR shadingRate = { VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR };
-	if (pCreateInfo.shadingRateMode == SHADING_RATE_VRS)
+	if (pCreateInfo.shadingRateMode == ShadingRateMode::VRS)
 	{
 		shadingRate.fragmentSize = VkExtent2D{ 1, 1 };
 		shadingRate.combinerOps[0] = VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR;
@@ -4763,7 +4685,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCre
 		1,
 		&vkci,
 		nullptr,
-		&mPipeline);
+		&m_pipeline);
 	// Destroy transient render pass
 	if (renderPass) {
 		vkDestroyRenderPass(
@@ -4782,9 +4704,9 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& pCre
 
 void GraphicsPipeline::destroyApiObjects()
 {
-	if (mPipeline) {
-		vkDestroyPipeline(GetDevice()->GetVkDevice(), mPipeline, nullptr);
-		mPipeline.Reset();
+	if (m_pipeline) {
+		vkDestroyPipeline(GetDevice()->GetVkDevice(), m_pipeline, nullptr);
+		m_pipeline.Reset();
 	}
 }
 
@@ -4798,13 +4720,13 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 	// If we have more than one set...we need to do some checks
 	if (pCreateInfo.setCount > 0) {
 		// Paranoid clear
-		mSetNumbers.clear();
+		m_setNumbers.clear();
 		// Copy set numbers
 		std::vector<uint32_t> sortedSetNumbers;
 		for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
 			uint32_t set = pCreateInfo.sets[i].set;
 			sortedSetNumbers.push_back(set); // Sortable array
-			mSetNumbers.push_back(set);      // Preserves declared ordering
+			m_setNumbers.push_back(set);      // Preserves declared ordering
 		}
 		// Sort set numbers
 		std::sort(std::begin(sortedSetNumbers), std::end(sortedSetNumbers));
@@ -4821,13 +4743,13 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 		// Check for consecutive ness
 		//
 		// Assume consecutive
-		mHasConsecutiveSetNumbers = true;
-		for (size_t i = 1; i < mSetNumbers.size(); ++i) {
+		m_hasConsecutiveSetNumbers = true;
+		for (size_t i = 1; i < m_setNumbers.size(); ++i) {
 			int32_t setB = static_cast<int32_t>(sortedSetNumbers[i]);
 			int32_t setA = static_cast<int32_t>(sortedSetNumbers[i - 1]);
 			int32_t diff = setB - setA;
 			if (diff != 1) {
-				mHasConsecutiveSetNumbers = false;
+				m_hasConsecutiveSetNumbers = false;
 				break;
 			}
 		}
@@ -4859,7 +4781,7 @@ Result PipelineInterface::create(const PipelineInterfaceCreateInfo& pCreateInfo)
 			}
 			// See if the layout has a binding that's the same as the push constants binding
 			const uint32_t pushConstantsBinding = pCreateInfo.pushConstants.binding;
-			auto& bindings = set.pLayout->GetBindings();
+			auto& bindings = set.layout->GetBindings();
 			auto           it = std::find_if(
 				bindings.begin(),
 				bindings.end(),
@@ -4886,7 +4808,7 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 {
 	VkDescriptorSetLayout setLayouts[MaxBoundDescriptorSets] = { VK_NULL_HANDLE };
 	for (uint32_t i = 0; i < pCreateInfo.setCount; ++i) {
-		setLayouts[i] = pCreateInfo.sets[i].pLayout->GetVkDescriptorSetLayout();
+		setLayouts[i] = pCreateInfo.sets[i].layout->GetVkDescriptorSetLayout();
 	}
 
 	bool                hasPushConstants = (pCreateInfo.pushConstants.count > 0);
@@ -4903,10 +4825,10 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 		}
 
 		// Save stage flags for use in command buffer
-		mPushConstantShaderStageFlags = ToVkShaderStageFlags(pCreateInfo.pushConstants.shaderVisiblity);
+		m_pushConstantShaderStageFlags = ToVkShaderStageFlags(pCreateInfo.pushConstants.shaderVisiblity);
 
 		// Fill out range
-		pushConstantsRange.stageFlags = mPushConstantShaderStageFlags;
+		pushConstantsRange.stageFlags = m_pushConstantShaderStageFlags;
 		pushConstantsRange.offset = 0;
 		pushConstantsRange.size = sizeInBytes;
 	}
@@ -4922,7 +4844,7 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 		GetDevice()->GetVkDevice(),
 		&vkci,
 		nullptr,
-		&mPipelineLayout);
+		&m_pipelineLayout);
 	if (vkres != VK_SUCCESS) {
 		ASSERT_MSG(false, "vkCreatePipelineLayout failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
@@ -4933,9 +4855,9 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& pC
 
 void PipelineInterface::destroyApiObjects()
 {
-	if (mPipelineLayout) {
-		vkDestroyPipelineLayout(GetDevice()->GetVkDevice(), mPipelineLayout, nullptr);
-		mPipelineLayout.Reset();
+	if (m_pipelineLayout) {
+		vkDestroyPipelineLayout(GetDevice()->GetVkDevice(), m_pipelineLayout, nullptr);
+		m_pipelineLayout.Reset();
 	}
 }
 
@@ -4944,7 +4866,7 @@ const DescriptorSetLayout* PipelineInterface::GetSetLayout(uint32_t setNumber) c
 	const DescriptorSetLayout* pLayout = nullptr;
 	for (uint32_t i = 0; i < m_createInfo.setCount; ++i) {
 		if (m_createInfo.sets[i].set == setNumber) {
-			pLayout = m_createInfo.sets[i].pLayout;
+			pLayout = m_createInfo.sets[i].layout;
 			break;
 		}
 	}
@@ -7278,7 +7200,7 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 		createInfo.setCount = pCreateInfo.setCount;
 		for (uint32_t i = 0; i < createInfo.setCount; ++i) {
 			createInfo.sets[i].set = pCreateInfo.sets[i].set;
-			createInfo.sets[i].pLayout = pCreateInfo.sets[i].pLayout;
+			createInfo.sets[i].layout = pCreateInfo.sets[i].pLayout;
 		}
 
 		ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
@@ -7296,7 +7218,7 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 		createInfo.PS = { pCreateInfo.PS, "psmain" };
 		createInfo.depthReadEnable = false;
 		createInfo.depthWriteEnable = false;
-		createInfo.pPipelineInterface = mPipelineInterface;
+		createInfo.pipelineInterface = mPipelineInterface;
 		createInfo.outputState.depthStencilFormat = pCreateInfo.depthStencilFormat;
 		// Render target formats
 		createInfo.outputState.renderTargetCount = pCreateInfo.renderTargetCount;
@@ -7843,7 +7765,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		PipelineInterfaceCreateInfo createInfo = {};
 		createInfo.setCount = 1;
 		createInfo.sets[0].set = 0;
-		createInfo.sets[0].pLayout = mDescriptorSetLayout;
+		createInfo.sets[0].layout = mDescriptorSetLayout;
 
 		Result ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
 		if (Failed(ppxres)) {
@@ -7855,13 +7777,13 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 	// Pipeline
 	{
 		VertexBinding vertexBinding;
-		vertexBinding.AppendAttribute({ "POSITION", 0, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		vertexBinding.AppendAttribute({ "TEXCOORD", 1, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
-		vertexBinding.AppendAttribute({ "COLOR", 2, Format::R8G8B8A8_UNORM, 0, APPEND_OFFSET_ALIGNED, VERTEX_INPUT_RATE_VERTEX });
+		vertexBinding.AppendAttribute({ "POSITION", 0, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VertexInputRate::Vertex });
+		vertexBinding.AppendAttribute({ "TEXCOORD", 1, Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, VertexInputRate::Vertex });
+		vertexBinding.AppendAttribute({ "COLOR", 2, Format::R8G8B8A8_UNORM, 0, APPEND_OFFSET_ALIGNED, VertexInputRate::Vertex });
 
 		GraphicsPipelineCreateInfo2 createInfo = {};
-		createInfo.VS = { pCreateInfo.VS.pModule, pCreateInfo.VS.entryPoint };
-		createInfo.PS = { pCreateInfo.PS.pModule, pCreateInfo.PS.entryPoint };
+		createInfo.VS = { pCreateInfo.VS.module, pCreateInfo.VS.entryPoint };
+		createInfo.PS = { pCreateInfo.PS.module, pCreateInfo.PS.entryPoint };
 		createInfo.vertexInputState.bindingCount = 1;
 		createInfo.vertexInputState.bindings[0] = vertexBinding;
 		createInfo.topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -7874,7 +7796,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.outputState.renderTargetCount = 1;
 		createInfo.outputState.renderTargetFormats[0] = pCreateInfo.renderTargetFormat;
 		createInfo.outputState.depthStencilFormat = pCreateInfo.depthStencilFormat;
-		createInfo.pPipelineInterface = mPipelineInterface;
+		createInfo.pipelineInterface = mPipelineInterface;
 
 		Result ppxres = GetDevice()->CreateGraphicsPipeline(createInfo, &mPipeline);
 		if (Failed(ppxres)) {

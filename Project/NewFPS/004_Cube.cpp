@@ -50,11 +50,11 @@ bool Example_004::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount                    = 1;
 		piCreateInfo.sets[0].set                 = 0;
-		piCreateInfo.sets[0].pLayout             = mDescriptorSetLayout;
+		piCreateInfo.sets[0].layout             = mDescriptorSetLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
-		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
-		mVertexBinding.AppendAttribute({ "COLOR", 1, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
+		mVertexBinding.AppendAttribute({ "COLOR", 1, vkr::Format::R32G32B32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo        = {};
 		gpCreateInfo.VS                                 = { mVS.Get(), "vsmain" };
@@ -71,7 +71,7 @@ bool Example_004::Setup()
 		gpCreateInfo.outputState.renderTargetCount      = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat     = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface                 = mPipelineInterface;
+		gpCreateInfo.pipelineInterface                 = mPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mPipeline));
 	}
 

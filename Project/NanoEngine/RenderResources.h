@@ -807,7 +807,7 @@ private:
 	bool                             m_hasLoadOpClear = false;
 };
 
-VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCount, const VkFormat* pRenderTargetFormats, VkFormat depthStencilFormat, VkSampleCountFlagBits sampleCount, uint32_t viewMask, uint32_t correlationMask, VkRenderPass* renderPass, ShadingRateMode shadingRateMode = SHADING_RATE_NONE);
+VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCount, const VkFormat* pRenderTargetFormats, VkFormat depthStencilFormat, VkSampleCountFlagBits sampleCount, uint32_t viewMask, uint32_t correlationMask, VkRenderPass* renderPass, ShadingRateMode shadingRateMode = ShadingRateMode::None);
 
 #pragma endregion
 
@@ -996,7 +996,7 @@ struct WriteDescriptor final
 	const Sampler*   sampler = nullptr;
 };
 
-struct DescriptorPoolCreateInfo
+struct DescriptorPoolCreateInfo final
 {
 	uint32_t sampler = 0;
 	uint32_t combinedImageSampler = 0;
@@ -1015,82 +1015,60 @@ struct DescriptorPoolCreateInfo
 class DescriptorPool final : public DeviceObject<DescriptorPoolCreateInfo>
 {
 public:
-	VkDescriptorPoolPtr GetVkDescriptorPool() const { return mDescriptorPool; }
+	VkDescriptorPoolPtr GetVkDescriptorPool() const { return m_descriptorPool; }
 
 private:
-	Result createApiObjects(const DescriptorPoolCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const DescriptorPoolCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkDescriptorPoolPtr mDescriptorPool;
+	VkDescriptorPoolPtr m_descriptorPool;
 };
 
 namespace internal
 {
-	struct DescriptorSetCreateInfo
+	struct DescriptorSetCreateInfo final
 	{
-		DescriptorPool* pPool = nullptr;
-		const DescriptorSetLayout* pLayout = nullptr;
+		DescriptorPool* pool = nullptr;
+		const DescriptorSetLayout* layout = nullptr;
 	};
 }
 
 class DescriptorSet final : public DeviceObject<internal::DescriptorSetCreateInfo>
 {
 public:
-	DescriptorPoolPtr          GetPool() const { return m_createInfo.pPool; }
-	const DescriptorSetLayout* GetLayout() const { return m_createInfo.pLayout; }
+	DescriptorPoolPtr          GetPool() const { return m_createInfo.pool; }
+	const DescriptorSetLayout* GetLayout() const { return m_createInfo.layout; }
 
-	Result UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* pWrites);
+	Result UpdateDescriptors(uint32_t writeCount, const WriteDescriptor* writes);
+	Result UpdateSampler(uint32_t binding, uint32_t  arrayIndex, const Sampler* sampler);
+	Result UpdateSampledImage(uint32_t binding, uint32_t arrayIndex, const SampledImageView* imageView);
+	Result UpdateSampledImage(uint32_t binding, uint32_t arrayIndex, const Texture* texture);
+	Result UpdateStorageImage(uint32_t binding, uint32_t arrayIndex, const Texture* texture);
+	Result UpdateUniformBuffer(uint32_t binding, uint32_t arrayIndex, const Buffer* buffer, uint64_t offset = 0, uint64_t range = WHOLE_SIZE);
 
-	Result UpdateSampler(
-		uint32_t             binding,
-		uint32_t             arrayIndex,
-		const Sampler* pSampler);
-
-	Result UpdateSampledImage(
-		uint32_t                      binding,
-		uint32_t                      arrayIndex,
-		const SampledImageView* pImageView);
-
-	Result UpdateSampledImage(
-		uint32_t             binding,
-		uint32_t             arrayIndex,
-		const Texture* pTexture);
-
-	Result UpdateStorageImage(
-		uint32_t             binding,
-		uint32_t             arrayIndex,
-		const Texture* pTexture);
-
-	Result UpdateUniformBuffer(
-		uint32_t            binding,
-		uint32_t            arrayIndex,
-		const Buffer* pBuffer,
-		uint64_t            offset = 0,
-		uint64_t            range = WHOLE_SIZE);
-
-	VkDescriptorSetPtr GetVkDescriptorSet() const { return mDescriptorSet; }
+	VkDescriptorSetPtr GetVkDescriptorSet() const { return m_descriptorSet; }
 
 private:
-	Result createApiObjects(const internal::DescriptorSetCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const internal::DescriptorSetCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkDescriptorSetPtr  mDescriptorSet;
-	VkDescriptorPoolPtr mDescriptorPool;
+	VkDescriptorSetPtr                  m_descriptorSet;
+	VkDescriptorPoolPtr                 m_descriptorPool;
 
 	// Reduce memory allocations during update process
-	std::vector<VkWriteDescriptorSet>   mWriteStore;
-	std::vector<VkDescriptorImageInfo>  mImageInfoStore;
-	std::vector<VkBufferView>           mTexelBufferStore;
-	std::vector<VkDescriptorBufferInfo> mBufferInfoStore;
-	uint32_t                            mWriteCount = 0;
-	uint32_t                            mImageCount = 0;
-	uint32_t                            mTexelBufferCount = 0;
-	uint32_t                            mBufferCount = 0;
+	std::vector<VkWriteDescriptorSet>   m_writeStore;
+	std::vector<VkDescriptorImageInfo>  m_imageInfoStore;
+	std::vector<VkBufferView>           m_texelBufferStore;
+	std::vector<VkDescriptorBufferInfo> m_bufferInfoStore;
+	uint32_t                            m_writeCount = 0;
+	uint32_t                            m_imageCount = 0;
+	uint32_t                            m_texelBufferCount = 0;
+	uint32_t                            m_bufferCount = 0;
 };
 
-struct DescriptorSetLayoutCreateInfo
+struct DescriptorSetLayoutCreateInfo final
 {
-	DescriptorSetLayoutFlags       flags;
+	DescriptorSetLayoutFlags flags;
 	std::vector<DescriptorBinding> bindings;
 };
 
@@ -1102,16 +1080,14 @@ public:
 
 	const std::vector<DescriptorBinding>& GetBindings() const { return m_createInfo.bindings; }
 
-	VkDescriptorSetLayoutPtr GetVkDescriptorSetLayout() const { return mDescriptorSetLayout; }
+	VkDescriptorSetLayoutPtr GetVkDescriptorSetLayout() const { return m_descriptorSetLayout; }
 
 private:
-	Result create(const DescriptorSetLayoutCreateInfo& pCreateInfo) final;
-
-	Result createApiObjects(const DescriptorSetLayoutCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const DescriptorSetLayoutCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 	Result validateDescriptorBindingFlags(const DescriptorBindingFlags& flags) const;
 
-	VkDescriptorSetLayoutPtr mDescriptorSetLayout;
+	VkDescriptorSetLayoutPtr m_descriptorSetLayout;
 };
 
 #pragma endregion
@@ -1120,20 +1096,20 @@ private:
 
 struct ShaderModuleCreateInfo final
 {
-	uint32_t    size = 0;
-	const char* pCode = nullptr;
+	uint32_t size = 0;
+	const char* code = nullptr;
 };
 
 class ShaderModule final : public DeviceObject<ShaderModuleCreateInfo>
 {
 public:
-	VkShaderModulePtr GetVkShaderModule() const { return mShaderModule; }
+	VkShaderModulePtr GetVkShaderModule() const { return m_shaderModule; }
 
 private:
-	Result createApiObjects(const ShaderModuleCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const ShaderModuleCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkShaderModulePtr mShaderModule;
+	VkShaderModulePtr m_shaderModule;
 };
 
 #pragma endregion
@@ -1154,14 +1130,13 @@ struct SupportedShadingRate final
 struct ShadingRateCapabilities final
 {
 	// The shading rate mode supported by this device.
-	ShadingRateMode supportedShadingRateMode = SHADING_RATE_NONE;
+	ShadingRateMode supportedShadingRateMode = ShadingRateMode::None;
 
 	struct
 	{
 		bool supportsNonSubsampledImages;
 
-		// Minimum/maximum size of the region of the render target
-		// corresponding to a single pixel in the FDM attachment.
+		// Minimum/maximum size of the region of the render target corresponding to a single pixel in the FDM attachment.
 		// This is *not* the minimum/maximum fragment density.
 		Extent2D minTexelSize;
 		Extent2D maxTexelSize;
@@ -1169,8 +1144,7 @@ struct ShadingRateCapabilities final
 
 	struct
 	{
-		// Minimum/maximum size of the region of the render target
-		// corresponding to a single pixel in the VRS attachment.
+		// Minimum/maximum size of the region of the render target corresponding to a single pixel in the VRS attachment.
 		// This is *not* the shading rate itself.
 		Extent2D minTexelSize;
 		Extent2D maxTexelSize;
@@ -1187,13 +1161,10 @@ public:
 	virtual ~ShadingRateEncoder() = default;
 
 	// Encode a pair of fragment density values.
-	//
-	// Fragment density values are a ratio over 255, e.g. 255 means shade every
-	// pixel, and 128 means shade every other pixel.
+	// Fragment density values are a ratio over 255, e.g. 255 means shade every pixel, and 128 means shade every other pixel.
 	virtual uint32_t EncodeFragmentDensity(uint8_t xDensity, uint8_t yDensity) const = 0;
 
 	// Encode a pair of fragment size values.
-	//
 	// The fragmentWidth/fragmentHeight values are in pixels.
 	virtual uint32_t EncodeFragmentSize(uint8_t fragmentWidth, uint8_t fragmentHeight) const = 0;
 };
@@ -1224,13 +1195,13 @@ namespace internal
 		// Maximum encoded value of a shading rate.
 		static constexpr size_t kMaxEncodedShadingRate = (2 << 2) | 2;
 
-		uint32_t        encodeFragmentSizeImpl(uint8_t xDensity, uint8_t yDensity) const;
+		uint32_t encodeFragmentSizeImpl(uint8_t xDensity, uint8_t yDensity) const;
 		static uint32_t rawEncode(uint8_t width, uint8_t height);
 
 		// Maps a requested shading rate to a supported shading rate.
 		// The fragment width/height of the supported shading rate will be no larger than the fragment width/height of the requested shading rate.
 		// Ties are broken lexicographically, e.g. if 2x2, 1x4 and 4x1 are supported, then 2x4 will be mapped to 2x2 but 4x2 will map to 4x1.
-		std::array<uint8_t, kMaxEncodedShadingRate + 1> mMapRateToSupported;
+		std::array<uint8_t, kMaxEncodedShadingRate + 1> m_mapRateToSupported;
 	};
 } // namespace internal
 
@@ -1243,7 +1214,7 @@ struct ShadingRatePatternCreateInfo final
 	Extent2D texelSize;
 
 	// The shading rate mode (FDM or VRS).
-	ShadingRateMode shadingRateMode = SHADING_RATE_NONE;
+	ShadingRateMode shadingRateMode = ShadingRateMode::None;
 
 	// The sample count of the render targets using this shading rate pattern.
 	SampleCount sampleCount;
@@ -1254,22 +1225,21 @@ class ShadingRatePattern final : public DeviceObject<ShadingRatePatternCreateInf
 {
 public:
 	// The shading rate mode (FDM or VRS).
-	ShadingRateMode GetShadingRateMode() const { return mShadingRateMode; }
+	ShadingRateMode GetShadingRateMode() const { return m_shadingRateMode; }
 
 	// The image contaning encoded fragment sizes/densities.
-	ImagePtr GetAttachmentImage() const { return mAttachmentImage; }
+	ImagePtr GetAttachmentImage() const { return m_attachmentImage; }
 
 	// The width/height of the image contaning encoded fragment sizes/densities.
-	uint32_t GetAttachmentWidth() const { return mAttachmentImage->GetWidth(); }
-	uint32_t GetAttachmentHeight() const { return mAttachmentImage->GetHeight(); }
+	uint32_t GetAttachmentWidth() const { return m_attachmentImage->GetWidth(); }
+	uint32_t GetAttachmentHeight() const { return m_attachmentImage->GetHeight(); }
 
-	// The width/height of the region of the render target image corresponding
-	// to a single pixel in the image containing fragment sizes/densities.
-	uint32_t GetTexelWidth() const { return mTexelSize.width; }
-	uint32_t GetTexelHeight() const { return mTexelSize.height; }
+	// The width/height of the region of the render target image corresponding to a single pixel in the image containing fragment sizes/densities.
+	uint32_t GetTexelWidth() const { return m_texelSize.width; }
+	uint32_t GetTexelHeight() const { return m_texelSize.height; }
 
 	// The sample count of the render targets using this shading rate pattern.
-	SampleCount GetSampleCount() const { return mSampleCount; }
+	SampleCount GetSampleCount() const { return m_sampleCount; }
 
 	// Create a bitmap suitable for uploading fragment density/size to this pattern.
 	std::unique_ptr<Bitmap> CreateBitmap() const;
@@ -1283,10 +1253,7 @@ public:
 	// Get an encoder that can encode fragment density/size values for this pattern.
 	const ShadingRateEncoder* GetShadingRateEncoder() const;
 
-	VkImageViewPtr GetAttachmentImageView() const
-	{
-		return mAttachmentView;
-	}
+	VkImageViewPtr GetAttachmentImageView() const { return m_attachmentView; }
 
 	// Creates a modified version of the render pass create info which supports the required shading rate mode.
 	// The shared_ptr also manages the memory of all referenced pointers and arrays in the VkRenderPassCreateInfo2 struct.
@@ -1303,37 +1270,30 @@ private:
 	public:
 		virtual ~ModifiedRenderPassCreateInfo() = default;
 
-		// Initializes the modified VkRenderPassCreateInfo2, based on the
-		// values in the input VkRenderPassCreateInfo/VkRenderPassCreateInfo2,
-		// with appropriate modifications for the shading rate implementation.
+		// Initializes the modified VkRenderPassCreateInfo2, based on the values in the input VkRenderPassCreateInfo/VkRenderPassCreateInfo2, with appropriate modifications for the shading rate implementation.
 		ModifiedRenderPassCreateInfo& Initialize(const VkRenderPassCreateInfo& vkci);
 		ModifiedRenderPassCreateInfo& Initialize(const VkRenderPassCreateInfo2& vkci);
 
 		// Returns the modified VkRenderPassCreateInfo2.
-		//
-		// The returned pointer, as well as pointers and arrays inside the
-		// VkRenderPassCreateInfo2 struct, point to memory owned by this
-		/// ModifiedRenderPassCreateInfo object, and so cannot be used after
-		// this object is destroyed.
+		// The returned pointer, as well as pointers and arrays inside the VkRenderPassCreateInfo2 struct, point to memory owned by this ModifiedRenderPassCreateInfo object, and so cannot be used after this object is destroyed.
 		std::shared_ptr<const VkRenderPassCreateInfo2> Get()
 		{
-			return std::shared_ptr<const VkRenderPassCreateInfo2>(shared_from_this(), &mVkRenderPassCreateInfo2);
+			return std::shared_ptr<const VkRenderPassCreateInfo2>(shared_from_this(), &m_vkRenderPassCreateInfo2);
 		}
 
 	protected:
 		// Initializes the internal VkRenderPassCreateInfo2, based on the values in the input VkRenderPassCreateInfo/VkRenderPassCreateInfo2.
-		// All arrays are copied to internal vectors, and the internal
-		// VkRenderPassCreateInfo2 references the data in these vectors, rather than the poitners in the input VkRenderPassCreateInfo.
-		void LoadVkRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci);
-		void LoadVkRenderPassCreateInfo2(const VkRenderPassCreateInfo2& vkci);
+		// All arrays are copied to internal vectors, and the internal VkRenderPassCreateInfo2 references the data in these vectors, rather than the poitners in the input VkRenderPassCreateInfo.
+		void loadVkRenderPassCreateInfo(const VkRenderPassCreateInfo& vkci);
+		void loadVkRenderPassCreateInfo2(const VkRenderPassCreateInfo2& vkci);
 
 		// Modifies the internal VkRenderPassCreateInfo2 to enable the shading rate implementation.
-		virtual void UpdateRenderPassForShadingRateImplementation() = 0;
+		virtual void updateRenderPassForShadingRateImplementation() = 0;
 
-		VkRenderPassCreateInfo2               mVkRenderPassCreateInfo2 = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2 };
-		std::vector<VkAttachmentDescription2> mAttachments;
-		std::vector<VkSubpassDescription2>    mSubpasses;
-		struct SubpassAttachments
+		VkRenderPassCreateInfo2               m_vkRenderPassCreateInfo2 = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2 };
+		std::vector<VkAttachmentDescription2> m_attachments;
+		std::vector<VkSubpassDescription2>    m_subpasses;
+		struct SubpassAttachments final
 		{
 			std::vector<VkAttachmentReference2> inputAttachments;
 			std::vector<VkAttachmentReference2> colorAttachments;
@@ -1341,57 +1301,55 @@ private:
 			VkAttachmentReference2              depthStencilAttachment;
 			std::vector<uint32_t>               preserveAttachments;
 		};
-		std::vector<SubpassAttachments>   mSubpassAttachments;
-		std::vector<VkSubpassDependency2> mDependencies;
+		std::vector<SubpassAttachments>   m_subpassAttachments;
+		std::vector<VkSubpassDependency2> m_dependencies;
 	};
 
 	// Creates a ModifiedRenderPassCreateInfo that will modify
 	// VkRenderPassCreateInfo/VkRenderPassCreateInfo2  to support the given ShadingRateMode on the given device.
-	static std::shared_ptr<ModifiedRenderPassCreateInfo> CreateModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode);
+	static std::shared_ptr<ModifiedRenderPassCreateInfo> createModifiedRenderPassCreateInfo(RenderDevice* device, ShadingRateMode mode);
 
 	// Creates a ModifiedRenderPassCreateInfo that will modify
 	// VkRenderPassCreateInfo/VkRenderPassCreateInfo2 to support this ShadingRatePattern.
-	std::shared_ptr<ModifiedRenderPassCreateInfo> CreateModifiedRenderPassCreateInfo() const
+	std::shared_ptr<ModifiedRenderPassCreateInfo> createModifiedRenderPassCreateInfo() const
 	{
-		return CreateModifiedRenderPassCreateInfo(GetDevice(), GetShadingRateMode());
+		return createModifiedRenderPassCreateInfo(GetDevice(), GetShadingRateMode());
 	}
 
 	// Handles modification of VkRenderPassCreateInfo(2) to add support for FDM.
-	class FDMModifiedRenderPassCreateInfo : public ModifiedRenderPassCreateInfo
+	class FDMModifiedRenderPassCreateInfo final : public ModifiedRenderPassCreateInfo
 	{
-	protected:
-		void UpdateRenderPassForShadingRateImplementation() override;
-
 	private:
-		VkRenderPassFragmentDensityMapCreateInfoEXT mFdmInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
+		void updateRenderPassForShadingRateImplementation() final;
+
+		VkRenderPassFragmentDensityMapCreateInfoEXT m_fdmInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
 	};
 
 	// Handles modification of VkRenderPassCreateInfo(2) to add support for VRS.
-	class VRSModifiedRenderPassCreateInfo : public ModifiedRenderPassCreateInfo
+	class VRSModifiedRenderPassCreateInfo final : public ModifiedRenderPassCreateInfo
 	{
 	public:
 		VRSModifiedRenderPassCreateInfo(const ShadingRateCapabilities& capabilities)
-			: mCapabilities(capabilities) {}
-
-	protected:
-		void UpdateRenderPassForShadingRateImplementation() override;
+			: m_capabilities(capabilities) {}
 
 	private:
-		ShadingRateCapabilities                mCapabilities;
-		VkFragmentShadingRateAttachmentInfoKHR mVrsAttachmentInfo = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR };
-		VkAttachmentReference2                 mVrsAttachmentRef = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR };
+		void updateRenderPassForShadingRateImplementation() final;
+
+		ShadingRateCapabilities                m_capabilities;
+		VkFragmentShadingRateAttachmentInfoKHR m_vrsAttachmentInfo = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR };
+		VkAttachmentReference2                 m_vrsAttachmentRef = { VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR };
 	};
 
-	Result createApiObjects(const ShadingRatePatternCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const ShadingRatePatternCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	std::unique_ptr<ShadingRateEncoder> mShadingRateEncoder;
-	VkImageViewPtr                      mAttachmentView;
+	std::unique_ptr<ShadingRateEncoder> m_shadingRateEncoder;
+	VkImageViewPtr                      m_attachmentView;
 
-	ShadingRateMode mShadingRateMode;
-	ImagePtr        mAttachmentImage;
-	Extent2D        mTexelSize;
-	SampleCount     mSampleCount;
+	ShadingRateMode m_shadingRateMode;
+	ImagePtr        m_attachmentImage;
+	Extent2D        m_texelSize;
+	SampleCount     m_sampleCount;
 };
 
 #pragma endregion
@@ -1413,7 +1371,7 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 
 #pragma region Mesh
 
-struct MeshVertexAttribute
+struct MeshVertexAttribute final
 {
 	Format format = Format::Undefined;
 
@@ -1425,99 +1383,82 @@ struct MeshVertexAttribute
 	uint32_t offset = 0;
 
 	// [OPTIONAL] Useful for debugging.
-	VertexSemantic vertexSemantic = VERTEX_SEMANTIC_UNDEFINED;
+	VertexSemantic vertexSemantic = VertexSemantic::Undefined;
 };
 
-struct MeshVertexBufferDescription
+struct MeshVertexBufferDescription final
 {
-	uint32_t                  attributeCount = 0;
+	uint32_t attributeCount = 0;
 	MeshVertexAttribute attributes[MaxVertexBindings] = {};
 
 	// Use 0 to have stride calculated from attributes
 	uint32_t stride = 0;
 
-	VertexInputRate vertexInputRate = VERTEX_INPUT_RATE_VERTEX;
+	VertexInputRate vertexInputRate = VertexInputRate::Vertex;
 };
 
-//! @struct MeshCreateInfo
-//!
-//! Usage Notes:
-//!   - Index and vertex data configuration needs to make sense
-//!       - If \b indexCount is 0 then \b vertexCount cannot be 0
-//!   - To create a mesh without an index buffer, \b indexType must be IndexType::Undefined
-//!   - If \b vertexCount is 0 then no vertex buffers will be created
-//!       - This means vertex buffer information will be ignored
-//!   - Active elements in \b vertexBuffers cannot have an \b attributeCount of 0
-//!
-struct MeshCreateInfo
+// Usage Notes:
+//   - Index and vertex data configuration needs to make sense
+//       - If \b indexCount is 0 then \b vertexCount cannot be 0
+//   - To create a mesh without an index buffer, \b indexType must be IndexType::Undefined
+//   - If \b vertexCount is 0 then no vertex buffers will be created
+//       - This means vertex buffer information will be ignored
+//   - Active elements in \b vertexBuffers cannot have an \b attributeCount of 0
+struct MeshCreateInfo final
 {
+	MeshCreateInfo() = default;
+	MeshCreateInfo(const Geometry& geometry);
+
 	IndexType                   indexType = IndexType::Undefined;
-	uint32_t                          indexCount = 0;
-	uint32_t                          vertexCount = 0;
-	uint32_t                          vertexBufferCount = 0;
+	uint32_t                    indexCount = 0;
+	uint32_t                    vertexCount = 0;
+	uint32_t                    vertexBufferCount = 0;
 	MeshVertexBufferDescription vertexBuffers[MaxVertexBindings] = {};
 	MemoryUsage                 memoryUsage = MemoryUsage::GPUOnly;
-
-	MeshCreateInfo() {}
-	MeshCreateInfo(const Geometry& geometry);
 };
 
-//! @class Mesh
-//!
-//! The \b Mesh class is a straight forward geometry container for the GPU.
-//! A \b Mesh instance consists of vertex data and an optional index buffer.
-//! The vertex data is stored in on or more vertex buffers. Each vertex buffer
-//! can store data for one or more attributes. The index data is stored in an
-//! index buffer.
-//!
-//! A \b Mesh instance does not store vertex binding information. Even if the
-//! create info is derived from a Geometry instance. This design is
-//! intentional since it enables calling applications to map vertex attributes
-//! and vertex buffers to how it sees fit. For convenience, the function
-//! \b Mesh::GetDerivedVertexBindings() returns vertex bindings derived from
-//! a \Mesh instance's vertex buffer descriptions.
-//!
-class Mesh : public DeviceObject<MeshCreateInfo>
+// The \b Mesh class is a straight forward geometry container for the GPU.
+// A \b Mesh instance consists of vertex data and an optional index buffer.
+// The vertex data is stored in on or more vertex buffers. Each vertex buffer can store data for one or more attributes. The index data is stored in an index buffer.
+// A \b Mesh instance does not store vertex binding information. Even if the create info is derived from a Geometry instance. This design is intentional since it enables calling applications to map vertex attributes and vertex buffers to how it sees fit. For convenience, the function \b Mesh::GetDerivedVertexBindings() returns vertex bindings derived from a \Mesh instance's vertex buffer descriptions.
+class Mesh final : public DeviceObject<MeshCreateInfo>
 {
 public:
-	Mesh() {}
-	virtual ~Mesh() {}
-
 	IndexType GetIndexType() const { return m_createInfo.indexType; }
-	uint32_t        GetIndexCount() const { return m_createInfo.indexCount; }
-	BufferPtr GetIndexBuffer() const { return mIndexBuffer; }
+	uint32_t  GetIndexCount() const { return m_createInfo.indexCount; }
+	BufferPtr GetIndexBuffer() const { return m_indexBuffer; }
 
-	uint32_t                                 GetVertexCount() const { return m_createInfo.vertexCount; }
-	uint32_t                                 GetVertexBufferCount() const { return CountU32(mVertexBuffers); }
+	uint32_t                           GetVertexCount() const { return m_createInfo.vertexCount; }
+	uint32_t                           GetVertexBufferCount() const { return CountU32(m_vertexBuffers); }
 	BufferPtr                          GetVertexBuffer(uint32_t index) const;
 	const MeshVertexBufferDescription* GetVertexBufferDescription(uint32_t index) const;
 
 	//! Returns derived vertex bindings based on the vertex buffer description
-	const std::vector<VertexBinding>& GetDerivedVertexBindings() const { return mDerivedVertexBindings; }
+	const std::vector<VertexBinding>& GetDerivedVertexBindings() const { return m_derivedVertexBindings; }
 
 private:
-	Result createApiObjects(const MeshCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const MeshCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	BufferPtr                                                            mIndexBuffer;
-	std::vector<std::pair<BufferPtr, MeshVertexBufferDescription>> mVertexBuffers;
-	std::vector<VertexBinding>                                           mDerivedVertexBindings;
+	BufferPtr                                                      m_indexBuffer;
+	std::vector<std::pair<BufferPtr, MeshVertexBufferDescription>> m_vertexBuffers;
+	std::vector<VertexBinding>                                     m_derivedVertexBindings;
 };
 
 #pragma endregion
 
 #pragma region Pipeline
 
-struct ShaderStageInfo
+struct ShaderStageInfo final
 {
-	const ShaderModule* pModule = nullptr;
+	const ShaderModule* module = nullptr;
 	std::string entryPoint = "";
 };
 
-struct ComputePipelineCreateInfo
+struct ComputePipelineCreateInfo final
 {
-	ShaderStageInfo          CS = {};
-	const PipelineInterface* pPipelineInterface = nullptr;
+	ShaderStageInfo CS = {};
+	const PipelineInterface* pipelineInterface = nullptr;
 };
 
 class ComputePipeline final : public DeviceObject<ComputePipelineCreateInfo>
@@ -1525,92 +1466,90 @@ class ComputePipeline final : public DeviceObject<ComputePipelineCreateInfo>
 	friend class RenderDevice;
 public:
 
-	VkPipelinePtr GetVkPipeline() const { return mPipeline; }
+	VkPipelinePtr GetVkPipeline() const { return m_pipeline; }
 
 private:
-	Result create(const ComputePipelineCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const ComputePipelineCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result createApiObjects(const ComputePipelineCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	VkPipelinePtr mPipeline;
+	VkPipelinePtr m_pipeline;
 };
 
-struct VertexInputState
+struct VertexInputState final
 {
-	uint32_t            bindingCount = 0;
+	uint32_t bindingCount = 0;
 	VertexBinding bindings[MaxVertexBindings] = {};
 };
 
-struct InputAssemblyState
+struct InputAssemblyState final
 {
 	PrimitiveTopology topology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	bool                    primitiveRestartEnable = false;
+	bool primitiveRestartEnable = false;
 };
 
-struct TessellationState
+struct TessellationState final
 {
-	uint32_t                       patchControlPoints = 0;
+	uint32_t patchControlPoints = 0;
 	TessellationDomainOrigin domainOrigin = TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT;
 };
 
-struct RasterState
+struct RasterState final
 {
-	bool              depthClampEnable = false;
-	bool              rasterizeDiscardEnable = false;
+	bool depthClampEnable = false;
+	bool rasterizeDiscardEnable = false;
 	PolygonMode polygonMode = POLYGON_MODE_FILL;
-	CullMode    cullMode = CULL_MODE_NONE;
-	FrontFace   frontFace = FRONT_FACE_CCW;
-	bool              depthBiasEnable = false;
-	float             depthBiasConstantFactor = 0.0f;
-	float             depthBiasClamp = 0.0f;
-	float             depthBiasSlopeFactor = 0.0f;
-	bool              depthClipEnable = false;
+	CullMode cullMode = CULL_MODE_NONE;
+	FrontFace frontFace = FRONT_FACE_CCW;
+	bool depthBiasEnable = false;
+	float depthBiasConstantFactor = 0.0f;
+	float depthBiasClamp = 0.0f;
+	float depthBiasSlopeFactor = 0.0f;
+	bool depthClipEnable = false;
 	SampleCount rasterizationSamples = SampleCount::Sample1;
 };
 
-struct MultisampleState
+struct MultisampleState final
 {
 	bool alphaToCoverageEnable = false;
 };
 
-struct StencilOpState
+struct StencilOpState final
 {
 	StencilOp failOp = STENCIL_OP_KEEP;
 	StencilOp passOp = STENCIL_OP_KEEP;
 	StencilOp depthFailOp = STENCIL_OP_KEEP;
 	CompareOp compareOp = CompareOp::Never;
-	uint32_t        compareMask = 0;
-	uint32_t        writeMask = 0;
-	uint32_t        reference = 0;
+	uint32_t compareMask = 0;
+	uint32_t writeMask = 0;
+	uint32_t reference = 0;
 };
 
-struct DepthStencilState
+struct DepthStencilState final
 {
-	bool                 depthTestEnable = true;
-	bool                 depthWriteEnable = true;
-	CompareOp      depthCompareOp = CompareOp::Less;
-	bool                 depthBoundsTestEnable = false;
-	float                minDepthBounds = 0.0f;
-	float                maxDepthBounds = 1.0f;
-	bool                 stencilTestEnable = false;
+	bool depthTestEnable = true;
+	bool depthWriteEnable = true;
+	CompareOp depthCompareOp = CompareOp::Less;
+	bool depthBoundsTestEnable = false;
+	float minDepthBounds = 0.0f;
+	float maxDepthBounds = 1.0f;
+	bool stencilTestEnable = false;
 	StencilOpState front = {};
 	StencilOpState back = {};
 };
 
-struct BlendAttachmentState
+struct BlendAttachmentState final
 {
-	bool                      blendEnable = false;
-	BlendFactor         srcColorBlendFactor = BLEND_FACTOR_ONE;
-	BlendFactor         dstColorBlendFactor = BLEND_FACTOR_ZERO;
-	BlendOp             colorBlendOp = BLEND_OP_ADD;
-	BlendFactor         srcAlphaBlendFactor = BLEND_FACTOR_ONE;
-	BlendFactor         dstAlphaBlendFactor = BLEND_FACTOR_ZERO;
-	BlendOp             alphaBlendOp = BLEND_OP_ADD;
+	bool blendEnable = false;
+	BlendFactor srcColorBlendFactor = BLEND_FACTOR_ONE;
+	BlendFactor dstColorBlendFactor = BLEND_FACTOR_ZERO;
+	BlendOp colorBlendOp = BLEND_OP_ADD;
+	BlendFactor srcAlphaBlendFactor = BLEND_FACTOR_ONE;
+	BlendFactor dstAlphaBlendFactor = BLEND_FACTOR_ZERO;
+	BlendOp alphaBlendOp = BLEND_OP_ADD;
 	ColorComponentFlags colorWriteMask = ColorComponentFlags::RGBA();
 
 	// These are best guesses based on random formulas off of the internet.
 	// Correct later when authorative literature is found.
-	//
 	static BlendAttachmentState BlendModeAdditive();
 	static BlendAttachmentState BlendModeAlpha();
 	static BlendAttachmentState BlendModeOver();
@@ -1618,23 +1557,23 @@ struct BlendAttachmentState
 	static BlendAttachmentState BlendModePremultAlpha();
 };
 
-struct ColorBlendState
+struct ColorBlendState final
 {
-	bool                       logicOpEnable = false;
-	LogicOp              logicOp = LOGIC_OP_CLEAR;
-	uint32_t                   blendAttachmentCount = 0;
+	bool logicOpEnable = false;
+	LogicOp logicOp = LOGIC_OP_CLEAR;
+	uint32_t blendAttachmentCount = 0;
 	BlendAttachmentState blendAttachments[MaxRenderTargets] = {};
-	float                      blendConstants[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float blendConstants[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
-struct OutputState
+struct OutputState final
 {
-	uint32_t     renderTargetCount = 0;
+	uint32_t renderTargetCount = 0;
 	Format renderTargetFormats[MaxRenderTargets] = { Format::Undefined };
 	Format depthStencilFormat = Format::Undefined;
 };
 
-struct GraphicsPipelineCreateInfo
+struct GraphicsPipelineCreateInfo final
 {
 	ShaderStageInfo          VS = {};
 	ShaderStageInfo          HS = {};
@@ -1649,13 +1588,13 @@ struct GraphicsPipelineCreateInfo
 	DepthStencilState        depthStencilState = {};
 	ColorBlendState          colorBlendState = {};
 	OutputState              outputState = {};
-	ShadingRateMode          shadingRateMode = SHADING_RATE_NONE;
+	ShadingRateMode          shadingRateMode = ShadingRateMode::None;
 	MultiViewState           multiViewState = {};
-	const PipelineInterface* pPipelineInterface = nullptr;
-	bool                           dynamicRenderPass = false;
+	const PipelineInterface* pipelineInterface = nullptr;
+	bool                     dynamicRenderPass = false;
 };
 
-struct GraphicsPipelineCreateInfo2
+struct GraphicsPipelineCreateInfo2 final
 {
 	ShaderStageInfo          VS = {};
 	ShaderStageInfo          PS = {};
@@ -1664,101 +1603,65 @@ struct GraphicsPipelineCreateInfo2
 	PolygonMode              polygonMode = POLYGON_MODE_FILL;
 	CullMode                 cullMode = CULL_MODE_NONE;
 	FrontFace                frontFace = FRONT_FACE_CCW;
-	bool                           depthReadEnable = true;
-	bool                           depthWriteEnable = true;
+	bool                     depthReadEnable = true;
+	bool                     depthWriteEnable = true;
 	CompareOp                depthCompareOp = CompareOp::Less;
 	BlendMode                blendModes[MaxRenderTargets] = { BLEND_MODE_NONE };
 	OutputState              outputState = {};
-	ShadingRateMode          shadingRateMode = SHADING_RATE_NONE;
+	ShadingRateMode          shadingRateMode = ShadingRateMode::None;
 	MultiViewState           multiViewState = {};
-	const PipelineInterface* pPipelineInterface = nullptr;
-	bool                           dynamicRenderPass = false;
+	const PipelineInterface* pipelineInterface = nullptr;
+	bool                     dynamicRenderPass = false;
 };
 
-namespace internal {
-
-	void FillOutGraphicsPipelineCreateInfo(
-		const GraphicsPipelineCreateInfo2& pSrcCreateInfo,
-		GraphicsPipelineCreateInfo* pDstCreateInfo);
-
+namespace internal
+{
+	void FillOutGraphicsPipelineCreateInfo(const GraphicsPipelineCreateInfo2& srcCreateInfo, GraphicsPipelineCreateInfo* dstCreateInfo);
 } // namespace internal
 
 class GraphicsPipeline final: public DeviceObject<GraphicsPipelineCreateInfo>
 {
 	friend class RenderDevice;
 public:
-	VkPipelinePtr GetVkPipeline() const { return mPipeline; }
+	VkPipelinePtr GetVkPipeline() const { return m_pipeline; }
 
 private:
-	Result create(const GraphicsPipelineCreateInfo& pCreateInfo) final;
-	Result createApiObjects(const GraphicsPipelineCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	Result create(const GraphicsPipelineCreateInfo& createInfo) final;
+	Result createApiObjects(const GraphicsPipelineCreateInfo& createInfo) final;
+	void destroyApiObjects() final;
 
-	Result initializeShaderStages(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
-		VkGraphicsPipelineCreateInfo& vkCreateInfo);
-	Result initializeVertexInput(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		std::vector<VkVertexInputAttributeDescription>& attribues,
-		std::vector<VkVertexInputBindingDescription>& bindings,
-		VkPipelineVertexInputStateCreateInfo& stateCreateInfo);
-	Result initializeInputAssembly(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo);
-	Result initializeTessellation(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo,
-		VkPipelineTessellationStateCreateInfo& stateCreateInfo);
-	Result initializeViewports(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineViewportStateCreateInfo& stateCreateInfo);
-	Result initializeRasterization(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo,
-		VkPipelineRasterizationStateCreateInfo& stateCreateInfo);
-	Result initializeMultisample(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineMultisampleStateCreateInfo& stateCreateInfo);
-	Result initializeDepthStencil(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		VkPipelineDepthStencilStateCreateInfo& stateCreateInfo);
-	Result initializeColorBlend(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		std::vector<VkPipelineColorBlendAttachmentState>& attachments,
-		VkPipelineColorBlendStateCreateInfo& stateCreateInfo);
-	Result initializeDynamicState(
-		const GraphicsPipelineCreateInfo& pCreateInfo,
-		std::vector<VkDynamicState>& dynamicStates,
-		VkPipelineDynamicStateCreateInfo& stateCreateInfo);
+	Result initializeShaderStages(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, VkGraphicsPipelineCreateInfo& vkCreateInfo);
+	Result initializeVertexInput(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkVertexInputAttributeDescription>& attribues, std::vector<VkVertexInputBindingDescription>& bindings, VkPipelineVertexInputStateCreateInfo& stateCreateInfo);
+	Result initializeInputAssembly(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo);
+	Result initializeTessellation(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo, VkPipelineTessellationStateCreateInfo& stateCreateInfo);
+	Result initializeViewports(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineViewportStateCreateInfo& stateCreateInfo);
+	Result initializeRasterization(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo, VkPipelineRasterizationStateCreateInfo& stateCreateInfo);
+	Result initializeMultisample(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineMultisampleStateCreateInfo& stateCreateInfo);
+	Result initializeDepthStencil(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineDepthStencilStateCreateInfo& stateCreateInfo);
+	Result initializeColorBlend(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkPipelineColorBlendAttachmentState>& attachments, VkPipelineColorBlendStateCreateInfo& stateCreateInfo);
+	Result initializeDynamicState(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo);
 
-	VkPipelinePtr mPipeline;
+	VkPipelinePtr m_pipeline;
 };
 
-struct PipelineInterfaceCreateInfo
+struct PipelineInterfaceCreateInfo final
 {
 	uint32_t setCount = 0;
 	struct
 	{
-		uint32_t                         set = VALUE_IGNORED; // Set number
-		const DescriptorSetLayout* pLayout = nullptr;           // Set layout
+		uint32_t set = VALUE_IGNORED; // Set number
+		const DescriptorSetLayout* layout = nullptr; // Set layout
 	} sets[MaxBoundDescriptorSets] = {};
 
 	// VK: Push constants
 	// DX: Root constants
-	//
 	// Push/root constants are measured in DWORDs (uint32_t) aka 32-bit values.
-	//
-	// The binding and set for push constants CAN NOT overlap with a binding
-	// AND set in sets (the struct immediately above this one). It's okay for
-	// push constants to be in an existing set at binding that is not used
-	// by an entry in the set layout.
-	//
+	// The binding and set for push constants CAN NOT overlap with a binding AND set in sets (the struct immediately above this one). It's okay for push constants to be in an existing set at binding that is not used by an entry in the set layout.
 	struct
 	{
-		uint32_t              count = 0;                 // Measured in DWORDs, must be less than or equal to MAX_PUSH_CONSTANTS
-		uint32_t              binding = VALUE_IGNORED; // D3D12 only, ignored by Vulkan
-		uint32_t              set = VALUE_IGNORED; // D3D12 only, ignored by Vulkan
+		uint32_t        count = 0;               // Measured in DWORDs, must be less than or equal to MAX_PUSH_CONSTANTS
+		uint32_t        binding = VALUE_IGNORED; // D3D12 only, ignored by Vulkan
+		uint32_t        set = VALUE_IGNORED;     // D3D12 only, ignored by Vulkan
 		ShaderStageBits shaderVisiblity = SHADER_STAGE_ALL;
 	} pushConstants;
 };
@@ -1767,24 +1670,24 @@ class PipelineInterface final : public DeviceObject<PipelineInterfaceCreateInfo>
 {
 	friend class RenderDevice;
 public:
-	bool                         HasConsecutiveSetNumbers() const { return mHasConsecutiveSetNumbers; }
-	const std::vector<uint32_t>& GetSetNumbers() const { return mSetNumbers; }
+	bool HasConsecutiveSetNumbers() const { return m_hasConsecutiveSetNumbers; }
+	const std::vector<uint32_t>& GetSetNumbers() const { return m_setNumbers; }
 
 	const DescriptorSetLayout* GetSetLayout(uint32_t setNumber) const;
 
-	VkPipelineLayoutPtr GetVkPipelineLayout() const { return mPipelineLayout; }
+	VkPipelineLayoutPtr GetVkPipelineLayout() const { return m_pipelineLayout; }
 
-	VkShaderStageFlags GetPushConstantShaderStageFlags() const { return mPushConstantShaderStageFlags; }
+	VkShaderStageFlags GetPushConstantShaderStageFlags() const { return m_pushConstantShaderStageFlags; }
 
 private:
 	Result create(const PipelineInterfaceCreateInfo& pCreateInfo) final;
 	Result createApiObjects(const PipelineInterfaceCreateInfo& pCreateInfo) final;
-	void   destroyApiObjects() final;
+	void destroyApiObjects() final;
 
-	VkPipelineLayoutPtr mPipelineLayout;
-	VkShaderStageFlags  mPushConstantShaderStageFlags = 0;
-	bool                  mHasConsecutiveSetNumbers = false;
-	std::vector<uint32_t> mSetNumbers = {};
+	VkPipelineLayoutPtr m_pipelineLayout;
+	VkShaderStageFlags  m_pushConstantShaderStageFlags = 0;
+	bool m_hasConsecutiveSetNumbers = false;
+	std::vector<uint32_t> m_setNumbers = {};
 };
 
 #pragma endregion

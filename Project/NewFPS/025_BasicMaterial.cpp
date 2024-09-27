@@ -293,13 +293,13 @@ bool Example_025::Setup()
 		vkr::PipelineInterfaceCreateInfo createInfo = {};
 		createInfo.setCount = 4;
 		createInfo.sets[0].set = 0;
-		createInfo.sets[0].pLayout = mSceneDataLayout;
+		createInfo.sets[0].layout = mSceneDataLayout;
 		createInfo.sets[1].set = 1;
-		createInfo.sets[1].pLayout = mMaterialResourcesLayout;
+		createInfo.sets[1].layout = mMaterialResourcesLayout;
 		createInfo.sets[2].set = 2;
-		createInfo.sets[2].pLayout = mMaterialDataLayout;
+		createInfo.sets[2].layout = mMaterialDataLayout;
 		createInfo.sets[3].set = 3;
-		createInfo.sets[3].pLayout = mModelDataLayout;
+		createInfo.sets[3].layout = mModelDataLayout;
 
 		CHECKED_CALL(device.CreatePipelineInterface(createInfo, &mPipelineInterface));
 
@@ -307,7 +307,7 @@ bool Example_025::Setup()
 		createInfo = {};
 		createInfo.setCount = 1;
 		createInfo.sets[0].set = 0;
-		createInfo.sets[0].pLayout = mEnvDrawLayout;
+		createInfo.sets[0].layout = mEnvDrawLayout;
 
 		CHECKED_CALL(device.CreatePipelineInterface(createInfo, &mEnvDrawPipelineInterface));
 	}
@@ -332,7 +332,7 @@ bool Example_025::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mPipelineInterface;
+		gpCreateInfo.pipelineInterface = mPipelineInterface;
 
 		vkr::ShaderModulePtr VS;
 
@@ -430,7 +430,7 @@ bool Example_025::Setup()
 			gpCreateInfo.vertexInputState.bindings[0] = mEnvDrawMesh->GetDerivedVertexBindings()[0];
 			gpCreateInfo.vertexInputState.bindings[1] = mEnvDrawMesh->GetDerivedVertexBindings()[1];
 			gpCreateInfo.cullMode = vkr::CULL_MODE_FRONT;
-			gpCreateInfo.pPipelineInterface = mEnvDrawPipelineInterface;
+			gpCreateInfo.pipelineInterface = mEnvDrawPipelineInterface;
 
 			gpCreateInfo.VS = { VS.Get(), "vsmain" };
 			gpCreateInfo.PS = { PS.Get(), "psmain" };

@@ -460,11 +460,11 @@ enum class Filter : uint8_t
 	Linear
 };
 
-enum ShadingRateMode
+enum class ShadingRateMode : uint8_t
 {
-	SHADING_RATE_NONE = 0,
-	SHADING_RATE_FDM = 1, // Fragment Density Map
-	SHADING_RATE_VRS = 2, // Variable Rate Shading
+	None,
+	FDM, // Fragment Density Map
+	VRS  // Variable Rate Shading
 };
 
 enum FrontFace
@@ -693,44 +693,44 @@ enum TransitionFlag
 	TRANSITION_FALG_API_OPTIONAL = 2, // Indicates a transition that can be optionally ignored by the API
 };
 
-enum VertexInputRate
+enum class VertexInputRate : uint8_t
 {
-	VERTEX_INPUT_RATE_VERTEX = 0,
-	VERETX_INPUT_RATE_INSTANCE = 1,
+	Vertex,
+	Instance,
 };
 
-enum VertexSemantic
+enum class VertexSemantic : uint8_t
 {
-	VERTEX_SEMANTIC_UNDEFINED = 0,
-	VERTEX_SEMANTIC_POSITION = 1, // Object space position
-	VERTEX_SEMANTIC_NORMAL = 2, // Object space normals
-	VERTEX_SEMANTIC_COLOR = 3, // Vertex color
-	VERTEX_SEMANTIC_TANGENT = 4, // Object space tangents
-	VERTEX_SEMANTIC_BITANGENT = 5, // Object space bitangents
-	VERTEX_SEMANTIC_TEXCOORD = 6,
-	VERTEX_SEMANTIC_TEXCOORD0 = VERTEX_SEMANTIC_TEXCOORD + 1,
-	VERTEX_SEMANTIC_TEXCOORD1 = VERTEX_SEMANTIC_TEXCOORD0 + 1,
-	VERTEX_SEMANTIC_TEXCOORD2 = VERTEX_SEMANTIC_TEXCOORD1 + 1,
-	VERTEX_SEMANTIC_TEXCOORD3 = VERTEX_SEMANTIC_TEXCOORD2 + 1,
-	VERTEX_SEMANTIC_TEXCOORD4 = VERTEX_SEMANTIC_TEXCOORD3 + 1,
-	VERTEX_SEMANTIC_TEXCOORD5 = VERTEX_SEMANTIC_TEXCOORD4 + 1,
-	VERTEX_SEMANTIC_TEXCOORD6 = VERTEX_SEMANTIC_TEXCOORD5 + 1,
-	VERTEX_SEMANTIC_TEXCOORD7 = VERTEX_SEMANTIC_TEXCOORD6 + 1,
-	VERTEX_SEMANTIC_TEXCOORD8 = VERTEX_SEMANTIC_TEXCOORD7 + 1,
-	VERTEX_SEMANTIC_TEXCOORD9 = VERTEX_SEMANTIC_TEXCOORD8 + 1,
-	VERTEX_SEMANTIC_TEXCOORD10 = VERTEX_SEMANTIC_TEXCOORD9 + 1,
-	VERTEX_SEMANTIC_TEXCOORD11 = VERTEX_SEMANTIC_TEXCOORD10 + 1,
-	VERTEX_SEMANTIC_TEXCOORD12 = VERTEX_SEMANTIC_TEXCOORD11 + 1,
-	VERTEX_SEMANTIC_TEXCOORD13 = VERTEX_SEMANTIC_TEXCOORD12 + 1,
-	VERTEX_SEMANTIC_TEXCOORD14 = VERTEX_SEMANTIC_TEXCOORD13 + 1,
-	VERTEX_SEMANTIC_TEXCOORD15 = VERTEX_SEMANTIC_TEXCOORD14 + 1,
-	VERTEX_SEMANTIC_TEXCOORD16 = VERTEX_SEMANTIC_TEXCOORD15 + 1,
-	VERTEX_SEMANTIC_TEXCOORD17 = VERTEX_SEMANTIC_TEXCOORD16 + 1,
-	VERTEX_SEMANTIC_TEXCOORD18 = VERTEX_SEMANTIC_TEXCOORD17 + 1,
-	VERTEX_SEMANTIC_TEXCOORD19 = VERTEX_SEMANTIC_TEXCOORD18 + 1,
-	VERTEX_SEMANTIC_TEXCOORD20 = VERTEX_SEMANTIC_TEXCOORD19 + 1,
-	VERTEX_SEMANTIC_TEXCOORD21 = VERTEX_SEMANTIC_TEXCOORD20 + 1,
-	VERTEX_SEMANTIC_TEXCOORD22 = VERTEX_SEMANTIC_TEXCOORD21 + 1,
+	Undefined,
+	Position, // object space position
+	Normal, // object space normals
+	Color, // vertex color
+	Tangent, // object space tangents
+	Bitangent, // object space bitangents
+	Texcoord,
+	Texcoord0,
+	Texcoord1,
+	Texcoord2,
+	Texcoord3,
+	Texcoord4,
+	Texcoord5,
+	Texcoord6,
+	Texcoord7,
+	Texcoord8,
+	Texcoord9,
+	Texcoord10,
+	Texcoord11,
+	Texcoord12,
+	Texcoord13,
+	Texcoord14,
+	Texcoord15,
+	Texcoord16,
+	Texcoord17,
+	Texcoord18,
+	Texcoord19,
+	Texcoord20,
+	Texcoord21,
+	Texcoord22,
 };
 
 enum class YcbcrModelConversion : uint8_t
@@ -1396,8 +1396,8 @@ struct VertexAttribute final
 	Format          format = Format::Undefined;
 	uint32_t        binding = 0;                          // Valid range is [0, 15]
 	uint32_t        offset = APPEND_OFFSET_ALIGNED;       // Use APPEND_OFFSET_ALIGNED to auto calculate offsets
-	VertexInputRate inputRate = VERTEX_INPUT_RATE_VERTEX;
-	VertexSemantic  semantic = VERTEX_SEMANTIC_UNDEFINED;
+	VertexInputRate inputRate = VertexInputRate::Vertex;
+	VertexSemantic  semantic = VertexSemantic::Undefined;
 };
 
 struct MultiViewState final
@@ -2039,12 +2039,12 @@ enum GeometryVertexAttributeLayout
 //!   - if PLANAR bindings can only have 1 attribute
 //!
 //! Supported vertex semantics:
-//!    VERTEX_SEMANTIC_POSITION
-//!    VERTEX_SEMANTIC_NORMAL
-//!    VERTEX_SEMANTIC_COLOR
-//!    VERTEX_SEMANTIC_TANGENT
+//!    VertexSemantic::Position
+//!    VertexSemantic::Normal
+//!    VertexSemantic::Color
+//!    VertexSemantic::Tangent
 //!    VERTEX_SEMANTIC_BITANGEN
-//!    VERTEX_SEMANTIC_TEXCOORD
+//!    VertexSemantic::Texcoord
 //!
 struct GeometryCreateInfo
 {

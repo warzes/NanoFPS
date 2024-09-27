@@ -51,7 +51,7 @@ bool Example_018::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mPipelineInterface;
+		gpCreateInfo.pipelineInterface = mPipelineInterface;
 
 		const std::vector<vkr::VertexBinding> bindings = mSphereMesh->GetDerivedVertexBindings();
 		gpCreateInfo.vertexInputState.bindingCount = static_cast<uint32_t>(bindings.size());

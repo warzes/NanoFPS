@@ -135,27 +135,27 @@ namespace scene
 
 		vkr::VertexBinding GetVertexBinding() const
 		{
-			vkr::VertexBinding binding = vkr::VertexBinding(1, vkr::VERTEX_INPUT_RATE_VERTEX);
+			vkr::VertexBinding binding = vkr::VertexBinding(1, vkr::VertexInputRate::Vertex);
 
 			uint32_t offset = 0;
 			if (this->bits.texCoords)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, vkr::Format::R32G32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TEXCOORD", kVertexAttributeTexCoordLocation, vkr::Format::R32G32_FLOAT, kVertexAttributeBinding, offset, vkr::VertexInputRate::Vertex });
 				offset += 8;
 			}
 			if (this->bits.normals)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "NORMAL", kVertexAttributeNormalLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VertexInputRate::Vertex });
 				offset += 12;
 			}
 			if (this->bits.tangents)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, vkr::Format::R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "TANGENT", kVertexAttributeTangentLocation, vkr::Format::R32G32B32A32_FLOAT, kVertexAttributeBinding, offset, vkr::VertexInputRate::Vertex });
 				offset += 16;
 			}
 			if (this->bits.colors)
 			{
-				binding.AppendAttribute(vkr::VertexAttribute{ "COLOR", kVertexAttributeColorLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VERTEX_INPUT_RATE_VERTEX });
+				binding.AppendAttribute(vkr::VertexAttribute{ "COLOR", kVertexAttributeColorLocation, vkr::Format::R32G32B32_FLOAT, kVertexAttributeBinding, offset, vkr::VertexInputRate::Vertex });
 			}
 
 			return binding;

@@ -284,7 +284,7 @@ void Example_024::SetupCommon()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mOpaqueDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mOpaqueDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mOpaquePipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -306,7 +306,7 @@ void Example_024::SetupCommon()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mOpaquePass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mOpaquePipelineInterface;
+		gpCreateInfo.pipelineInterface = mOpaquePipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mOpaquePipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -388,7 +388,7 @@ void Example_024::SetupCommon()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mCompositeDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mCompositeDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mCompositePipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -409,7 +409,7 @@ void Example_024::SetupCommon()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = swapChain.GetDepthFormat();
-		gpCreateInfo.pPipelineInterface = mCompositePipelineInterface;
+		gpCreateInfo.pipelineInterface = mCompositePipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mCompositePipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -763,7 +763,7 @@ void Example_024::SetupBufferBuckets()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mBuffer.buckets.gatherDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mBuffer.buckets.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.buckets.gatherPipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -783,7 +783,7 @@ void Example_024::SetupBufferBuckets()
 		gpCreateInfo.depthWriteEnable = false;
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
-		gpCreateInfo.pPipelineInterface = mBuffer.buckets.gatherPipelineInterface;
+		gpCreateInfo.pipelineInterface = mBuffer.buckets.gatherPipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.buckets.gatherPipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -830,7 +830,7 @@ void Example_024::SetupBufferBuckets()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mBuffer.buckets.combineDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mBuffer.buckets.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.buckets.combinePipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -851,7 +851,7 @@ void Example_024::SetupBufferBuckets()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mBuffer.buckets.combinePipelineInterface;
+		gpCreateInfo.pipelineInterface = mBuffer.buckets.combinePipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.buckets.combinePipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -989,7 +989,7 @@ void Example_024::SetupBufferLinkedLists()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mBuffer.lists.gatherDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mBuffer.lists.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.lists.gatherPipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -1009,7 +1009,7 @@ void Example_024::SetupBufferLinkedLists()
 		gpCreateInfo.depthWriteEnable = false;
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 0;
-		gpCreateInfo.pPipelineInterface = mBuffer.lists.gatherPipelineInterface;
+		gpCreateInfo.pipelineInterface = mBuffer.lists.gatherPipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.lists.gatherPipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -1066,7 +1066,7 @@ void Example_024::SetupBufferLinkedLists()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mBuffer.lists.combineDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mBuffer.lists.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mBuffer.lists.combinePipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -1087,7 +1087,7 @@ void Example_024::SetupBufferLinkedLists()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mBuffer.lists.combinePipelineInterface;
+		gpCreateInfo.pipelineInterface = mBuffer.lists.combinePipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mBuffer.lists.combinePipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -1371,7 +1371,7 @@ void Example_024::SetupDepthPeeling()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mDepthPeeling.layerDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mDepthPeeling.layerDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mDepthPeeling.layerPipelineInterface));
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -1387,7 +1387,7 @@ void Example_024::SetupDepthPeeling()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mDepthPeeling.layerTextures[0]->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mDepthPeeling.depthTextures[0]->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mDepthPeeling.layerPipelineInterface;
+		gpCreateInfo.pipelineInterface = mDepthPeeling.layerPipelineInterface;
 
 		vkr::ShaderModulePtr VS, PS;
 
@@ -1449,7 +1449,7 @@ void Example_024::SetupDepthPeeling()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mDepthPeeling.combineDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mDepthPeeling.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mDepthPeeling.combinePipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -1470,7 +1470,7 @@ void Example_024::SetupDepthPeeling()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyTexture->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mDepthPeeling.combinePipelineInterface;
+		gpCreateInfo.pipelineInterface = mDepthPeeling.combinePipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mDepthPeeling.combinePipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);
@@ -1564,7 +1564,7 @@ void Example_024::SetupUnsortedOver()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mUnsortedOver.descriptorSetLayout;
+		piCreateInfo.sets[0].layout = mUnsortedOver.descriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mUnsortedOver.pipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -1594,7 +1594,7 @@ void Example_024::SetupUnsortedOver()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mUnsortedOver.pipelineInterface;
+		gpCreateInfo.pipelineInterface = mUnsortedOver.pipelineInterface;
 
 		gpCreateInfo.rasterState.cullMode = vkr::CULL_MODE_NONE;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mUnsortedOver.meshAllFacesPipeline));
@@ -1744,7 +1744,7 @@ void Example_024::SetupWeightedAverage()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mWeightedAverage.gatherDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mWeightedAverage.gatherDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedAverage.gatherPipelineInterface));
 
 		vkr::ShaderModulePtr            VS, PS;
@@ -1781,7 +1781,7 @@ void Example_024::SetupWeightedAverage()
 		gpCreateInfo.outputState.renderTargetFormats[0] = mWeightedAverage.colorTexture->GetImageFormat();
 		gpCreateInfo.outputState.renderTargetFormats[1] = mWeightedAverage.extraTexture->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mWeightedAverage.gatherPipelineInterface;
+		gpCreateInfo.pipelineInterface = mWeightedAverage.gatherPipelineInterface;
 
 		// Count type
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedAverageFragmentCountGather.vs", &VS));
@@ -1844,7 +1844,7 @@ void Example_024::SetupWeightedAverage()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mWeightedAverage.combineDescriptorSetLayout;
+		piCreateInfo.sets[0].layout = mWeightedAverage.combineDescriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedAverage.combinePipelineInterface));
 
 		vkr::ShaderModulePtr             VS, PS;
@@ -1860,7 +1860,7 @@ void Example_024::SetupWeightedAverage()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyTexture->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mOpaquePass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mWeightedAverage.combinePipelineInterface;
+		gpCreateInfo.pipelineInterface = mWeightedAverage.combinePipelineInterface;
 
 		// Count type
 		CHECKED_CALL(GetRenderDevice().CreateShader("basic/shaders/oit_demo", "WeightedAverageFragmentCountCombine.vs", &VS));
@@ -1989,7 +1989,7 @@ void Example_024::SetupWeightedSum()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mWeightedSum.descriptorSetLayout;
+		piCreateInfo.sets[0].layout = mWeightedSum.descriptorSetLayout;
 		CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mWeightedSum.pipelineInterface));
 
 		vkr::ShaderModulePtr VS, PS;
@@ -2020,7 +2020,7 @@ void Example_024::SetupWeightedSum()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = mTransparencyPass->GetRenderTargetTexture(0)->GetImageFormat();
 		gpCreateInfo.outputState.depthStencilFormat = mTransparencyPass->GetDepthStencilTexture()->GetImageFormat();
-		gpCreateInfo.pPipelineInterface = mWeightedSum.pipelineInterface;
+		gpCreateInfo.pipelineInterface = mWeightedSum.pipelineInterface;
 		CHECKED_CALL(GetRenderDevice().CreateGraphicsPipeline(gpCreateInfo, &mWeightedSum.pipeline));
 
 		GetRenderDevice().DestroyShaderModule(VS);

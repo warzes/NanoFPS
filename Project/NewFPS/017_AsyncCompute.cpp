@@ -111,7 +111,7 @@ bool Example_017::Setup()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mRenderLayout;
+		piCreateInfo.sets[0].layout = mRenderLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mRenderPipelineInterface));
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -130,7 +130,7 @@ bool Example_017::Setup()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
-		gpCreateInfo.pPipelineInterface = mRenderPipelineInterface;
+		gpCreateInfo.pipelineInterface = mRenderPipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mRenderPipeline));
 
 		device.DestroyShaderModule(VS);
@@ -279,11 +279,11 @@ void Example_017::setupComposition()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mComposeLayout;
+		piCreateInfo.sets[0].layout = mComposeLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComposePipelineInterface));
 
-		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
-		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VERTEX_INPUT_RATE_VERTEX });
+		mComposeVertexBinding.AppendAttribute({ "POSITION", 0, vkr::Format::R32G32B32A32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
+		mComposeVertexBinding.AppendAttribute({ "TEXCOORD", 1, vkr::Format::R32G32_FLOAT, 0, APPEND_OFFSET_ALIGNED, vkr::VertexInputRate::Vertex });
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
@@ -300,7 +300,7 @@ void Example_017::setupComposition()
 		gpCreateInfo.outputState.renderTargetCount = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
-		gpCreateInfo.pPipelineInterface = mComposePipelineInterface;
+		gpCreateInfo.pipelineInterface = mComposePipelineInterface;
 		CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &mComposePipeline));
 
 		device.DestroyShaderModule(VS);
@@ -406,12 +406,12 @@ void Example_017::setupCompute()
 		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 		piCreateInfo.setCount = 1;
 		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].pLayout = mComputeLayout;
+		piCreateInfo.sets[0].layout = mComputeLayout;
 		CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &mComputePipelineInterface));
 
 		vkr::ComputePipelineCreateInfo cpCreateInfo = {};
 		cpCreateInfo.CS = { CS.Get(), "csmain" };
-		cpCreateInfo.pPipelineInterface = mComputePipelineInterface;
+		cpCreateInfo.pipelineInterface = mComputePipelineInterface;
 
 		CHECKED_CALL(device.CreateComputePipeline(cpCreateInfo, &mComputePipeline));
 

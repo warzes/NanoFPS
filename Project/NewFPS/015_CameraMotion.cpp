@@ -289,7 +289,7 @@ void Example_015::setupPipelines()
 	vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 	piCreateInfo.setCount = 1;
 	piCreateInfo.sets[0].set = 0;
-	piCreateInfo.sets[0].pLayout = mDescriptorSetLayout;
+	piCreateInfo.sets[0].layout = mDescriptorSetLayout;
 	CHECKED_CALL(GetRenderDevice().CreatePipelineInterface(piCreateInfo, &mPipelineInterface));
 
 	vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -304,7 +304,7 @@ void Example_015::setupPipelines()
 	gpCreateInfo.outputState.renderTargetCount = 1;
 	gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
 	gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-	gpCreateInfo.pPipelineInterface = mPipelineInterface;
+	gpCreateInfo.pipelineInterface = mPipelineInterface;
 
 	for (auto& entity : mEntities) {
 		// NOTE: Number of vertex input bindings here must match the number of options added to each entity in ProjApp::SetupEntities.

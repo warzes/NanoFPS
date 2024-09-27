@@ -394,7 +394,7 @@ void Example_019::loadMaterial(
 	vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
 	piCreateInfo.setCount = 1;
 	piCreateInfo.sets[0].set = 0;
-	piCreateInfo.sets[0].pLayout = mSetLayout;
+	piCreateInfo.sets[0].layout = mSetLayout;
 	CHECKED_CALL(device.CreatePipelineInterface(piCreateInfo, &pOutput->pInterface));
 
 	vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
@@ -417,7 +417,7 @@ void Example_019::loadMaterial(
 	gpCreateInfo.outputState.renderTargetCount = 1;
 	gpCreateInfo.outputState.renderTargetFormats[0] = render.GetSwapChain().GetColorFormat();
 	gpCreateInfo.outputState.depthStencilFormat = render.GetSwapChain().GetDepthFormat();
-	gpCreateInfo.pPipelineInterface = pOutput->pInterface;
+	gpCreateInfo.pipelineInterface = pOutput->pInterface;
 
 	CHECKED_CALL(device.CreateGraphicsPipeline(gpCreateInfo, &pOutput->pPipeline));
 
@@ -493,17 +493,17 @@ void Example_019::loadPrimitive(const cgltf_primitive& primitive, vkr::BufferPtr
 			ASSERT_MSG(a.component_type == cgltf_component_type_r_32f, "only float for POS, NORM, TEX are supported.");
 
 			ci.vertexBuffers[i].attributeCount = 1;
-			ci.vertexBuffers[i].vertexInputRate = vkr::VERTEX_INPUT_RATE_VERTEX;
+			ci.vertexBuffers[i].vertexInputRate = vkr::VertexInputRate::Vertex;
 			ci.vertexBuffers[i].attributes[0].format = a.type == cgltf_type_vec2 ? vkr::Format::R32G32_FLOAT
 				: a.type == cgltf_type_vec3 ? vkr::Format::R32G32B32_FLOAT
 				: vkr::Format::R32G32B32A32_FLOAT;
 			ci.vertexBuffers[i].attributes[0].stride = static_cast<uint32_t>(bv.stride == 0 ? a.stride : bv.stride);
 
 			constexpr std::array<vkr::VertexSemantic, ATTRIBUTE_COUNT> semantics = {
-			vkr::VERTEX_SEMANTIC_POSITION,
-			vkr::VERTEX_SEMANTIC_TEXCOORD,
-			vkr::VERTEX_SEMANTIC_NORMAL,
-			vkr::VERTEX_SEMANTIC_TANGENT };
+			vkr::VertexSemantic::Position,
+			vkr::VertexSemantic::Texcoord,
+			vkr::VertexSemantic::Normal,
+			vkr::VertexSemantic::Tangent };
 			ci.vertexBuffers[i].attributes[0].vertexSemantic = semantics[i];
 		}
 		CHECKED_CALL(device.CreateMesh(ci, &targetMesh));
