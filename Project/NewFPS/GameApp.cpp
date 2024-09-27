@@ -8,50 +8,6 @@
 
 #define kShadowMapSize 2056
 
-void game::Player::Move(MovementDirection dir, float distance)
-{
-	if (dir == MovementDirection::FORWARD) {
-		location += float3(distance * std::cos(azimuth), 0, distance * std::sin(azimuth));
-	}
-	else if (dir == MovementDirection::LEFT) {
-		float perpendicularDir = azimuth - pi<float>() / 2.0f;
-		location += float3(distance * std::cos(perpendicularDir), 0, distance * std::sin(perpendicularDir));
-	}
-	else if (dir == MovementDirection::RIGHT) {
-		float perpendicularDir = azimuth + pi<float>() / 2.0f;
-		location += float3(distance * std::cos(perpendicularDir), 0, distance * std::sin(perpendicularDir));
-	}
-	else if (dir == MovementDirection::BACKWARD) {
-		location += float3(-distance * std::cos(azimuth), 0, -distance * std::sin(azimuth));
-	}
-}
-
-void game::Player::Turn(float deltaAzimuth, float deltaAltitude)
-{
-	azimuth += deltaAzimuth;
-	altitude += deltaAltitude;
-
-	// Saturate azimuth values by making wrap around.
-	if (azimuth < 0)
-	{
-		azimuth = 2 * pi<float>();
-	}
-	else if (azimuth > 2 * pi<float>())
-	{
-		azimuth = 0;
-	}
-
-	// Altitude is saturated by making it stop, so the world doesn't turn upside down.
-	if (altitude < 0)
-	{
-		altitude = 0;
-	}
-	else if (altitude > pi<float>())
-	{
-		altitude = pi<float>();
-	}
-}
-
 EngineApplicationCreateInfo GameApplication::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
@@ -67,7 +23,8 @@ bool GameApplication::Setup()
 	WorldCreateInfo worldCI = {};
 	if (!m_world.Setup(this, worldCI)) return false;
 
-	if (!setupCamera()) return false;
+	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
+
 	if (!setupDescriptors()) return false;
 	if (!setupEntities()) return false;
 	if (!setupPipelines()) return false;
@@ -77,7 +34,7 @@ bool GameApplication::Setup()
 
 	VulkanPerFrameData perFrame;
 	if (!perFrame.Setup(device)) return false;
-	mPerFrame.emplace_back(perFrame);
+	m_perFrame.emplace_back(perFrame);
 
 	updateLight();
 
@@ -255,16 +212,6 @@ void GameApplication::KeyDown(KeyCode key)
 void GameApplication::KeyUp(KeyCode key)
 {
 	m_pressedKeys.erase(key);
-}
-
-bool GameApplication::setupCamera()
-{
-	m_perspCamera = PerspCamera(60.0f, GetWindowAspect());
-	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
-
-	m_oldPlayer.Setup();
-	updateCamera();
-	return true;
 }
 
 bool GameApplication::setupDescriptors()
@@ -540,13 +487,6 @@ bool GameApplication::setupLight()
 	return true;
 }
 
-void GameApplication::updateCamera()
-{
-	float3 cameraPosition= m_oldPlayer.GetLocation();
-	m_perspCamera.LookAt(cameraPosition, m_oldPlayer.GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
-	m_perspCamera.SetPerspective(60.f, GetWindowAspect());
-}
-
 void GameApplication::updateLight()
 {
 	// Update light position
@@ -571,27 +511,6 @@ void GameApplication::processInput()
 		else GetInput().SetCursorMode(CursorMode::Normal);
 	}
 
-	if (m_pressedKeys.count(KEY_W) > 0) {
-		m_oldPlayer.Move(game::Player::MovementDirection::FORWARD, m_oldPlayer.GetRateOfMove());
-	}
-
-	if (m_pressedKeys.count(KEY_A) > 0) {
-		m_oldPlayer.Move(game::Player::MovementDirection::LEFT, m_oldPlayer.GetRateOfMove());
-	}
-
-	if (m_pressedKeys.count(KEY_S) > 0) {
-		m_oldPlayer.Move(game::Player::MovementDirection::BACKWARD, m_oldPlayer.GetRateOfMove());
-	}
-
-	if (m_pressedKeys.count(KEY_D) > 0) {
-		m_oldPlayer.Move(game::Player::MovementDirection::RIGHT, m_oldPlayer.GetRateOfMove());
-	}
-
-	if (m_pressedKeys.count(KEY_SPACE) > 0) {
-		setupCamera();
-		return;
-	}
-
 	if (m_pressedKeys.count(KEY_LEFT) > 0) {
 		m_oldPlayer.Turn(-m_oldPlayer.GetRateOfTurn(), 0);
 	}
@@ -607,6 +526,8 @@ void GameApplication::processInput()
 	if (m_pressedKeys.count(KEY_DOWN) > 0) {
 		m_oldPlayer.Turn(0, m_oldPlayer.GetRateOfTurn());
 	}
+
+	m_world.GetPlayer().ProcessInput(m_pressedKeys);
 
 	updateCamera();
 }

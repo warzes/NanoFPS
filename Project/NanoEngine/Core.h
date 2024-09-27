@@ -197,7 +197,7 @@ struct RangeU32 final
 };
 
 template <typename T>
-T pi()
+constexpr T pi()
 {
 	return static_cast<T>(3.1415926535897932384626433832795);
 }

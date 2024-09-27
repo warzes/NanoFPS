@@ -2,9 +2,17 @@
 
 class GameApplication;
 
+enum class MovementDirection
+{
+	Forward,
+	Left,
+	Right,
+	Backward
+};
+
 struct PlayerCreateInfo final
 {
-	glm::vec3 position = glm::vec3(0.0f, 2.0f, -5.0f);
+	glm::vec3 position = glm::vec3(0.0f, 1.0f, 0.0f);
 };
 
 class Player final
@@ -13,51 +21,45 @@ public:
 	bool Setup(GameApplication* game, const PlayerCreateInfo& createInfo);
 	void Shutdown();
 
+	void ProcessInput(const std::set<KeyCode>& pressedKeys);
 	void Update(float deltaTime);
 
-	bool IsAlive() const;
+	// Change the location where the person is looking at by turning @param deltaAzimuth radians and looking up @param deltaAltitude radians. @param deltaAzimuth is an angle in the range [0, 2pi].  @param deltaAltitude is an angle in the range [0, pi].
+	void Turn(float deltaAzimuth, float deltaAltitude);
 
-	void ComputeCameraOrientation();
+	// Return the coordinates in world space that the person is looking at.
+	const float3 GetLookAt() const { return m_position + SphericalToCartesian(m_azimuth, m_altitude); }
 
-	glm::vec3 GetPos();
-	void SetPos(const glm::vec3& pos);
+	// Return the location of the person in world space.
+	const float3& GetPosition() const { return m_position; }
 
-	glm::vec3 GetCameraLook();
-	glm::vec3 GetCameraSide();
-	glm::vec3 GetCameraUp();
+	float GetAzimuth() const { return m_azimuth; }
+	float GetAltitude() const { return m_altitude; }
+	float GetRateOfMove() const { return m_rateOfMove; }
+	float GetRateOfTurn() const { return m_rateOfTurn; }
 
 private:
-	void controlMouseInput(float deltaTime);      // turns mouse motion into camera angles
-	void computeWalkingVectors();                 // computes the vectors used for walking
-	void controlLooking(float deltaTime);         // places limits on the player's viewing angles
-	void controlMovingAndFiring(float deltaTime); // controls player motion, firing, and reloading
+	void setupCamera();
+	void updateCamera();
+	// Move the location of this person in @param dir direction for @param distance units.
+	// All the symbolic directions are computed using the current direction where the person is looking at (azimuth).
+	void move(MovementDirection dir, float distance);
 
 	GameApplication* m_game;
 
-	glm::vec3 m_pos;           // global position of player
-	glm::vec3 m_gunPos;        // position of gun relative to player
-	glm::vec3 m_forward;       // forwards vector of player
-	glm::vec3 m_side;          // sideway vector of player (used for strafing)
-	glm::vec3 m_up;            // up vector of player
+	PerspCamera m_perspCamera;
 
-	float m_jumpTimer;         // jumping uses a short timed burst of upwards motion; this timer controls it
-	float m_gravity;           // current downward pull experienced by player---zero when touching ground
-	bool m_touchingGround;     // is the player touching the ground currently?
-	bool m_isMoving;           // is the player walking at all, in any direction?
+	float3 m_position = float3(0.0f);
 
-	double m_oldMouseX;        // used to determine mouse motion
-	double m_oldMouseY;        // used to determine mouse motion
+	// Spherical coordinates in world space where the person is looking at.
+	// azimuth is an angle in the range [0, 2pi].
+	// altitude is an angle in the range [0, pi].
+	float m_azimuth = pi<float>() / 2.0f;
+	float m_altitude = pi<float>() / 2.0f;
 
-	float m_targetLookAngleX;  // used to compute smooth camera motion
-	float m_targetLookAngleY;  // used to compute smooth camera motion
+	// Rate of motion (grid units) and turning (radians).
+	float m_rateOfMove = 0.2f;
+	float m_rateOfTurn = 0.02f;
 
-	float m_lookAngleX;        // is computed using targetLookAngleX for smooth camera motion
-	float m_lookAngleY;        // is computed using targetLookAngleY for smooth camera motion
 
-	glm::vec3 m_cameraForward; // forward look direction of camera
-	glm::vec3 m_cameraSide;    // sideways vector of camera
-	glm::vec3 m_cameraUp;      // cross of cameraForward and cameraSide
-	glm::vec3 m_cameraLook;    // the global 3D position where the camera is focused (used for glm::lookAt())
-
-	bool m_alive;              // one hit, one kill---is the player alive?
 };
