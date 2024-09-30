@@ -445,14 +445,14 @@ void GameApplication::updateUniformBuffer()
 		scene.NormalMatrix = glm::inverseTranspose(M);
 		scene.Ambient = float4(0.3f);
 		scene.CameraViewProjectionMatrix = m_world.GetPlayer().GetCamera().GetViewProjectionMatrix();
-		scene.LightPosition = float4(mLightPosition, 0);
-		scene.LightViewProjectionMatrix = mLightCamera.GetViewProjectionMatrix();
+		scene.LightPosition = float4(m_world.GetMainLight().GetPosition(), 0);
+		scene.LightViewProjectionMatrix = m_world.GetMainLight().GetCamera().GetViewProjectionMatrix();
 		scene.UsePCF = uint4(mUsePCF);
 
 		pEntity->drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
 
 		// Shadow uniform buffers
-		float4x4 PV = mLightCamera.GetViewProjectionMatrix();
+		float4x4 PV = m_world.GetMainLight().GetCamera().GetViewProjectionMatrix();
 		float4x4 MVP = PV * M; // Yes - the other is reversed
 
 		pEntity->shadowUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);
@@ -460,10 +460,9 @@ void GameApplication::updateUniformBuffer()
 
 	// Update light uniform buffer
 	{
-		float4x4        T = glm::translate(mLightPosition);
+		float4x4        T = glm::translate(m_world.GetMainLight().GetPosition());
 		const float4x4& PV = m_world.GetPlayer().GetCamera().GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
-
-		mLight.drawUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);
+		m_world.GetMainLight().UpdateShaderUniform(sizeof(MVP), &MVP);
 	}
 }

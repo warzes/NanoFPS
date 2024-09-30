@@ -109,3 +109,8 @@ void DirectionalLight::DrawDebug(vkr::CommandBufferPtr cmd)
 	cmd->BindVertexBuffers(mLight.mesh);
 	cmd->DrawIndexed(mLight.mesh->GetIndexCount());
 }
+
+void DirectionalLight::UpdateShaderUniform(uint32_t dataSize, const void* srcData)
+{
+	mLight.drawUniformBuffer->CopyFromSource(dataSize, srcData);
+}

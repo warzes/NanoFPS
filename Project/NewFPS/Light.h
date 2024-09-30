@@ -12,6 +12,11 @@ public:
 	void Update(float deltaTime);
 	void DrawDebug(vkr::CommandBufferPtr cmd);
 
+	void UpdateShaderUniform(uint32_t dataSize, const void* srcData);
+
+	const float3& GetPosition() const { return mLightPosition; }
+	const PerspCamera& GetCamera() const { return mLightCamera; }
+
 private:
 	GameApplication* m_game;
 	vkr::DescriptorSetLayoutPtr mLightSetLayout;
