@@ -164,7 +164,7 @@ namespace scene
 		return pParentlessChild;
 	}
 
-	MeshNode::MeshNode(const scene::MeshRef& mesh, scene::Scene* pScene)
+	MeshNode::MeshNode(const scene::MeshPtr& mesh, scene::Scene* pScene)
 		: scene::Node(pScene),
 		mMesh(mesh)
 	{
@@ -174,7 +174,7 @@ namespace scene
 	{
 	}
 
-	void MeshNode::SetMesh(const scene::MeshRef& mesh)
+	void MeshNode::SetMesh(const scene::MeshPtr& mesh)
 	{
 		mMesh = mesh;
 	}
@@ -272,15 +272,15 @@ namespace scene
 	}
 
 	Texture::Texture(
-		const scene::ImageRef   image,
-		const scene::SamplerRef sampler)
+		const scene::ImagePtr   image,
+		const scene::SamplerPtr sampler)
 		: mImage(image),
 		mSampler(sampler)
 	{
 	}
 
 	TextureView::TextureView(
-		const scene::TextureRef& texture,
+		const scene::TexturePtr& texture,
 		float2                   texCoordTranslate,
 		float                    texCoordRotate,
 		float2                   texCoordScale)
@@ -447,10 +447,6 @@ namespace scene {
 			dstTextureParams.samplerIndex = itSampler->second;
 			dstTextureParams.textureIndex = itImage->second;
 		}
-	}
-
-	MaterialPipelineArgs::MaterialPipelineArgs()
-	{
 	}
 
 	MaterialPipelineArgs::~MaterialPipelineArgs()
@@ -1180,72 +1176,64 @@ namespace scene {
 
 #pragma region Scene Resource Manager
 
-namespace scene {
-
-	ResourceManager::ResourceManager()
-	{
-	}
-
-	ResourceManager::~ResourceManager()
-	{
-	}
-
-	bool ResourceManager::Find(uint64_t objectId, scene::SamplerRef& outObject) const
+namespace scene
+{
+	bool ResourceManager::Find(uint64_t objectId, scene::SamplerPtr& outObject) const
 	{
 		return FindObject<vkr::Sampler>(objectId, mSamplers, outObject);
 	}
 
-	bool ResourceManager::Find(uint64_t objectId, scene::ImageRef& outObject) const
+	bool ResourceManager::Find(uint64_t objectId, scene::ImagePtr& outObject) const
 	{
 		return FindObject<vkr::Image>(objectId, mImages, outObject);
 	}
 
-	bool ResourceManager::Find(uint64_t objectId, scene::TextureRef& outObject) const
+	bool ResourceManager::Find(uint64_t objectId, scene::TexturePtr& outObject) const
 	{
 		return FindObject<scene::Texture>(objectId, mTextures, outObject);
 	}
 
-	bool ResourceManager::Find(uint64_t objectId, scene::MaterialRef& outObject) const
+	bool ResourceManager::Find(uint64_t objectId, scene::MaterialPtr& outObject) const
 	{
 		return FindObject<scene::Material>(objectId, mMaterials, outObject);
 	}
 
-	bool ResourceManager::Find(uint64_t objectId, scene::MeshDataRef& outObject) const
+	bool ResourceManager::Find(uint64_t objectId, scene::MeshDataPtr& outObject) const
 	{
 		return FindObject<scene::MeshData>(objectId, mMeshData, outObject);
 	}
 
-	bool ResourceManager::Find(uint64_t objectId, scene::MeshRef& outObject) const
+	bool ResourceManager::Find(uint64_t objectId, scene::MeshPtr& outObject) const
 	{
 		return FindObject<scene::Mesh>(objectId, mMeshes, outObject);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::SamplerRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::SamplerPtr& object)
 	{
 		return CacheObject<vkr::Image>(objectId, object, mSamplers);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::ImageRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::ImagePtr& object)
 	{
 		return CacheObject<vkr::Image>(objectId, object, mImages);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::TextureRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::TexturePtr& object)
 	{
 		return CacheObject<scene::Texture>(objectId, object, mTextures);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::MaterialRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::MaterialPtr& object)
 	{
 		return CacheObject<scene::Material>(objectId, object, mMaterials);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::MeshDataRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::MeshDataPtr& object)
 	{
 		return CacheObject<scene::MeshData>(objectId, object, mMeshData);
 	}
 
-	Result ResourceManager::Cache(uint64_t objectId, const scene::MeshRef& object)
+	Result ResourceManager::Cache(uint64_t objectId, const scene::MeshPtr& object)
 	{
 		return CacheObject<scene::Mesh>(objectId, object, mMeshes);
 	}
@@ -1260,22 +1248,22 @@ namespace scene {
 		mMeshes.clear();
 	}
 
-	const std::unordered_map<uint64_t, scene::SamplerRef>& ResourceManager::GetSamplers() const
+	const std::unordered_map<uint64_t, scene::SamplerPtr>& ResourceManager::GetSamplers() const
 	{
 		return mSamplers;
 	}
 
-	const std::unordered_map<uint64_t, scene::ImageRef>& ResourceManager::GetImages() const
+	const std::unordered_map<uint64_t, scene::ImagePtr>& ResourceManager::GetImages() const
 	{
 		return mImages;
 	}
 
-	const std::unordered_map<uint64_t, scene::TextureRef>& ResourceManager::GetTextures() const
+	const std::unordered_map<uint64_t, scene::TexturePtr>& ResourceManager::GetTextures() const
 	{
 		return mTextures;
 	}
 
-	const std::unordered_map<uint64_t, scene::MaterialRef>& ResourceManager::GetMaterials() const
+	const std::unordered_map<uint64_t, scene::MaterialPtr>& ResourceManager::GetMaterials() const
 	{
 		return mMaterials;
 	}
@@ -1380,7 +1368,7 @@ namespace scene {
 	}
 
 	PrimitiveBatch::PrimitiveBatch(
-		const scene::MaterialRef& material,
+		const scene::MaterialPtr& material,
 		const vkr::IndexBufferView& indexBufferView,
 		const vkr::VertexBufferView& positionBufferView,
 		const vkr::VertexBufferView& attributeBufferView,
@@ -1398,7 +1386,7 @@ namespace scene {
 	}
 
 	Mesh::Mesh(
-		const scene::MeshDataRef& meshData,
+		const scene::MeshDataPtr& meshData,
 		std::vector<scene::PrimitiveBatch>&& batches)
 		: mMeshData(meshData),
 		mBatches(std::move(batches))
@@ -1408,7 +1396,7 @@ namespace scene {
 
 	Mesh::Mesh(
 		std::unique_ptr<scene::ResourceManager>&& resourceManager,
-		const scene::MeshDataRef& meshData,
+		const scene::MeshDataPtr& meshData,
 		std::vector<scene::PrimitiveBatch>&& batches)
 		: mResourceManager(std::move(resourceManager)),
 		mMeshData(meshData),
@@ -1554,7 +1542,7 @@ namespace scene {
 	{
 		auto it = FindIf(
 			mNodes,
-			[name](const scene::NodeRef& elem) {
+			[name](const scene::NodePtr& elem) {
 				bool match = (elem->GetName() == name);
 				return match; });
 		if (it == mNodes.end()) {
@@ -1580,7 +1568,7 @@ namespace scene {
 		return FindNodeByName(name, mLightNodes);
 	}
 
-	Result Scene::AddNode(scene::NodeRef&& node)
+	Result Scene::AddNode(scene::NodePtr&& node)
 	{
 		if (!node) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -1601,7 +1589,7 @@ namespace scene {
 		auto it = std::find_if(
 			mNodes.begin(),
 			mNodes.end(),
-			[&node](const scene::NodeRef& elem) -> bool {
+			[&node](const scene::NodePtr& elem) -> bool {
 				bool match = (elem.get() == node.get());
 				return match; });
 		if (it != mNodes.end()) {
@@ -2255,7 +2243,7 @@ namespace scene {
 	Result GltfLoader::FetchSamplerInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_sampler* pGltfSampler,
-		scene::SamplerRef& outSampler)
+		scene::SamplerPtr& outSampler)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfSampler)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -2402,7 +2390,7 @@ namespace scene {
 	Result GltfLoader::FetchImageInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_image* pGltfImage,
-		scene::ImageRef& outImage)
+		scene::ImagePtr& outImage)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfImage)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -2465,8 +2453,8 @@ namespace scene {
 		Print("Loading GLTF texture[" + std::to_string(gltfObjectIndex) + "]: " + gltfTextureObjectName + " (image=" + gltfImageObjectName + ")");
 
 		// Required objects
-		scene::SamplerRef targetSampler = nullptr;
-		scene::ImageRef   targetImage = nullptr;
+		scene::SamplerPtr targetSampler = nullptr;
+		scene::ImagePtr   targetImage = nullptr;
 
 		// Fetch if there's a resource manager...
 		if (!IsNull(loadParams.pResourceManager)) {
@@ -2529,7 +2517,7 @@ namespace scene {
 	Result GltfLoader::FetchTextureInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_texture* pGltfTexture,
-		scene::TextureRef& outTexture)
+		scene::TexturePtr& outTexture)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfTexture)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -2583,7 +2571,7 @@ namespace scene {
 		ASSERT_NULL_ARG(pTargetTextureView);
 
 		// Required object
-		scene::TextureRef targetTexture = nullptr;
+		scene::TexturePtr targetTexture = nullptr;
 
 		// Fetch if there's a resource manager...
 		if (!IsNull(loadParams.pResourceManager)) {
@@ -2794,7 +2782,7 @@ namespace scene {
 	Result GltfLoader::FetchMaterialInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_material* pGltfMaterial,
-		scene::MaterialRef& outMaterial)
+		scene::MaterialPtr& outMaterial)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfMaterial)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -2841,7 +2829,7 @@ namespace scene {
 	Result GltfLoader::LoadMeshData(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_mesh* pGltfMesh,
-		scene::MeshDataRef& outMeshData,
+		scene::MeshDataPtr& outMeshData,
 		std::vector<scene::PrimitiveBatch>& outBatches)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(pGltfMesh)) {
@@ -2889,7 +2877,7 @@ namespace scene {
 
 		struct BatchInfo
 		{
-			scene::MaterialRef material = nullptr;
+			scene::MaterialPtr material = nullptr;
 			uint32_t           indexDataOffset = 0; // Must have 4 byte alignment
 			uint32_t           indexDataSize = 0;
 			uint32_t           positionDataOffset = 0; // Must have 4 byte alignment
@@ -3382,7 +3370,7 @@ namespace scene {
 				}
 
 				// Fetch material since we'll always have a resource manager
-				scene::MaterialRef loadedMaterial;
+				scene::MaterialPtr loadedMaterial;
 				//
 				auto ppxres = FetchMaterialInternal(
 					localLoadParams,
@@ -3425,7 +3413,7 @@ namespace scene {
 			localLoadParams.requiredVertexAttributes.bits.colors = false;
 
 			// Load mesh data and batches
-			scene::MeshDataRef                 meshData = nullptr;
+			scene::MeshDataPtr                 meshData = nullptr;
 			std::vector<scene::PrimitiveBatch> batches = {};
 			//
 			{
@@ -3471,7 +3459,7 @@ namespace scene {
 	Result GltfLoader::FetchMeshInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_mesh* pGltfMesh,
-		scene::MeshRef& outMesh)
+		scene::MeshPtr& outMesh)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfMesh)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -3555,7 +3543,7 @@ namespace scene {
 			}
 
 			// Required object
-			scene::MeshRef targetMesh = nullptr;
+			scene::MeshPtr targetMesh = nullptr;
 
 			// Fetch if there's a resource manager...
 			if (!IsNull(loadParams.pResourceManager)) {
@@ -3720,7 +3708,7 @@ namespace scene {
 	Result GltfLoader::FetchNodeInternal(
 		const GltfLoader::InternalLoadParams& loadParams,
 		const cgltf_node* pGltfNode,
-		scene::NodeRef& outNode)
+		scene::NodePtr& outNode)
 	{
 		if (IsNull(loadParams.pDevice) || IsNull(loadParams.pResourceManager) || IsNull(pGltfNode)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;
@@ -3802,7 +3790,7 @@ namespace scene {
 			for (cgltf_size gltfNodeIndex : uniqueGltfNodeIndices) {
 				const cgltf_node* pGltfNode = &mGltfData->nodes[gltfNodeIndex];
 
-				scene::NodeRef node;
+				scene::NodePtr node;
 				//
 				auto ppxres = FetchNodeInternal(
 					loadParams,

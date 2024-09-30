@@ -18,11 +18,8 @@ public:
 
 	Player& GetPlayer() { return m_player; }
 
-	glm::mat4& GetProjection() { return m_perspectiveProjection; }
-
 private:
 	GameApplication* m_game;
 
 	Player m_player;
-	glm::mat4 m_perspectiveProjection;
 };

@@ -16,6 +16,9 @@
     <ClCompile Include="Entity.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -30,6 +33,9 @@
       <Filter>game\Core</Filter>
     </ClInclude>
     <ClInclude Include="Entity.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>

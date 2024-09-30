@@ -27,6 +27,8 @@ private:
 	std::vector<VulkanPerFrameData> m_perFrame;
 	World m_world;
 
+	std::set<KeyCode> m_pressedKeys;
+
 private:
 	bool setupDescriptors();
 	bool setupEntities();
@@ -40,7 +42,7 @@ private:
 
 	void updateUniformBuffer();
 
-	std::set<KeyCode> m_pressedKeys;
+
 
 	vkr::DescriptorPoolPtr      m_descriptorPool;
 

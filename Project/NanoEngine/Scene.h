@@ -7,27 +7,24 @@
 
 namespace scene
 {
-
 	class Image;
-	class Loader;
 	class Material;
 	class MaterialFactory;
 	class Mesh;
 	class MeshData;
 	class Node;
-	class Renderer;
 	class ResourceManager;
 	class Sampler;
 	class Scene;
 	class Texture;
 
-	using ImageRef = std::shared_ptr<scene::Image>;
-	using MaterialRef = std::shared_ptr<scene::Material>;
-	using MeshRef = std::shared_ptr<scene::Mesh>;
-	using MeshDataRef = std::shared_ptr<scene::MeshData>;
-	using NodeRef = std::shared_ptr<scene::Node>;
-	using SamplerRef = std::shared_ptr<scene::Sampler>;
-	using TextureRef = std::shared_ptr<scene::Texture>;
+	using ImagePtr = std::shared_ptr<scene::Image>;
+	using MaterialPtr = std::shared_ptr<scene::Material>;
+	using MeshPtr = std::shared_ptr<scene::Mesh>;
+	using MeshDataPtr = std::shared_ptr<scene::MeshData>;
+	using NodePtr = std::shared_ptr<scene::Node>;
+	using SamplerPtr = std::shared_ptr<scene::Sampler>;
+	using TexturePtr = std::shared_ptr<scene::Texture>;
 
 	enum LightType
 	{
@@ -51,10 +48,8 @@ namespace scene
 	const vkr::Format kVertexAttributeTagentFormat = vkr::Format::R32G32B32A32_FLOAT;
 	const vkr::Format kVertexAttributeColorFormat = vkr::Format::R32G32B32_FLOAT;
 
-	template <
-		typename ObjectT,
-		typename ObjectRefT = std::shared_ptr<ObjectT>>
-		ObjectRefT MakeRef(ObjectT* pObject)
+	template <typename ObjectT, typename ObjectRefT = std::shared_ptr<ObjectT>>
+	ObjectRefT MakeRef(ObjectT* pObject)
 	{
 		return ObjectRefT(pObject);
 	}
@@ -73,9 +68,7 @@ namespace scene
 			uint32_t mask = 0;
 		};
 
-		constexpr VertexAttributeFlags(uint32_t initialMask = 0)
-			: mask(initialMask) {
-		}
+		constexpr VertexAttributeFlags(uint32_t initialMask = 0) : mask(initialMask) {}
 
 		static VertexAttributeFlags None()
 		{
@@ -180,7 +173,6 @@ namespace scene
 
 namespace scene
 {
-
 	enum NodeType
 	{
 		NODE_TYPE_TRANSFORM = 0,
@@ -242,56 +234,51 @@ namespace scene
 	// Scene Graph Mesh Node
 	// Scene graph nodes that contains reference to a scene::Mesh object.
 	// When used as a standalone node, scene::Mesh stores a mesh and its required objects as populated by a loader.
-	class MeshNode : public scene::Node
+	class MeshNode final : public Node
 	{
 	public:
-		MeshNode(const scene::MeshRef& mesh, scene::Scene* pScene = nullptr);
-		virtual ~MeshNode();
+		MeshNode(const scene::MeshPtr& mesh, scene::Scene* pScene = nullptr);
+		~MeshNode() final;
 
-		virtual scene::NodeType GetNodeType() const override { return scene::NODE_TYPE_MESH; }
-
+		scene::NodeType GetNodeType() const final { return scene::NODE_TYPE_MESH; }
 		const scene::Mesh* GetMesh() const { return mMesh.get(); }
-
-		void SetMesh(const scene::MeshRef& mesh);
+		void SetMesh(const scene::MeshPtr& mesh);
 
 	private:
-		scene::MeshRef mMesh = nullptr;
+		scene::MeshPtr mMesh = nullptr;
 	};
 
 	// Scene Graph Camera Node
 	// Scene graph node that contains an instance of a Camera object.
 	// Can be used for both perspective and orthographic cameras.
 	// When used as a standalone node, scene::Camera stores a camera object as populated by a loader.
-	class CameraNode : public scene::Node
+	class CameraNode final : public Node
 	{
 	public:
 		CameraNode(std::unique_ptr<Camera>&& camera, scene::Scene* pScene = nullptr);
-		virtual ~CameraNode();
+		~CameraNode() final;
 
-		virtual scene::NodeType GetNodeType() const override { return scene::NODE_TYPE_CAMERA; }
-
+		scene::NodeType GetNodeType() const final { return scene::NODE_TYPE_CAMERA; }
 		const Camera* GetCamera() const { return mCamera.get(); }
-
-		virtual void SetTranslation(const float3& translation) override;
-		virtual void SetRotation(const float3& rotation) override;
+		void SetTranslation(const float3& translation) final;
+		void SetRotation(const float3& rotation) final;
 
 	private:
 		void UpdateCameraLookAt();
 
-	private:
 		std::unique_ptr<Camera> mCamera;
 	};
 
 	// Scene Graph Light Node
 	// Scene graph node that contains all properties to represent different light types.
 	// When used as a standalone node, scene::Light stores light information as populated by a loader.
-	class LightNode : public scene::Node
+	class LightNode final : public Node
 	{
 	public:
 		LightNode(scene::Scene* pScene = nullptr);
-		virtual ~LightNode();
+		~LightNode() final;
 
-		virtual scene::NodeType GetNodeType() const override { return scene::NODE_TYPE_LIGHT; }
+		scene::NodeType GetNodeType() const final { return scene::NODE_TYPE_LIGHT; }
 
 		const float3& GetColor() const { return mColor; }
 		float         GetIntensity() const { return mIntensity; }
@@ -307,7 +294,7 @@ namespace scene
 		void SetSpotInnerConeAngle(float angle) { mSpotInnerConeAngle = angle; }
 		void SetSpotOuterConeAngle(float angle) { mSpotOuterConeAngle = angle; }
 
-		virtual void SetRotation(const float3& rotation) override;
+		void SetRotation(const float3& rotation) final;
 
 	private:
 		scene::LightType mLightType = scene::LIGHT_TYPE_UNDEFINED;
@@ -334,19 +321,16 @@ namespace scene
 
 namespace scene
 {
-
 	// Image
-	// This class wraps a ::Image and a ::SampledImage objects to make pathing access to the GPU pipelines easier.
+	// This class wraps a vkr::Image and a vkr::SampledImage objects to make pathing access to the GPU pipelines easier.
 	// This class owns mImage and mImageView and destroys them in the destructor.
 	// scene::Image objects can be shared between different scene::Texture objects.
 	// Corresponds to GLTF's image object.
-	class Image : public vkr::NamedObjectTrait
+	class Image final : public vkr::NamedObjectTrait
 	{
 	public:
-		Image(
-			vkr::Image* pImage,
-			vkr::SampledImageView* pImageView);
-		virtual ~Image();
+		Image(vkr::Image* pImage, vkr::SampledImageView* pImageView);
+		~Image();
 
 		vkr::Image* GetImage() const { return mImage.Get(); }
 		vkr::SampledImageView* GetImageView() const { return mImageView.Get(); }
@@ -357,15 +341,15 @@ namespace scene
 	};
 
 	// Sampler
-	// This class wraps a ::Sampler object to make sharability on the scene level easier to understand.
+	// This class wraps a vkr::Sampler object to make sharability on the scene level easier to understand.
 	// This class owns mSampler and destroys it in the destructor.
 	// scene::Sampler objects can be shared between different scene::Texture objects.
 	// Corresponds to GLTF's sampler object.
-	class Sampler : public vkr::NamedObjectTrait
+	class Sampler final : public vkr::NamedObjectTrait
 	{
 	public:
 		Sampler(vkr::Sampler* pSampler);
-		virtual ~Sampler();
+		~Sampler();
 
 		vkr::Sampler* GetSampler() const { return mSampler.Get(); }
 
@@ -377,34 +361,30 @@ namespace scene
 	// This class is container for references to a scene::Image and a scene::Sampler objects.
 	// scene::Texture objects can be shared between different scene::Material objects via the scene::TextureView struct.
 	// Corresponds to GLTF's texture objects
-	class Texture : public vkr::NamedObjectTrait
+	class Texture final : public vkr::NamedObjectTrait
 	{
 	public:
 		Texture() = default;
-
-		Texture(
-			const scene::ImageRef   image,
-			const scene::SamplerRef sampler);
+		Texture( const scene::ImagePtr image, const scene::SamplerPtr sampler);
 
 		const scene::Image* GetImage() const { return mImage.get(); }
 		const scene::Sampler* GetSampler() const { return mSampler.get(); }
 
 	private:
-		scene::ImageRef   mImage = nullptr;
-		scene::SamplerRef mSampler = nullptr;
+		scene::ImagePtr   mImage = nullptr;
+		scene::SamplerPtr mSampler = nullptr;
 	};
 
 	// Texture View
 	// This class contains a reference to a texture object and the transform data that must be applied by the shader before sampling a pixel.
 	// scene::Texture view objects are used directly by scene::Material objects.
 	// Corresponds to cgltf's texture view object.
-	class TextureView
+	class TextureView final
 	{
 	public:
 		TextureView() = default;
-
 		TextureView(
-			const scene::TextureRef& texture,
+			const scene::TexturePtr& texture,
 			float2                   texCoordTranslate,
 			float                    texCoordRotate,
 			float2                   texCoordScale);
@@ -418,7 +398,7 @@ namespace scene
 		bool HasTexture() const { return mTexture ? true : false; }
 
 	private:
-		scene::TextureRef mTexture = nullptr;
+		scene::TexturePtr mTexture = nullptr;
 		float2            mTexCoordTranslate = float2(0, 0);
 		float             mTexCoordRotate = 0;
 		float2            mTexCoordScale = float2(1, 1);
@@ -447,52 +427,43 @@ namespace scene
 
 	// Error Material for when a primitive batch is missing a material.
 	// Implementations should render something recognizable. Default version renders solid purple: float3(1, 0, 1).
-	class ErrorMaterial : public scene::Material
+	class ErrorMaterial final : public scene::Material
 	{
 	public:
-		ErrorMaterial() = default;
-		virtual ~ErrorMaterial() = default;
+		std::string GetIdentString() const final { return MATERIAL_IDENT_ERROR; }
 
-		virtual std::string GetIdentString() const override { return MATERIAL_IDENT_ERROR; }
+		scene::VertexAttributeFlags GetRequiredVertexAttributes() const final;
 
-		virtual scene::VertexAttributeFlags GetRequiredVertexAttributes() const override;
-
-		virtual bool HasParams() const override { return false; }
-		virtual bool HasTextures() const override { return false; }
+		bool HasParams() const final { return false; }
+		bool HasTextures() const final { return false; }
 	};
 
 	// Debug Material
 	// Implementations should render position, tex coord, normal, and tangent as color output.
-	class DebugMaterial : public scene::Material
+	class DebugMaterial final : public scene::Material
 	{
 	public:
-		DebugMaterial() = default;
-		virtual ~DebugMaterial() = default;
+		std::string GetIdentString() const final { return MATERIAL_IDENT_DEBUG; }
 
-		virtual std::string GetIdentString() const override { return MATERIAL_IDENT_DEBUG; }
+		scene::VertexAttributeFlags GetRequiredVertexAttributes() const final;
 
-		virtual scene::VertexAttributeFlags GetRequiredVertexAttributes() const override;
-
-		virtual bool HasParams() const override { return false; }
-		virtual bool HasTextures() const override { return false; }
+		bool HasParams() const final { return false; }
+		bool HasTextures() const final { return false; }
 	};
 
 	// Unlit Material
 	// Implementations should render a texture without any lighting. Base color factor can act as a multiplier for the values from base color texture.
 	// Corresponds to GLTF's KHR_materials_unlit:
 	//   https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_unlit/README.md
-	class UnlitMaterial : public scene::Material
+	class UnlitMaterial final : public scene::Material
 	{
 	public:
-		UnlitMaterial() = default;
-		virtual ~UnlitMaterial() = default;
+		std::string GetIdentString() const final { return MATERIAL_IDENT_UNLIT; }
 
-		virtual std::string GetIdentString() const override { return MATERIAL_IDENT_UNLIT; }
+		scene::VertexAttributeFlags GetRequiredVertexAttributes() const final;
 
-		virtual scene::VertexAttributeFlags GetRequiredVertexAttributes() const override;
-
-		virtual bool HasParams() const override { return true; }
-		virtual bool HasTextures() const override;
+		bool HasParams() const final { return true; }
+		bool HasTextures() const final;
 
 		const float4& GetBaseColorFactor() const { return mBaseColorFactor; }
 		const scene::TextureView& GetBaseColorTextureView() const { return mBaseColorTextureView; }
@@ -511,18 +482,15 @@ namespace scene
 	// Implementations should render a lit pixel using a PBR method that makes use of the provided fields and textures of this class.
 	// Corresponds to GLTF's metallic roughness material:
 	//   https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-material-pbrmetallicroughness
-	class StandardMaterial : public scene::Material
+	class StandardMaterial final : public scene::Material
 	{
 	public:
-		StandardMaterial() = default;
-		virtual ~StandardMaterial() = default;
+		std::string GetIdentString() const final { return MATERIAL_IDENT_STANDARD; }
 
-		virtual std::string GetIdentString() const override { return MATERIAL_IDENT_STANDARD; }
+		scene::VertexAttributeFlags GetRequiredVertexAttributes() const final;
 
-		virtual scene::VertexAttributeFlags GetRequiredVertexAttributes() const override;
-
-		virtual bool HasParams() const override { return true; }
-		virtual bool HasTextures() const override;
+		bool HasParams() const final { return true; }
+		bool HasTextures() const final;
 
 		const float4& GetBaseColorFactor() const { return mBaseColorFactor; }
 		float         GetMetallicFactor() const { return mMetallicFactor; }
@@ -573,15 +541,11 @@ namespace scene
 	// Material Factory
 	// Customizable factory that provides implementations of materials. An application can inherit this class to provide implementations of materials as it sees fit.
 	// Materials must be uniquely identifiable by their Material Ident string.
-	class MaterialFactory
+	class MaterialFactory final
 	{
 	public:
-		MaterialFactory() = default;
-		virtual ~MaterialFactory() = default;
-
-		virtual scene::VertexAttributeFlags GetRequiredVertexAttributes(const std::string& materialIdent) const;
-
-		virtual scene::Material* CreateMaterial(const std::string& materialIdent) const;
+		scene::VertexAttributeFlags GetRequiredVertexAttributes(const std::string& materialIdent) const;
+		scene::Material* CreateMaterial(const std::string& materialIdent) const;
 	};
 
 } // namespace scene
@@ -592,18 +556,15 @@ namespace scene
 
 namespace scene
 {
-
-	class MaterialPipelineArgs;
-
 	// size = 8
-	struct FrameParams
+	struct FrameParams final
 	{
 		uint32_t frameIndex; // offset = 0
 		float    time;       // offset = 4
 	};
 
 	// size = 96
-	struct CameraParams
+	struct CameraParams final
 	{
 		float4x4 viewProjectionMatrix; // offset = 0
 		float3   eyePosition;          // offset = 64
@@ -613,14 +574,14 @@ namespace scene
 	};
 
 	// size = 128
-	struct InstanceParams
+	struct InstanceParams final
 	{
 		float4x4 modelMatrix;        // offset = 0
 		float4x4 inverseModelMatrix; // offset = 64
 	};
 
 	// size = 24
-	struct MaterialTextureParams
+	struct MaterialTextureParams final
 	{
 		uint     textureIndex;      // offset = 0
 		uint     samplerIndex;      // offset = 4
@@ -628,7 +589,7 @@ namespace scene
 	};
 
 	// size = 164
-	struct MaterialParams
+	struct MaterialParams final
 	{
 		float4                       baseColorFactor;      // offset = 0
 		float                        metallicFactor;       // offset = 16
@@ -643,18 +604,14 @@ namespace scene
 		scene::MaterialTextureParams emssiveTex;           // offset = 140
 	};
 
-
-	// Material Pipeline Arguments
-	class MaterialPipelineArgs
+	class MaterialPipelineArgs final
 	{
 	public:
-		//
 		// These constants correspond to values in:
 		//   - scene_renderer/shaders/Config.hlsli
 		//   - scene_renderer/shaders/MaterialInterface.hlsli
 		//
 		// @TODO: Find a more appropriate location for these
-		//
 		static const uint32_t MAX_UNIQUE_MATERIALS = 8192;
 		static const uint32_t MAX_TEXTURES_PER_MATERIAL = 6;
 		static const uint32_t MAX_MATERIAL_TEXTURES = MAX_UNIQUE_MATERIALS * MAX_TEXTURES_PER_MATERIAL;
@@ -697,16 +654,16 @@ namespace scene
 
 		// ---------------------------------------------------------------------------------------------
 
-		MaterialPipelineArgs();
-		virtual ~MaterialPipelineArgs();
+		MaterialPipelineArgs() = default;
+		~MaterialPipelineArgs();
 
 		static Result Create(vkr::RenderDevice* pDevice, scene::MaterialPipelineArgs** ppTargetPipelineArgs);
 
-		vkr::DescriptorPool* GetDescriptorPool() const { return mDescriptorPool.Get(); }
+		vkr::DescriptorPool*      GetDescriptorPool() const { return mDescriptorPool.Get(); }
 		vkr::DescriptorSetLayout* GetDescriptorSetLayout() const { return mDescriptorSetLayout.Get(); }
-		vkr::DescriptorSet* GetDescriptorSet() const { return mDescriptorSet.Get(); }
+		vkr::DescriptorSet*       GetDescriptorSet() const { return mDescriptorSet.Get(); }
 
-		scene::FrameParams* GetFrameParams() { return mFrameParamsAddress; }
+		scene::FrameParams*  GetFrameParams() { return mFrameParamsAddress; }
 		scene::CameraParams* GetCameraParams() { return mCameraParamsAddress; }
 		void                 SetCameraParams(const Camera* pCamera);
 
@@ -784,47 +741,35 @@ namespace scene
 
 namespace scene
 {
-
-	// Resource Manager
-	//
 	// This class stores required objects for scenes and standalone meshes.
-	// It also acts as a cache during scene loading to prevent loading of
-	// duplicate objects.
+	// It also acts as a cache during scene loading to prevent loading of duplicate objects.
 	//
-	// The resource manager acts as the external owner of all shared resources
-	// for scenes and meshes. Required objects can be shared in a variety of
-	// different cases:
+	// The resource manager acts as the external owner of all shared resources for scenes and meshes. Required objects can be shared in a variety of different cases:
 	//   - images and image views can be shared among textures
 	//   - textures can be shared among materials by way of texture views
 	//   - materials can be shared among primitive batches
 	//   - mesh data can be shared among meshes
 	//   - meshes can be shared among nodes
 	//
-	// Both scene::Scene and scene::Mesh will call ResourceManager::DestroyAll()
-	// in their destructors to destroy all its references to shared objects.
-	// If afterwards a shared object has an external reference, the code holding
-	// the reference is responsible for the shared objct.
-	//
-	class ResourceManager
+	// Both scene::Scene and scene::Mesh will call ResourceManager::DestroyAll() in their destructors to destroy all its references to shared objects.
+	// If afterwards a shared object has an external reference, the code holding the reference is responsible for the shared objct.
+	class ResourceManager final
 	{
 	public:
-		ResourceManager();
-		virtual ~ResourceManager();
-
-		bool Find(uint64_t objectId, scene::SamplerRef& outObject) const;
-		bool Find(uint64_t objectId, scene::ImageRef& outObject) const;
-		bool Find(uint64_t objectId, scene::TextureRef& outObject) const;
-		bool Find(uint64_t objectId, scene::MaterialRef& outObject) const;
-		bool Find(uint64_t objectId, scene::MeshDataRef& outObject) const;
-		bool Find(uint64_t objectId, scene::MeshRef& outObject) const;
+		bool Find(uint64_t objectId, scene::SamplerPtr& outObject) const;
+		bool Find(uint64_t objectId, scene::ImagePtr& outObject) const;
+		bool Find(uint64_t objectId, scene::TexturePtr& outObject) const;
+		bool Find(uint64_t objectId, scene::MaterialPtr& outObject) const;
+		bool Find(uint64_t objectId, scene::MeshDataPtr& outObject) const;
+		bool Find(uint64_t objectId, scene::MeshPtr& outObject) const;
 
 		// Cache functions assumes ownership of pObject
-		Result Cache(uint64_t objectId, const scene::SamplerRef& object);
-		Result Cache(uint64_t objectId, const scene::ImageRef& object);
-		Result Cache(uint64_t objectId, const scene::TextureRef& object);
-		Result Cache(uint64_t objectId, const scene::MaterialRef& object);
-		Result Cache(uint64_t objectId, const scene::MeshDataRef& object);
-		Result Cache(uint64_t objectId, const scene::MeshRef& object);
+		Result Cache(uint64_t objectId, const scene::SamplerPtr& object);
+		Result Cache(uint64_t objectId, const scene::ImagePtr& object);
+		Result Cache(uint64_t objectId, const scene::TexturePtr& object);
+		Result Cache(uint64_t objectId, const scene::MaterialPtr& object);
+		Result Cache(uint64_t objectId, const scene::MeshDataPtr& object);
+		Result Cache(uint64_t objectId, const scene::MeshPtr& object);
 
 		uint32_t GetSamplerCount() const { return static_cast<uint32_t>(mSamplers.size()); }
 		uint32_t GetImageCount() const { return static_cast<uint32_t>(mImages.size()); }
@@ -835,46 +780,29 @@ namespace scene
 
 		void DestroyAll();
 
-		const std::unordered_map<uint64_t, scene::SamplerRef>& GetSamplers() const;
-		const std::unordered_map<uint64_t, scene::ImageRef>& GetImages() const;
-		const std::unordered_map<uint64_t, scene::TextureRef>& GetTextures() const;
-		const std::unordered_map<uint64_t, scene::MaterialRef>& GetMaterials() const;
+		const std::unordered_map<uint64_t, scene::SamplerPtr>& GetSamplers() const;
+		const std::unordered_map<uint64_t, scene::ImagePtr>& GetImages() const;
+		const std::unordered_map<uint64_t, scene::TexturePtr>& GetTextures() const;
+		const std::unordered_map<uint64_t, scene::MaterialPtr>& GetMaterials() const;
 
 	private:
-		template <
-			typename ObjectT,
-			typename ObjectRefT = std::shared_ptr<ObjectT>>
-			bool FindObject(
-				uint64_t                                        objectId,
-				const std::unordered_map<uint64_t, ObjectRefT>& container,
-				ObjectRefT& outObject) const
+		template <typename ObjectT, typename ObjectRefT = std::shared_ptr<ObjectT>>
+		bool FindObject(uint64_t objectId, 	const std::unordered_map<uint64_t, ObjectRefT>& container, ObjectRefT& outObject) const
 		{
 			auto it = container.find(objectId);
-			if (it == container.end()) {
-				return false;
-			}
-
+			if (it == container.end()) { return false; }
 			outObject = (*it).second;
 			return true;
 		}
 
-		template <
-			typename ObjectT,
-			typename ObjectRefT = std::shared_ptr<ObjectT>>
-			Result CacheObject(
-				uint64_t                                  objectId,
-				const ObjectRefT& object,
-				std::unordered_map<uint64_t, ObjectRefT>& container)
+		template <typename ObjectT, typename ObjectRefT = std::shared_ptr<ObjectT>>
+		Result CacheObject(uint64_t objectId, const ObjectRefT& object, std::unordered_map<uint64_t, ObjectRefT>& container)
 		{
 			// Don't cache NULL objects
-			if (!object) {
-				return ERROR_UNEXPECTED_NULL_ARGUMENT;
-			}
+			if (!object) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
 			auto it = container.find(objectId);
-			if (it != container.end()) {
-				return ERROR_DUPLICATE_ELEMENT;
-			}
+			if (it != container.end()) return ERROR_DUPLICATE_ELEMENT;
 
 			container[objectId] = object;
 
@@ -882,12 +810,12 @@ namespace scene
 		}
 
 	private:
-		std::unordered_map<uint64_t, scene::SamplerRef>  mSamplers;
-		std::unordered_map<uint64_t, scene::ImageRef>    mImages;
-		std::unordered_map<uint64_t, scene::TextureRef>  mTextures;
-		std::unordered_map<uint64_t, scene::MaterialRef> mMaterials;
-		std::unordered_map<uint64_t, scene::MeshDataRef> mMeshData;
-		std::unordered_map<uint64_t, scene::MeshRef>     mMeshes;
+		std::unordered_map<uint64_t, scene::SamplerPtr>  mSamplers;
+		std::unordered_map<uint64_t, scene::ImagePtr>    mImages;
+		std::unordered_map<uint64_t, scene::TexturePtr>  mTextures;
+		std::unordered_map<uint64_t, scene::MaterialPtr> mMaterials;
+		std::unordered_map<uint64_t, scene::MeshDataPtr> mMeshData;
+		std::unordered_map<uint64_t, scene::MeshPtr>     mMeshes;
 	};
 
 } // namespace scene
@@ -896,26 +824,16 @@ namespace scene
 
 #pragma region Scene Mesh
 
-namespace scene {
+namespace scene
+{
 
-	// Mesh Data
-	//
-	// Container for geometry data and the buffer views required by
-	// a renderer. scene::MeshData objects can be shared among different
-	// scene::Mesh instances.
-	//
-	// It's necessary to separate out the mesh data from the mesh since
-	// it's possible for a series of meshes to use the same geometry
-	// data but a different set of scene::PrimitiveBatch descriptions.
-	//
-	//
-	class MeshData : public vkr::NamedObjectTrait
+	// Container for geometry data and the buffer views required by a renderer. scene::MeshData objects can be shared among different scene::Mesh instances.
+	// It's necessary to separate out the mesh data from the mesh since it's possible for a series of meshes to use the same geometry data but a different set of scene::PrimitiveBatch descriptions.
+	class MeshData final : public vkr::NamedObjectTrait
 	{
 	public:
-		MeshData(
-			const scene::VertexAttributeFlags& availableVertexAttributes,
-			vkr::Buffer* pGpuBuffer);
-		virtual ~MeshData();
+		MeshData(const scene::VertexAttributeFlags& availableVertexAttributes, vkr::Buffer* pGpuBuffer);
+		~MeshData();
 
 		const scene::VertexAttributeFlags& GetAvailableVertexAttributes() const { return mAvailableVertexAttributes; }
 		const std::vector<vkr::VertexBinding>& GetAvailableVertexBindings() const { return mVertexBindings; }
@@ -927,28 +845,19 @@ namespace scene {
 		vkr::BufferPtr                  mGpuBuffer;
 	};
 
-	// Primitive Batch
-	//
-	// Contains all information necessary for a draw call. The material
-	// reference will determine which pipeline gets used. The offsets and
-	// counts correspond to the graphics API's draw call. Bounding box
-	// can be used by renderer.
-	//
-	class PrimitiveBatch
+	// Contains all information necessary for a draw call. The material reference will determine which pipeline gets used. The offsets and counts correspond to the graphics API's draw call. Bounding box can be used by renderer.
+	class PrimitiveBatch final
 	{
 	public:
 		PrimitiveBatch() = default;
-
 		PrimitiveBatch(
-			const scene::MaterialRef& material,
+			const scene::MaterialPtr& material,
 			const vkr::IndexBufferView& indexBufferView,
 			const vkr::VertexBufferView& positionBufferView,
 			const vkr::VertexBufferView& attributeBufferView,
 			uint32_t                      indexCount,
 			uint32_t                      vertexCount,
 			const AABB& boundingBox);
-
-		~PrimitiveBatch() = default;
 
 		const scene::Material* GetMaterial() const { return mMaterial.get(); }
 		const vkr::IndexBufferView& GetIndexBufferView() const { return mIndexBufferView; }
@@ -959,7 +868,7 @@ namespace scene {
 		uint32_t                      GetVertexCount() const { return mVertexCount; }
 
 	private:
-		scene::MaterialRef     mMaterial = nullptr;
+		scene::MaterialPtr     mMaterial = nullptr;
 		vkr::IndexBufferView  mIndexBufferView = {};
 		vkr::VertexBufferView mPositionBufferView = {};
 		vkr::VertexBufferView mAttributeBufferView = {};
@@ -968,30 +877,23 @@ namespace scene {
 		AABB              mBoundingBox = {};
 	};
 
-	// Mesh
-	//
 	// Contains all the information necessary to render a model:
 	//   - geometry data reference
 	//   - primitive batches
 	//   - material references
-	//
-	// If a mesh is loaded standalone, it will use its own resource
-	// manager for required materials, textures, images, and samplers.
-	//
-	// If a mesh is loaded as part of a scene, the scene's resource
-	// manager will be used instead.
-	//
-	class Mesh : public vkr::NamedObjectTrait
+	// If a mesh is loaded standalone, it will use its own resource manager for required materials, textures, images, and samplers.
+	// If a mesh is loaded as part of a scene, the scene's resource manager will be used instead.
+	class Mesh final : public vkr::NamedObjectTrait
 	{
 	public:
 		Mesh(
-			const scene::MeshDataRef& meshData,
+			const scene::MeshDataPtr& meshData,
 			std::vector<scene::PrimitiveBatch>&& batches);
 		Mesh(
 			std::unique_ptr<scene::ResourceManager>&& resourceManager,
-			const scene::MeshDataRef& meshData,
+			const scene::MeshDataPtr& meshData,
 			std::vector<scene::PrimitiveBatch>&& batches);
-		virtual ~Mesh();
+		~Mesh();
 
 		bool HasResourceManager() const { return mResourceManager ? true : false; }
 
@@ -1010,7 +912,7 @@ namespace scene {
 
 	private:
 		std::unique_ptr<scene::ResourceManager> mResourceManager = nullptr;
-		scene::MeshDataRef                      mMeshData = nullptr;
+		scene::MeshDataPtr                      mMeshData = nullptr;
 		std::vector<scene::PrimitiveBatch>      mBatches = {};
 		AABB                               mBoundingBox = {};
 	};
@@ -1021,27 +923,19 @@ namespace scene {
 
 #pragma region Scene
 
-namespace scene {
+namespace scene
+{
 
 	// Map a resource pointer to an index, used for indexing resource on GPU.
 	template <typename ResObjT>
 	using ResourceIndexMap = std::unordered_map<const ResObjT*, uint32_t>;
 
-	// Scene Graph
-	//
-	// Basic scene graph designed to feed into a renderer. Manages nodes and all
-	// their required objects: meshes, mesh geometry data, materials, textures,
-	// images, and samplers.
-	//
-	// See scene::ResourceManager for details on object sharing among the various
-	// elements of the scene.
-	//
-	class Scene : public vkr::NamedObjectTrait
+	// Basic scene graph designed to feed into a renderer. Manages nodes and all their required objects: meshes, mesh geometry data, materials, textures, images, and samplers.
+	// See scene::ResourceManager for details on object sharing among the various elements of the scene.
+	class Scene final : public vkr::NamedObjectTrait
 	{
 	public:
 		Scene(std::unique_ptr<scene::ResourceManager>&& resourceManager);
-
-		virtual ~Scene() = default;
 
 		// Returns the number of all samplers in the scene
 		uint32_t GetSamplerCount() const;
@@ -1076,11 +970,8 @@ namespace scene {
 
 		// ---------------------------------------------------------------------------------------------
 		// Find*Node functions return the first node that matches the name argument.
-		// Since it's possible for source data to have multiple nodes of the same
-		// name, there can't be any type of ordering or search consistency guarantees.
-		//
+		// Since it's possible for source data to have multiple nodes of the same name, there can't be any type of ordering or search consistency guarantees.
 		// Best to avoid using the same name for multiple nodes in source data.
-		//
 		// ---------------------------------------------------------------------------------------------
 		// Returns a node that matches name
 		scene::Node* FindNode(const std::string& name) const;
@@ -1091,17 +982,13 @@ namespace scene {
 		// Returns a light node that matches name
 		scene::LightNode* FindLightNode(const std::string& name) const;
 
-		Result AddNode(scene::NodeRef&& node);
+		Result AddNode(scene::NodePtr&& node);
 
 		// ---------------------------------------------------------------------------------------------
-		// Get*ArrayIndexMap functions are used when populating resource and parameter
-		// arguments for the shader. The return value of these functions are two parts:
+		// Get*ArrayIndexMap functions are used when populating resource and parameter arguments for the shader. The return value of these functions are two parts:
 		//   - the first is an array of resources from the resource manager
 		//   - the second is a map of the resource to its array index
-		//
-		// These two parts are used to build textures, sampler, and material resources
-		// arrays for the shader.
-		//
+		// These two parts are used to build textures, sampler, and material resources arrays for the shader.
 		// ---------------------------------------------------------------------------------------------
 		// Returns an array of samplers and their index mappings
 		scene::ResourceIndexMap<scene::Sampler> GetSamplersArrayIndexMap() const;
@@ -1129,7 +1016,7 @@ namespace scene {
 
 	private:
 		std::unique_ptr<scene::ResourceManager> mResourceManager = nullptr;
-		std::vector<scene::NodeRef>             mNodes = {};
+		std::vector<scene::NodePtr>             mNodes = {};
 		std::vector<scene::MeshNode*>           mMeshNodes = {};
 		std::vector<scene::CameraNode*>         mCameraNodes = {};
 		std::vector<scene::LightNode*>          mLightNodes = {};
@@ -1140,18 +1027,12 @@ namespace scene {
 
 #pragma region Scene Loader
 
-namespace scene {
-
-	// Load Options
-	//
+namespace scene
+{
 	// Stores optional paramters that are passed to scene loader implementations.
-	//
-	class LoadOptions
+	class LoadOptions final
 	{
 	public:
-		LoadOptions() {}
-		~LoadOptions() {}
-
 		// Returns current material factory or NULL if one has not been set.
 		scene::MaterialFactory* GetMaterialFactory() const { return mMaterialFactory; }
 
@@ -1456,7 +1337,7 @@ namespace scene {
 		Result FetchSamplerInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_sampler* pGltfSampler,
-			scene::SamplerRef& outSampler);
+			scene::SamplerPtr& outSampler);
 
 		Result LoadImageInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
@@ -1466,7 +1347,7 @@ namespace scene {
 		Result FetchImageInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_image* pGltfImage,
-			scene::ImageRef& outImage);
+			scene::ImagePtr& outImage);
 
 		Result LoadTextureInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
@@ -1476,7 +1357,7 @@ namespace scene {
 		Result FetchTextureInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_texture* pGltfTexture,
-			scene::TextureRef& outTexture);
+			scene::TexturePtr& outTexture);
 
 		Result LoadTextureViewInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
@@ -1501,12 +1382,12 @@ namespace scene {
 		Result FetchMaterialInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_material* pGltfMaterial,
-			scene::MaterialRef& outMaterial);
+			scene::MaterialPtr& outMaterial);
 
 		Result LoadMeshData(
 			const GltfLoader::InternalLoadParams& extgernalLoadParams,
 			const cgltf_mesh* pGltfMesh,
-			scene::MeshDataRef& outMeshData,
+			scene::MeshDataPtr& outMeshData,
 			std::vector<scene::PrimitiveBatch>& outBatches);
 
 		Result LoadMeshInternal(
@@ -1517,7 +1398,7 @@ namespace scene {
 		Result FetchMeshInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_mesh* pGltfMesh,
-			scene::MeshRef& outMesh);
+			scene::MeshPtr& outMesh);
 
 		Result LoadNodeInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
@@ -1527,7 +1408,7 @@ namespace scene {
 		Result FetchNodeInternal(
 			const GltfLoader::InternalLoadParams& loadParams,
 			const cgltf_node* pGltfNode,
-			scene::NodeRef& outNode);
+			scene::NodePtr& outNode);
 
 		Result LoadSceneInternal(
 			const GltfLoader::InternalLoadParams& externalLoadParams,
