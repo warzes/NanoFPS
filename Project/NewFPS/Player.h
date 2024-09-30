@@ -38,6 +38,8 @@ public:
 	float GetRateOfMove() const { return m_rateOfMove; }
 	float GetRateOfTurn() const { return m_rateOfTurn; }
 
+	PerspCamera& GetCamera() { return m_perspCamera; }
+
 private:
 	void setupCamera();
 	void updateCamera();

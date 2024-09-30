@@ -45,9 +45,9 @@ bool GameApplication::Setup()
 
 void GameApplication::Shutdown()
 {
-	for (size_t i = 0; i < mPerFrame.size(); i++)
+	for (size_t i = 0; i < m_perFrame.size(); i++)
 	{
-		mPerFrame[i].Shutdown();
+		m_perFrame[i].Shutdown();
 	}
 	m_world.Shutdown();
 	// TODO: очистка
@@ -66,7 +66,7 @@ void GameApplication::Render()
 
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
-	auto& frame = mPerFrame[0];
+	auto& frame = m_perFrame[0];
 	uint32_t imageIndex = frame.Frame(swapChain);
 
 	// Build command buffer
@@ -141,13 +141,13 @@ void GameApplication::Render()
 						ImGui::Columns(2);
 						ImGui::Text("Camera position");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_perspCamera.GetEyePosition()[0], m_perspCamera.GetEyePosition()[1], m_perspCamera.GetEyePosition()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetCamera().GetEyePosition()[0], m_world.GetPlayer().GetCamera().GetEyePosition()[1], m_world.GetPlayer().GetCamera().GetEyePosition()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Camera looking at");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_perspCamera.GetTarget()[0], m_perspCamera.GetTarget()[1], m_perspCamera.GetTarget()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetCamera().GetTarget()[0], m_world.GetPlayer().GetCamera().GetTarget()[1], m_world.GetPlayer().GetCamera().GetTarget()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Separator();
@@ -155,25 +155,25 @@ void GameApplication::Render()
 						ImGui::Columns(2);
 						ImGui::Text("Person location");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_oldPlayer.GetLocation()[0], m_oldPlayer.GetLocation()[1], m_oldPlayer.GetLocation()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetPosition()[0], m_world.GetPlayer().GetPosition()[1], m_world.GetPlayer().GetPosition()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Person looking at");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_oldPlayer.GetLookAt()[0], m_oldPlayer.GetLookAt()[1], m_oldPlayer.GetLookAt()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetLookAt()[0], m_world.GetPlayer().GetLookAt()[1], m_world.GetPlayer().GetLookAt()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Azimuth");
 						ImGui::NextColumn();
-						ImGui::Text("%.4f", m_oldPlayer.GetAzimuth());
+						ImGui::Text("%.4f", m_world.GetPlayer().GetAzimuth());
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Altitude");
 						ImGui::NextColumn();
-						ImGui::Text("%.4f", m_oldPlayer.GetAltitude());
+						ImGui::Text("%.4f", m_world.GetPlayer().GetAltitude());
 						ImGui::NextColumn();
 					}
 
@@ -200,8 +200,7 @@ void GameApplication::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, Mo
 	float2 deltaPos = prevPos - curPos;
 	float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
 	float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
-	m_oldPlayer.Turn(-deltaAzimuth, deltaAltitude);
-	updateCamera();
+	m_world.GetPlayer().Turn(-deltaAzimuth, deltaAltitude);
 }
 
 void GameApplication::KeyDown(KeyCode key)
@@ -510,26 +509,7 @@ void GameApplication::processInput()
 		if (m_cursorVisible) GetInput().SetCursorMode(CursorMode::Disabled);
 		else GetInput().SetCursorMode(CursorMode::Normal);
 	}
-
-	if (m_pressedKeys.count(KEY_LEFT) > 0) {
-		m_oldPlayer.Turn(-m_oldPlayer.GetRateOfTurn(), 0);
-	}
-
-	if (m_pressedKeys.count(KEY_RIGHT) > 0) {
-		m_oldPlayer.Turn(m_oldPlayer.GetRateOfTurn(), 0);
-	}
-
-	if (m_pressedKeys.count(KEY_UP) > 0) {
-		m_oldPlayer.Turn(0, -m_oldPlayer.GetRateOfTurn());
-	}
-
-	if (m_pressedKeys.count(KEY_DOWN) > 0) {
-		m_oldPlayer.Turn(0, m_oldPlayer.GetRateOfTurn());
-	}
-
 	m_world.GetPlayer().ProcessInput(m_pressedKeys);
-
-	updateCamera();
 }
 
 void GameApplication::updateUniformBuffer()
@@ -563,12 +543,10 @@ void GameApplication::updateUniformBuffer()
 		scene.ModelMatrix = M;
 		scene.NormalMatrix = glm::inverseTranspose(M);
 		scene.Ambient = float4(0.3f);
-		scene.CameraViewProjectionMatrix = m_perspCamera.GetViewProjectionMatrix();
+		scene.CameraViewProjectionMatrix = m_world.GetPlayer().GetCamera().GetViewProjectionMatrix();
 		scene.LightPosition = float4(mLightPosition, 0);
 		scene.LightViewProjectionMatrix = mLightCamera.GetViewProjectionMatrix();
 		scene.UsePCF = uint4(mUsePCF);
-
-		auto t = m_world.GetVP();
 
 		pEntity->drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
 
@@ -582,7 +560,7 @@ void GameApplication::updateUniformBuffer()
 	// Update light uniform buffer
 	{
 		float4x4        T = glm::translate(mLightPosition);
-		const float4x4& PV = m_perspCamera.GetViewProjectionMatrix();
+		const float4x4& PV = m_world.GetPlayer().GetCamera().GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
 
 		mLight.drawUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);

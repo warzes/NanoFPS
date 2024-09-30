@@ -19,17 +19,24 @@ void Player::Shutdown()
 
 void Player::ProcessInput(const std::set<KeyCode>& pressedKeys)
 {
-	if (pressedKeys.count(KEY_W) > 0) Move(MovementDirection::Forward, GetRateOfMove());
-	if (pressedKeys.count(KEY_A) > 0) Move(MovementDirection::Left, GetRateOfMove());
-	if (pressedKeys.count(KEY_S) > 0) Move(MovementDirection::Backward, GetRateOfMove());
-	if (pressedKeys.count(KEY_D) > 0) Move(MovementDirection::Right, GetRateOfMove());
+	if (pressedKeys.count(KEY_LEFT) > 0) Turn(-GetRateOfTurn(), 0);
+	if (pressedKeys.count(KEY_RIGHT) > 0) Turn(GetRateOfTurn(), 0);
+	if (pressedKeys.count(KEY_UP) > 0) Turn(0, -GetRateOfTurn());
+	if (pressedKeys.count(KEY_DOWN) > 0) Turn(0, GetRateOfTurn());
+
+	if (pressedKeys.count(KEY_W) > 0) move(MovementDirection::Forward, GetRateOfMove());
+	if (pressedKeys.count(KEY_A) > 0) move(MovementDirection::Left, GetRateOfMove());
+	if (pressedKeys.count(KEY_S) > 0) move(MovementDirection::Backward, GetRateOfMove());
+	if (pressedKeys.count(KEY_D) > 0) move(MovementDirection::Right, GetRateOfMove());
+
+	updateCamera();
 }
 
 void Player::Update(float deltaTime)
 {
 }
 
-void Player::Move(MovementDirection dir, float distance)
+void Player::move(MovementDirection dir, float distance)
 {
 	if (dir == MovementDirection::Forward)
 	{
@@ -63,6 +70,8 @@ void Player::Turn(float deltaAzimuth, float deltaAltitude)
 	// Altitude is saturated by making it stop, so the world doesn't turn upside down.
 	if (m_altitude < 0.0f) m_altitude = 0.0f;
 	else if (m_altitude > pi<float>()) m_altitude = pi<float>();
+
+	updateCamera();
 }
 
 void Player::setupCamera()

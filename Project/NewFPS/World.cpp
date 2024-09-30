@@ -18,8 +18,6 @@ void World::Shutdown()
 void World::Update(float deltaTime)
 {
 	m_player.Update(deltaTime);
-	m_player.ComputeCameraOrientation();
-	m_perspectiveView = glm::lookAt(m_player.GetPos(), m_player.GetCameraLook(), glm::vec3(0.0, 1.0, 0.0));
 
 	{
 		const float FOV = 60.0f;
