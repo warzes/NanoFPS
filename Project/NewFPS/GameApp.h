@@ -3,6 +3,7 @@
 #include "PerFrame.h"
 #include "World.h"
 #include "Entity.h"
+#include "Light.h"
 
 namespace game
 {
@@ -23,8 +24,12 @@ public:
 	void KeyDown(KeyCode key) final;
 	void KeyUp(KeyCode key) final;
 
+	vkr::DescriptorPoolPtr GetDescriptorPool() { return m_descriptorPool; }
+
 private:
 	std::vector<VulkanPerFrameData> m_perFrame;
+	vkr::DescriptorPoolPtr m_descriptorPool;
+
 	World m_world;
 
 	std::set<KeyCode> m_pressedKeys;
@@ -35,16 +40,9 @@ private:
 	bool setupPipelines();
 	bool setupShadowRenderPass();
 	bool setupShadowInfo();
-	bool setupLight();
 
-	void updateLight();
 	void processInput();
-
 	void updateUniformBuffer();
-
-
-
-	vkr::DescriptorPoolPtr      m_descriptorPool;
 
 	vkr::DescriptorSetLayoutPtr m_drawObjectSetLayout;
 	vkr::PipelineInterfacePtr   mDrawObjectPipelineInterface;
@@ -61,12 +59,6 @@ private:
 	vkr::SampledImageViewPtr    mShadowImageView;
 	vkr::SamplerPtr             mShadowSampler;
 
-	vkr::DescriptorSetLayoutPtr mLightSetLayout;
-	vkr::PipelineInterfacePtr   mLightPipelineInterface;
-	vkr::GraphicsPipelinePtr    mLightPipeline;
-	GameEntity                 mLight;
-	float3                 mLightPosition = float3(0, 5, 5);
-	PerspCamera            mLightCamera;
 	bool                   mUsePCF = false;
 
 	bool m_cursorVisible = true;

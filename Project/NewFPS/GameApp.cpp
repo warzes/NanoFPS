@@ -20,23 +20,18 @@ bool GameApplication::Setup()
 {
 	auto& device = GetRenderDevice();
 
-	WorldCreateInfo worldCI = {};
-	if (!m_world.Setup(this, worldCI)) return false;
-
-	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
-
 	if (!setupDescriptors()) return false;
 	if (!setupEntities()) return false;
 	if (!setupPipelines()) return false;
 	if (!setupShadowRenderPass()) return false;
 	if (!setupShadowInfo()) return false;
-	if (!setupLight()) return false;
+
+	WorldCreateInfo worldCI = {};
+	if (!m_world.Setup(this, worldCI)) return false;
 
 	VulkanPerFrameData perFrame;
 	if (!perFrame.Setup(device)) return false;
 	m_perFrame.emplace_back(perFrame);
-
-	updateLight();
 
 	if (m_cursorVisible) GetInput().SetCursorMode(CursorMode::Disabled);
 
@@ -55,7 +50,6 @@ void GameApplication::Shutdown()
 
 void GameApplication::Update()
 {
-	updateLight();
 	processInput();
 	m_world.Update(GetDeltaTime());
 }
@@ -127,11 +121,8 @@ void GameApplication::Render()
 				}
 
 				// Draw light
-				frame.cmd->BindGraphicsPipeline(mLightPipeline);
-				frame.cmd->BindGraphicsDescriptorSets(mLightPipelineInterface, 1, &mLight.drawDescriptorSet);
-				frame.cmd->BindIndexBuffer(mLight.mesh);
-				frame.cmd->BindVertexBuffers(mLight.mesh);
-				frame.cmd->DrawIndexed(mLight.mesh->GetIndexCount());
+				m_world.GetMainLight().DrawDebug(frame.cmd);
+
 
 				// Draw ImGui
 				//render.DrawDebugInfo();
@@ -407,96 +398,6 @@ bool GameApplication::setupShadowInfo()
 	}
 
 	return true;
-}
-
-bool GameApplication::setupLight()
-{
-	auto& device = GetRenderDevice();
-
-	// Light
-	{
-		// Descriptor set layt
-		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &mLightSetLayout));
-
-		// Model
-		vkr::TriMeshOptions options = vkr::TriMeshOptions().Indices().ObjectColor(float3(1, 1, 1));
-		vkr::TriMesh        mesh = vkr::TriMesh::CreateCube(float3(0.25f, 0.25f, 0.25f), options);
-
-		vkr::Geometry geo;
-		CHECKED_CALL_AND_RETURN_FALSE(vkr::Geometry::Create(mesh, &geo));
-		CHECKED_CALL_AND_RETURN_FALSE(vkr::vkrUtil::CreateMeshFromGeometry(GetRenderDevice().GetGraphicsQueue(), &geo, &mLight.mesh));
-
-		// Uniform buffer
-		vkr::BufferCreateInfo bufferCreateInfo = {};
-		bufferCreateInfo.size = vkr::MINIMUM_UNIFORM_BUFFER_SIZE;
-		bufferCreateInfo.usageFlags.bits.uniformBuffer = true;
-		bufferCreateInfo.memoryUsage = vkr::MemoryUsage::CPUToGPU;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateBuffer(bufferCreateInfo, &mLight.drawUniformBuffer));
-
-		// Descriptor set
-		CHECKED_CALL_AND_RETURN_FALSE(device.AllocateDescriptorSet(m_descriptorPool, mLightSetLayout, &mLight.drawDescriptorSet));
-
-		// Update descriptor set
-		vkr::WriteDescriptor write = {};
-		write.binding = 0;
-		write.type = vkr::DescriptorType::UniformBuffer;
-		write.bufferOffset = 0;
-		write.bufferRange = WHOLE_SIZE;
-		write.buffer = mLight.drawUniformBuffer;
-		CHECKED_CALL_AND_RETURN_FALSE(mLight.drawDescriptorSet->UpdateDescriptors(1, &write));
-
-		// Pipeline interface
-		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
-		piCreateInfo.setCount = 1;
-		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].layout = mLightSetLayout;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreatePipelineInterface(piCreateInfo, &mLightPipelineInterface));
-
-		// Pipeline
-		vkr::ShaderModulePtr VS;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("basic/shaders", "VertexColors.vs", &VS));
-		vkr::ShaderModulePtr PS;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("basic/shaders", "VertexColors.ps", &PS));
-
-		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
-		gpCreateInfo.VS = { VS.Get(), "vsmain" };
-		gpCreateInfo.PS = { PS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 2;
-		gpCreateInfo.vertexInputState.bindings[0] = mLight.mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.vertexInputState.bindings[1] = mLight.mesh->GetDerivedVertexBindings()[1];
-		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
-		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable = true;
-		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount = 1;
-		gpCreateInfo.outputState.renderTargetFormats[0] = GetRender().GetSwapChain().GetColorFormat();
-		gpCreateInfo.outputState.depthStencilFormat = GetRender().GetSwapChain().GetDepthFormat();
-		gpCreateInfo.pipelineInterface = mLightPipelineInterface;
-
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mLightPipeline));
-		device.DestroyShaderModule(VS);
-		device.DestroyShaderModule(PS);
-	}
-
-	return true;
-}
-
-void GameApplication::updateLight()
-{
-	// Update light position
-	//float t = GetElapsedSeconds() / 2.0f;
-	static float t = 0.0;
-	t += 0.001f;
-	float r = 7.0f;
-	mLightPosition = float3(r * cos(t), 5.0f, r * sin(t));
-
-	// Update camera(s)
-	mLightCamera.LookAt(mLightPosition, float3(0, 0, 0));
 }
 
 void GameApplication::processInput()
