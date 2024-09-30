@@ -20,6 +20,8 @@ bool GameApplication::Setup()
 {
 	auto& device = GetRenderDevice();
 
+	if (!m_gameGraphics.Setup(device)) return false;
+
 	if (!setupDescriptors()) return false;
 	if (!setupEntities()) return false;
 	if (!setupPipelines()) return false;
@@ -29,10 +31,6 @@ bool GameApplication::Setup()
 	WorldCreateInfo worldCI = {};
 	if (!m_world.Setup(this, worldCI)) return false;
 
-	VulkanPerFrameData perFrame;
-	if (!perFrame.Setup(device)) return false;
-	m_perFrame.emplace_back(perFrame);
-
 	if (m_cursorVisible) GetInput().SetCursorMode(CursorMode::Disabled);
 
 	return true;
@@ -40,10 +38,8 @@ bool GameApplication::Setup()
 
 void GameApplication::Shutdown()
 {
-	for (size_t i = 0; i < m_perFrame.size(); i++)
-	{
-		m_perFrame[i].Shutdown();
-	}
+	m_gameGraphics.Shutdown();
+
 	m_world.Shutdown();
 	// TODO: очистка
 }
@@ -60,7 +56,7 @@ void GameApplication::Render()
 
 	auto& render = GetRender();
 	auto& swapChain = render.GetSwapChain();
-	auto& frame = m_perFrame[0];
+	auto& frame = m_gameGraphics.FrameData(0);
 	uint32_t imageIndex = frame.Frame(swapChain);
 
 	// Build command buffer

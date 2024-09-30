@@ -1,9 +1,10 @@
 #pragma 
 
-#include "PerFrame.h"
+
 #include "World.h"
 #include "Entity.h"
 #include "Light.h"
+#include "GameGraphics.h"
 
 namespace game
 {
@@ -27,7 +28,11 @@ public:
 	vkr::DescriptorPoolPtr GetDescriptorPool() { return m_descriptorPool; }
 
 private:
-	std::vector<VulkanPerFrameData> m_perFrame;
+	GameGraphics m_gameGraphics;
+
+
+
+
 	vkr::DescriptorPoolPtr m_descriptorPool;
 
 	World m_world;
