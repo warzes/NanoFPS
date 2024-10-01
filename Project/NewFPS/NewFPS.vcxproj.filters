@@ -25,6 +25,9 @@
     <ClCompile Include="ShadowPass.cpp">
       <Filter>game\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="LoaderMapData.cpp">
+      <Filter>game\Map</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -50,6 +53,9 @@
     <ClInclude Include="ShadowPass.h">
       <Filter>game\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="LoaderMapData.h">
+      <Filter>game\Map</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="game">
@@ -63,6 +69,9 @@
     </Filter>
     <Filter Include="game\RenderPass">
       <UniqueIdentifier>{57b47291-d3d0-4ea8-a294-184e67a06c9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\Map">
+      <UniqueIdentifier>{11fcf822-6bb7-46b8-ad8d-350189766269}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -2,10 +2,12 @@
 
 #include "Player.h"
 #include "Light.h"
+#include "LoaderMapData.h"
 
 struct WorldCreateInfo final
 {
 	PlayerCreateInfo player;
+	std::string_view startMapName = "test.te3";
 };
 
 class World final
@@ -37,4 +39,7 @@ private:
 	vkr::PipelineInterfacePtr m_drawObjectPipelineInterface;
 	vkr::GraphicsPipelinePtr m_drawObjectPipeline;
 	std::vector<GameEntity> m_entities;
+
+	// Map
+	LoaderMapData m_mapData;
 };

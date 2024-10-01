@@ -103,6 +103,7 @@
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="GameGraphics.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="LoaderMapData.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerFrame.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -118,6 +119,7 @@
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="GameGraphics.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="LoaderMapData.h" />
     <ClInclude Include="PerFrame.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="ShadowPass.h" />

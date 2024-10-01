@@ -12,11 +12,14 @@ bool World::Setup(GameApplication* game, const WorldCreateInfo& createInfo)
 	if (!addTestEntities()) return false;
 	if (!setupEntities()) return false;
 
+	if (!m_mapData.Setup(createInfo.startMapName)) return false;
+
 	return true;
 }
 
 void World::Shutdown()
 {
+	m_mapData.Shutdown();
 	m_mainLight.Shutdown();
 	m_player.Shutdown();
 }

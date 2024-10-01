@@ -11,6 +11,8 @@ Thumbs.db
 /bin/Log.txt
 
 #exe
+/bin/Example_Debug.*
+/bin/Example_Release.*
 /bin/FPS_Debug.*
 /bin/FPS_Release.*
 /bin/NewFPS_Debug.*
