@@ -90,7 +90,7 @@ void ShadowPass::Shutdown()
 {
 }
 
-void ShadowPass::Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity*>& entities)
+void ShadowPass::Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity>& entities)
 {
 	//  Render shadow pass
 	{
@@ -106,10 +106,10 @@ void ShadowPass::Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity*>&
 			{
 				auto entity = entities[i];
 
-				cmd->BindGraphicsDescriptorSets(mShadowPipelineInterface, 1, &entity->shadowDescriptorSet);
-				cmd->BindIndexBuffer(entity->mesh);
-				cmd->BindVertexBuffers(entity->mesh);
-				cmd->DrawIndexed(entity->mesh->GetIndexCount());
+				cmd->BindGraphicsDescriptorSets(mShadowPipelineInterface, 1, &entity.shadowDescriptorSet);
+				cmd->BindIndexBuffer(entity.mesh);
+				cmd->BindVertexBuffers(entity.mesh);
+				cmd->DrawIndexed(entity.mesh->GetIndexCount());
 			}
 		}
 		cmd->EndRenderPass();

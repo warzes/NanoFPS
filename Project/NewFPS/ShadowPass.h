@@ -8,7 +8,7 @@ public:
 	bool Setup(vkr::RenderDevice& device);
 	void Shutdown();
 
-	void Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity*>& entities);
+	void Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity>& entities);
 
 	vkr::DescriptorSetLayoutPtr GetDescriptorSetLayout() { return m_shadowSetLayout; }
 	vkr::SampledImageViewPtr GetSampledImageView() { return mShadowImageView; }

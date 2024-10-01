@@ -24,32 +24,16 @@ public:
 	void KeyDown(KeyCode key) final;
 	void KeyUp(KeyCode key) final;
 
-	vkr::DescriptorPoolPtr GetDescriptorPool() { return m_gameGraphics.GetDescriptorPool(); }
+	GameGraphics& GetGameGraphics() { return m_gameGraphics; }
 
 private:
 	GameGraphics m_gameGraphics;
-
 	World m_world;
-
 	std::set<KeyCode> m_pressedKeys;
 
 private:
-	bool createDescriptorSetLayout();
-	bool setupEntities();
-	bool setupPipelines();
-
 	void processInput();
 	void updateUniformBuffer();
-
-	vkr::DescriptorSetLayoutPtr m_drawObjectSetLayout;
-	vkr::PipelineInterfacePtr   mDrawObjectPipelineInterface;
-	vkr::GraphicsPipelinePtr    mDrawObjectPipeline;
-	GameEntity                 mGroundPlane;
-	GameEntity                 mCube;
-	GameEntity                 mKnob;
-	std::vector<GameEntity*>   mEntities;
-
-	
 
 	bool m_cursorVisible = true;
 };
