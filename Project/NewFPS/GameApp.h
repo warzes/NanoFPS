@@ -29,17 +29,12 @@ public:
 private:
 	GameGraphics m_gameGraphics;
 
-
-
-
-
-
 	World m_world;
 
 	std::set<KeyCode> m_pressedKeys;
 
 private:
-	bool setupDescriptors();
+	bool createDescriptorSetLayout();
 	bool setupEntities();
 	bool setupPipelines();
 

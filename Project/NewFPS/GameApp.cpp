@@ -22,15 +22,11 @@ bool GameApplication::Setup()
 	ggci.descriptorPool.maxUniformBuffer = game::NumMaxEntities;
 	ggci.descriptorPool.maxSampledImage = game::NumMaxEntities;
 	ggci.descriptorPool.maxSampler = game::NumMaxEntities;
+	if (!m_gameGraphics.Setup(device, ggci)) return false;
 
-	if (!m_gameGraphics.CreateDescriptorPool(device, ggci)) return false;
-	if (!setupDescriptors()) return false;
-	if (!m_gameGraphics.GetShadowPass().CreateDescriptorSetLayout(device)) return false;
+	if (!createDescriptorSetLayout()) return false;
 	if (!setupEntities()) return false;
 	if (!setupPipelines()) return false;
-	if (!m_gameGraphics.CreateShadowPass(device, ggci, mEntities)) return false;
-	if (!m_gameGraphics.CreateFrameData(device, ggci)) return false;
-
 
 	WorldCreateInfo worldCI = {};
 	if (!m_world.Setup(this, worldCI)) return false;
@@ -183,7 +179,7 @@ void GameApplication::KeyUp(KeyCode key)
 	m_pressedKeys.erase(key);
 }
 
-bool GameApplication::setupDescriptors()
+bool GameApplication::createDescriptorSetLayout()
 {
 	auto& device = GetRenderDevice();
 
@@ -209,16 +205,16 @@ bool GameApplication::setupEntities()
 			.VertexColors()
 			.Normals();
 		vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
-		mGroundPlane.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
+		mGroundPlane.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass());
 		mEntities.push_back(&mGroundPlane);
 
 		mesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), vkr::TriMeshOptions(options).ObjectColor(float3(0.5f, 0.5f, 0.7f)));
-		mCube.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
+		mCube.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass());
 		mCube.translate = float3(-2, 1, 0);
 		mEntities.push_back(&mCube);
 
 		mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 0.2f)));
-		mKnob.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
+		mKnob.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass());
 		mKnob.translate = float3(2, 1, 0);
 		mKnob.rotate = float3(0, glm::radians(180.0f), 0);
 		mKnob.scale = float3(2, 2, 2);

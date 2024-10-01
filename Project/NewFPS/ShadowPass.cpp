@@ -1,19 +1,18 @@
 ﻿#include "stdafx.h"
 #include "ShadowPass.h"
+#include "Entity.h"
 
 #define kShadowMapSize 1024
 
-bool ShadowPass::CreateDescriptorSetLayout(vkr::RenderDevice& device)
+bool ShadowPass::Setup(vkr::RenderDevice& device)
 {
-	vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-	layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-	CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &m_shadowSetLayout));
+	// Create Descriptor Set Layout
+	{
+		vkr::DescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
+		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &m_shadowSetLayout));
+	}
 
-	return true;
-}
-
-bool ShadowPass::Setup(vkr::RenderDevice& device, std::vector<GameEntity*>& entities)
-{
 	// Shadow render pass
 	{
 		vkr::RenderPassCreateInfo2 createInfo = {};
@@ -45,20 +44,6 @@ bool ShadowPass::Setup(vkr::RenderDevice& device, std::vector<GameEntity*>& enti
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSampler(samplerCreateInfo, &mShadowSampler));
 	}
 
-	// TODO: перенести отсюда в ентити?
-	{
-		vkr::WriteDescriptor writes[2] = {};
-		writes[0].binding = 1; // Shadow texture
-		writes[0].type = vkr::DescriptorType::SampledImage;
-		writes[0].imageView = mShadowImageView;
-		writes[1].binding = 2; // Shadow sampler
-		writes[1].type = vkr::DescriptorType::Sampler;
-		writes[1].sampler = mShadowSampler;
-
-		for (size_t i = 0; i < entities.size(); ++i) // TODO: перенести отсюда в ентитит?
-			CHECKED_CALL_AND_RETURN_FALSE(entities[i]->drawDescriptorSet->UpdateDescriptors(2, writes));
-	}
-
 	// Shadow pipeline interface and pipeline
 	{
 		// Pipeline interface
@@ -72,25 +57,17 @@ bool ShadowPass::Setup(vkr::RenderDevice& device, std::vector<GameEntity*>& enti
 		vkr::ShaderModulePtr VS;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "Depth.vs", &VS));
 
-		vkr::VertexBinding binding = vkr::VertexBinding(0, vkr::VertexInputRate::Vertex);
-		binding.SetBinding(0);
-		binding.SetStride(12);
-
-		vkr::VertexAttribute attr = {};
-		attr.semanticName = "POSITION";
-		attr.location = 0;
-		attr.format = vkr::Format::R32G32B32_FLOAT;
-		attr.binding = 0;
-		attr.offset = 0;
-		attr.inputRate = vkr::VertexInputRate::Vertex;
-		attr.semantic = vkr::VertexSemantic::Position;
-
-		binding.AppendAttribute(attr);
+		vkr::VertexAttribute vertexAttribute = {
+			.semanticName = "POSITION",
+			.format = vkr::Format::R32G32B32_FLOAT,
+			.inputRate = vkr::VertexInputRate::Vertex,
+			.semantic = vkr::VertexSemantic::Position
+		};
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
 		gpCreateInfo.vertexInputState.bindingCount = 1;
-		gpCreateInfo.vertexInputState.bindings[0] = binding;
+		gpCreateInfo.vertexInputState.bindings[0] = vkr::VertexBinding(vertexAttribute);
 		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
 		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;

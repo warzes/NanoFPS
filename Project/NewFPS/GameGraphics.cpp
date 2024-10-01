@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "GameGraphics.h"
 
-bool GameGraphics::CreateDescriptorPool(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo)
+bool GameGraphics::Setup(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo)
 {
 	// Create descriptor pool large enough for this project
 	{
@@ -12,19 +12,15 @@ bool GameGraphics::CreateDescriptorPool(vkr::RenderDevice& device, const GameGra
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorPool(poolCreateInfo, &m_descriptorPool));
 	}
 
-	return true;
-}
+	if (!m_shadowPass.Setup(device)) return false;
 
-bool GameGraphics::CreateShadowPass(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo, std::vector<GameEntity*>& entities)
-{
-	return m_shadowPass.Setup(device, entities);
-}
+	// Create Frame Data
+	{
+		VulkanPerFrameData perFrame;
+		if (!perFrame.Setup(device)) return false;
+		m_perFrame.emplace_back(perFrame);
+	}
 
-bool GameGraphics::CreateFrameData(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo)
-{
-	VulkanPerFrameData perFrame;
-	if (!perFrame.Setup(device)) return false;
-	m_perFrame.emplace_back(perFrame);
 	return true;
 }
 

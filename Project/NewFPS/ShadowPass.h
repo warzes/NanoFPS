@@ -1,17 +1,19 @@
 #pragma once
 
-#include "Entity.h"
+struct GameEntity;
 
 class ShadowPass final
 {
 public:
-	bool CreateDescriptorSetLayout(vkr::RenderDevice& device);
-	bool Setup(vkr::RenderDevice& device, std::vector<GameEntity*>& entities);
+	bool Setup(vkr::RenderDevice& device);
 	void Shutdown();
 
 	void Draw(vkr::CommandBufferPtr cmd, const std::vector<GameEntity*>& entities);
 
 	vkr::DescriptorSetLayoutPtr GetDescriptorSetLayout() { return m_shadowSetLayout; }
+	vkr::SampledImageViewPtr GetSampledImageView() { return mShadowImageView; }
+	vkr::SamplerPtr GetSampler() { return mShadowSampler; }
+
 	bool& UsePCF() { return mUsePCF; }
 	bool UsePCF() const { return mUsePCF; }
 

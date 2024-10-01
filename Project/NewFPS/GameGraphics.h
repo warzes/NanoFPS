@@ -16,10 +16,7 @@ struct GameGraphicsCreateInfo final
 class GameGraphics final
 {
 public:
-	bool CreateDescriptorPool(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo);
-	bool CreateShadowPass(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo, std::vector<GameEntity*>& entities);
-	bool CreateFrameData(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo);
-
+	bool Setup(vkr::RenderDevice& device, const GameGraphicsCreateInfo& createInfo);
 	void Shutdown(vkr::RenderDevice& device);
 
 	VulkanPerFrameData& FrameData(size_t id) { assert(id < m_perFrame.size()); return m_perFrame[id]; }
