@@ -18,7 +18,6 @@ public:
 	const PerspCamera& GetCamera() const { return mLightCamera; }
 
 private:
-	GameApplication* m_game;
 	vkr::DescriptorSetLayoutPtr mLightSetLayout;
 	vkr::PipelineInterfacePtr   mLightPipelineInterface;
 	vkr::GraphicsPipelinePtr    mLightPipeline;

@@ -4,8 +4,6 @@
 
 bool DirectionalLight::Setup(GameApplication* game)
 {
-	m_game = game;
-
 	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
 
 	auto& device = game->GetRenderDevice();
@@ -33,7 +31,7 @@ bool DirectionalLight::Setup(GameApplication* game)
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateBuffer(bufferCreateInfo, &mLight.drawUniformBuffer));
 
 		// Descriptor set
-		CHECKED_CALL_AND_RETURN_FALSE(device.AllocateDescriptorSet(game->GetDescriptorPool(), mLightSetLayout, &mLight.drawDescriptorSet));
+		CHECKED_CALL_AND_RETURN_FALSE(device.AllocateDescriptorSet(game->GetGameGraphics().GetDescriptorPool(), mLightSetLayout, &mLight.drawDescriptorSet));
 
 		// Update descriptor set
 		vkr::WriteDescriptor write = {};

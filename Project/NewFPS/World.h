@@ -17,13 +17,17 @@ public:
 	void Update(float deltaTime);
 	void Draw(vkr::CommandBufferPtr cmd);
 
+	void UpdateUniformBuffer();
+
 	Player& GetPlayer() { return m_player; }
 	DirectionalLight& GetMainLight() { return m_mainLight; }
 	std::vector<GameEntity>& GetEntities() { return m_entities; }
 
 private:
-	bool setupEntities();
+	bool setupDescriptorSetLayout();
 	bool addTestEntities();
+	bool setupEntities();
+
 	GameApplication* m_game;
 	Player m_player;
 	DirectionalLight m_mainLight;

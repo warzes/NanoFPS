@@ -24,20 +24,6 @@ void VulkanPerFrameData::Shutdown()
 	// TODO: очистка ресурсов объекта?
 }
 
-uint32_t VulkanPerFrameData::Frame(vkr::VulkanSwapChain& swapChain)
-{
-	// Wait for and reset render complete fence
-	CHECKED_CALL(renderCompleteFence->WaitAndReset());
-
-	uint32_t imageIndex = UINT32_MAX;
-	CHECKED_CALL(swapChain.AcquireNextImage(UINT64_MAX, imageAcquiredSemaphore, imageAcquiredFence, &imageIndex));
-
-	// Wait for and reset image acquired fence
-	CHECKED_CALL(imageAcquiredFence->WaitAndReset());
-
-	return imageIndex;
-}
-
 vkr::SubmitInfo VulkanPerFrameData::SetupSubmitInfo()
 {
 	vkr::SubmitInfo submitInfo = {};

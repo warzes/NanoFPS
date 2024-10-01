@@ -1,8 +1,6 @@
 #pragma 
 
 #include "World.h"
-#include "Entity.h"
-#include "Light.h"
 #include "GameGraphics.h"
 
 namespace game
@@ -27,13 +25,11 @@ public:
 	GameGraphics& GetGameGraphics() { return m_gameGraphics; }
 
 private:
+	void processInput();
+
 	GameGraphics m_gameGraphics;
 	World m_world;
 	std::set<KeyCode> m_pressedKeys;
-
-private:
-	void processInput();
-	void updateUniformBuffer();
 
 	bool m_cursorVisible = true;
 };
