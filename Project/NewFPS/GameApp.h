@@ -1,6 +1,5 @@
 #pragma 
 
-
 #include "World.h"
 #include "Entity.h"
 #include "Light.h"
@@ -8,7 +7,7 @@
 
 namespace game
 {
-	constexpr auto NumMaxEntities = 512u;
+	constexpr auto NumMaxEntities = 1024u;
 } // game
 
 class GameApplication final : public EngineApplication
@@ -25,7 +24,7 @@ public:
 	void KeyDown(KeyCode key) final;
 	void KeyUp(KeyCode key) final;
 
-	vkr::DescriptorPoolPtr GetDescriptorPool() { return m_descriptorPool; }
+	vkr::DescriptorPoolPtr GetDescriptorPool() { return m_gameGraphics.GetDescriptorPool(); }
 
 private:
 	GameGraphics m_gameGraphics;
@@ -33,7 +32,7 @@ private:
 
 
 
-	vkr::DescriptorPoolPtr m_descriptorPool;
+
 
 	World m_world;
 
@@ -43,8 +42,6 @@ private:
 	bool setupDescriptors();
 	bool setupEntities();
 	bool setupPipelines();
-	bool setupShadowRenderPass();
-	bool setupShadowInfo();
 
 	void processInput();
 	void updateUniformBuffer();
@@ -57,14 +54,7 @@ private:
 	GameEntity                 mKnob;
 	std::vector<GameEntity*>   mEntities;
 
-	vkr::DescriptorSetLayoutPtr m_shadowSetLayout;
-	vkr::PipelineInterfacePtr   mShadowPipelineInterface;
-	vkr::GraphicsPipelinePtr    mShadowPipeline;
-	vkr::RenderPassPtr          mShadowRenderPass;
-	vkr::SampledImageViewPtr    mShadowImageView;
-	vkr::SamplerPtr             mShadowSampler;
-
-	bool                   mUsePCF = false;
+	
 
 	bool m_cursorVisible = true;
 };

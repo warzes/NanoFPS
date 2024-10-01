@@ -466,8 +466,8 @@ CompileResult vkr::RenderDevice::CompileGLSL(const std::string& shaderSource, Vk
 
 std::vector<char> RenderDevice::LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName)
 {
-	ASSERT_MSG(baseDir.is_relative(), "baseDir must be relative. Do not call GetAssetPath() on the directory.");
-	ASSERT_MSG(baseName.is_relative(), "baseName must be relative. Do not call GetAssetPath() on the directory.");
+	ASSERT_MSG(baseDir.is_relative(), "baseDir must be relative.");
+	ASSERT_MSG(baseName.is_relative(), "baseName must be relative.");
 	auto suffix = getShaderPathSuffix(baseName);
 	if (!suffix.has_value())
 	{

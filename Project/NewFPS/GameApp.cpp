@@ -6,8 +6,6 @@
 //https://www.youtube.com/watch?v=kh1zqOVvBVo
 // Pangeon
 
-#define kShadowMapSize 2056
-
 EngineApplicationCreateInfo GameApplication::Config() const
 {
 	EngineApplicationCreateInfo createInfo{};
@@ -20,13 +18,19 @@ bool GameApplication::Setup()
 {
 	auto& device = GetRenderDevice();
 
-	if (!m_gameGraphics.Setup(device)) return false;
+	GameGraphicsCreateInfo ggci = {};
+	ggci.descriptorPool.maxUniformBuffer = game::NumMaxEntities;
+	ggci.descriptorPool.maxSampledImage = game::NumMaxEntities;
+	ggci.descriptorPool.maxSampler = game::NumMaxEntities;
 
+	if (!m_gameGraphics.CreateDescriptorPool(device, ggci)) return false;
 	if (!setupDescriptors()) return false;
+	if (!m_gameGraphics.GetShadowPass().CreateDescriptorSetLayout(device)) return false;
 	if (!setupEntities()) return false;
 	if (!setupPipelines()) return false;
-	if (!setupShadowRenderPass()) return false;
-	if (!setupShadowInfo()) return false;
+	if (!m_gameGraphics.CreateShadowPass(device, ggci, mEntities)) return false;
+	if (!m_gameGraphics.CreateFrameData(device, ggci)) return false;
+
 
 	WorldCreateInfo worldCI = {};
 	if (!m_world.Setup(this, worldCI)) return false;
@@ -38,7 +42,9 @@ bool GameApplication::Setup()
 
 void GameApplication::Shutdown()
 {
-	m_gameGraphics.Shutdown();
+	auto& device = GetRenderDevice();
+
+	m_gameGraphics.Shutdown(device);
 
 	m_world.Shutdown();
 	// TODO: очистка
@@ -58,37 +64,14 @@ void GameApplication::Render()
 	auto& swapChain = render.GetSwapChain();
 	auto& frame = m_gameGraphics.FrameData(0);
 	uint32_t imageIndex = frame.Frame(swapChain);
+	vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
+	ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
 
 	// Build command buffer
 	CHECKED_CALL(frame.cmd->Begin());
 	{
-		vkr::RenderPassPtr renderPass = swapChain.GetRenderPass(imageIndex);
-		ASSERT_MSG(!renderPass.IsNull(), "render pass object is null");
+		m_gameGraphics.GetShadowPass().Draw(frame.cmd, mEntities);
 
-		//  Render shadow pass
-		{
-			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::ResourceState::PixelShaderResource, vkr::ResourceState::DepthStencilWrite);
-			frame.cmd->BeginRenderPass(mShadowRenderPass);
-			{
-				frame.cmd->SetScissors(mShadowRenderPass->GetScissor());
-				frame.cmd->SetViewports(mShadowRenderPass->GetViewport());
-
-				// Draw entities
-				frame.cmd->BindGraphicsPipeline(mShadowPipeline);
-				for (size_t i = 0; i < mEntities.size(); ++i)
-				{
-					GameEntity* pEntity = mEntities[i];
-
-					frame.cmd->BindGraphicsDescriptorSets(mShadowPipelineInterface, 1, &pEntity->shadowDescriptorSet);
-					frame.cmd->BindIndexBuffer(pEntity->mesh);
-					frame.cmd->BindVertexBuffers(pEntity->mesh);
-					frame.cmd->DrawIndexed(pEntity->mesh->GetIndexCount());
-				}
-			}
-			frame.cmd->EndRenderPass();
-			frame.cmd->TransitionImageLayout(mShadowRenderPass->GetDepthStencilImage(), ALL_SUBRESOURCES, vkr::ResourceState::DepthStencilWrite, vkr::ResourceState::PixelShaderResource);
-		}
-		
 		//  Render scene
 		{
 			vkr::RenderPassBeginInfo renderPassBeginInfo = {};
@@ -165,7 +148,7 @@ void GameApplication::Render()
 					}
 
 					ImGui::Separator();
-					ImGui::Checkbox("Use PCF Shadows", &mUsePCF);
+					ImGui::Checkbox("Use PCF Shadows", &m_gameGraphics.GetShadowPass().UsePCF());
 				}
 				render.DrawImGui(frame.cmd);
 			}
@@ -204,15 +187,6 @@ bool GameApplication::setupDescriptors()
 {
 	auto& device = GetRenderDevice();
 
-	// Create descriptor pool large enough for this project
-	{
-		vkr::DescriptorPoolCreateInfo poolCreateInfo = {};
-		poolCreateInfo.uniformBuffer                 = game::NumMaxEntities;
-		poolCreateInfo.sampledImage                  = game::NumMaxEntities;
-		poolCreateInfo.sampler                       = game::NumMaxEntities;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorPool(poolCreateInfo, &m_descriptorPool));
-	}
-
 	// Descriptor set layouts
 	{
 		// Draw objects
@@ -221,11 +195,6 @@ bool GameApplication::setupDescriptors()
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_PS });
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &m_drawObjectSetLayout));
-
-		// Shadow
-		layoutCreateInfo = {};
-		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &m_shadowSetLayout));
 	}
 
 	return true;
@@ -240,16 +209,16 @@ bool GameApplication::setupEntities()
 			.VertexColors()
 			.Normals();
 		vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
-		mGroundPlane.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
+		mGroundPlane.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
 		mEntities.push_back(&mGroundPlane);
 
 		mesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), vkr::TriMeshOptions(options).ObjectColor(float3(0.5f, 0.5f, 0.7f)));
-		mCube.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
+		mCube.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
 		mCube.translate = float3(-2, 1, 0);
 		mEntities.push_back(&mCube);
 
 		mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 0.2f)));
-		mKnob.Setup(GetRenderDevice(), mesh, m_descriptorPool, m_drawObjectSetLayout, m_shadowSetLayout);
+		mKnob.Setup(GetRenderDevice(), mesh, GetDescriptorPool(), m_drawObjectSetLayout, m_gameGraphics.GetShadowPass().GetDescriptorSetLayout());
 		mKnob.translate = float3(2, 1, 0);
 		mKnob.rotate = float3(0, glm::radians(180.0f), 0);
 		mKnob.scale = float3(2, 2, 2);
@@ -274,9 +243,9 @@ bool GameApplication::setupPipelines()
 
 		// Pipeline
 		vkr::ShaderModulePtr VS;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("basic/shaders", "DiffuseShadow.vs", &VS));
+		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.vs", &VS));
 		vkr::ShaderModulePtr PS;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("basic/shaders", "DiffuseShadow.ps", &PS));
+		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.ps", &PS));
 
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
@@ -300,97 +269,6 @@ bool GameApplication::setupPipelines()
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mDrawObjectPipeline));
 		device.DestroyShaderModule(VS);
 		device.DestroyShaderModule(PS);
-	}
-
-	// Shadow pipeline interface and pipeline
-	{
-		// Pipeline interface
-		vkr::PipelineInterfaceCreateInfo piCreateInfo = {};
-		piCreateInfo.setCount = 1;
-		piCreateInfo.sets[0].set = 0;
-		piCreateInfo.sets[0].layout = m_shadowSetLayout;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreatePipelineInterface(piCreateInfo, &mShadowPipelineInterface));
-
-		// Pipeline
-		vkr::ShaderModulePtr VS;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("basic/shaders", "Depth.vs", &VS));
-
-		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
-		gpCreateInfo.VS = { VS.Get(), "vsmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 1;
-		gpCreateInfo.vertexInputState.bindings[0] = mGroundPlane.mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
-		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable = true;
-		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount = 0;
-		gpCreateInfo.outputState.depthStencilFormat = vkr::Format::D32_FLOAT;
-		gpCreateInfo.pipelineInterface = mShadowPipelineInterface;
-
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &mShadowPipeline));
-		device.DestroyShaderModule(VS);
-	}
-
-	return true;
-}
-
-bool GameApplication::setupShadowRenderPass()
-{
-	auto& device = GetRenderDevice();
-
-	// Shadow render pass
-	{
-		vkr::RenderPassCreateInfo2 createInfo = {};
-		createInfo.width = kShadowMapSize;
-		createInfo.height = kShadowMapSize;
-		createInfo.depthStencilFormat = vkr::Format::D32_FLOAT;
-		createInfo.depthStencilUsageFlags.bits.depthStencilAttachment = true;
-		createInfo.depthStencilUsageFlags.bits.sampled = true;
-		createInfo.depthStencilClearValue = { 1.0f, 0xFF };
-		createInfo.depthLoadOp = vkr::AttachmentLoadOp::Clear;
-		createInfo.depthStoreOp = vkr::AttachmentStoreOp::Store;
-		createInfo.depthStencilInitialState = vkr::ResourceState::PixelShaderResource;
-
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateRenderPass(createInfo, &mShadowRenderPass));
-	}
-
-	return true;
-}
-
-bool GameApplication::setupShadowInfo()
-{
-	auto& device = GetRenderDevice();
-
-	// Update draw objects with shadow information
-	{
-		vkr::SampledImageViewCreateInfo ivCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(mShadowRenderPass->GetDepthStencilImage());
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSampledImageView(ivCreateInfo, &mShadowImageView));
-
-		vkr::SamplerCreateInfo samplerCreateInfo = {};
-		samplerCreateInfo.addressModeU = vkr::SamplerAddressMode::ClampToEdge;
-		samplerCreateInfo.addressModeV = vkr::SamplerAddressMode::ClampToEdge;
-		samplerCreateInfo.addressModeW = vkr::SamplerAddressMode::ClampToEdge;
-		samplerCreateInfo.compareEnable = true;
-		samplerCreateInfo.compareOp = vkr::CompareOp::LessOrEqual;
-		samplerCreateInfo.borderColor = vkr::BorderColor::FloatOpaqueWhite;
-		CHECKED_CALL_AND_RETURN_FALSE(device.CreateSampler(samplerCreateInfo, &mShadowSampler));
-
-		vkr::WriteDescriptor writes[2] = {};
-		writes[0].binding = 1; // Shadow texture
-		writes[0].type = vkr::DescriptorType::SampledImage;
-		writes[0].imageView = mShadowImageView;
-		writes[1].binding = 2; // Shadow sampler
-		writes[1].type = vkr::DescriptorType::Sampler;
-		writes[1].sampler = mShadowSampler;
-
-		for (size_t i = 0; i < mEntities.size(); ++i)
-		{
-			GameEntity* pEntity = mEntities[i];
-			CHECKED_CALL_AND_RETURN_FALSE(pEntity->drawDescriptorSet->UpdateDescriptors(2, writes));
-		}
 	}
 
 	return true;
@@ -443,7 +321,7 @@ void GameApplication::updateUniformBuffer()
 		scene.CameraViewProjectionMatrix = m_world.GetPlayer().GetCamera().GetViewProjectionMatrix();
 		scene.LightPosition = float4(m_world.GetMainLight().GetPosition(), 0);
 		scene.LightViewProjectionMatrix = m_world.GetMainLight().GetCamera().GetViewProjectionMatrix();
-		scene.UsePCF = uint4(mUsePCF);
+		scene.UsePCF = uint4(m_gameGraphics.GetShadowPass().UsePCF());
 
 		pEntity->drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
 

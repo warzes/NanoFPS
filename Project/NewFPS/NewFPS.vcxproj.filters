@@ -22,6 +22,9 @@
     <ClCompile Include="GameGraphics.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowPass.cpp">
+      <Filter>game\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -44,6 +47,9 @@
     <ClInclude Include="GameGraphics.h">
       <Filter>game</Filter>
     </ClInclude>
+    <ClInclude Include="ShadowPass.h">
+      <Filter>game\RenderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="game">
@@ -52,5 +58,24 @@
     <Filter Include="game\Core">
       <UniqueIdentifier>{150feeb2-f5be-470d-bbd8-22cc6990bace}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{8902133d-5154-4d04-a71e-bbbae2736fea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\RenderPass">
+      <UniqueIdentifier>{57b47291-d3d0-4ea8-a294-184e67a06c9f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\BuildGameShader.bat">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\bin\GameData\Shaders\Depth.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\bin\GameData\Shaders\DiffuseShadow.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

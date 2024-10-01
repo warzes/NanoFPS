@@ -2786,8 +2786,7 @@ Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& createIn
 		}
 	}
 
-	// Flags
-	uint32_t flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+	const uint32_t flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
 	VkDescriptorPoolCreateInfo vkci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
 	vkci.flags                      = flags;
