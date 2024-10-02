@@ -7,6 +7,7 @@
 #	pragma warning(disable : 4625)
 #	pragma warning(disable : 4626)
 #	pragma warning(disable : 4820)
+#	pragma warning(disable : 5026)
 #	pragma warning(disable : 5027)
 #	pragma warning(disable : 5045)
 #	pragma warning(push, 3)

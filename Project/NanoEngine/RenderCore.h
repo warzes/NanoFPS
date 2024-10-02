@@ -1507,6 +1507,8 @@ class CreateDestroyTraits
 {
 	friend class RenderDevice;
 public:
+	virtual ~CreateDestroyTraits() = default;
+
 	Ownership GetOwnership() const { return m_ownership; }
 
 	void SetOwnership(Ownership ownership)

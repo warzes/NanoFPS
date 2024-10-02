@@ -385,32 +385,8 @@ inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
 
 #pragma region Ptr
 
-class ObjPtrRefBase
-{
-public:
-	ObjPtrRefBase() = default;
-	virtual ~ObjPtrRefBase() = default;
-
-private:
-	friend class ObjPtrBase;
-	virtual void set(void** ppObj) = 0;
-};
-
-class ObjPtrBase
-{
-public:
-	ObjPtrBase() = default;
-	virtual ~ObjPtrBase() = default;
-
-protected:
-	void Set(void** ppObj, ObjPtrRefBase* pObjRef) const
-	{
-		pObjRef->set(ppObj);
-	}
-};
-
 template <typename ObjectT>
-class ObjPtrRef final : public ObjPtrRefBase
+class ObjPtrRef final
 {
 public:
 	ObjPtrRef(ObjectT** ptrRef) : m_ptrRef(ptrRef) {}
@@ -420,31 +396,19 @@ public:
 		void** addr = reinterpret_cast<void**>(m_ptrRef);
 		return addr;
 	}
-
 	operator ObjectT**() { return m_ptrRef; }
 
 private:
-	void set(void** ppObj) final
-	{
-		*m_ptrRef = reinterpret_cast<ObjectT*>(*ppObj);
-	}
-
 	ObjectT** m_ptrRef = nullptr;
 };
 
 template <typename ObjectT>
-class ObjPtr final : public ObjPtrBase
+class ObjPtr final
 {
 public:
 	using object_type = ObjectT;
 
 	ObjPtr(ObjectT* ptr = nullptr) : m_ptr(ptr) {}
-
-	ObjPtr& operator=(const ObjPtr& rhs)
-	{
-		if (&rhs != this) m_ptr = rhs.m_ptr;
-		return *this;
-	}
 
 	ObjPtr& operator=(const ObjectT* rhs)
 	{
