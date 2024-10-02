@@ -109,7 +109,7 @@ bool Example_018::Setup()
 
 			preRecordedCmd->BeginRendering(&renderingInfo);
 			{
-				vkr::RenderTargetClearValue rtvClearValue = { 0.7f, 0.7f, 0.7f, 1.0f };
+				float4 rtvClearValue = { 0.7f, 0.7f, 0.7f, 1.0f };
 				vkr::DepthStencilClearValue dsvClearValue = { 1.0f, 0xFF };
 				preRecordedCmd->ClearRenderTarget(GetRender().GetSwapChain().GetColorImage(imageIndex), rtvClearValue);
 				preRecordedCmd->ClearDepthStencil(GetRender().GetSwapChain().GetDepthImage(imageIndex), dsvClearValue, vkr::CLEAR_FLAG_DEPTH);

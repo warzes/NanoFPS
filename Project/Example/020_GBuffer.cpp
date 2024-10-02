@@ -442,7 +442,7 @@ bool Example_020::Setup()
 
 	// Cameras
 	{
-		mCamera = PerspCamera(60.0f, GetWindowAspect());
+		mCamera = PerspectiveCamera(60.0f, GetWindowAspect());
 	}
 
 	// Create descriptor pool
@@ -966,7 +966,7 @@ void Example_020::setupGBufferPasses()
 	{
 		// Usage flags for render target and depth stencil will automatically be added during create. So we only need to specify the additional usage flags here.
 		vkr::ImageUsageFlags        additionalUsageFlags = vkr::IMAGE_USAGE_SAMPLED;
-		vkr::RenderTargetClearValue rtvClearValue = { 0, 0, 0, 0 };
+		float4 rtvClearValue = { 0, 0, 0, 0 };
 		vkr::DepthStencilClearValue dsvClearValue = { 1.0f, 0xFF };
 
 		vkr::DrawPassCreateInfo createInfo = {};

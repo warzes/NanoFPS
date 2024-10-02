@@ -633,7 +633,7 @@ void Example_024::RecordComposite(vkr::RenderPassPtr renderPass)
 	beginInfo.pRenderPass = renderPass;
 	beginInfo.renderArea = renderPass->GetRenderArea();
 	beginInfo.RTVClearCount = 1;
-	beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
+	beginInfo.RTVClearValues[0] = {0, 0, 0, 0};
 	beginInfo.DSVClearValue = { 1.0f, 0xFF };
 	mCommandBuffer->BeginRenderPass(&beginInfo);
 

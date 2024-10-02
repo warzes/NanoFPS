@@ -23,5 +23,5 @@ private:
 	vkr::TextureFontPtr        mRoboto;
 	vkr::TextDrawPtr           mStaticText;
 	vkr::TextDrawPtr           mDynamicText;
-	PerspCamera           mCamera;
+	PerspectiveCamera           mCamera;
 };

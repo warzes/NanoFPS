@@ -204,7 +204,7 @@ private:
 
 	std::vector<PerFrame>        mPerFrame;
 	vkr::DescriptorPoolPtr      mDescriptorPool;
-	PerspCamera                  mCamera;
+	PerspectiveCamera                  mCamera;
 	vkr::DescriptorSetLayoutPtr mSceneDataLayout;
 	vkr::DescriptorSetPtr       mSceneDataSet;
 	vkr::BufferPtr              mCpuSceneConstants;

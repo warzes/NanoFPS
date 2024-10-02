@@ -240,7 +240,7 @@ void Example_004::Render()
 		beginInfo.renderArea          = renderPass->GetRenderArea();
 
 		// Clear RTV to greyish blue
-		vkr::RenderTargetClearValue rtvClearValue = { 0.23f, 0.23f, 0.33f, 0 };
+		float4 rtvClearValue = { 0.23f, 0.23f, 0.33f, 0 };
 		vkr::DepthStencilClearValue dsvClearValue = { 1.0f, 0xFF };
 
 		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);

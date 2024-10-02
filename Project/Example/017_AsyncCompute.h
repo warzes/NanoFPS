@@ -77,7 +77,7 @@ private:
 	void     compose(PerFrame& frame, size_t quadIndex);
 	void     drawScene(PerFrame& frame, size_t quadIndex);
 
-	PerspCamera mCamera;
+	PerspectiveCamera mCamera;
 
 	vkr::MeshPtr    mModelMesh;
 	vkr::TexturePtr mModelTexture;

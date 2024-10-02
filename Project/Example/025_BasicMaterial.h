@@ -76,7 +76,7 @@ private:
 	vkr::TexturePtr m1x1WhiteTexture;
 
 	std::vector<PerFrame>      mPerFrame;
-	PerspCamera                mCamera;
+	PerspectiveCamera                mCamera;
 	vkr::DescriptorPoolPtr    mDescriptorPool;
 	std::vector<vkr::MeshPtr> mMeshes;
 	vkr::MeshPtr              mEnvDrawMesh;

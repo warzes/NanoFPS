@@ -16,7 +16,7 @@ bool Example_017::Setup()
 	mAsyncComputeEnabled = true;
 	mUseQueueFamilyTransfers = true;
 
-	mCamera = PerspCamera(60.0f, GetWindowAspect());
+	mCamera = PerspectiveCamera(60.0f, GetWindowAspect());
 
 	mGraphicsQueue = device.GetGraphicsQueue();
 	mComputeQueue = mAsyncComputeEnabled ? device.GetComputeQueue() : mGraphicsQueue;

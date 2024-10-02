@@ -43,7 +43,7 @@ private:
 	Entity                 mSphere;
 	std::vector<Entity*>   mEntities;
 	uint32_t               mEntityIndex = 0;
-	PerspCamera            mCamera;
+	PerspectiveCamera            mCamera;
 
 	std::vector<const char*> mEntityNames = {
 		"Cube",

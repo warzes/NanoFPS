@@ -234,7 +234,7 @@ void Example_006::Render()
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
-		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
+		beginInfo.RTVClearValues[0] = {0, 0, 0, 0};
 
 		// Fill image with red
 		frame.cmd->TransitionImageLayout(mImage, ALL_SUBRESOURCES, vkr::ResourceState::ShaderResource, vkr::ResourceState::UnorderedAccess);

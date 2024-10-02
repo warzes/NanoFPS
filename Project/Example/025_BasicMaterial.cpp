@@ -22,7 +22,7 @@ bool Example_025::Setup()
 
 	// Cameras
 	{
-		mCamera = PerspCamera(60.0f, GetWindowAspect());
+		mCamera = PerspectiveCamera(60.0f, GetWindowAspect());
 	}
 
 	{

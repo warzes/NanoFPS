@@ -47,7 +47,7 @@ private:
 	Entity                 mCube;
 	Entity                 mKnob;
 	std::vector<Entity*>   mEntities;
-	PerspCamera            mCamera;
+	PerspectiveCamera            mCamera;
 
 	vkr::DescriptorSetLayoutPtr mShadowSetLayout;
 	vkr::PipelineInterfacePtr   mShadowPipelineInterface;
@@ -61,6 +61,6 @@ private:
 	vkr::GraphicsPipelinePtr    mLightPipeline;
 	Entity                 mLight;
 	float3                 mLightPosition = float3(0, 5, 5);
-	PerspCamera            mLightCamera;
+	PerspectiveCamera            mLightCamera;
 	bool                   mUsePCF = false;
 };

@@ -20,8 +20,8 @@ bool Example_012::Setup()
 
 	// Cameras
 	{
-		mCamera = PerspCamera(60.0f, GetWindowAspect());
-		mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
+		mCamera = PerspectiveCamera(60.0f, GetWindowAspect());
+		mLightCamera = PerspectiveCamera(60.0f, 1.0f, 1.0f, 100.0f);
 	}
 
 	// Create descriptor pool large enough for this project

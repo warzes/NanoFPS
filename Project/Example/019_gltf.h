@@ -67,7 +67,7 @@ private:
 	vkr::ShaderModulePtr        mVertexShader;
 	vkr::ShaderModulePtr        mPbrPixelShader;
 	vkr::ShaderModulePtr        mUnlitPixelShader;
-	PerspCamera                  mCamera;
+	PerspectiveCamera                  mCamera;
 	float3                       mLightPosition = float3(10, 100, 10);
 
 	std::vector<Material>  mMaterials;

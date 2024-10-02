@@ -11,7 +11,7 @@ bool Example_026::Setup()
 {
 	auto& device = GetRenderDevice();
 
-	mCamera = PerspCamera(GetWindowWidth(), GetWindowHeight());
+	mCamera = PerspectiveCamera(GetWindowWidth(), GetWindowHeight());
 
 	// Per frame data
 	{
@@ -132,7 +132,7 @@ void Example_026::Render()
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
-		beginInfo.RTVClearValues[0] = { {0.25f, 0.3f, 0.33f, 1} };
+		beginInfo.RTVClearValues[0] = {0.25f, 0.3f, 0.33f, 1};
 
 		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(&beginInfo);

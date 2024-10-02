@@ -71,7 +71,7 @@ void Example_016::Render()
 		beginInfo.pRenderPass = renderPass;
 		beginInfo.renderArea = renderPass->GetRenderArea();
 		beginInfo.RTVClearCount = 1;
-		beginInfo.RTVClearValues[0] = { {0, 0, 0, 0} };
+		beginInfo.RTVClearValues[0] = {0, 0, 0, 0};
 
 		frame.cmd->TransitionImageLayout(renderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);
 		frame.cmd->BeginRenderPass(&beginInfo);

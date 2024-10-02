@@ -162,9 +162,9 @@ private:
 	vkr::DescriptorPoolPtr      mDescriptorPool;
 	vkr::DescriptorSetLayoutPtr mDescriptorSetLayout;
 	std::vector<Entity>    mEntities;
-	PerspCamera            mPerspCamera;
+	PerspectiveCamera            mPerspCamera;
 	ArcballCamera          mArcballCamera;
-	PerspCamera*           mCurrentCamera;
+	PerspectiveCamera*           mCurrentCamera;
 	std::set<KeyCode>      mPressedKeys;
 	Person                 mPerson;
 
@@ -172,7 +172,7 @@ private:
 	void setupPipelines();
 	void setupPerFrameData();
 	void setupCamera();
-	void updateCamera(PerspCamera* camera);
+	void updateCamera(PerspectiveCamera* camera);
 	void setupEntities();
 	void setupEntity(const vkr::TriMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
 	void setupEntity(const vkr::WireMesh& mesh, const vkr::GeometryCreateInfo& createInfo, Entity* pEntity);
