@@ -4,7 +4,7 @@
 
 bool DirectionalLight::Setup(GameApplication* game)
 {
-	mLightCamera = PerspCamera(60.0f, 1.0f, 1.0f, 100.0f);
+	mLightCamera = PerspectiveCamera(60.0f, 1.0f, 1.0f, 100.0f);
 
 	auto& device = game->GetRenderDevice();
 

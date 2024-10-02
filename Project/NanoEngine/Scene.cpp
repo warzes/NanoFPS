@@ -3593,7 +3593,7 @@ namespace scene {
 				float nearClip = pGltfCamera->data.perspective.znear;
 				float farClip = pGltfCamera->data.perspective.has_zfar ? pGltfCamera->data.perspective.zfar : (nearClip + 1000.0f);
 
-				camera = std::unique_ptr<Camera>(new PerspCamera(glm::degrees(fov), aspect, nearClip, farClip));
+				camera = std::unique_ptr<Camera>(new PerspectiveCamera(glm::degrees(fov), aspect, nearClip, farClip));
 			}
 			else if (pGltfCamera->type == cgltf_camera_type_orthographic) {
 				float left = -pGltfCamera->data.orthographic.xmag;

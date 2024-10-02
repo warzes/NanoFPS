@@ -15,7 +15,7 @@ public:
 	void UpdateShaderUniform(uint32_t dataSize, const void* srcData);
 
 	const float3& GetPosition() const { return mLightPosition; }
-	const PerspCamera& GetCamera() const { return mLightCamera; }
+	const PerspectiveCamera& GetCamera() const { return mLightCamera; }
 
 private:
 	vkr::DescriptorSetLayoutPtr mLightSetLayout;
@@ -23,5 +23,5 @@ private:
 	vkr::GraphicsPipelinePtr    mLightPipeline;
 	GameEntity                  mLight;
 	float3                      mLightPosition = float3(0, 5, 5);
-	PerspCamera                 mLightCamera;
+	PerspectiveCamera                 mLightCamera;
 };

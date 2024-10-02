@@ -1,19 +1,19 @@
-#pragma once
+﻿#pragma once
 
 #pragma region Camera
 
-#define CAMERA_DEFAULT_NEAR_CLIP      0.1f
-#define CAMERA_DEFAULT_FAR_CLIP       10000.0f
-#define CAMERA_DEFAULT_EYE_POSITION   float3(0, 0, 1)
-#define CAMERA_DEFAULT_LOOK_AT        float3(0, 0, 0)
-#define CAMERA_DEFAULT_WORLD_UP       float3(0, 1, 0)
-#define CAMERA_DEFAULT_VIEW_DIRECTION float3(0, 0, -1)
+constexpr auto CAMERA_DEFAULT_NEAR_CLIP      = 0.1f;
+constexpr auto CAMERA_DEFAULT_FAR_CLIP       = 10000.0f;
+constexpr auto CAMERA_DEFAULT_EYE_POSITION   = float3(0.0f, 0.0f,  1.0f);
+constexpr auto CAMERA_DEFAULT_LOOK_AT        = float3(0.0f, 0.0f,  0.0f);
+constexpr auto CAMERA_DEFAULT_WORLD_UP       = float3(0.0f, 1.0f,  0.0f);
+constexpr auto CAMERA_DEFAULT_VIEW_DIRECTION = float3(0.0f, 0.0f, -1.0f);
 
-enum CameraType
+enum class CameraType : uint8_t
 {
-	CAMERA_TYPE_UNKNOWN = 0,
-	CAMERA_TYPE_PERSPECTIVE = 1,
-	CAMERA_TYPE_ORTHOGRAPHIC = 2,
+	Unknown,
+	Perspective,
+	Orthographic
 };
 
 class Camera
@@ -25,19 +25,19 @@ public:
 
 	virtual CameraType GetCameraType() const = 0;
 
-	float GetNearClip() const { return mNearClip; }
-	float GetFarClip() const { return mFarClip; }
+	float GetNearClip() const { return m_nearClip; }
+	float GetFarClip() const { return m_farClip; }
 
 	virtual void LookAt(const float3& eye, const float3& target, const float3& up = CAMERA_DEFAULT_WORLD_UP);
 
-	const float3& GetEyePosition() const { return mEyePosition; }
-	const float3& GetTarget() const { return mTarget; }
-	const float3& GetViewDirection() const { return mViewDirection; }
-	const float3& GetWorldUp() const { return mWorldUp; }
+	const float3& GetEyePosition() const { return m_eyePosition; }
+	const float3& GetTarget() const { return m_target; }
+	const float3& GetViewDirection() const { return m_viewDirection; }
+	const float3& GetWorldUp() const { return m_worldUp; }
 
-	const float4x4& GetViewMatrix() const { return mViewMatrix; }
-	const float4x4& GetProjectionMatrix() const { return mProjectionMatrix; }
-	const float4x4& GetViewProjectionMatrix() const { return mViewProjectionMatrix; }
+	const float4x4& GetViewMatrix() const { return m_viewMatrix; }
+	const float4x4& GetProjectionMatrix() const { return m_projectionMatrix; }
+	const float4x4& GetViewProjectionMatrix() const { return m_viewProjectionMatrix; }
 
 	float3 WorldToViewPoint(const float3& worldPoint) const;
 	float3 WorldToViewVector(const float3& worldVector) const;
@@ -45,161 +45,82 @@ public:
 	void MoveAlongViewDirection(float distance);
 
 protected:
-	bool             mPixelAligned = false;
-	float            mNearClip = CAMERA_DEFAULT_NEAR_CLIP;
-	float            mFarClip = CAMERA_DEFAULT_FAR_CLIP;
-	float3           mEyePosition = CAMERA_DEFAULT_EYE_POSITION;
-	float3           mTarget = CAMERA_DEFAULT_LOOK_AT;
-	float3           mViewDirection = CAMERA_DEFAULT_VIEW_DIRECTION;
-	float3           mWorldUp = CAMERA_DEFAULT_WORLD_UP;
-	mutable float4x4 mViewMatrix = float4x4(1);
-	mutable float4x4 mProjectionMatrix = float4x4(1);
-	mutable float4x4 mViewProjectionMatrix = float4x4(1);
-	mutable float4x4 mInverseViewMatrix = float4x4(1);
+	bool             m_pixelAligned = false;
+	float            m_nearClip = CAMERA_DEFAULT_NEAR_CLIP;
+	float            m_farClip = CAMERA_DEFAULT_FAR_CLIP;
+	float3           m_eyePosition = CAMERA_DEFAULT_EYE_POSITION;
+	float3           m_target = CAMERA_DEFAULT_LOOK_AT;
+	float3           m_viewDirection = CAMERA_DEFAULT_VIEW_DIRECTION;
+	float3           m_worldUp = CAMERA_DEFAULT_WORLD_UP;
+	mutable float4x4 m_viewMatrix = float4x4(1.0f);
+	mutable float4x4 m_projectionMatrix = float4x4(1.0f);
+	mutable float4x4 m_viewProjectionMatrix = float4x4(1.0f);
+	mutable float4x4 m_inverseViewMatrix = float4x4(1.0f);
 };
 
-class PerspCamera : public Camera
+class PerspectiveCamera : public Camera
 {
 public:
-	PerspCamera();
-
-	explicit PerspCamera(
-		float horizFovDegrees,
-		float aspect,
-		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
-		float farClip = CAMERA_DEFAULT_FAR_CLIP);
-
-	explicit PerspCamera(
-		const float3& eye,
-		const float3& target,
-		const float3& up,
-		float         horizFovDegrees,
-		float         aspect,
-		float         nearClip = CAMERA_DEFAULT_NEAR_CLIP,
-		float         farClip = CAMERA_DEFAULT_FAR_CLIP);
-
-	explicit PerspCamera(
-		uint32_t pixelWidth,
-		uint32_t pixelHeight,
-		float    horizFovDegrees = 60.0f);
-
+	PerspectiveCamera() = default;
+	explicit PerspectiveCamera(float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
+	explicit PerspectiveCamera(const float3& eye, const float3& target, const float3& up, float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
+	explicit PerspectiveCamera(uint32_t pixelWidth, uint32_t pixelHeight, float horizFovDegrees = 60.0f);
 	// Pixel aligned camera
-	explicit PerspCamera(
-		uint32_t pixelWidth,
-		uint32_t pixelHeight,
-		float    horizFovDegrees,
-		float    nearClip,
-		float    farClip);
+	explicit PerspectiveCamera(uint32_t pixelWidth, uint32_t pixelHeight, float horizFovDegrees, float nearClip, float farClip);
 
-	virtual ~PerspCamera();
+	CameraType GetCameraType() const override { return CameraType::Perspective; }
 
-	virtual CameraType GetCameraType() const { return CAMERA_TYPE_PERSPECTIVE; }
-
-	void SetPerspective(
-		float horizFovDegrees,
-		float aspect,
-		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
-		float farClip = CAMERA_DEFAULT_FAR_CLIP);
+	void SetPerspective(float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
 
 	void FitToBoundingBox(const float3& bboxMinWorldSpace, const float3& bbxoMaxWorldSpace);
 
 private:
-	float mHorizFovDegrees = 60.0f;
-	float mVertFovDegrees = 36.98f;
-	float mAspect = 1.0f;
+	float m_horizFovDegrees = 60.0f;
+	float m_vertFovDegrees = 36.98f;
+	float m_aspect = 1.0f;
 };
 
 class OrthoCamera : public Camera
 {
 public:
-	OrthoCamera();
+	OrthoCamera() = default;
+	OrthoCamera(float left, float right, float bottom, float top, float nearClip, float farClip);
 
-	OrthoCamera(
-		float left,
-		float right,
-		float bottom,
-		float top,
-		float nearClip,
-		float farClip);
+	CameraType GetCameraType() const override { return CameraType::Orthographic; }
 
-	virtual ~OrthoCamera();
-
-	virtual CameraType GetCameraType() const { return CAMERA_TYPE_ORTHOGRAPHIC; }
-
-	void SetOrthographic(
-		float left,
-		float right,
-		float bottom,
-		float top,
-		float nearClip,
-		float farClip);
+	void SetOrthographic(float left, float right, float bottom, float top, float nearClip, float farClip);
 
 private:
-	float mLeft = -1.0f;
-	float mRight = 1.0f;
-	float mBottom = -1.0f;
-	float mTop = 1.0f;
+	float m_left = -1.0f;
+	float m_right = 1.0f;
+	float m_bottom = -1.0f;
+	float m_top = 1.0f;
 };
 
 // Adapted from: https://github.com/Twinklebear/arcball-cpp
-class ArcballCamera : public PerspCamera
+class ArcballCamera : public PerspectiveCamera
 {
 public:
-	ArcballCamera();
-
-	ArcballCamera(
-		float horizFovDegrees,
-		float aspect,
-		float nearClip = CAMERA_DEFAULT_NEAR_CLIP,
-		float farClip = CAMERA_DEFAULT_FAR_CLIP);
-
-	ArcballCamera(
-		const float3& eye,
-		const float3& target,
-		const float3& up,
-		float         horizFovDegrees,
-		float         aspect,
-		float         nearClip = CAMERA_DEFAULT_NEAR_CLIP,
-		float         farClip = CAMERA_DEFAULT_FAR_CLIP);
-
-	virtual ~ArcballCamera() {}
+	ArcballCamera(float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
+	ArcballCamera(const float3& eye, const float3& target, const float3& up, float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
 
 	void LookAt(const float3& eye, const float3& target, const float3& up = CAMERA_DEFAULT_WORLD_UP) override;
 
-	//! @fn void Rotate(const float2& prevPos, const float2& curPos)
-	//!
-	//! @param prevPos previous mouse position in normalized device coordinates
-	//! @param curPos current mouse position in normalized device coordinates
-	//!
+	// prevPos previous mouse position in normalized device coordinates
+	// curPos current mouse position in normalized device coordinates
 	void Rotate(const float2& prevPos, const float2& curPos);
 
-	//! @fn void Pan(const float2& delta)
-	//!
-	//! @param delta mouse delta in normalized device coordinates
-	//!
+	// delta mouse delta in normalized device coordinates
 	void Pan(const float2& delta);
 
-	//! @fn void Zoom(float amount)
-	//!
 	void Zoom(float amount);
 
-	////! @fn const float4x4& GetCameraMatrix() const
-	////!
-	// const float4x4& GetCameraMatrix() const { return mCameraMatrix; }
-
-	////! @fn const float4x4& GetInverseCameraMatrix() const
-	////!
-	// const float4x4& GetInverseCameraMatrix() const { return mInverseCameraMatrix; }
-
 private:
-	void UpdateCamera();
+	void updateCamera();
 
-private:
-	float4x4 mCenterTranslationMatrix;
-	float4x4 mTranslationMatrix;
-	quat     mRotationQuat;
-	// float4x4 mCameraMatrix;
-	// float4x4 mInverseCameraMatrix;
+	float4x4 m_centerTranslationMatrix;
+	float4x4 m_translationMatrix;
+	quat     m_rotationQuat;
 };
 
 #pragma endregion

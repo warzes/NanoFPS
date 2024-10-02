@@ -76,7 +76,7 @@ void Player::Turn(float deltaAzimuth, float deltaAltitude)
 
 void Player::setupCamera()
 {
-	m_perspCamera = PerspCamera(60.0f, m_game->GetWindowAspect());
+	m_perspCamera = PerspectiveCamera(60.0f, m_game->GetWindowAspect());
 	updateCamera();
 }
 
