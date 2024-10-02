@@ -220,10 +220,10 @@ constexpr auto RemainingMipLevels = UINT32_MAX;
 //!   +----------+----------+
 //!   | ... |               |
 //!   +-----+---------------+
-class Mipmap
+class Mipmap final
 {
 public:
-	Mipmap() {}
+	Mipmap() = default;
 	// Using the static, shared-memory pool is currently only safe in single-threaded applications!
 	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
 	Mipmap(uint32_t width, uint32_t height, Bitmap::Format format, uint32_t levelCount, bool useStaticPool);
@@ -232,22 +232,20 @@ public:
 	// This should only be used for temporary mipmaps which will be destroyed prior to the creation of any new mipmap.
 	Mipmap(const Bitmap& bitmap, uint32_t levelCount, bool useStaticPool);
 	Mipmap(const Bitmap& bitmap, uint32_t levelCount);
-	~Mipmap() {}
 
 	// Returns true if there's at least one mip level, format is valid, and storage is valid
 	bool IsOk() const;
 
 	Bitmap::Format GetFormat() const;
 	uint32_t       GetLevelCount() const { return CountU32(mMips); }
-	Bitmap* GetMip(uint32_t level);
-	const Bitmap* GetMip(uint32_t level) const;
+	Bitmap*        GetMip(uint32_t level);
+	const Bitmap*  GetMip(uint32_t level) const;
 
-	uint32_t GetWidth(uint32_t level) const;
-	uint32_t GetHeight(uint32_t level) const;
+	uint32_t       GetWidth(uint32_t level) const;
+	uint32_t       GetHeight(uint32_t level) const;
 
 	static uint32_t CalculateLevelCount(uint32_t width, uint32_t height);
 	static Result   LoadFile(const std::filesystem::path& path, uint32_t baseWidth, uint32_t baseHeight, Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
-	static Result   SaveFile(const std::filesystem::path& path, const Mipmap* pMipmap, uint32_t levelCount = RemainingMipLevels);
 
 private:
 	std::vector<char>   mData;
@@ -264,14 +262,14 @@ private:
 
 #pragma region Font
 
-struct FontMetrics
+struct FontMetrics final
 {
 	float ascent = 0;
 	float descent = 0;
 	float lineGap = 0;
 };
 
-struct GlyphBox
+struct GlyphBox final
 {
 	int32_t x0 = 0;
 	int32_t y0 = 0;
@@ -279,19 +277,16 @@ struct GlyphBox
 	int32_t y1 = 0;
 };
 
-struct GlyphMetrics
+struct GlyphMetrics final
 {
 	float    advance = 0;
 	float    leftBearing = 0;
 	GlyphBox box = {};
 };
 
-class Font
+class Font final
 {
 public:
-	Font();
-	virtual ~Font();
-
 	static Result CreateFromFile(const std::filesystem::path& path, Font* pFont);
 	static Result CreateFromMemory(size_t size, const char* pData, Font* pFont);
 
