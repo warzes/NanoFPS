@@ -1274,7 +1274,7 @@ void Texture::destroyApiObjects()
 
 #pragma region RenderPass
 
-void RenderPassCreateInfo::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
+void RenderPassCreateInfo::SetAllRenderTargetClearValue(const float4& value)
 {
 	for (uint32_t i = 0; i < renderTargetCount; ++i) 
 		renderTargetClearValues[i] = value;
@@ -1286,7 +1286,7 @@ void RenderPassCreateInfo2::SetAllRenderTargetUsageFlags(const ImageUsageFlags& 
 		renderTargetUsageFlags[i] = flags;
 }
 
-void RenderPassCreateInfo2::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
+void RenderPassCreateInfo2::SetAllRenderTargetClearValue(const float4& value)
 {
 	for (uint32_t i = 0; i < renderTargetCount; ++i)
 		renderTargetClearValues[i] = value;
@@ -1309,7 +1309,7 @@ void RenderPassCreateInfo2::SetAllRenderTargetToClear()
 	SetAllRenderTargetLoadOp(AttachmentLoadOp::Clear);
 }
 
-void RenderPassCreateInfo3::SetAllRenderTargetClearValue(const RenderTargetClearValue& value)
+void RenderPassCreateInfo3::SetAllRenderTargetClearValue(const float4& value)
 {
 	for (uint32_t i = 0; i < renderTargetCount; ++i)
 		renderTargetClearValues[i] = value;
@@ -5504,11 +5504,10 @@ void CommandBuffer::PushDescriptorImpl(
 		&write);                                  // pDescriptorWrites;
 }
 
-void CommandBuffer::ClearRenderTarget(
-	Image* pImage,
-	const RenderTargetClearValue& clearValue)
+void CommandBuffer::ClearRenderTarget(Image* pImage, const float4& clearValue)
 {
-	if (!HasActiveRenderPass()) {
+	if (!HasActiveRenderPass())
+	{
 		Warning("No active render pass.");
 		return;
 	}

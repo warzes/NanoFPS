@@ -204,7 +204,7 @@ struct ImageCreateInfo final
 	ImageUsageFlags        usageFlags = ImageUsageFlags::SampledImage();
 	MemoryUsage            memoryUsage = MemoryUsage::GPUOnly;    // D3D12 will fail on any other memory usage
 	ResourceState          initialState = ResourceState::General; // This may not be the best choice
-	RenderTargetClearValue RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
+	float4                 RTVClearValue = { 0, 0, 0, 0 };        // Optimized RTV clear value
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };        // Optimized DSV clear value
 	void*                  ApiObject = nullptr;                   // [OPTIONAL] For external images such as swapchain images
 	Ownership              ownership = Ownership::Reference;
@@ -249,7 +249,7 @@ public:
 	const ImageUsageFlags&        GetUsageFlags() const { return m_createInfo.usageFlags; }
 	MemoryUsage                   GetMemoryUsage() const { return m_createInfo.memoryUsage; }
 	ResourceState                 GetInitialState() const { return m_createInfo.initialState; }
-	const RenderTargetClearValue& GetRTVClearValue() const { return m_createInfo.RTVClearValue; }
+	const float4&                 GetRTVClearValue() const { return m_createInfo.RTVClearValue; }
 	const DepthStencilClearValue& GetDSVClearValue() const { return m_createInfo.DSVClearValue; }
 	bool                          GetConcurrentMultiQueueUsageEnabled() const { return m_createInfo.concurrentMultiQueueUsage; }
 	ImageCreateFlags              GetCreateFlags() const { return m_createInfo.createFlags; }
@@ -536,7 +536,7 @@ struct TextureCreateInfo final
 	ImageUsageFlags         usageFlags = ImageUsageFlags::SampledImage();
 	MemoryUsage             memoryUsage = MemoryUsage::GPUOnly;
 	ResourceState           initialState = ResourceState::General;           // This may not be the best choice
-	RenderTargetClearValue  RTVClearValue = { 0, 0, 0, 0 };                  // Optimized RTV clear value
+	float4                  RTVClearValue = { 0, 0, 0, 0 };                  // Optimized RTV clear value
 	DepthStencilClearValue  DSVClearValue = { 1.0f, 0xFF };                  // Optimized DSV clear value
 	ImageViewType           sampledImageViewType = ImageViewType::Undefined; // Guesses from image if UNDEFINED
 	Format                  sampledImageViewFormat = Format::Undefined;      // Guesses from image if UNDEFINED
@@ -601,7 +601,7 @@ struct RenderPassCreateInfo final
 	RenderTargetView*      renderTargetViews[MaxRenderTargets] = {};
 	DepthStencilView*      depthStencilView = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
-	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+	float4                 renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	Ownership              ownership = Ownership::Reference;
 
@@ -609,7 +609,7 @@ struct RenderPassCreateInfo final
 	// (`GraphicsPipelineCreateInfo.shadingRateMode`).
 	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
-	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
+	void SetAllRenderTargetClearValue(const float4& value);
 };
 
 // Use this version if the format(s) are know but images and views need creation.
@@ -626,7 +626,7 @@ struct RenderPassCreateInfo2 final
 	Format                 depthStencilFormat = Format::Undefined;
 	ImageUsageFlags        renderTargetUsageFlags[MaxRenderTargets] = {};
 	ImageUsageFlags        depthStencilUsageFlags = {};
-	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+	float4                 renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { AttachmentLoadOp::Load };
 	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { AttachmentStoreOp::Store };
@@ -642,7 +642,7 @@ struct RenderPassCreateInfo2 final
 	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
 	void SetAllRenderTargetUsageFlags(const ImageUsageFlags& flags);
-	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
+	void SetAllRenderTargetClearValue(const float4& value);
 	void SetAllRenderTargetLoadOp(AttachmentLoadOp op);
 	void SetAllRenderTargetStoreOp(AttachmentStoreOp op);
 	void SetAllRenderTargetToClear();
@@ -659,7 +659,7 @@ struct RenderPassCreateInfo3 final
 	Image*                 renderTargetImages[MaxRenderTargets] = {};
 	Image*                 depthStencilImage = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
-	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+	float4                 renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	AttachmentLoadOp       renderTargetLoadOps[MaxRenderTargets] = { AttachmentLoadOp::Load };
 	AttachmentStoreOp      renderTargetStoreOps[MaxRenderTargets] = { AttachmentStoreOp::Store };
@@ -672,7 +672,7 @@ struct RenderPassCreateInfo3 final
 	// If `pShadingRatePattern` is not null, then the pipeline targeting this RenderPass must use the same shading rate mode (`GraphicsPipelineCreateInfo.shadingRateMode`).
 	ShadingRatePatternPtr  shadingRatePattern = nullptr;
 
-	void SetAllRenderTargetClearValue(const RenderTargetClearValue& value);
+	void SetAllRenderTargetClearValue(const float4& value);
 	void SetAllRenderTargetLoadOp(AttachmentLoadOp op);
 	void SetAllRenderTargetStoreOp(AttachmentStoreOp op);
 	void SetAllRenderTargetToClear();
@@ -727,7 +727,7 @@ namespace internal
 		} V3;
 
 		// Clear values
-		RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+		float4                 renderTargetClearValues[MaxRenderTargets] = {};
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		// Load/store ops
@@ -829,7 +829,7 @@ struct DrawPassCreateInfo final
 	ImageUsageFlags        depthStencilUsageFlags = {};
 	ResourceState          renderTargetInitialStates[MaxRenderTargets] = { ResourceState::RenderTarget };
 	ResourceState          depthStencilInitialState = ResourceState::DepthStencilWrite;
-	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+	float4                 renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    shadingRatePattern = nullptr;
 	ImageCreateFlags       imageCreateFlags = {};
@@ -844,7 +844,7 @@ struct DrawPassCreateInfo2 final
 	Image*                 renderTargetImages[MaxRenderTargets] = {};
 	Image*                 depthStencilImage = nullptr;
 	ResourceState          depthStencilState = ResourceState::DepthStencilWrite;
-	RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+	float4                 renderTargetClearValues[MaxRenderTargets] = {};
 	DepthStencilClearValue depthStencilClearValue = {};
 	ShadingRatePattern*    shadingRatePattern = nullptr;
 };
@@ -908,7 +908,7 @@ namespace internal
 		} V3;
 
 		// Clear values
-		RenderTargetClearValue renderTargetClearValues[MaxRenderTargets] = {};
+		float4                 renderTargetClearValues[MaxRenderTargets] = {};
 		DepthStencilClearValue depthStencilClearValue = {};
 
 		DrawPassCreateInfo() = default;
@@ -1828,7 +1828,7 @@ struct RenderPassBeginInfo
 	const RenderPass* pRenderPass = nullptr;
 	Rect                   renderArea = {};
 	uint32_t                     RTVClearCount = 0;
-	RenderTargetClearValue RTVClearValues[MaxRenderTargets] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float4                 RTVClearValues[MaxRenderTargets] = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };
 };
 
@@ -1842,7 +1842,7 @@ struct RenderingInfo
 	RenderTargetView* pRenderTargetViews[MaxRenderTargets] = {};
 	DepthStencilView* pDepthStencilView = nullptr;
 
-	RenderTargetClearValue RTVClearValues[MaxRenderTargets] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	float4                 RTVClearValues[MaxRenderTargets] = { { 0.0f, 0.0f, 0.0f, 0.0f } };
 	DepthStencilClearValue DSVClearValue = { 1.0f, 0xFF };
 };
 
@@ -1917,9 +1917,7 @@ public:
 	// Clear functions must be called between BeginRenderPass and EndRenderPass.
 	// Arg for pImage must be an image in the current render pass.
 	// TODO: add support for calling inside a dynamic render pass (i.e., BeginRendering and EndRendering).
-	void ClearRenderTarget(
-		Image* pImage,
-		const RenderTargetClearValue& clearValue);
+	void ClearRenderTarget(Image* pImage, const float4& clearValue);
 	void ClearDepthStencil(
 		Image* pImage,
 		const DepthStencilClearValue& clearValue,

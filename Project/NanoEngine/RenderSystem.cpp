@@ -1049,7 +1049,7 @@ Result VulkanSwapChain::createRenderPasses()
 		rpCreateInfo.renderTargetCount = 1;
 		rpCreateInfo.renderTargetViews[0] = m_clearRenderTargets[i];
 		rpCreateInfo.depthStencilView = m_depthImages.empty() ? nullptr : m_clearDepthStencilViews[i];
-		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
+		rpCreateInfo.renderTargetClearValues[0] = {0.0f, 0.0f, 0.0f, 0.0f};
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		rpCreateInfo.ownership = Ownership::Restricted;
 		rpCreateInfo.shadingRatePattern = m_createInfo.shadingRatePattern;
@@ -1074,7 +1074,7 @@ Result VulkanSwapChain::createRenderPasses()
 		rpCreateInfo.renderTargetCount = 1;
 		rpCreateInfo.renderTargetViews[0] = m_loadRenderTargets[i];
 		rpCreateInfo.depthStencilView = m_depthImages.empty() ? nullptr : m_loadDepthStencilViews[i];
-		rpCreateInfo.renderTargetClearValues[0] = { {0.0f, 0.0f, 0.0f, 0.0f} };
+		rpCreateInfo.renderTargetClearValues[0] = {0.0f, 0.0f, 0.0f, 0.0f};
 		rpCreateInfo.depthStencilClearValue = { 1.0f, 0xFF };
 		rpCreateInfo.ownership = Ownership::Restricted;
 		rpCreateInfo.shadingRatePattern = m_createInfo.shadingRatePattern;

@@ -1048,13 +1048,13 @@ VkChromaLocation ToVkEnum(ChromaLocation value)
 	return InvalidValue<VkChromaLocation>();
 }
 
-VkClearColorValue ToVkClearColorValue(const RenderTargetClearValue& value)
+VkClearColorValue ToVkClearColorValue(const float4& value)
 {
 	VkClearColorValue res = {};
-	res.float32[0] = value.rgba[0];
-	res.float32[1] = value.rgba[1];
-	res.float32[2] = value.rgba[2];
-	res.float32[3] = value.rgba[3];
+	res.float32[0] = value[0];
+	res.float32[1] = value[1];
+	res.float32[2] = value[2];
+	res.float32[3] = value[3];
 	return res;
 }
 
@@ -5668,7 +5668,7 @@ namespace vkrUtil
 			ci.usageFlags.bits.sampled = true;
 			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = options.mInitialState;
-			ci.RTVClearValue = { {0, 0, 0, 0} };
+			ci.RTVClearValue = {0, 0, 0, 0};
 			ci.DSVClearValue = { 1.0f, 0xFF };
 			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;
@@ -5755,7 +5755,7 @@ namespace vkrUtil
 			ci.usageFlags.bits.sampled = true;
 			ci.memoryUsage = MemoryUsage::GPUOnly;
 			ci.initialState = options.mInitialState;
-			ci.RTVClearValue = { {0, 0, 0, 0} };
+			ci.RTVClearValue = {0, 0, 0, 0};
 			ci.DSVClearValue = { 1.0f, 0xFF };
 			ci.sampledImageViewType = ImageViewType::Undefined;
 			ci.sampledImageViewFormat = Format::Undefined;

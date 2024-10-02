@@ -79,7 +79,7 @@ void GameApplication::Render()
 			renderPassBeginInfo.pRenderPass = mainRenderPass;
 			renderPassBeginInfo.renderArea = mainRenderPass->GetRenderArea();
 			renderPassBeginInfo.RTVClearCount = 1;
-			renderPassBeginInfo.RTVClearValues[0] = { {0.2f, 0.4f, 1.0f, 0.0f} };
+			renderPassBeginInfo.RTVClearValues[0] = {0.2f, 0.4f, 1.0f, 0.0f};
 			renderPassBeginInfo.DSVClearValue = { 1.0f, 0xFF };
 
 			frame.cmd->TransitionImageLayout(mainRenderPass->GetRenderTargetImage(0), ALL_SUBRESOURCES, vkr::ResourceState::Present, vkr::ResourceState::RenderTarget);

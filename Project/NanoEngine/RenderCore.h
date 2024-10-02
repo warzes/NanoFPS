@@ -1464,18 +1464,6 @@ struct DepthStencilClearValue final
 	uint32_t stencil = 0;
 };
 
-union RenderTargetClearValue final
-{
-	struct
-	{
-		float r;
-		float g;
-		float b;
-		float a;
-	};
-	float rgba[4];
-};
-
 struct Rect final
 {
 	Rect() = default;
@@ -1615,7 +1603,7 @@ VkBlendOp                     ToVkEnum(BlendOp value);
 VkBorderColor                 ToVkEnum(BorderColor value);
 VkBufferUsageFlags            ToVkBufferUsageFlags(const BufferUsageFlags& value);
 VkChromaLocation              ToVkEnum(ChromaLocation value);
-VkClearColorValue             ToVkClearColorValue(const RenderTargetClearValue& value);
+VkClearColorValue             ToVkClearColorValue(const float4& value);
 VkClearDepthStencilValue      ToVkClearDepthStencilValue(const DepthStencilClearValue& value);
 VkColorComponentFlags         ToVkColorComponentFlags(const ColorComponentFlags& value);
 VkCompareOp                   ToVkEnum(CompareOp value);
