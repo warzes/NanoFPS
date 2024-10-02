@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include "RenderSystem.h"
 #include "Graphics.h"
@@ -312,7 +312,7 @@ namespace scene
 
 #pragma region Scene Material
 
-// TODO: возможно это надо в графику
+// TODO: РІРѕР·РјРѕР¶РЅРѕ СЌС‚Рѕ РЅР°РґРѕ РІ РіСЂР°С„РёРєСѓ
 
 #define MATERIAL_IDENT_ERROR    "material_ident:error"
 #define MATERIAL_IDENT_DEBUG    "material_ident:debug"

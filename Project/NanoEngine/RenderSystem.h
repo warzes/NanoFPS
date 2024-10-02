@@ -327,7 +327,7 @@ public:
 	[[nodiscard]] const VkPhysicalDeviceLimits& GetDeviceLimits() const { return m_instance.GetDeviceLimits(); }
 	[[nodiscard]] float GetDeviceTimestampPeriod() const { return m_instance.GetDeviceTimestampPeriod(); }
 	[[nodiscard]] uint32_t GetMaxPushDescriptors() const { return m_instance.maxPushDescriptors; }
-	[[nodiscard]] bool PartialDescriptorBindingsSupported() const { return m_instance.descriptorIndexingFeatures.descriptorBindingPartiallyBound; }
+	[[nodiscard]] bool PartialDescriptorBindingsSupported() const { return m_instance.descriptorIndexingFeatures.descriptorBindingPartiallyBound == VK_TRUE; }
 
 	[[nodiscard]] DeviceQueuePtr GetVkGraphicsQueue() { return m_instance.graphicsQueue; }
 	[[nodiscard]] DeviceQueuePtr GetVkPresentQueue() { return m_instance.presentQueue; }

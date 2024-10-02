@@ -101,15 +101,14 @@ private:
 	void keyDownCallback(KeyCode key);
 	void keyUpCallback(KeyCode key);
 
-	std::ofstream m_logFile;
-	Window        m_window;
-	Input         m_input;
-	vkr::RenderSystem  m_render;
-
-	StatusApp     m_status = StatusApp::NonInit;
-	int32_t       m_previousMouseX = INT32_MAX;
-	int32_t       m_previousMouseY = INT32_MAX;
-	KeyState      m_keyStates[TOTAL_KEY_COUNT] = { false, 0.0f };
+	std::ofstream     m_logFile;
+	Window            m_window;
+	Input             m_input;
+	vkr::RenderSystem m_render;
+	StatusApp         m_status = StatusApp::NonInit;
+	int32_t           m_previousMouseX = INT32_MAX;
+	int32_t           m_previousMouseY = INT32_MAX;
+	KeyState          m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
 };
 
 #pragma endregion

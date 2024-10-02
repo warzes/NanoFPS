@@ -531,7 +531,6 @@ enum LogicOp
 
 enum class MemoryUsage : uint8_t
 {
-	Unknown,
 	GPUOnly,
 	CPUOnly,
 	CPUToGPU,
@@ -568,7 +567,6 @@ enum PrimitiveTopology
 	PRIMITIVE_TOPOLOGY_POINT_LIST = 3,
 	PRIMITIVE_TOPOLOGY_LINE_LIST = 4,
 	PRIMITIVE_TOPOLOGY_LINE_STRIP = 5,
-	PRIMITIVE_TOPOLOGY_PATCH_LIST = 6,
 };
 
 enum class QueryType : uint8_t
@@ -1766,14 +1764,13 @@ private:
 	friend class TriMesh;
 };
 
-class TriMesh
+class TriMesh final
 {
 public:
 	TriMesh();
 	TriMesh(IndexType indexType);
 	TriMesh(TriMeshAttributeDim texCoordDim);
 	TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim);
-	~TriMesh();
 
 	IndexType     GetIndexType() const { return mIndexType; }
 	TriMeshAttributeDim GetTexCoordDim() const { return mTexCoordDim; }
@@ -1904,12 +1901,11 @@ private:
 	friend class WireMesh;
 };
 
-class WireMesh
+class WireMesh final
 {
 public:
-	WireMesh();
+	WireMesh() = default;
 	WireMesh(IndexType indexType);
-	~WireMesh();
 
 	IndexType GetIndexType() const { return mIndexType; }
 
@@ -2057,7 +2053,7 @@ private:
 // Implementation Notes:
 //   - Recommended to avoid modifying the index/vertex buffers directly and to use
 //     the Append* functions instead (for smaller geometries especially)
-class Geometry
+class Geometry final
 {
 	template <typename T>
 	friend class VertexDataProcessorBase;
@@ -2088,13 +2084,11 @@ public:
 	//!   - Create a buffer object with type and element size
 	//!   - Call Append<T>() to append data to it
 	//!
-	class Buffer
+	class Buffer final
 	{
 	public:
-		Buffer() {}
-		Buffer(BufferType type, uint32_t elementSize)
-			: mType(type), mElementSize(elementSize) {}
-		~Buffer() {}
+		Buffer() = default;
+		Buffer(BufferType type, uint32_t elementSize) : mType(type), mElementSize(elementSize) {}
 
 		BufferType  GetType() const { return mType; }
 		uint32_t    GetElementSize() const { return mElementSize; }
@@ -2142,8 +2136,6 @@ public:
 	};
 
 public:
-	Geometry() {}
-	virtual ~Geometry() {}
 
 private:
 	Result InternalCtor();
@@ -2570,7 +2562,7 @@ namespace vkrUtil
 		Mesh** ppMesh,
 		const TriMeshOptions& options = TriMeshOptions());
 
-	Format ToGrfxFormat(Bitmap::Format value);
+	//Format ToGrfxFormat(Bitmap::Format value);
 }
 
 #pragma endregion
