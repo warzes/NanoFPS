@@ -29,41 +29,41 @@ bool RenderDevice::Setup(ShadingRateMode supportShadingRateMode)
 void RenderDevice::Shutdown()
 {
 	// Destroy queues first to clear any pending work
-	destroyAllObjects(mGraphicsQueues);
-	destroyAllObjects(mComputeQueues);
-	destroyAllObjects(mTransferQueues);
+	destroyAllObjects(m_graphicsQueues);
+	destroyAllObjects(m_computeQueues);
+	destroyAllObjects(m_transferQueues);
 
 	// Destroy helper objects first
-	destroyAllObjects(mDrawPasses);
-	destroyAllObjects(mFullscreenQuads);
-	destroyAllObjects(mTextDraws);
-	destroyAllObjects(mTextures);
-	destroyAllObjects(mTextureFonts);
+	destroyAllObjects(m_drawPasses);
+	destroyAllObjects(m_fullscreenQuads);
+	destroyAllObjects(m_textDraws);
+	destroyAllObjects(m_textures);
+	destroyAllObjects(m_textureFonts);
 
 	// Destroy render passes before images and views
-	destroyAllObjects(mRenderPasses);
+	destroyAllObjects(m_renderPasses);
 
-	destroyAllObjects(mBuffers);
-	destroyAllObjects(mCommandBuffers);
-	destroyAllObjects(mCommandPools);
-	destroyAllObjects(mComputePipelines);
-	destroyAllObjects(mDepthStencilViews);
-	destroyAllObjects(mDescriptorSets); // Descriptor sets need to be destroyed before pools
-	destroyAllObjects(mDescriptorPools);
-	destroyAllObjects(mDescriptorSetLayouts);
-	destroyAllObjects(mFences);
-	destroyAllObjects(mImages);
-	destroyAllObjects(mGraphicsPipelines);
-	destroyAllObjects(mPipelineInterfaces);
-	destroyAllObjects(mQuerys);
-	destroyAllObjects(mRenderTargetViews);
-	destroyAllObjects(mSampledImageViews);
-	destroyAllObjects(mSamplers);
-	destroyAllObjects(mSemaphores);
-	destroyAllObjects(mStorageImageViews);
-	destroyAllObjects(mShaderModules);
+	destroyAllObjects(m_buffers);
+	destroyAllObjects(m_commandBuffers);
+	destroyAllObjects(m_commandPools);
+	destroyAllObjects(m_computePipelines);
+	destroyAllObjects(m_depthStencilViews);
+	destroyAllObjects(m_descriptorSets); // Descriptor sets need to be destroyed before pools
+	destroyAllObjects(m_descriptorPools);
+	destroyAllObjects(m_descriptorSetLayouts);
+	destroyAllObjects(m_fences);
+	destroyAllObjects(m_images);
+	destroyAllObjects(m_graphicsPipelines);
+	destroyAllObjects(m_pipelineInterfaces);
+	destroyAllObjects(mQueries);
+	destroyAllObjects(m_renderTargetViews);
+	destroyAllObjects(m_sampledImageViews);
+	destroyAllObjects(m_samplers);
+	destroyAllObjects(m_semaphores);
+	destroyAllObjects(m_storageImageViews);
+	destroyAllObjects(m_shaderModules);
 	// Destroy Ycbcr Conversions after images and views
-	destroyAllObjects(mSamplerYcbcrConversions);
+	destroyAllObjects(m_samplerYcbcrConversions);
 }
 
 VkDevice& RenderDevice::GetVkDevice()
@@ -93,7 +93,7 @@ float RenderDevice::GetDeviceTimestampPeriod() const
 
 const ShadingRateCapabilities& RenderDevice::GetShadingRateCapabilities() const
 {
-	return mShadingRateCapabilities;
+	return m_shadingRateCapabilities;
 }
 
 uint32_t RenderDevice::GetMaxPushDescriptors() const
@@ -210,7 +210,7 @@ std::vector<char> RenderDevice::LoadShader(const std::filesystem::path& baseDir,
 	return bytecode.value();
 }
 
-Result RenderDevice::CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule)
+Result RenderDevice::CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** shaderModule)
 {
 	std::vector<char> bytecode = LoadShader(baseDir, baseName);
 	if (bytecode.empty())
@@ -220,7 +220,7 @@ Result RenderDevice::CreateShader(const std::filesystem::path& baseDir, const st
 	}
 
 	ShaderModuleCreateInfo shaderCreateInfo = { static_cast<uint32_t>(bytecode.size()), bytecode.data() };
-	Result ppxres = CreateShaderModule(shaderCreateInfo, ppShaderModule);
+	Result ppxres = CreateShaderModule(shaderCreateInfo, shaderModule);
 	if (Failed(ppxres))
 	{
 		Error("Shader not create.");
@@ -230,76 +230,76 @@ Result RenderDevice::CreateShader(const std::filesystem::path& baseDir, const st
 	return SUCCESS;
 }
 
-Result RenderDevice::CreateBuffer(const BufferCreateInfo& pCreateInfo, Buffer** ppBuffer)
+Result RenderDevice::CreateBuffer(const BufferCreateInfo& createInfo, Buffer** buffer)
 {
-	ASSERT_NULL_ARG(ppBuffer);
-	return createObject(pCreateInfo, mBuffers, ppBuffer);
+	ASSERT_NULL_ARG(buffer);
+	return createObject(createInfo, m_buffers, buffer);
 }
 
-void RenderDevice::DestroyBuffer(const Buffer* pBuffer)
+void RenderDevice::DestroyBuffer(const Buffer* buffer)
 {
-	ASSERT_NULL_ARG(pBuffer);
-	destroyObject(mBuffers, pBuffer);
+	ASSERT_NULL_ARG(buffer);
+	destroyObject(m_buffers, buffer);
 }
 
-Result RenderDevice::CreateCommandPool(const CommandPoolCreateInfo& pCreateInfo, CommandPool** ppCommandPool)
+Result RenderDevice::CreateCommandPool(const CommandPoolCreateInfo& createInfo, CommandPool** commandPool)
 {
-	ASSERT_NULL_ARG(ppCommandPool);
-	return createObject(pCreateInfo, mCommandPools, ppCommandPool);
+	ASSERT_NULL_ARG(commandPool);
+	return createObject(createInfo, m_commandPools, commandPool);
 }
 
-void RenderDevice::DestroyCommandPool(const CommandPool* pCommandPool)
+void RenderDevice::DestroyCommandPool(const CommandPool* commandPool)
 {
-	ASSERT_NULL_ARG(pCommandPool);
-	destroyObject(mCommandPools, pCommandPool);
+	ASSERT_NULL_ARG(commandPool);
+	destroyObject(m_commandPools, commandPool);
 }
 
-Result RenderDevice::CreateComputePipeline(const ComputePipelineCreateInfo& pCreateInfo, ComputePipeline** ppComputePipeline)
+Result RenderDevice::CreateComputePipeline(const ComputePipelineCreateInfo& createInfo, ComputePipeline** computePipeline)
 {
-	ASSERT_NULL_ARG(ppComputePipeline);
-	return createObject(pCreateInfo, mComputePipelines, ppComputePipeline);
+	ASSERT_NULL_ARG(computePipeline);
+	return createObject(createInfo, m_computePipelines, computePipeline);
 }
 
-void RenderDevice::DestroyComputePipeline(const ComputePipeline* pComputePipeline)
+void RenderDevice::DestroyComputePipeline(const ComputePipeline* computePipeline)
 {
-	ASSERT_NULL_ARG(pComputePipeline);
-	destroyObject(mComputePipelines, pComputePipeline);
+	ASSERT_NULL_ARG(computePipeline);
+	destroyObject(m_computePipelines, computePipeline);
 }
 
 Result RenderDevice::CreateDepthStencilView(const DepthStencilViewCreateInfo& pCreateInfo, DepthStencilView** ppDepthStencilView)
 {
 	ASSERT_NULL_ARG(ppDepthStencilView);
-	return createObject(pCreateInfo, mDepthStencilViews, ppDepthStencilView);
+	return createObject(pCreateInfo, m_depthStencilViews, ppDepthStencilView);
 }
 
 void RenderDevice::DestroyDepthStencilView(const DepthStencilView* pDepthStencilView)
 {
 	ASSERT_NULL_ARG(pDepthStencilView);
-	destroyObject(mDepthStencilViews, pDepthStencilView);
+	destroyObject(m_depthStencilViews, pDepthStencilView);
 }
 
 Result RenderDevice::CreateDescriptorPool(const DescriptorPoolCreateInfo& pCreateInfo, DescriptorPool** ppDescriptorPool)
 {
 	ASSERT_NULL_ARG(ppDescriptorPool);
-	return createObject(pCreateInfo, mDescriptorPools, ppDescriptorPool);
+	return createObject(pCreateInfo, m_descriptorPools, ppDescriptorPool);
 }
 
 void RenderDevice::DestroyDescriptorPool(const DescriptorPool* pDescriptorPool)
 {
 	ASSERT_NULL_ARG(pDescriptorPool);
-	destroyObject(mDescriptorPools, pDescriptorPool);
+	destroyObject(m_descriptorPools, pDescriptorPool);
 }
 
 Result RenderDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutCreateInfo& pCreateInfo, DescriptorSetLayout** ppDescriptorSetLayout)
 {
 	ASSERT_NULL_ARG(ppDescriptorSetLayout);
-	return createObject(pCreateInfo, mDescriptorSetLayouts, ppDescriptorSetLayout);
+	return createObject(pCreateInfo, m_descriptorSetLayouts, ppDescriptorSetLayout);
 }
 
 void RenderDevice::DestroyDescriptorSetLayout(const DescriptorSetLayout* pDescriptorSetLayout)
 {
 	ASSERT_NULL_ARG(pDescriptorSetLayout);
-	destroyObject(mDescriptorSetLayouts, pDescriptorSetLayout);
+	destroyObject(m_descriptorSetLayouts, pDescriptorSetLayout);
 }
 
 Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo& pCreateInfo, DrawPass** ppDrawPass)
@@ -308,7 +308,7 @@ Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo& pCreateInfo, DrawP
 
 	internal::DrawPassCreateInfo createInfo = internal::DrawPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mDrawPasses, ppDrawPass);
+	return createObject(createInfo, m_drawPasses, ppDrawPass);
 }
 
 Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo2& pCreateInfo, DrawPass** ppDrawPass)
@@ -317,7 +317,7 @@ Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo2& pCreateInfo, Draw
 
 	internal::DrawPassCreateInfo createInfo = internal::DrawPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mDrawPasses, ppDrawPass);
+	return createObject(createInfo, m_drawPasses, ppDrawPass);
 }
 
 Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo3& pCreateInfo, DrawPass** ppDrawPass)
@@ -326,55 +326,55 @@ Result RenderDevice::CreateDrawPass(const DrawPassCreateInfo3& pCreateInfo, Draw
 
 	internal::DrawPassCreateInfo createInfo = internal::DrawPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mDrawPasses, ppDrawPass);
+	return createObject(createInfo, m_drawPasses, ppDrawPass);
 }
 
 void RenderDevice::DestroyDrawPass(const DrawPass* pDrawPass)
 {
 	ASSERT_NULL_ARG(pDrawPass);
-	destroyObject(mDrawPasses, pDrawPass);
+	destroyObject(m_drawPasses, pDrawPass);
 }
 
 Result RenderDevice::CreateFence(const FenceCreateInfo& createInfo, Fence** ppFence)
 {
 	ASSERT_NULL_ARG(ppFence);
-	return createObject(createInfo, mFences, ppFence);
+	return createObject(createInfo, m_fences, ppFence);
 }
 
 void RenderDevice::DestroyFence(const Fence* fence)
 {
 	ASSERT_NULL_ARG(fence);
-	destroyObject(mFences, fence);
+	destroyObject(m_fences, fence);
 }
 
 Result RenderDevice::CreateShadingRatePattern(const ShadingRatePatternCreateInfo& pCreateInfo, ShadingRatePattern** ppShadingRatePattern)
 {
 	ASSERT_NULL_ARG(ppShadingRatePattern);
-	return createObject(pCreateInfo, mShadingRatePatterns, ppShadingRatePattern);
+	return createObject(pCreateInfo, m_shadingRatePatterns, ppShadingRatePattern);
 }
 
 void RenderDevice::DestroyShadingRatePattern(const ShadingRatePattern* pShadingRatePattern)
 {
 	ASSERT_NULL_ARG(pShadingRatePattern);
-	destroyObject(mShadingRatePatterns, pShadingRatePattern);
+	destroyObject(m_shadingRatePatterns, pShadingRatePattern);
 }
 
 Result RenderDevice::CreateFullscreenQuad(const FullscreenQuadCreateInfo& pCreateInfo, FullscreenQuad** ppFullscreenQuad)
 {
 	ASSERT_NULL_ARG(ppFullscreenQuad);
-	return createObject(pCreateInfo, mFullscreenQuads, ppFullscreenQuad);
+	return createObject(pCreateInfo, m_fullscreenQuads, ppFullscreenQuad);
 }
 
 void RenderDevice::DestroyFullscreenQuad(const FullscreenQuad* pFullscreenQuad)
 {
 	ASSERT_NULL_ARG(pFullscreenQuad);
-	destroyObject(mFullscreenQuads, pFullscreenQuad);
+	destroyObject(m_fullscreenQuads, pFullscreenQuad);
 }
 
 Result RenderDevice::CreateGraphicsPipeline(const GraphicsPipelineCreateInfo& pCreateInfo, GraphicsPipeline** ppGraphicsPipeline)
 {
 	ASSERT_NULL_ARG(ppGraphicsPipeline);
-	return createObject(pCreateInfo, mGraphicsPipelines, ppGraphicsPipeline);
+	return createObject(pCreateInfo, m_graphicsPipelines, ppGraphicsPipeline);
 }
 
 Result RenderDevice::CreateGraphicsPipeline(const GraphicsPipelineCreateInfo2& pCreateInfo, GraphicsPipeline** ppGraphicsPipeline)
@@ -384,61 +384,61 @@ Result RenderDevice::CreateGraphicsPipeline(const GraphicsPipelineCreateInfo2& p
 	GraphicsPipelineCreateInfo createInfo = {};
 	internal::FillOutGraphicsPipelineCreateInfo(pCreateInfo, &createInfo);
 
-	return createObject(createInfo, mGraphicsPipelines, ppGraphicsPipeline);
+	return createObject(createInfo, m_graphicsPipelines, ppGraphicsPipeline);
 }
 
 void RenderDevice::DestroyGraphicsPipeline(const GraphicsPipeline* pGraphicsPipeline)
 {
 	ASSERT_NULL_ARG(pGraphicsPipeline);
-	destroyObject(mGraphicsPipelines, pGraphicsPipeline);
+	destroyObject(m_graphicsPipelines, pGraphicsPipeline);
 }
 
 Result RenderDevice::CreateImage(const ImageCreateInfo& pCreateInfo, Image** ppImage)
 {
 	ASSERT_NULL_ARG(ppImage);
-	return createObject(pCreateInfo, mImages, ppImage);
+	return createObject(pCreateInfo, m_images, ppImage);
 }
 
 void RenderDevice::DestroyImage(const Image* pImage)
 {
 	ASSERT_NULL_ARG(pImage);
-	destroyObject(mImages, pImage);
+	destroyObject(m_images, pImage);
 }
 
 Result RenderDevice::CreateMesh(const MeshCreateInfo& pCreateInfo, Mesh** ppMesh)
 {
 	ASSERT_NULL_ARG(ppMesh);
-	return createObject(pCreateInfo, mMeshes, ppMesh);
+	return createObject(pCreateInfo, m_meshes, ppMesh);
 }
 
 void RenderDevice::DestroyMesh(const Mesh* pMesh)
 {
 	ASSERT_NULL_ARG(pMesh);
-	destroyObject(mMeshes, pMesh);
+	destroyObject(m_meshes, pMesh);
 }
 
 Result RenderDevice::CreatePipelineInterface(const PipelineInterfaceCreateInfo& pCreateInfo, PipelineInterface** ppPipelineInterface)
 {
 	ASSERT_NULL_ARG(ppPipelineInterface);
-	return createObject(pCreateInfo, mPipelineInterfaces, ppPipelineInterface);
+	return createObject(pCreateInfo, m_pipelineInterfaces, ppPipelineInterface);
 }
 
 void RenderDevice::DestroyPipelineInterface(const PipelineInterface* pPipelineInterface)
 {
 	ASSERT_NULL_ARG(pPipelineInterface);
-	destroyObject(mPipelineInterfaces, pPipelineInterface);
+	destroyObject(m_pipelineInterfaces, pPipelineInterface);
 }
 
 Result RenderDevice::CreateQuery(const QueryCreateInfo& pCreateInfo, Query** ppQuery)
 {
 	ASSERT_NULL_ARG(ppQuery);
-	return createObject(pCreateInfo, mQuerys, ppQuery);
+	return createObject(pCreateInfo, mQueries, ppQuery);
 }
 
 void RenderDevice::DestroyQuery(const Query* pQuery)
 {
 	ASSERT_NULL_ARG(pQuery);
-	destroyObject(mQuerys, pQuery);
+	destroyObject(mQueries, pQuery);
 }
 
 Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo& pCreateInfo, RenderPass** ppRenderPass)
@@ -447,7 +447,7 @@ Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo& pCreateInfo, R
 
 	internal::RenderPassCreateInfo createInfo = internal::RenderPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mRenderPasses, ppRenderPass);
+	return createObject(createInfo, m_renderPasses, ppRenderPass);
 }
 
 Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo2& pCreateInfo, RenderPass** ppRenderPass)
@@ -456,7 +456,7 @@ Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo2& pCreateInfo, 
 
 	internal::RenderPassCreateInfo createInfo = internal::RenderPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mRenderPasses, ppRenderPass);
+	return createObject(createInfo, m_renderPasses, ppRenderPass);
 }
 
 Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo3& pCreateInfo, RenderPass** ppRenderPass)
@@ -465,140 +465,136 @@ Result RenderDevice::CreateRenderPass(const RenderPassCreateInfo3& pCreateInfo, 
 
 	internal::RenderPassCreateInfo createInfo = internal::RenderPassCreateInfo(pCreateInfo);
 
-	return createObject(createInfo, mRenderPasses, ppRenderPass);
+	return createObject(createInfo, m_renderPasses, ppRenderPass);
 }
 
 void RenderDevice::DestroyRenderPass(const RenderPass* pRenderPass)
 {
 	ASSERT_NULL_ARG(pRenderPass);
-	destroyObject(mRenderPasses, pRenderPass);
+	destroyObject(m_renderPasses, pRenderPass);
 }
 
 Result RenderDevice::CreateRenderTargetView(const RenderTargetViewCreateInfo& pCreateInfo, RenderTargetView** ppRenderTargetView)
 {
 	ASSERT_NULL_ARG(ppRenderTargetView);
-	return createObject(pCreateInfo, mRenderTargetViews, ppRenderTargetView);
+	return createObject(pCreateInfo, m_renderTargetViews, ppRenderTargetView);
 }
 
 void RenderDevice::DestroyRenderTargetView(const RenderTargetView* pRenderTargetView)
 {
 	ASSERT_NULL_ARG(pRenderTargetView);
-	destroyObject(mRenderTargetViews, pRenderTargetView);
+	destroyObject(m_renderTargetViews, pRenderTargetView);
 }
 
 Result RenderDevice::CreateSampledImageView(const SampledImageViewCreateInfo& pCreateInfo, SampledImageView** ppSampledImageView)
 {
 	ASSERT_NULL_ARG(ppSampledImageView);
-	return createObject(pCreateInfo, mSampledImageViews, ppSampledImageView);
+	return createObject(pCreateInfo, m_sampledImageViews, ppSampledImageView);
 }
 
 void RenderDevice::DestroySampledImageView(const SampledImageView* pSampledImageView)
 {
 	ASSERT_NULL_ARG(pSampledImageView);
-	destroyObject(mSampledImageViews, pSampledImageView);
+	destroyObject(m_sampledImageViews, pSampledImageView);
 }
 
 Result RenderDevice::CreateSampler(const SamplerCreateInfo& pCreateInfo, Sampler** ppSampler)
 {
 	ASSERT_NULL_ARG(ppSampler);
-	return createObject(pCreateInfo, mSamplers, ppSampler);
+	return createObject(pCreateInfo, m_samplers, ppSampler);
 }
 
 void RenderDevice::DestroySampler(const Sampler* pSampler)
 {
 	ASSERT_NULL_ARG(pSampler);
-	destroyObject(mSamplers, pSampler);
+	destroyObject(m_samplers, pSampler);
 }
 
 Result RenderDevice::CreateSamplerYcbcrConversion(const SamplerYcbcrConversionCreateInfo& pCreateInfo, SamplerYcbcrConversion** ppConversion)
 {
 	ASSERT_NULL_ARG(ppConversion);
-	return createObject(pCreateInfo, mSamplerYcbcrConversions, ppConversion);
+	return createObject(pCreateInfo, m_samplerYcbcrConversions, ppConversion);
 }
 
 void RenderDevice::DestroySamplerYcbcrConversion(const SamplerYcbcrConversion* pConversion)
 {
 	ASSERT_NULL_ARG(pConversion);
-	destroyObject(mSamplerYcbcrConversions, pConversion);
+	destroyObject(m_samplerYcbcrConversions, pConversion);
 }
 
 Result RenderDevice::CreateSemaphore(const SemaphoreCreateInfo& pCreateInfo, Semaphore** ppSemaphore)
 {
 	ASSERT_NULL_ARG(ppSemaphore);
-	return createObject(pCreateInfo, mSemaphores, ppSemaphore);
+	return createObject(pCreateInfo, m_semaphores, ppSemaphore);
 }
 
 void RenderDevice::DestroySemaphore(const Semaphore* pSemaphore)
 {
 	ASSERT_NULL_ARG(pSemaphore);
-	destroyObject(mSemaphores, pSemaphore);
+	destroyObject(m_semaphores, pSemaphore);
 }
 
 Result RenderDevice::CreateShaderModule(const ShaderModuleCreateInfo& pCreateInfo, ShaderModule** ppShaderModule)
 {
 	ASSERT_NULL_ARG(ppShaderModule);
-	return createObject(pCreateInfo, mShaderModules, ppShaderModule);
+	return createObject(pCreateInfo, m_shaderModules, ppShaderModule);
 }
 
 void RenderDevice::DestroyShaderModule(const ShaderModule* pShaderModule)
 {
 	ASSERT_NULL_ARG(pShaderModule);
-	destroyObject(mShaderModules, pShaderModule);
+	destroyObject(m_shaderModules, pShaderModule);
 }
 
 Result RenderDevice::CreateStorageImageView(const StorageImageViewCreateInfo& pCreateInfo, StorageImageView** ppStorageImageView)
 {
 	ASSERT_NULL_ARG(ppStorageImageView);
-	return createObject(pCreateInfo, mStorageImageViews, ppStorageImageView);
+	return createObject(pCreateInfo, m_storageImageViews, ppStorageImageView);
 }
 
 void RenderDevice::DestroyStorageImageView(const StorageImageView* pStorageImageView)
 {
 	ASSERT_NULL_ARG(pStorageImageView);
-	destroyObject(mStorageImageViews, pStorageImageView);
+	destroyObject(m_storageImageViews, pStorageImageView);
 }
 
 Result RenderDevice::CreateTextDraw(const TextDrawCreateInfo& pCreateInfo, TextDraw** ppTextDraw)
 {
 	ASSERT_NULL_ARG(ppTextDraw);
-	return createObject(pCreateInfo, mTextDraws, ppTextDraw);
+	return createObject(pCreateInfo, m_textDraws, ppTextDraw);
 }
 
 void RenderDevice::DestroyTextDraw(const TextDraw* pTextDraw)
 {
 	ASSERT_NULL_ARG(pTextDraw);
-	destroyObject(mTextDraws, pTextDraw);
+	destroyObject(m_textDraws, pTextDraw);
 }
 
 Result RenderDevice::CreateTexture(const TextureCreateInfo& pCreateInfo, Texture** ppTexture)
 {
 	ASSERT_NULL_ARG(ppTexture);
-	return createObject(pCreateInfo, mTextures, ppTexture);
+	return createObject(pCreateInfo, m_textures, ppTexture);
 }
 
 void RenderDevice::DestroyTexture(const Texture* pTexture)
 {
 	ASSERT_NULL_ARG(pTexture);
-	destroyObject(mTextures, pTexture);
+	destroyObject(m_textures, pTexture);
 }
 
 Result RenderDevice::CreateTextureFont(const TextureFontCreateInfo& pCreateInfo, TextureFont** ppTextureFont)
 {
 	ASSERT_NULL_ARG(ppTextureFont);
-	return createObject(pCreateInfo, mTextureFonts, ppTextureFont);
+	return createObject(pCreateInfo, m_textureFonts, ppTextureFont);
 }
 
 void RenderDevice::DestroyTextureFont(const TextureFont* pTextureFont)
 {
 	ASSERT_NULL_ARG(pTextureFont);
-	destroyObject(mTextureFonts, pTextureFont);
+	destroyObject(m_textureFonts, pTextureFont);
 }
 
-Result RenderDevice::AllocateCommandBuffer(
-	const CommandPool* pPool,
-	CommandBuffer** ppCommandBuffer,
-	uint32_t                 resourceDescriptorCount,
-	uint32_t                 samplerDescriptorCount)
+Result RenderDevice::AllocateCommandBuffer(const CommandPool* pPool, CommandBuffer** ppCommandBuffer, uint32_t resourceDescriptorCount, uint32_t samplerDescriptorCount)
 {
 	ASSERT_NULL_ARG(ppCommandBuffer);
 
@@ -607,13 +603,13 @@ Result RenderDevice::AllocateCommandBuffer(
 	createInfo.resourceDescriptorCount = resourceDescriptorCount;
 	createInfo.samplerDescriptorCount = samplerDescriptorCount;
 
-	return createObject(createInfo, mCommandBuffers, ppCommandBuffer);
+	return createObject(createInfo, m_commandBuffers, ppCommandBuffer);
 }
 
 void RenderDevice::FreeCommandBuffer(const CommandBuffer* pCommandBuffer)
 {
 	ASSERT_NULL_ARG(pCommandBuffer);
-	destroyObject(mCommandBuffers, pCommandBuffer);
+	destroyObject(m_commandBuffers, pCommandBuffer);
 }
 
 Result RenderDevice::AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet)
@@ -623,29 +619,25 @@ Result RenderDevice::AllocateDescriptorSet(DescriptorPool* pPool, const Descript
 	ASSERT_NULL_ARG(ppSet);
 
 	// Prevent allocation using layouts that are pushable
-	if (pLayout->IsPushable()) {
-		return ERROR_GRFX_OPERATION_NOT_PERMITTED;
-	}
+	if (pLayout->IsPushable()) return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 
 	internal::DescriptorSetCreateInfo createInfo = {};
 	createInfo.pool = pPool;
 	createInfo.layout = pLayout;
 
-	return createObject(createInfo, mDescriptorSets, ppSet);
+	return createObject(createInfo, m_descriptorSets, ppSet);
 }
 
 void RenderDevice::FreeDescriptorSet(const DescriptorSet* pSet)
 {
 	ASSERT_NULL_ARG(pSet);
-	destroyObject(mDescriptorSets, pSet);
+	destroyObject(m_descriptorSets, pSet);
 }
 
 Result RenderDevice::allocateObject(Buffer** ppObject)
 {
 	Buffer* pObject = new Buffer();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -653,9 +645,7 @@ Result RenderDevice::allocateObject(Buffer** ppObject)
 Result RenderDevice::allocateObject(CommandBuffer** ppObject)
 {
 	CommandBuffer* pObject = new CommandBuffer();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -663,9 +653,7 @@ Result RenderDevice::allocateObject(CommandBuffer** ppObject)
 Result RenderDevice::allocateObject(CommandPool** ppObject)
 {
 	CommandPool* pObject = new CommandPool();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -673,9 +661,7 @@ Result RenderDevice::allocateObject(CommandPool** ppObject)
 Result RenderDevice::allocateObject(ComputePipeline** ppObject)
 {
 	ComputePipeline* pObject = new ComputePipeline();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -683,9 +669,7 @@ Result RenderDevice::allocateObject(ComputePipeline** ppObject)
 Result RenderDevice::allocateObject(DepthStencilView** ppObject)
 {
 	DepthStencilView* pObject = new DepthStencilView();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -693,9 +677,7 @@ Result RenderDevice::allocateObject(DepthStencilView** ppObject)
 Result RenderDevice::allocateObject(DescriptorPool** ppObject)
 {
 	DescriptorPool* pObject = new DescriptorPool();
-	if (IsNull(pObject)) {
-		return ERROR_ALLOCATION_FAILED;
-	}
+	if (IsNull(pObject)) return ERROR_ALLOCATION_FAILED;
 	*ppObject = pObject;
 	return SUCCESS;
 }
@@ -932,21 +914,21 @@ Result RenderDevice::createGraphicsQueue(Queue** ppQueue)
 {
 	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_GRAPHICS };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(createInfo, mGraphicsQueues, ppQueue);
+	return createObject(createInfo, m_graphicsQueues, ppQueue);
 }
 
 Result RenderDevice::createComputeQueue(Queue** ppQueue)
 {
 	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_COMPUTE };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(createInfo, mComputeQueues, ppQueue);
+	return createObject(createInfo, m_computeQueues, ppQueue);
 }
 
 Result RenderDevice::createTransferQueue(Queue** ppQueue)
 {
 	auto createInfo = internal::QueueCreateInfo{ .commandType = COMMAND_TYPE_TRANSFER };
 	ASSERT_NULL_ARG(ppQueue);
-	return createObject(createInfo, mTransferQueues, ppQueue);
+	return createObject(createInfo, m_transferQueues, ppQueue);
 }
 
 template<typename ObjectT, typename CreateInfoT, typename ContainerT>

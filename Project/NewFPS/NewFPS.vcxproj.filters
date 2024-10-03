@@ -56,9 +56,6 @@
     <ClInclude Include="LoaderMapData.h">
       <Filter>game\Map</Filter>
     </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>game\Map</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="game">

@@ -3,16 +3,9 @@
 
 #define DEG2RAD (pi<float>()/180.0f) /*TODO: удалить*/
 
-fileMapData::TileGrid::TileGrid(LoaderMapData* mapMan, size_t width, size_t height, size_t length, float spacing, Tile fill)
+fileMapData::TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Tile fill)
 	: Grid<Tile>(width, height, length, spacing, fill)
 {
-	m_mapMan = mapMan;
-	m_batchFromY = 0;
-	m_batchToY = height - 1;
-	m_batchPosition = glm::vec3(0.0f);
-	m_regenBatches = true;
-	m_regenModel = true;
-	m_modelCulled = false;
 }
 
 fileMapData::Tile fileMapData::TileGrid::GetTile(int i, int j, int k) const
@@ -28,15 +21,11 @@ fileMapData::Tile fileMapData::TileGrid::GetTile(int flatIndex) const
 void fileMapData::TileGrid::SetTile(int i, int j, int k, const Tile& tile)
 {
 	setCel(i, j, k, tile);
-	m_regenBatches = true;
-	m_regenModel = true;
 }
 
 void fileMapData::TileGrid::SetTile(int flatIndex, const Tile& tile)
 {
 	m_grid[flatIndex] = tile;
-	m_regenBatches = true;
-	m_regenModel = true;
 }
 
 std::string fileMapData::TileGrid::GetTileDataBase64() const
@@ -201,30 +190,35 @@ bool LoaderMapData::Setup(std::filesystem::path filePath)
 	file >> jsonData;
 
 	auto tilesData = jsonData.at("tiles");
-
-	m_texturePaths = tilesData.at("textures");
-	m_modelPaths = tilesData.at("shapes");
-	
-	m_tileGrid = fileMapData::TileGrid(this, tilesData.at("width"), tilesData.at("height"), tilesData.at("length"), TILE_SPACING_DEFAULT, fileMapData::Tile());
-	m_tileGrid.SetTileDataBase64(tilesData.at("data"));
-
-	for (size_t x = 0; x < m_tileGrid.GetWidth(); x++)
 	{
-		std::string line = "";
-		for (size_t y = 0; y < m_tileGrid.GetLength(); y++)
-		{
-			auto t = m_tileGrid.GetTile(x, 1, y);
+		m_texturePaths = tilesData.at("textures");
+		m_modelPaths = tilesData.at("shapes");
 
-			line += std::to_string(t.texture);
+		m_tileGrid = fileMapData::TileGrid(tilesData.at("width"), tilesData.at("height"), tilesData.at("length"), fileMapData::TILE_SPACING_DEFAULT, fileMapData::Tile());
+		m_tileGrid.SetTileDataBase64(tilesData.at("data"));
+
+		for (size_t x = 0; x < m_tileGrid.GetWidth(); x++)
+		{
+			std::string line = "";
+			for (size_t y = 0; y < m_tileGrid.GetLength(); y++)
+			{
+				auto t = m_tileGrid.GetTile(x, 1, y);
+
+				line += std::to_string(t.texture);
+			}
+			puts(line.c_str());
 		}
-		puts(line.c_str());
+
 	}
 
 	m_entGrid = fileMapData::EntGrid(m_tileGrid.GetWidth(), m_tileGrid.GetHeight(), m_tileGrid.GetLength());
-	for (const fileMapData::Ent& e : jsonData.at("ents").get<std::vector<fileMapData::Ent>>())
+	auto entData = jsonData.at("ents");
 	{
-		glm::vec3 gridPos = m_entGrid.WorldToGridPos(e.position);
-		m_entGrid.AddEnt((int)gridPos.x, (int)gridPos.y, (int)gridPos.z, e);
+		for (const fileMapData::Ent& e : entData.get<std::vector<fileMapData::Ent>>())
+		{
+			glm::vec3 gridPos = m_entGrid.WorldToGridPos(e.position);
+			m_entGrid.AddEnt((int)gridPos.x, (int)gridPos.y, (int)gridPos.z, e);
+		}
 	}
 
 	if (jsonData.contains("editorCamera"))

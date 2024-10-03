@@ -124,7 +124,6 @@
     <ClInclude Include="Player.h" />
     <ClInclude Include="ShadowPass.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Tile.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
