@@ -51,8 +51,6 @@ public:
 	[[nodiscard]] QueuePtr GetComputeQueue() const;
 	[[nodiscard]] QueuePtr GetAnyAvailableQueue() const;
 
-	CompileResult CompileGLSL(const std::string& shaderSource, VkShaderStageFlagBits shaderStage, const CompilerOptions& options, std::vector<uint32_t>* pSPIRV, std::string* errorMsg);
-
 	std::vector<char> LoadShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName);
 
 	Result CreateShader(const std::filesystem::path& baseDir, const std::filesystem::path& baseName, ShaderModule** ppShaderModule);
@@ -172,7 +170,6 @@ private:
 	Result allocateObject(SamplerYcbcrConversion** ppObject);
 	Result allocateObject(Semaphore** ppObject);
 	Result allocateObject(ShaderModule** ppObject);
-	Result allocateObject(ShaderProgram** ppObject);
 	Result allocateObject(ShadingRatePattern** ppObject);
 	Result allocateObject(StorageImageView** ppObject);
 	Result allocateObject(DrawPass** ppObject);
@@ -224,7 +221,6 @@ private:
 	std::vector<SamplerYcbcrConversionPtr> mSamplerYcbcrConversions;
 	std::vector<SemaphorePtr>              mSemaphores;
 	std::vector<ShaderModulePtr>           mShaderModules;
-	std::vector<ShaderProgramPtr>          mShaderPrograms;
 	std::vector<StorageImageViewPtr>       mStorageImageViews;
 	std::vector<TextDrawPtr>               mTextDraws;
 	std::vector<TexturePtr>                mTextures;

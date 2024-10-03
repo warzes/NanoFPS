@@ -104,8 +104,6 @@ class Sampler;
 class SamplerYcbcrConversion;
 class Semaphore;
 class ShaderModule;
-class ShadingRatePattern;
-class ShaderProgram;
 class TextDraw;
 class Texture;
 class TextureFont;
@@ -142,7 +140,6 @@ using SamplerPtr = ObjPtr<Sampler>;
 using SamplerYcbcrConversionPtr = ObjPtr<SamplerYcbcrConversion>;
 using SemaphorePtr = ObjPtr<Semaphore>;
 using ShaderModulePtr = ObjPtr<ShaderModule>;
-using ShaderProgramPtr = ObjPtr<ShaderProgram>;
 using TextDrawPtr = ObjPtr<TextDraw>;
 using TexturePtr = ObjPtr<Texture>;
 using TextureFontPtr = ObjPtr<TextureFont>;
@@ -742,23 +739,6 @@ enum class YcbcrRange : uint8_t
 {
 	ITU_FULL,
 	ITU_NARROW,
-};
-
-enum CompileResult
-{
-	COMPILE_SUCCESS = 0,
-	COMPILE_ERROR_FAILED = -1,
-	COMPILE_ERROR_UNKNOWN_LANGUAGE = -2,
-	COMPILE_ERROR_INVALID_SOURCE = -3,
-	COMPILE_ERROR_INVALID_ENTRY_POINT = -4,
-	COMPILE_ERROR_INVALID_SHADER_STAGE = -5,
-	COMPILE_ERROR_INVALID_SHADER_MODEL = -6,
-	COMPILE_ERROR_INTERNAL_COMPILER_ERROR = -7,
-	COMPILE_ERROR_PREPROCESS_FAILED = -8,
-	COMPILE_ERROR_COMPILE_FAILED = -9,
-	COMPILE_ERROR_LINK_FAILED = -10,
-	COMPILE_ERROR_MAP_IO_FAILED = -11,
-	COMPILE_ERROR_CODE_GEN_FAILED = -12,
 };
 
 #pragma endregion

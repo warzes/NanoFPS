@@ -133,9 +133,9 @@ Result Semaphore::timelineWait(uint64_t value, uint64_t timeout) const
 	VkSemaphore semaphoreHandle = m_semaphore;
 
 	VkSemaphoreWaitInfo waitInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
-	waitInfo.semaphoreCount = 1;
-	waitInfo.pSemaphores = &semaphoreHandle;
-	waitInfo.pValues = &value;
+	waitInfo.semaphoreCount      = 1;
+	waitInfo.pSemaphores         = &semaphoreHandle;
+	waitInfo.pValues             = &value;
 
 	VkResult vkres = vkWaitSemaphores(GetDevice()->GetVkDevice(), &waitInfo, timeout);
 	if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
@@ -151,8 +151,8 @@ Result Semaphore::timelineSignal(uint64_t value) const
 		VkSemaphore semaphoreHandle = m_semaphore;
 
 		VkSemaphoreSignalInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO };
-		signalInfo.semaphore = m_semaphore;
-		signalInfo.value = value;
+		signalInfo.semaphore             = m_semaphore;
+		signalInfo.value                 = value;
 
 		VkResult vkres = vkSignalSemaphore(GetDevice()->GetVkDevice(), &signalInfo);
 		if (vkres != VK_SUCCESS) return ERROR_API_FAILURE;
@@ -450,38 +450,38 @@ void Buffer::destroyApiObjects()
 
 ImageCreateInfo ImageCreateInfo::SampledImage2D(uint32_t width, uint32_t height, Format format, SampleCount sampleCount, MemoryUsage memoryUsage)
 {
-	ImageCreateInfo ci = {};
-	ci.type = ImageType::Image2D;
-	ci.width = width;
-	ci.height = height;
-	ci.depth = 1;
-	ci.format = format;
-	ci.sampleCount = sampleCount;
-	ci.mipLevelCount = 1;
-	ci.arrayLayerCount = 1;
+	ImageCreateInfo ci         = {};
+	ci.type                    = ImageType::Image2D;
+	ci.width                   = width;
+	ci.height                  = height;
+	ci.depth                   = 1;
+	ci.format                  = format;
+	ci.sampleCount             = sampleCount;
+	ci.mipLevelCount           = 1;
+	ci.arrayLayerCount         = 1;
 	ci.usageFlags.bits.sampled = true;
-	ci.memoryUsage = memoryUsage;
-	ci.initialState = ResourceState::ShaderResource;
-	ci.ApiObject = nullptr;
+	ci.memoryUsage             = memoryUsage;
+	ci.initialState            = ResourceState::ShaderResource;
+	ci.ApiObject               = nullptr;
 	return ci;
 }
 
 ImageCreateInfo ImageCreateInfo::DepthStencilTarget(uint32_t width, uint32_t height, Format format, SampleCount sampleCount)
 {
-	ImageCreateInfo ci = {};
-	ci.type = ImageType::Image2D;
-	ci.width = width;
-	ci.height = height;
-	ci.depth = 1;
-	ci.format = format;
-	ci.sampleCount = sampleCount;
-	ci.mipLevelCount = 1;
-	ci.arrayLayerCount = 1;
-	ci.usageFlags.bits.sampled = true;
+	ImageCreateInfo ci                        = {};
+	ci.type                                   = ImageType::Image2D;
+	ci.width                                  = width;
+	ci.height                                 = height;
+	ci.depth                                  = 1;
+	ci.format                                 = format;
+	ci.sampleCount                            = sampleCount;
+	ci.mipLevelCount                          = 1;
+	ci.arrayLayerCount                        = 1;
+	ci.usageFlags.bits.sampled                = true;
 	ci.usageFlags.bits.depthStencilAttachment = true;
-	ci.memoryUsage = MemoryUsage::GPUOnly;
-	ci.initialState = ResourceState::DepthStencilWrite;
-	ci.ApiObject = nullptr;
+	ci.memoryUsage                            = MemoryUsage::GPUOnly;
+	ci.initialState                           = ResourceState::DepthStencilWrite;
+	ci.ApiObject                              = nullptr;
 	return ci;
 }
 
