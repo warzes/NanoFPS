@@ -36,8 +36,8 @@ public:
 protected:
 	struct Cursor
 	{
-		Vector3 position;
-		Vector3 endPosition;
+		Vector3 position = { 0.0f, 0.0f, 0.0f };
+		Vector3 endPosition = { 0.0f, 0.0f, 0.0f };
 	};
 
 	struct TileCursor : public Cursor

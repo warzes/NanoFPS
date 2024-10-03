@@ -250,7 +250,7 @@ namespace fileMapData
 	void from_json(const nlohmann::json& j, Ent& ent);
 
 	//This represents a grid of entities. 
-//Instead of the grid storing entities directly, it stores iterators into the `_ents` array to save on memory.
+	//Instead of the grid storing entities directly, it stores iterators into the `_ents` array to save on memory.
 	class EntGrid : public Grid<Ent>
 	{
 	public:

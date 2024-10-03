@@ -105,11 +105,9 @@ void fileMapData::TileGrid::SetTileDataBase64(std::string data)
 	size_t gridIndex = 0;
 	for (size_t b = 0; b < bin.size(); b += sizeof(Tile))
 	{
-		// Reinterpret groups of bytes as tiles and place them into the grid.
 		Tile loadedTile = *(reinterpret_cast<Tile*>(&bin[b]));
 		if (loadedTile.shape < 0)
 		{
-			// This tile represents a run of blank tiles
 			int j = 0;
 			for (j = 0; j < -loadedTile.shape; ++j)
 			{
@@ -125,7 +123,6 @@ void fileMapData::TileGrid::SetTileDataBase64(std::string data)
 	}
 }
 
-// Default, inactive entity
 fileMapData::Ent::Ent()
 {
 	active = false;
@@ -200,46 +197,43 @@ bool LoaderMapData::Setup(std::filesystem::path filePath)
 	filePath = "GameData/Maps/" / filePath;
 
 	std::ifstream file(filePath);
-	json jData;
-	file >> jData;
+	json jsonData;
+	file >> jsonData;
 
-	auto tData = jData.at("tiles");
+	auto tilesData = jsonData.at("tiles");
 
-	//Replace our textures with the listed ones
-	std::vector<std::string> texturePaths = tData.at("textures");
-	m_texturePaths.clear();
-	m_texturePaths.reserve(texturePaths.size());
-	for (const auto& path : texturePaths)
+	m_texturePaths = tilesData.at("textures");
+	m_modelPaths = tilesData.at("shapes");
+	
+	m_tileGrid = fileMapData::TileGrid(this, tilesData.at("width"), tilesData.at("height"), tilesData.at("length"), TILE_SPACING_DEFAULT, fileMapData::Tile());
+	m_tileGrid.SetTileDataBase64(tilesData.at("data"));
+
+	for (size_t x = 0; x < m_tileGrid.GetWidth(); x++)
 	{
-		m_texturePaths.push_back(std::filesystem::path(path));
-	}
+		std::string line = "";
+		for (size_t y = 0; y < m_tileGrid.GetLength(); y++)
+		{
+			auto t = m_tileGrid.GetTile(x, 1, y);
 
-	//Same with models
-	std::vector<std::string> shapePaths = tData.at("shapes");
-	m_modelPaths.clear();
-	m_modelPaths.reserve(shapePaths.size());
-	for (const auto& path : shapePaths)
-	{
-		m_modelPaths.push_back(std::filesystem::path(path));
+			line += std::to_string(t.texture);
+		}
+		puts(line.c_str());
 	}
-
-	m_tileGrid = fileMapData::TileGrid(this, tData.at("width"), tData.at("height"), tData.at("length"), TILE_SPACING_DEFAULT, fileMapData::Tile());
-	m_tileGrid.SetTileDataBase64(tData.at("data"));
 
 	m_entGrid = fileMapData::EntGrid(m_tileGrid.GetWidth(), m_tileGrid.GetHeight(), m_tileGrid.GetLength());
-	for (const fileMapData::Ent& e : jData.at("ents").get<std::vector<fileMapData::Ent>>())
+	for (const fileMapData::Ent& e : jsonData.at("ents").get<std::vector<fileMapData::Ent>>())
 	{
 		glm::vec3 gridPos = m_entGrid.WorldToGridPos(e.position);
 		m_entGrid.AddEnt((int)gridPos.x, (int)gridPos.y, (int)gridPos.z, e);
 	}
 
-	if (jData.contains("editorCamera"))
+	if (jsonData.contains("editorCamera"))
 	{
-		json::array_t posArr = jData["editorCamera"]["position"];
+		json::array_t posArr = jsonData["editorCamera"]["position"];
 		m_defaultCameraPosition = glm::vec3{
 		(float)posArr[0], (float)posArr[1], (float)posArr[2]
 		};
-		json::array_t rotArr = jData["editorCamera"]["eulerAngles"];
+		json::array_t rotArr = jsonData["editorCamera"]["eulerAngles"];
 		m_defaultCameraAngles = glm::vec3{
 		(float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD
 		};
