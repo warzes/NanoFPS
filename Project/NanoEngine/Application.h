@@ -109,6 +109,9 @@ private:
 	int32_t           m_previousMouseX = INT32_MAX;
 	int32_t           m_previousMouseY = INT32_MAX;
 	KeyState          m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
+
+	float             m_lastFrameTime{};
+	float             m_deltaTime{};
 };
 
 #pragma endregion

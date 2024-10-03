@@ -60,6 +60,10 @@ void EngineApplication::Run()
 		{
 			if (m_window.ShouldClose()) break;
 
+			float currentFrame = static_cast<float>(glfwGetTime());
+			m_deltaTime = currentFrame - m_lastFrameTime;
+			m_lastFrameTime = currentFrame;
+
 			// Update
 			m_window.Update();
 			m_input.Update();
@@ -97,6 +101,8 @@ bool EngineApplication::setup()
 
 	if (m_status != StatusApp::Success)
 		return false;
+
+	m_lastFrameTime = static_cast<float>(glfwGetTime());
 
 	return true;
 }
@@ -174,7 +180,7 @@ bool EngineApplication::IsWindowMaximized() const
 
 float EngineApplication::GetDeltaTime() const
 {
-	return 0.0001f; // TODO: исправить
+	return m_deltaTime;
 }
 
 void EngineApplication::resizeCallback(uint32_t width, uint32_t height)

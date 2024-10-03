@@ -1,43 +1,18 @@
 #pragma once
 
+#include "Tile.h"
+
 class LoaderMapData;
 
 namespace fileMapData
 {
 #define ENT_SPACING_DEFAULT 2.0f
 #define TILE_SPACING_DEFAULT 2.0f
-#define NO_TEX -1
-#define NO_MODEL -1
 
-	typedef int TexID;
-	typedef int ModelID;
+
+
 	enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
 
-	struct Tile final
-	{
-		Tile() : shape(NO_MODEL), angle(0), texture(NO_TEX), pitch(0) {}
-		Tile(ModelID s, int a, TexID t, int p) : shape(s), angle(a), texture(t), pitch(p) {}
-
-		operator bool() const
-		{
-			return shape > NO_MODEL && texture > NO_TEX;
-		}
-
-		ModelID shape;
-		int angle; //Yaw in whole number of degrees
-		TexID texture;
-		int pitch; //Pitch in whole number of degrees
-	};
-
-	inline bool operator==(const Tile& lhs, const Tile& rhs)
-	{
-		return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.pitch == rhs.pitch);
-	}
-
-	inline bool operator!=(const Tile& lhs, const Tile& rhs)
-	{
-		return !(lhs == rhs);
-	}
 
 	//Represents a 3 dimensional array of tiles and provides functions for converting coordinates.
 	template<class Cel>
