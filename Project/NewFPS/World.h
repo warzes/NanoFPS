@@ -26,9 +26,9 @@ public:
 	std::vector<GameEntity>& GetEntities() { return m_entities; }
 
 private:
-	bool setupDescriptorSetLayout();
+	bool setupPipelineEntities();
 	bool addTestEntities();
-	bool setupEntities();
+
 
 	GameApplication* m_game;
 	Player m_player;
