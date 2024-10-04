@@ -1,6 +1,5 @@
-//
 // Keep things easy for now and use 16-byte aligned types
-//
+
 struct SceneData
 {
     float4x4 ModelMatrix;  // Transforms object space to world space
@@ -17,8 +16,8 @@ struct SceneData
 
 ConstantBuffer<SceneData> Scene : register(b0);
 
-Texture2D                 ShadowDepthTexture : register(t1);
-SamplerComparisonState    ShadowDepthSampler : register(s2);
+Texture2D              ShadowDepthTexture : register(t1);
+SamplerComparisonState ShadowDepthSampler : register(s2);
 
 struct VSOutput {
     float4 PositionWS : POSITION;

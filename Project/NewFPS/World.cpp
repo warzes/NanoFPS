@@ -8,11 +8,11 @@ bool World::Setup(GameApplication* game, const WorldCreateInfo& createInfo)
 	if (!m_player.Setup(m_game, createInfo.player)) return false;
 	if (!m_mainLight.Setup(m_game)) return false;
 
+	if (!m_mapData.Setup(createInfo.startMapName)) return false;
+
 	if (!setupDescriptorSetLayout()) return false;
 	if (!addTestEntities()) return false;
 	if (!setupEntities()) return false;
-
-	if (!m_mapData.Setup(createInfo.startMapName)) return false;
 
 	return true;
 }
@@ -128,7 +128,8 @@ bool World::addTestEntities()
 	vkr::TriMeshOptions options = vkr::TriMeshOptions()
 		.Indices()
 		.VertexColors()
-		.Normals();
+		.Normals()
+		.TexCoords();
 
 	GameEntity mGroundPlane;
 	vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
@@ -155,6 +156,7 @@ bool World::addTestEntities()
 bool World::setupEntities()
 {
 	auto& device = m_game->GetRenderDevice();
+	auto& swapChain = m_game->GetRender().GetSwapChain();
 
 	// Draw object pipeline interface and pipeline
 	{
@@ -171,24 +173,69 @@ bool World::setupEntities()
 		vkr::ShaderModulePtr PS;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.ps", &PS));
 
-		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
-		gpCreateInfo.VS = { VS.Get(), "vsmain" };
-		gpCreateInfo.PS = { PS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 3;
-		gpCreateInfo.vertexInputState.bindings[0] = m_entities[0].mesh->GetDerivedVertexBindings()[0];
-		gpCreateInfo.vertexInputState.bindings[1] = m_entities[0].mesh->GetDerivedVertexBindings()[1];
-		gpCreateInfo.vertexInputState.bindings[2] = m_entities[0].mesh->GetDerivedVertexBindings()[2];
-		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
-		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable = true;
-		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount = 1;
-		gpCreateInfo.outputState.renderTargetFormats[0] = m_game->GetRender().GetSwapChain().GetColorFormat(); // TODO: передавать через креатор
-		gpCreateInfo.outputState.depthStencilFormat = m_game->GetRender().GetSwapChain().GetDepthFormat(); // TODO: передавать через креатор
-		gpCreateInfo.pipelineInterface = m_drawObjectPipelineInterface;
+		vkr::VertexAttribute vertexAttribute0 = {
+			.semanticName = "POSITION",
+			.location = 0,
+			.format = vkr::Format::R32G32B32_FLOAT,
+			.binding = 0,
+			.offset = 0,
+			.inputRate = vkr::VertexInputRate::Vertex,
+			.semantic = vkr::VertexSemantic::Position
+		};
+
+		vkr::VertexAttribute vertexAttribute1 = {
+			.semanticName = "COLOR",
+			.location = 1,
+			.format = vkr::Format::R32G32B32_FLOAT,
+			.binding = 1,
+			.offset = 0,
+			.inputRate = vkr::VertexInputRate::Vertex,
+			.semantic = vkr::VertexSemantic::Color
+		};
+
+		vkr::VertexAttribute vertexAttribute2 = {
+			.semanticName = "NORMAL",
+			.location = 2,
+			.format = vkr::Format::R32G32B32_FLOAT,
+			.binding = 2,
+			.offset = 0,
+			.inputRate = vkr::VertexInputRate::Vertex,
+			.semantic = vkr::VertexSemantic::Normal
+		};
+
+		vkr::VertexBinding vertexBinding0{};
+		vertexBinding0.SetBinding(0);
+		vertexBinding0.SetStride(0);
+		vertexBinding0.AppendAttribute(vertexAttribute0);
+
+		vkr::VertexBinding vertexBinding1{};
+		vertexBinding1.SetBinding(1);
+		vertexBinding1.SetStride(12);
+		vertexBinding1.AppendAttribute(vertexAttribute1);
+
+		vkr::VertexBinding vertexBinding2{};
+		vertexBinding2.SetBinding(2);
+		vertexBinding2.SetStride(12);
+		vertexBinding2.AppendAttribute(vertexAttribute2);
+
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo   = {};
+		gpCreateInfo.VS                                 = { VS.Get(), "vsmain" };
+		gpCreateInfo.PS                                 = { PS.Get(), "psmain" };
+		gpCreateInfo.vertexInputState.bindingCount      = 3;
+		gpCreateInfo.vertexInputState.bindings[0]       = vertexBinding0;
+		gpCreateInfo.vertexInputState.bindings[1]       = vertexBinding1;
+		gpCreateInfo.vertexInputState.bindings[2]       = vertexBinding2;
+		gpCreateInfo.topology                           = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode                        = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode                           = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace                          = vkr::FRONT_FACE_CCW;
+		gpCreateInfo.depthReadEnable                    = true;
+		gpCreateInfo.depthWriteEnable                   = true;
+		gpCreateInfo.blendModes[0]                      = vkr::BLEND_MODE_NONE;
+		gpCreateInfo.outputState.renderTargetCount      = 1;
+		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat(); // TODO: передавать через креатор
+		gpCreateInfo.outputState.depthStencilFormat     = swapChain.GetDepthFormat(); // TODO: передавать через креатор
+		gpCreateInfo.pipelineInterface                  = m_drawObjectPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &m_drawObjectPipeline));
 		device.DestroyShaderModule(VS);

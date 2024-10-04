@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "LoaderMapData.h"
 
-#define DEG2RAD (pi<float>()/180.0f) /*TODO: удалить*/
-
 fileMapData::TileGrid::TileGrid(size_t width, size_t height, size_t length, float spacing, Tile fill)
 	: Grid<Tile>(width, height, length, spacing, fill)
 {
@@ -134,6 +132,8 @@ bool LoaderMapData::Setup(std::filesystem::path filePath)
 
 	if (jsonData.contains("editorCamera"))
 	{
+		const auto DEG2RAD = pi<float>() / 180.0f;
+
 		json::array_t posArr = jsonData["editorCamera"]["position"];
 		m_defaultCameraPosition = glm::vec3{(float)posArr[0], (float)posArr[1], (float)posArr[2]};
 		json::array_t rotArr = jsonData["editorCamera"]["eulerAngles"];
