@@ -189,6 +189,7 @@ constexpr auto DefaultResourceDescriptorCount = 8192u;
 constexpr auto DefaultSampleDescriptorCount = MaxSamplerDescriptors;
 
 constexpr auto MaxSetsPerPool = 1024u;
+
 constexpr auto MaxBoundDescriptorSets = 32u;
 
 constexpr auto RemainingArrayLayers = UINT32_MAX;

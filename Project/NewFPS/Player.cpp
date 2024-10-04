@@ -28,6 +28,8 @@ void Player::ProcessInput(const std::set<KeyCode>& pressedKeys)
 	if (pressedKeys.count(KEY_A) > 0) move(MovementDirection::Left, GetRateOfMove());
 	if (pressedKeys.count(KEY_S) > 0) move(MovementDirection::Backward, GetRateOfMove());
 	if (pressedKeys.count(KEY_D) > 0) move(MovementDirection::Right, GetRateOfMove());
+	if (pressedKeys.count(KEY_E) > 0) move(MovementDirection::Up, GetRateOfMove());
+	if (pressedKeys.count(KEY_Q) > 0) move(MovementDirection::Down, GetRateOfMove());
 
 	updateCamera();
 }
@@ -55,6 +57,14 @@ void Player::move(MovementDirection dir, float distance)
 	else if (dir == MovementDirection::Backward)
 	{
 		m_position += float3(-distance * std::cos(m_azimuth), 0, -distance * std::sin(m_azimuth));
+	}
+	else if (dir == MovementDirection::Up)
+	{
+		m_position += float3(0, distance, 0);
+	}
+	else if (dir == MovementDirection::Down)
+	{
+		m_position -= float3(0, distance, 0);
 	}
 }
 

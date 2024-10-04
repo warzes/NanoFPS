@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "World.h"
 #include "GameApp.h"
 
@@ -10,8 +10,7 @@ bool World::Setup(GameApplication* game, const WorldCreateInfo& createInfo)
 
 	if (!setupPipelineEntities()) return false;
 
-	if (!m_mapData.Setup(createInfo.startMapName)) return false;
-	if (!addTestEntities()) return false;
+	if (!loadMap(createInfo.startMapName)) return false;
 
 	return true;
 }
@@ -35,12 +34,43 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 	cmd->BindGraphicsPipeline(m_drawObjectPipeline);
 	for (size_t i = 0; i < m_entities.size(); ++i)
 	{
-		GameEntity& pEntity = m_entities[i];
+		GameEntity& entity = m_entities[i];
+		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
 
-		cmd->BindGraphicsDescriptorSets(m_drawObjectPipelineInterface, 1, &pEntity.drawDescriptorSet);
-		cmd->BindIndexBuffer(pEntity.mesh);
-		cmd->BindVertexBuffers(pEntity.mesh);
-		cmd->DrawIndexed(pEntity.mesh->GetIndexCount());
+		cmd->BindGraphicsDescriptorSets(m_drawObjectPipelineInterface, 1, &entity.drawDescriptorSet);
+		cmd->BindIndexBuffer(entity.mesh);
+		cmd->BindVertexBuffers(entity.mesh);
+		cmd->DrawIndexed(entity.mesh->GetIndexCount());
+	}
+
+	// Draw Map
+	{
+		auto& tileGrid = m_mapData.GetTileGrid();
+		auto& tileModelFileName = m_mapData.GetModelPaths();
+
+		for (size_t x = 0; x < tileGrid.GetWidth(); x++)
+		{
+			for (size_t y = 0; y < tileGrid.GetLength(); y++)
+			{
+				for (size_t z = 0; z < tileGrid.GetHeight(); z++)
+				{
+					auto tile = tileGrid.GetTile(x, z, y);
+					if (tile.shape == fileMapData::NO_MODEL) continue;
+
+					GameEntity& entity = m_mapTiles[tileModelFileName[tile.shape].string()]; // TODO: переделать
+
+					entity.translate = float3(x, z, y) * tileGrid.GetSpacing();
+					entity.scale = float3(tileGrid.GetSpacing());
+
+					entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
+
+					cmd->BindGraphicsDescriptorSets(m_drawObjectPipelineInterface, 1, &entity.drawDescriptorSet);
+					cmd->BindIndexBuffer(entity.mesh);
+					cmd->BindVertexBuffers(entity.mesh);
+					cmd->DrawIndexed(entity.mesh->GetIndexCount());
+				}
+			}
+		}
 	}
 
 	// Draw light
@@ -49,49 +79,6 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 
 void World::UpdateUniformBuffer()
 {
-	// Update uniform buffers
-	for (size_t i = 0; i < m_entities.size(); ++i)
-	{
-		GameEntity& pEntity = m_entities[i];
-
-		float4x4 T = glm::translate(pEntity.translate);
-		float4x4 R =
-			glm::rotate(pEntity.rotate.z, float3(0, 0, 1)) *
-			glm::rotate(pEntity.rotate.y, float3(0, 1, 0)) *
-			glm::rotate(pEntity.rotate.x, float3(1, 0, 0));
-		float4x4 S = glm::scale(pEntity.scale);
-		float4x4 M = T * R * S;
-
-		// Draw uniform buffers
-		struct Scene
-		{
-			float4x4 ModelMatrix;                // Transforms object space to world space
-			float4x4 NormalMatrix;               // Transforms object space to normal space
-			float4   Ambient;                    // Object's ambient intensity
-			float4x4 CameraViewProjectionMatrix; // Camera's view projection matrix
-			float4   LightPosition;              // Light's position
-			float4x4 LightViewProjectionMatrix;  // Light's view projection matrix
-			uint4    UsePCF;                     // Enable/disable PCF
-		};
-
-		Scene scene = {};
-		scene.ModelMatrix = M;
-		scene.NormalMatrix = glm::inverseTranspose(M);
-		scene.Ambient = float4(0.3f);
-		scene.CameraViewProjectionMatrix = GetPlayer().GetCamera().GetViewProjectionMatrix();
-		scene.LightPosition = float4(GetMainLight().GetPosition(), 0);
-		scene.LightViewProjectionMatrix = GetMainLight().GetCamera().GetViewProjectionMatrix();
-		scene.UsePCF = uint4(m_game->GetGameGraphics().GetShadowPass().UsePCF());
-
-		pEntity.drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
-
-		// Shadow uniform buffers
-		float4x4 PV = GetMainLight().GetCamera().GetViewProjectionMatrix();
-		float4x4 MVP = PV * M; // Yes - the other is reversed
-
-		pEntity.shadowUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);
-	}
-
 	// Update light uniform buffer
 	{
 		float4x4        T = glm::translate(GetMainLight().GetPosition());
@@ -191,8 +178,8 @@ bool World::setupPipelineEntities()
 		gpCreateInfo.depthWriteEnable = true;
 		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
 		gpCreateInfo.outputState.renderTargetCount = 1;
-		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat(); // TODO: ���������� ����� �������
-		gpCreateInfo.outputState.depthStencilFormat = swapChain.GetDepthFormat(); // TODO: ���������� ����� �������
+		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat(); // TODO: передавать через креатор
+		gpCreateInfo.outputState.depthStencilFormat = swapChain.GetDepthFormat(); // TODO: передавать через креатор
 		gpCreateInfo.pipelineInterface = m_drawObjectPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &m_drawObjectPipeline));
@@ -202,7 +189,6 @@ bool World::setupPipelineEntities()
 
 	return true;
 }
-
 
 bool World::addTestEntities()
 {
@@ -235,6 +221,58 @@ bool World::addTestEntities()
 	mKnob.rotate = float3(0, glm::radians(180.0f), 0);
 	mKnob.scale = float3(2, 2, 2);
 	m_entities.emplace_back(mKnob);
+
+	return true;
+}
+
+bool World::loadMap(std::string_view mapFileName)
+{
+	if (!m_mapData.Setup(mapFileName)) return false;
+	if (!addTestEntities()) return false;
+
+	auto& device = m_game->GetRenderDevice();
+	auto& gameGraphics = m_game->GetGameGraphics();
+	vkr::DescriptorPoolPtr descriptorPool = gameGraphics.GetDescriptorPool();
+	ShadowPass& shadowPassData = gameGraphics.GetShadowPass();
+
+	vkr::TriMeshOptions options = vkr::TriMeshOptions()
+		.Indices()
+		.VertexColors()
+		.Normals()
+		.TexCoords();
+
+	auto& tileGrid = m_mapData.GetTileGrid();
+	auto& tileModelFileName = m_mapData.GetModelPaths();
+
+	for (size_t i = 0; i < tileModelFileName.size(); i++)
+	{
+		// TODO: в будущем переделать чтобы оно не грузило одни и теже модели
+		// а также собирало батчи
+		vkr::TriMesh mesh = vkr::TriMesh::CreateFromOBJ(tileModelFileName[i], vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f)));
+
+		GameEntity entity;
+		entity.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+		m_mapTiles[tileModelFileName[i].string()] = entity;
+		//m_mapTiles2[tileModelFileName[i].string()] = mesh;
+	}
+	
+	/*for (size_t x = 0; x < tileGrid.GetWidth(); x++)
+	{
+		for (size_t y = 0; y < tileGrid.GetLength(); y++)
+		{
+			for (size_t z = 0; z < tileGrid.GetHeight(); z++)
+			{
+				auto tile = tileGrid.GetTile(x, z, y);
+				if (tile.shape == fileMapData::NO_MODEL) continue;
+
+				GameEntity entity;
+				entity.Setup(device, m_mapTiles2[tileModelFileName[tile.shape].string()], descriptorPool, m_drawObjectSetLayout, shadowPassData);
+				entity.translate = float3(x, z, y) * 2.0f;
+				m_entities.emplace_back(entity);
+				puts(std::to_string(m_entities.size()).c_str());
+			}
+		}
+	}*/
 
 	return true;
 }

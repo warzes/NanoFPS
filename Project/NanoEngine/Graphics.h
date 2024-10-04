@@ -101,6 +101,7 @@ private:
 class ArcballCamera : public PerspectiveCamera
 {
 public:
+	ArcballCamera() = default;
 	ArcballCamera(float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
 	ArcballCamera(const float3& eye, const float3& target, const float3& up, float horizFovDegrees, float aspect, float nearClip = CAMERA_DEFAULT_NEAR_CLIP, float farClip = CAMERA_DEFAULT_FAR_CLIP);
 

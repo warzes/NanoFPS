@@ -28,7 +28,7 @@ public:
 private:
 	bool setupPipelineEntities();
 	bool addTestEntities();
-
+	bool loadMap(std::string_view mapFileName);
 
 	GameApplication* m_game;
 	Player m_player;
@@ -42,4 +42,6 @@ private:
 
 	// Map
 	LoaderMapData m_mapData;
+	std::unordered_map<std::string, GameEntity> m_mapTiles;
+	std::unordered_map<std::string, vkr::TriMesh> m_mapTiles2;
 };

@@ -7,7 +7,9 @@ enum class MovementDirection
 	Forward,
 	Left,
 	Right,
-	Backward
+	Backward,
+	Up,
+	Down,
 };
 
 struct PlayerCreateInfo final

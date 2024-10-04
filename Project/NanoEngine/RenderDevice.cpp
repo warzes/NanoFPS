@@ -612,26 +612,25 @@ void RenderDevice::FreeCommandBuffer(const CommandBuffer* pCommandBuffer)
 	destroyObject(m_commandBuffers, pCommandBuffer);
 }
 
-Result RenderDevice::AllocateDescriptorSet(DescriptorPool* pPool, const DescriptorSetLayout* pLayout, DescriptorSet** ppSet)
+Result RenderDevice::AllocateDescriptorSet(DescriptorPool* pool, const DescriptorSetLayout* layout, DescriptorSet** set)
 {
-	ASSERT_NULL_ARG(pPool);
-	ASSERT_NULL_ARG(pLayout);
-	ASSERT_NULL_ARG(ppSet);
+	ASSERT_NULL_ARG(pool);
+	ASSERT_NULL_ARG(layout);
+	ASSERT_NULL_ARG(set);
 
 	// Prevent allocation using layouts that are pushable
-	if (pLayout->IsPushable()) return ERROR_GRFX_OPERATION_NOT_PERMITTED;
+	if (layout->IsPushable()) return ERROR_GRFX_OPERATION_NOT_PERMITTED;
 
 	internal::DescriptorSetCreateInfo createInfo = {};
-	createInfo.pool = pPool;
-	createInfo.layout = pLayout;
-
-	return createObject(createInfo, m_descriptorSets, ppSet);
+	createInfo.pool                              = pool;
+	createInfo.layout                            = layout;
+	return createObject(createInfo, m_descriptorSets, set);
 }
 
-void RenderDevice::FreeDescriptorSet(const DescriptorSet* pSet)
+void RenderDevice::FreeDescriptorSet(const DescriptorSet* set)
 {
-	ASSERT_NULL_ARG(pSet);
-	destroyObject(m_descriptorSets, pSet);
+	ASSERT_NULL_ARG(set);
+	destroyObject(m_descriptorSets, set);
 }
 
 Result RenderDevice::allocateObject(Buffer** ppObject)

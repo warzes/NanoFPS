@@ -602,30 +602,30 @@ void Fatal(const std::string& msg);
         assert(false);                                                \
     }
 
-#define CHECKED_CALL(EXPR)                                                 \
-    {                                                                      \
-        Result checkedResult = EXPR;                                       \
-        if (checkedResult != SUCCESS) {                                    \
-            ::Fatal(std::string("*** Call Failed ***\n")                   \
-                + std::string("Return     : ") + ToString(checkedResult)   \
-                + std::string("Expression : ") + #EXPR + "\n"              \
-                + std::string("Function   : ") + __FUNCTION__ + "\n"       \
-                + std::string("Location   : ") + __FILE__ + " : " + LINE); \
-            assert(false);                                                 \
-        }                                                                  \
+#define CHECKED_CALL(EXPR)                                                        \
+    {                                                                             \
+        Result checkedResult = EXPR;                                              \
+        if (checkedResult != SUCCESS) {                                           \
+            ::Fatal(std::string("*** Call Failed ***\n")                          \
+                + std::string("\tReturn     : ") + ToString(checkedResult) + "\n" \
+                + std::string("\tExpression : ") + #EXPR + "\n"                   \
+                + std::string("\tFunction   : ") + __FUNCTION__ + "\n"            \
+                + std::string("\tLocation   : ") + __FILE__ + " : " + LINE);      \
+            assert(false);                                                        \
+        }                                                                         \
     }
 
-#define CHECKED_CALL_AND_RETURN_FALSE(EXPR)                                \
-    {                                                                      \
-        Result checkedResult = EXPR;                                       \
-        if (checkedResult != SUCCESS) {                                    \
-            ::Fatal(std::string("*** Call Failed ***\n")                   \
-                + std::string("Return     : ") + ToString(checkedResult)   \
-                + std::string("Expression : ") + #EXPR + "\n"              \
-                + std::string("Function   : ") + __FUNCTION__ + "\n"       \
-                + std::string("Location   : ") + __FILE__ + " : " + LINE); \
-            return false;                                                  \
-        }                                                                  \
+#define CHECKED_CALL_AND_RETURN_FALSE(EXPR)                                       \
+    {                                                                             \
+        Result checkedResult = EXPR;                                              \
+        if (checkedResult != SUCCESS) {                                           \
+            ::Fatal(std::string("*** Call Failed ***\n")                          \
+                + std::string("\tReturn     : ") + ToString(checkedResult) + "\n" \
+                + std::string("\tExpression : ") + #EXPR + "\n"                   \
+                + std::string("\tFunction   : ") + __FUNCTION__ + "\n"            \
+                + std::string("\tLocation   : ") + __FILE__ + " : " + LINE);      \
+            return false;                                                         \
+        }                                                                         \
     }
 
 // TODO: удалить
