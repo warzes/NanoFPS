@@ -2789,16 +2789,14 @@ TriMesh TriMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, cons
 
 Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options, TriMesh* pTriMesh)
 {
-	if (IsNull(pTriMesh)) {
-		return ERROR_UNEXPECTED_NULL_ARGUMENT;
-	}
+	if (IsNull(pTriMesh)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
 	/*Timer timer; // TODO: замер времени
 	ASSERT_MSG(timer.Start() == TIMER_RESULT_SUCCESS, "timer start failed");
 	double fnStartTime = timer.SecondsSinceStart();*/
 
 	// Determine index type and tex coord dim
-	IndexType     indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
+	IndexType indexType = options.mEnableIndices ? IndexType::Uint32 : IndexType::Undefined;
 	TriMeshAttributeDim texCoordDim = options.mEnableTexCoords ? TRI_MESH_ATTRIBUTE_DIM_2 : TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 
 	// Create new mesh
@@ -2819,54 +2817,21 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 	std::vector<tinyobj::material_t> materials;
 
 	FileStream objStream;
-	if (!objStream.Open(path.string().c_str())) {
-		return ERROR_GEOMETRY_FILE_LOAD_FAILED;
-	}
+	if (!objStream.Open(path.string().c_str())) return ERROR_GEOMETRY_FILE_LOAD_FAILED;
 
-	std::string  warn;
-	std::string  err;
+	std::string warn;
+	std::string err;
 	std::istream istr(&objStream);
-	bool         loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &istr, nullptr, true);
-	if (!loaded || !err.empty()) {
-		return ERROR_GEOMETRY_FILE_LOAD_FAILED;
-	}
+	bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &istr, nullptr, true);
+	if (!loaded || !err.empty()) return ERROR_GEOMETRY_FILE_LOAD_FAILED;
 
 	size_t numShapes = shapes.size();
-	if (numShapes == 0) {
-		return ERROR_GEOMETRY_FILE_NO_DATA;
-	}
-
-	//// Check to see if data can be indexed
-	// bool indexable = true;
-	// for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
-	//     const tinyobj::shape_t& shape     = shapes[shapeIdx];
-	//     const tinyobj::mesh_t&  shapeMesh = shape.mesh;
-	//
-	//     size_t numTriangles = shapeMesh.indices.size() / 3;
-	//     for (size_t triIdx = 0; triIdx < numTriangles; ++triIdx) {
-	//         size_t triVtxIdx0 = triIdx * 3 + 0;
-	//         size_t triVtxIdx1 = triIdx * 3 + 1;
-	//         size_t triVtxIdx2 = triIdx * 3 + 2;
-	//
-	//         // Index data
-	//         const tinyobj::index_t& dataIdx0 = shapeMesh.indices[triVtxIdx0];
-	//         const tinyobj::index_t& dataIdx1 = shapeMesh.indices[triVtxIdx1];
-	//         const tinyobj::index_t& dataIdx2 = shapeMesh.indices[triVtxIdx2];
-	//
-	//         bool sameIdx0 = (dataIdx0.vertex_index == dataIdx0.normal_index) && (dataIdx0.normal_index == dataIdx0.texcoord_index);
-	//         bool sameIdx1 = (dataIdx1.vertex_index == dataIdx1.normal_index) && (dataIdx1.normal_index == dataIdx1.texcoord_index);
-	//         bool sameIdx2 = (dataIdx2.vertex_index == dataIdx2.normal_index) && (dataIdx2.normal_index == dataIdx2.texcoord_index);
-	//         bool same     = sameIdx0 && sameIdx1 && sameIdx2;
-	//         if (!same) {
-	//            indexable = false;
-	//            break;
-	//         }
-	//     }
-	// }
+	if (numShapes == 0) return ERROR_GEOMETRY_FILE_NO_DATA;
 
 	// Preallocate based on the total number of triangles.
 	size_t totalTriangles = 0;
-	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
+	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx)
+	{
 		totalTriangles += shapes[shapeIdx].mesh.indices.size() / 3;
 	}
 	pTriMesh->PreallocateForTriangleCount(totalTriangles,
@@ -2876,12 +2841,14 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 		options.mEnableTangents);
 
 	// Build geometry
-	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx) {
+	for (size_t shapeIdx = 0; shapeIdx < numShapes; ++shapeIdx)
+	{
 		const tinyobj::shape_t& shape = shapes[shapeIdx];
 		const tinyobj::mesh_t& shapeMesh = shape.mesh;
 
 		size_t numTriangles = shapeMesh.indices.size() / 3;
-		for (size_t triIdx = 0; triIdx < numTriangles; ++triIdx) {
+		for (size_t triIdx = 0; triIdx < numTriangles; ++triIdx)
+		{
 			size_t triVtxIdx0 = triIdx * 3 + 0;
 			size_t triVtxIdx1 = triIdx * 3 + 1;
 			size_t triVtxIdx2 = triIdx * 3 + 2;
@@ -2973,8 +2940,10 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 			uint32_t triVtx1 = pTriMesh->AppendPosition(pos1) - 1;
 			uint32_t triVtx2 = pTriMesh->AppendPosition(pos2) - 1;
 
-			if (options.mEnableVertexColors || options.mEnableObjectColor) {
-				if (options.mEnableObjectColor) {
+			if (options.mEnableVertexColors || options.mEnableObjectColor)
+			{
+				if (options.mEnableObjectColor)
+				{
 					vtx0.color = options.mObjectColor;
 					vtx1.color = options.mObjectColor;
 					vtx2.color = options.mObjectColor;
@@ -2984,19 +2953,22 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 				pTriMesh->AppendColor(vtx2.color);
 			}
 
-			if (options.mEnableNormals) {
+			if (options.mEnableNormals)
+			{
 				pTriMesh->AppendNormal(vtx0.normal);
 				pTriMesh->AppendNormal(vtx1.normal);
 				pTriMesh->AppendNormal(vtx2.normal);
 			}
 
-			if (options.mEnableTexCoords) {
+			if (options.mEnableTexCoords)
+			{
 				pTriMesh->AppendTexCoord(vtx0.texCoord);
 				pTriMesh->AppendTexCoord(vtx1.texCoord);
 				pTriMesh->AppendTexCoord(vtx2.texCoord);
 			}
 
-			if (options.mEnableTangents) {
+			if (options.mEnableTangents)
+			{
 				float3 edge1 = vtx1.position - vtx0.position;
 				float3 edge2 = vtx2.position - vtx0.position;
 				float2 duv1 = vtx1.texCoord - vtx0.texCoord;
@@ -3024,8 +2996,10 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 				pTriMesh->AppendBitangent(-bitangent);
 			}
 
-			if (indexType != IndexType::Undefined) {
-				if (options.mInvertWinding) {
+			if (indexType != IndexType::Undefined)
+			{
+				if (options.mInvertWinding)
+				{
 					pTriMesh->AppendTriangle(triVtx0, triVtx2, triVtx1);
 				}
 				else {
@@ -3034,19 +3008,6 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 			}
 		}
 	}
-
-	// if (options.mEnableTangents) {
-	//     size_t numPositions  = mesh.mPositions.size();
-	//     size_t numNormals    = mesh.mNormals.size();
-	//     size_t numTangents   = mesh.mTangents.size();
-	//     size_t numBitangents = mesh.mBitangents.size();
-	//     ASSERT_MSG(numPositions == numNormals == numTangents == numBitangents, "misaligned data for tangent calculation");
-	//
-	//     for (size_t i = 0; i < numPositions; ++i) {
-	//         const float3& T = mesh.mTangents[i];
-	//         const float3& B = mesh.mBitangents[i];
-	//     }
-	// }
 
 	//double fnEndTime = timer.SecondsSinceStart();
 	//float  fnElapsed = static_cast<float>(fnEndTime - fnStartTime);
@@ -4502,30 +4463,32 @@ Result Geometry::Create(const GeometryCreateInfo& createInfo, Geometry* pGeometr
 	return SUCCESS;
 }
 
-Result Geometry::Create(
-	const GeometryCreateInfo& createInfo,
-	const TriMesh& mesh,
-	Geometry* pGeometry)
+Result Geometry::Create(const GeometryCreateInfo& createInfo, const TriMesh& mesh, Geometry* pGeometry)
 {
 	// Create geometry
 	Result ppxres = Geometry::Create(createInfo, pGeometry);
-	if (Failed(ppxres)) {
+	if (Failed(ppxres))
+	{
 		Fatal("failed creating geometry");
 		return ppxres;
 	}
 
 	// Target geometry WITHOUT index data
-	if (createInfo.indexType == IndexType::Undefined) {
+	if (createInfo.indexType == IndexType::Undefined)
+	{
 		// Mesh has index data
-		if (mesh.GetIndexType() != IndexType::Undefined) {
+		if (mesh.GetIndexType() != IndexType::Undefined)
+		{
 			// Iterate through the meshes triangles and add vertex data for each triangle vertex
 			uint32_t triCount = mesh.GetCountTriangles();
-			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex)
+			{
 				uint32_t vtxIndex0 = VALUE_IGNORED;
 				uint32_t vtxIndex1 = VALUE_IGNORED;
 				uint32_t vtxIndex2 = VALUE_IGNORED;
 				ppxres = mesh.GetTriangle(triIndex, vtxIndex0, vtxIndex1, vtxIndex2);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting triangle indices at triIndex=" + std::to_string(triIndex));
 					return ppxres;
 				}
@@ -4533,21 +4496,24 @@ Result Geometry::Create(
 				// First vertex
 				TriMeshVertexData vertexData0 = {};
 				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
 					return ppxres;
 				}
 				// Second vertex
 				TriMeshVertexData vertexData1 = {};
 				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
 					return ppxres;
 				}
 				// Third vertex
 				TriMeshVertexData vertexData2 = {};
 				ppxres = mesh.GetVertexData(vtxIndex2, &vertexData2);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex2=" + std::to_string(vtxIndex2));
 					return ppxres;
 				}
@@ -4558,7 +4524,8 @@ Result Geometry::Create(
 			}
 		}
 		// Mesh does not have index data
-		else {
+		else
+		{
 			// Iterate through the meshes vertx data and add it to the geometry
 			uint32_t vertexCount = mesh.GetCountPositions();
 			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
@@ -4573,17 +4540,21 @@ Result Geometry::Create(
 		}
 	}
 	// Target geometry WITH index data
-	else {
+	else
+	{
 		// Mesh has index data
-		if (mesh.GetIndexType() != IndexType::Undefined) {
+		if (mesh.GetIndexType() != IndexType::Undefined)
+		{
 			// Iterate the meshes triangles and add the vertex indices
 			uint32_t triCount = mesh.GetCountTriangles();
-			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex)
+			{
 				uint32_t v0 = VALUE_IGNORED;
 				uint32_t v1 = VALUE_IGNORED;
 				uint32_t v2 = VALUE_IGNORED;
 				ppxres = mesh.GetTriangle(triIndex, v0, v1, v2);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("couldn't get triangle at triIndex=" + std::to_string(triIndex));
 					return ppxres;
 				}
@@ -4592,10 +4563,12 @@ Result Geometry::Create(
 
 			// Iterate through the meshes vertx data and add it to the geometry
 			uint32_t vertexCount = mesh.GetCountPositions();
-			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+			for (uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+			{
 				TriMeshVertexData vertexData = {};
 				ppxres = mesh.GetVertexData(vertexIndex, &vertexData);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vertexIndex=" + std::to_string(vertexIndex));
 					return ppxres;
 				}
@@ -4603,10 +4576,12 @@ Result Geometry::Create(
 			}
 		}
 		// Mesh does not have index data
-		else {
+		else
+		{
 			// Use every 3 vertices as a triangle and add each as an indexed triangle
 			uint32_t triCount = mesh.GetCountPositions() / 3;
-			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex) {
+			for (uint32_t triIndex = 0; triIndex < triCount; ++triIndex)
+			{
 				uint32_t vtxIndex0 = 3 * triIndex + 0;
 				uint32_t vtxIndex1 = 3 * triIndex + 1;
 				uint32_t vtxIndex2 = 3 * triIndex + 2;
@@ -4614,21 +4589,24 @@ Result Geometry::Create(
 				// First vertex
 				TriMeshVertexData vertexData0 = {};
 				ppxres = mesh.GetVertexData(vtxIndex0, &vertexData0);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex0=" + std::to_string(vtxIndex0));
 					return ppxres;
 				}
 				// Second vertex
 				TriMeshVertexData vertexData1 = {};
 				ppxres = mesh.GetVertexData(vtxIndex1, &vertexData1);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex1=" + std::to_string(vtxIndex1));
 					return ppxres;
 				}
 				// Third vertex
 				TriMeshVertexData vertexData2 = {};
 				ppxres = mesh.GetVertexData(vtxIndex2, &vertexData2);
-				if (Failed(ppxres)) {
+				if (Failed(ppxres))
+				{
 					Fatal("failed getting vertex data at vtxIndex2=" + std::to_string(vtxIndex2));
 					return ppxres;
 				}
@@ -4642,10 +4620,7 @@ Result Geometry::Create(
 	return SUCCESS;
 }
 
-Result Geometry::Create(
-	const GeometryCreateInfo& createInfo,
-	const WireMesh& mesh,
-	Geometry* pGeometry)
+Result Geometry::Create(const GeometryCreateInfo& createInfo, const WireMesh& mesh, Geometry* pGeometry)
 {
 	// Create geometry
 	Result ppxres = Geometry::Create(createInfo, pGeometry);
@@ -4775,33 +4750,21 @@ Result Geometry::Create(
 
 Result Geometry::Create(const TriMesh& mesh, Geometry* pGeometry)
 {
-	GeometryCreateInfo createInfo = {};
+	GeometryCreateInfo createInfo    = {};
 	createInfo.vertexAttributeLayout = GEOMETRY_VERTEX_ATTRIBUTE_LAYOUT_PLANAR;
-	createInfo.indexType = mesh.GetIndexType();
-	createInfo.primitiveTopology = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	createInfo.indexType             = mesh.GetIndexType();
+	createInfo.primitiveTopology     = PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 	createInfo.AddPosition();
 
-	if (mesh.HasColors()) {
-		createInfo.AddColor();
-	}
-	if (mesh.HasNormals()) {
-		createInfo.AddNormal();
-	}
-	if (mesh.HasTexCoords()) {
-		createInfo.AddTexCoord();
-	}
-	if (mesh.HasTangents()) {
-		createInfo.AddTangent();
-	}
-	if (mesh.HasBitangents()) {
-		createInfo.AddBitangent();
-	}
+	if (mesh.HasColors())     createInfo.AddColor();
+	if (mesh.HasNormals())    createInfo.AddNormal();
+	if (mesh.HasTexCoords())  createInfo.AddTexCoord();
+	if (mesh.HasTangents())   createInfo.AddTangent();
+	if (mesh.HasBitangents()) createInfo.AddBitangent();
 
 	Result ppxres = Create(createInfo, mesh, pGeometry);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
+	if (Failed(ppxres)) return ppxres;
 
 	return SUCCESS;
 }
@@ -4815,14 +4778,10 @@ Result Geometry::Create(const WireMesh& mesh, Geometry* pGeometry)
 
 	createInfo.AddPosition();
 
-	if (mesh.HasColors()) {
-		createInfo.AddColor();
-	}
+	if (mesh.HasColors()) createInfo.AddColor();
 
 	Result ppxres = Create(createInfo, mesh, pGeometry);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
+	if (Failed(ppxres)) return ppxres;
 
 	return SUCCESS;
 }
@@ -4881,15 +4840,9 @@ uint32_t Geometry::GetLargestBufferSize() const
 
 void Geometry::AppendIndex(uint32_t idx)
 {
-	if (mCreateInfo.indexType == IndexType::Uint16) {
-		mIndexBuffer.Append(static_cast<uint16_t>(idx));
-	}
-	else if (mCreateInfo.indexType == IndexType::Uint32) {
-		mIndexBuffer.Append(idx);
-	}
-	else if (mCreateInfo.indexType == IndexType::Uint8) {
-		mIndexBuffer.Append(static_cast<uint8_t>(idx));
-	}
+	if (mCreateInfo.indexType == IndexType::Uint16) mIndexBuffer.Append(static_cast<uint16_t>(idx));
+	else if (mCreateInfo.indexType == IndexType::Uint32) mIndexBuffer.Append(idx);
+	else if (mCreateInfo.indexType == IndexType::Uint8) mIndexBuffer.Append(static_cast<uint8_t>(idx));
 }
 
 void Geometry::AppendIndicesTriangle(uint32_t idx0, uint32_t idx1, uint32_t idx2)

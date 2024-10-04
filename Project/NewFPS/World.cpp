@@ -35,42 +35,10 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 	for (size_t i = 0; i < m_entities.size(); ++i)
 	{
 		GameEntity& entity = m_entities[i];
-		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
-
 		cmd->BindGraphicsDescriptorSets(m_drawObjectPipelineInterface, 1, &entity.drawDescriptorSet);
 		cmd->BindIndexBuffer(entity.mesh);
 		cmd->BindVertexBuffers(entity.mesh);
 		cmd->DrawIndexed(entity.mesh->GetIndexCount());
-	}
-
-	// Draw Map
-	{
-		auto& tileGrid = m_mapData.GetTileGrid();
-		auto& tileModelFileName = m_mapData.GetModelPaths();
-
-		for (size_t x = 0; x < tileGrid.GetWidth(); x++)
-		{
-			for (size_t y = 0; y < tileGrid.GetLength(); y++)
-			{
-				for (size_t z = 0; z < tileGrid.GetHeight(); z++)
-				{
-					auto tile = tileGrid.GetTile(x, z, y);
-					if (tile.shape == fileMapData::NO_MODEL) continue;
-
-					GameEntity& entity = m_mapTiles[tileModelFileName[tile.shape].string()]; // TODO: переделать
-
-					entity.translate = float3(x, z, y) * tileGrid.GetSpacing();
-					entity.scale = float3(tileGrid.GetSpacing());
-
-					entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
-
-					cmd->BindGraphicsDescriptorSets(m_drawObjectPipelineInterface, 1, &entity.drawDescriptorSet);
-					cmd->BindIndexBuffer(entity.mesh);
-					cmd->BindVertexBuffers(entity.mesh);
-					cmd->DrawIndexed(entity.mesh->GetIndexCount());
-				}
-			}
-		}
 	}
 
 	// Draw light
@@ -79,6 +47,12 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 
 void World::UpdateUniformBuffer()
 {
+	for (size_t i = 0; i < m_entities.size(); ++i)
+	{
+		GameEntity& entity = m_entities[i];
+		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
+	}
+
 	// Update light uniform buffer
 	{
 		float4x4        T = glm::translate(GetMainLight().GetPosition());
@@ -192,37 +166,42 @@ bool World::setupPipelineEntities()
 
 bool World::addTestEntities()
 {
-	auto& device = m_game->GetRenderDevice();
-	auto& gameGraphics = m_game->GetGameGraphics();
-	vkr::DescriptorPoolPtr descriptorPool = gameGraphics.GetDescriptorPool();
-	ShadowPass& shadowPassData = gameGraphics.GetShadowPass();
+	//auto& device = m_game->GetRenderDevice();
+	//auto& gameGraphics = m_game->GetGameGraphics();
+	//vkr::DescriptorPoolPtr descriptorPool = gameGraphics.GetDescriptorPool();
+	//ShadowPass& shadowPassData = gameGraphics.GetShadowPass();
 
-	vkr::TriMeshOptions options = vkr::TriMeshOptions()
-		.Indices()
-		.VertexColors()
-		.Normals()
-		.TexCoords();
+	//vkr::TriMeshOptions options = vkr::TriMeshOptions()
+	//	.Indices()
+	//	.VertexColors()
+	//	.Normals()
+	//	.TexCoords();
 
-	GameEntity mGroundPlane;
-	vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
-	mGroundPlane.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-	m_entities.emplace_back(mGroundPlane);
+	//GameEntity mGroundPlane;
+	//vkr::TriMesh mesh = vkr::TriMesh::CreatePlane(vkr::TRI_MESH_PLANE_POSITIVE_Y, float2(50, 50), 1, 1, vkr::TriMeshOptions(options).ObjectColor(float3(0.7f)));
+	//mGroundPlane.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+	//m_entities.emplace_back(mGroundPlane);
 
-	GameEntity mCube;
-	mesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), vkr::TriMeshOptions(options).ObjectColor(float3(0.5f, 0.5f, 0.7f)));
-	mCube.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-	mCube.translate = float3(-2, 1, 0);
-	m_entities.emplace_back(mCube);
+	//GameEntity mCube;
+	//mesh = vkr::TriMesh::CreateCube(float3(2, 2, 2), vkr::TriMeshOptions(options).ObjectColor(float3(0.5f, 0.5f, 0.7f)));
+	//mCube.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+	//mCube.translate = float3(-2, 1, 0);
+	//m_entities.emplace_back(mCube);
 
-	GameEntity mKnob;
-	mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 0.2f)));
-	mKnob.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-	mKnob.translate = float3(2, 1, 0);
-	mKnob.rotate = float3(0, glm::radians(180.0f), 0);
-	mKnob.scale = float3(2, 2, 2);
-	m_entities.emplace_back(mKnob);
+	//GameEntity mKnob;
+	//mesh = vkr::TriMesh::CreateFromOBJ("basic/models/material_sphere.obj", vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 0.2f)));
+	//mKnob.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+	//mKnob.translate = float3(2, 1, 0);
+	//mKnob.rotate = float3(0, glm::radians(180.0f), 0);
+	//mKnob.scale = float3(2, 2, 2);
+	//m_entities.emplace_back(mKnob);
 
 	return true;
+}
+
+void MergeTriMesh(const vkr::TriMesh& inMesh, vkr::TriMesh& outMesh)
+{
+
 }
 
 bool World::loadMap(std::string_view mapFileName)
@@ -244,35 +223,40 @@ bool World::loadMap(std::string_view mapFileName)
 	auto& tileGrid = m_mapData.GetTileGrid();
 	auto& tileModelFileName = m_mapData.GetModelPaths();
 
-	for (size_t i = 0; i < tileModelFileName.size(); i++)
-	{
-		// TODO: в будущем переделать чтобы оно не грузило одни и теже модели
-		// а также собирало батчи
-		vkr::TriMesh mesh = vkr::TriMesh::CreateFromOBJ(tileModelFileName[i], vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f)));
+	vkr::Geometry geo;
+	CHECKED_CALL(vkr::Geometry::Create(vkr::TriMesh::CreateFromOBJ(tileModelFileName[0].string(), vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f))), &geo));
 
-		GameEntity entity;
-		entity.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-		m_mapTiles[tileModelFileName[i].string()] = entity;
-		//m_mapTiles2[tileModelFileName[i].string()] = mesh;
+	for (size_t i = 1; i < tileModelFileName.size(); i++)
+	{
+		vkr::Geometry geo2;
+		CHECKED_CALL(vkr::Geometry::Create(vkr::TriMesh::CreateFromOBJ(tileModelFileName[i].string(), vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f))), &geo2));
+
+		geo2.
 	}
 	
-	/*for (size_t x = 0; x < tileGrid.GetWidth(); x++)
+	for (size_t x = 0; x < tileGrid.GetWidth(); x++)
 	{
 		for (size_t y = 0; y < tileGrid.GetLength(); y++)
 		{
 			for (size_t z = 0; z < tileGrid.GetHeight(); z++)
 			{
+				if (m_entities.size() > 500) break;
+
 				auto tile = tileGrid.GetTile(x, z, y);
 				if (tile.shape == fileMapData::NO_MODEL) continue;
 
+				// TODO: в будущем переделать чтобы оно не грузило одни и теже модели
+				// а также собирало батчи
+				vkr::TriMesh mesh = vkr::TriMesh::CreateFromOBJ(tileModelFileName[tile.shape], vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f)));
+
 				GameEntity entity;
-				entity.Setup(device, m_mapTiles2[tileModelFileName[tile.shape].string()], descriptorPool, m_drawObjectSetLayout, shadowPassData);
+				entity.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
 				entity.translate = float3(x, z, y) * 2.0f;
 				m_entities.emplace_back(entity);
 				puts(std::to_string(m_entities.size()).c_str());
 			}
 		}
-	}*/
+	}
 
 	return true;
 }

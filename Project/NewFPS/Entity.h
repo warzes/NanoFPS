@@ -8,7 +8,6 @@ struct GameEntity
 	bool Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass);
 
 	void UniformBuffer(const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF);
-	void UniformBuffer2(vkr::CommandBufferPtr cmd, const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF);
 
 	float3                translate = float3(0, 0, 0);
 	float3                rotate = float3(0, 0, 0);

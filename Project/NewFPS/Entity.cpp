@@ -47,7 +47,6 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 	write.buffer = shadowUniformBuffer;
 	CHECKED_CALL(shadowDescriptorSet->UpdateDescriptors(1, &write));
 
-	// TODO: перенести отсюда в ентити?
 	{
 		vkr::WriteDescriptor writes[2] = {};
 		writes[0].binding = 1; // Shadow texture
@@ -64,47 +63,6 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 }
 
 void GameEntity::UniformBuffer(const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF)
-{
-	// TODO: сделать методом ентити
-	float4x4 T = glm::translate(glm::mat4(1.0), translate);
-	float4x4 R =
-		glm::rotate(rotate.z, float3(0, 0, 1)) *
-		glm::rotate(rotate.y, float3(0, 1, 0)) *
-		glm::rotate(rotate.x, float3(1, 0, 0));
-	float4x4 S = glm::scale(scale);
-	float4x4 M = T * R * S;
-
-	// Draw uniform buffers
-	struct Scene
-	{
-		float4x4 ModelMatrix;                // Transforms object space to world space
-		float4x4 NormalMatrix;               // Transforms object space to normal space
-		float4   Ambient;                    // Object's ambient intensity
-		float4x4 CameraViewProjectionMatrix; // Camera's view projection matrix
-		float4   LightPosition;              // Light's position
-		float4x4 LightViewProjectionMatrix;  // Light's view projection matrix
-		uint4    UsePCF;                     // Enable/disable PCF
-	};
-
-	Scene scene = {};
-	scene.ModelMatrix = M;
-	scene.NormalMatrix = glm::inverseTranspose(M);
-	scene.Ambient = float4(0.3f);
-	scene.CameraViewProjectionMatrix = viewProj;
-	scene.LightPosition = float4(mainLight.GetPosition(), 0);
-	scene.LightViewProjectionMatrix = mainLight.GetCamera().GetViewProjectionMatrix();
-	scene.UsePCF = uint4(UsePCF);
-
-	drawUniformBuffer->CopyFromSource(sizeof(scene), &scene);
-
-	// Shadow uniform buffers
-	float4x4 PV = mainLight.GetCamera().GetViewProjectionMatrix();
-	float4x4 MVP = PV * M; // Yes - the other is reversed
-
-	shadowUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);
-}
-
-void GameEntity::UniformBuffer2(vkr::CommandBufferPtr cmd, const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF)
 {
 	// TODO: сделать методом ентити
 	float4x4 T = glm::translate(glm::mat4(1.0), translate);

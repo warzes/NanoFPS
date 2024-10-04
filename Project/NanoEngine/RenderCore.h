@@ -1753,7 +1753,7 @@ public:
 	TriMesh(TriMeshAttributeDim texCoordDim);
 	TriMesh(IndexType indexType, TriMeshAttributeDim texCoordDim);
 
-	IndexType     GetIndexType() const { return mIndexType; }
+	IndexType GetIndexType() const { return mIndexType; }
 	TriMeshAttributeDim GetTexCoordDim() const { return mTexCoordDim; }
 
 	bool HasColors() const { return GetCountColors() > 0; }
@@ -1828,7 +1828,7 @@ private:
 		TriMesh& mesh);
 
 private:
-	IndexType      mIndexType = IndexType::Undefined;
+	IndexType            mIndexType = IndexType::Undefined;
 	TriMeshAttributeDim  mTexCoordDim = TRI_MESH_ATTRIBUTE_DIM_UNDEFINED;
 	std::vector<uint8_t> mIndices;        // Stores both 16 and 32 bit indices
 	std::vector<float3>  mPositions;      // Vertex positions
@@ -2126,34 +2126,28 @@ public:
 	static Result Create(const GeometryCreateInfo& createInfo, Geometry* pGeometry);
 
 	// Create object using parameters from createInfo using data from mesh
-	static Result Create(
-		const GeometryCreateInfo& createInfo,
-		const TriMesh& mesh,
-		Geometry* pGeometry);
+	static Result Create(const GeometryCreateInfo& createInfo, const TriMesh& mesh, Geometry* pGeometry);
 
 	// Create object using parameters from createInfo using data from tri mesh
-	static Result Create(
-		const GeometryCreateInfo& createInfo,
-		const WireMesh& mesh,
-		Geometry* pGeometry);
+	static Result Create(const GeometryCreateInfo& createInfo, const WireMesh& mesh, Geometry* pGeometry);
 
 	// Create object with a create info derived from mesh
 	static Result Create(const TriMesh& mesh, Geometry* pGeometry);
 	static Result Create(const WireMesh& mesh, Geometry* pGeometry);
 
-	IndexType         GetIndexType() const { return mCreateInfo.indexType; }
+	IndexType               GetIndexType() const { return mCreateInfo.indexType; }
 	const Geometry::Buffer* GetIndexBuffer() const { return &mIndexBuffer; }
 	void                    SetIndexBuffer(const Geometry::Buffer& newIndexBuffer);
 	uint32_t                GetIndexCount() const;
 
 	GeometryVertexAttributeLayout GetVertexAttributeLayout() const { return mCreateInfo.vertexAttributeLayout; }
 	uint32_t                      GetVertexBindingCount() const { return mCreateInfo.vertexBindingCount; }
-	const VertexBinding* GetVertexBinding(uint32_t index) const;
+	const VertexBinding*          GetVertexBinding(uint32_t index) const;
 
 	uint32_t                GetVertexCount() const;
 	uint32_t                GetVertexBufferCount() const { return CountU32(mVertexBuffers); }
 	const Geometry::Buffer* GetVertexBuffer(uint32_t index) const;
-	Geometry::Buffer* GetVertexBuffer(uint32_t index);
+	Geometry::Buffer*       GetVertexBuffer(uint32_t index);
 	uint32_t                GetLargestBufferSize() const;
 
 	// Appends single index, triangle, or edge vertex indices to index buffer
@@ -2180,7 +2174,7 @@ public:
 private:
 	// This is intialized to point to a static var of derived class of VertexDataProcessorBase
 	// which is shared by geometry objects, it is not supposed to be deleted
-	VertexDataProcessorBase<TriMeshVertexData>* mVDProcessor = nullptr;
+	VertexDataProcessorBase<TriMeshVertexData>*           mVDProcessor = nullptr;
 	VertexDataProcessorBase<TriMeshVertexDataCompressed>* mVDProcessorCompressed = nullptr;
 	GeometryCreateInfo                                    mCreateInfo = {};
 	Geometry::Buffer                                      mIndexBuffer;
