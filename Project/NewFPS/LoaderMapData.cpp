@@ -18,74 +18,16 @@ fileMapData::Tile fileMapData::TileGrid::GetTile(int flatIndex) const
 	return m_grid[flatIndex];
 }
 
-void fileMapData::TileGrid::SetTile(int i, int j, int k, const Tile& tile)
+fileMapData::TileGrid fileMapData::TileGrid::Subsection(int i, int j, int k, int w, int h, int l) const
 {
-	setCel(i, j, k, tile);
-}
+	assert(i >= 0 && j >= 0 && k >= 0);
+	assert(i + w <= int(m_width) && j + h <= int(m_height) && k + l <= int(m_length));
 
-void fileMapData::TileGrid::SetTile(int flatIndex, const Tile& tile)
-{
-	m_grid[flatIndex] = tile;
-}
+	TileGrid newGrid(w, h, l);
 
-std::string fileMapData::TileGrid::GetTileDataBase64() const
-{
-	std::vector<uint8_t> bin;
-	bin.reserve(m_grid.size() * sizeof(Tile));
-	for (size_t i = 0; i < m_grid.size(); ++i)
-	{
-		Tile savedTile = m_grid[i];
+	subsectionCopy(i, j, k, w, h, l, newGrid);
 
-		//Reinterpret each tile as a series of bytes and push them onto the vector.
-		const char* tileBin = reinterpret_cast<const char*>(&savedTile);
-		for (size_t b = 0; b < sizeof(Tile); ++b)
-		{
-			bin.push_back(tileBin[b]);
-		}
-	}
-
-	return base64::encode(bin);
-}
-
-std::string fileMapData::TileGrid::GetOptimizedTileDataBase64() const
-{
-	std::vector<uint8_t> bin;
-	bin.reserve(m_grid.size() * sizeof(Tile));
-
-	int runLength = 0;
-	for (size_t i = 0; i < m_grid.size(); ++i)
-	{
-		Tile savedTile = m_grid[i];
-
-		if (!savedTile && i < m_grid.size() - 1)
-		{
-			// Blank tiles (except for the last tile in the grid) are represented as runs.
-			++runLength;
-		}
-		else
-		{
-			if (runLength > 0)
-			{
-				//Insert a special tile signifying the number of empty tiles preceding this one.
-				Tile runTile = { -runLength, runLength, -runLength, runLength };
-				const char* tileBin = reinterpret_cast<const char*>(&runTile);
-				for (size_t b = 0; b < sizeof(Tile); ++b)
-				{
-					bin.push_back(tileBin[b]);
-				}
-				runLength = 0;
-			}
-
-			//Reinterpret the tile as a series of bytes and push them onto the vector.
-			const char* tileBin = reinterpret_cast<const char*>(&savedTile);
-			for (size_t b = 0; b < sizeof(Tile); ++b)
-			{
-				bin.push_back(tileBin[b]);
-			}
-		}
-	}
-
-	return base64::encode(bin);
+	return newGrid;
 }
 
 void fileMapData::TileGrid::SetTileDataBase64(std::string data)
@@ -112,64 +54,34 @@ void fileMapData::TileGrid::SetTileDataBase64(std::string data)
 	}
 }
 
-fileMapData::Ent::Ent()
-{
-	active = false;
-	display = DisplayMode::SPHERE;
-	color = Color::White;
-	radius = 0.0f;
-	position = glm::vec3(0.0f);
-	yaw = pitch = 0;
-	properties = std::map<std::string, std::string>();
-}
-
 fileMapData::Ent::Ent(float radius)
 {
 	active = true;
-	display = DisplayMode::SPHERE;
-	color = Color::White;
 	this->radius = radius;
-	position = glm::vec3(0.0f);
-	yaw = pitch = 0;
-	properties = std::map<std::string, std::string>();
-}
-
-void fileMapData::to_json(nlohmann::json& j, const fileMapData::Ent& ent)
-{
-	j["radius"] = ent.radius;
-	j["color"] = nlohmann::json::array({ ent.color.r, ent.color.g, ent.color.b });
-	j["position"] = nlohmann::json::array({ ent.position.x, ent.position.y, ent.position.z });
-	j["angles"] = nlohmann::json::array({ ent.pitch, ent.yaw, 0.0f });
-	j["display"] = ent.display;
-	//if (ent.model != nullptr) j["model"] = ent.model->GetPath();
-	//if (ent.texture != nullptr) j["texture"] = ent.texture->GetPath();
-	j["properties"] = ent.properties;
 }
 
 void fileMapData::from_json(const nlohmann::json& j, fileMapData::Ent& ent)
 {
-	ent.active = true;
-	ent.radius = j.at("radius");
-	ent.color = Color{ j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
-	ent.position = glm::vec3{ j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
-	ent.pitch = j.at("angles").at(0);
-	ent.yaw = j.at("angles").at(1);
+	ent.active     = true;
+	ent.radius     = j.at("radius");
+	ent.color      = Color{ j.at("color").at(0), j.at("color").at(1), j.at("color").at(2), 255 };
+	ent.position   = glm::vec3{ j.at("position").at(0), j.at("position").at(1), j.at("position").at(2) };
+	ent.pitch      = j.at("angles").at(0);
+	ent.yaw        = j.at("angles").at(1);
 	ent.properties = j.at("properties");
 
-	if (j.contains("display"))
-		ent.display = j.at("display");
-	else
-		ent.display = Ent::DisplayMode::SPHERE;
+	if (j.contains("display")) ent.display = j.at("display");
+	else ent.display = Ent::DisplayMode::SPHERE;
 
-	//switch (ent.display)
-	//{
-	//case Ent::DisplayMode::MODEL:
-	//	if (j.contains("model")) ent.model = Assets::GetModel(j.at("model"));
-	//	//fallthrough
-	//case Ent::DisplayMode::SPRITE:
-	//	if (j.contains("texture")) ent.texture = Assets::GetTexture(j.at("texture"));
-	//	break;
-	//}
+	switch (ent.display)
+	{
+	case Ent::DisplayMode::MODEL:
+		if (j.contains("model")) ent.model = j.at("model");
+		[[fallthrough]];
+	case Ent::DisplayMode::SPRITE:
+		if (j.contains("texture")) ent.texture = j.at("texture");
+		break;
+	}
 }
 
 //Creates ent grid of given dimensions, default spacing.
@@ -197,18 +109,17 @@ bool LoaderMapData::Setup(std::filesystem::path filePath)
 		m_tileGrid = fileMapData::TileGrid(tilesData.at("width"), tilesData.at("height"), tilesData.at("length"), fileMapData::TILE_SPACING_DEFAULT, fileMapData::Tile());
 		m_tileGrid.SetTileDataBase64(tilesData.at("data"));
 
-		for (size_t x = 0; x < m_tileGrid.GetWidth(); x++)
-		{
-			std::string line = "";
-			for (size_t y = 0; y < m_tileGrid.GetLength(); y++)
-			{
-				auto t = m_tileGrid.GetTile(x, 1, y);
+		//for (size_t x = 0; x < m_tileGrid.GetWidth(); x++)
+		//{
+		//	std::string line = "";
+		//	for (size_t y = 0; y < m_tileGrid.GetLength(); y++)
+		//	{
+		//		auto t = m_tileGrid.GetTile(x, 1, y);
 
-				line += std::to_string(t.texture);
-			}
-			puts(line.c_str());
-		}
-
+		//		line += std::to_string(t.texture);
+		//	}
+		//	puts(line.c_str());
+		//}
 	}
 
 	m_entGrid = fileMapData::EntGrid(m_tileGrid.GetWidth(), m_tileGrid.GetHeight(), m_tileGrid.GetLength());
@@ -224,13 +135,9 @@ bool LoaderMapData::Setup(std::filesystem::path filePath)
 	if (jsonData.contains("editorCamera"))
 	{
 		json::array_t posArr = jsonData["editorCamera"]["position"];
-		m_defaultCameraPosition = glm::vec3{
-		(float)posArr[0], (float)posArr[1], (float)posArr[2]
-		};
+		m_defaultCameraPosition = glm::vec3{(float)posArr[0], (float)posArr[1], (float)posArr[2]};
 		json::array_t rotArr = jsonData["editorCamera"]["eulerAngles"];
-		m_defaultCameraAngles = glm::vec3{
-		(float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD
-		};
+		m_defaultCameraAngles = glm::vec3{(float)rotArr[0] * DEG2RAD, (float)rotArr[1] * DEG2RAD, (float)rotArr[2] * DEG2RAD};
 	}
 	return true;
 }

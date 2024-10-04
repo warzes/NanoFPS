@@ -4,7 +4,6 @@ namespace fileMapData
 {
 	constexpr auto ENT_SPACING_DEFAULT = 2.0f;
 	constexpr auto TILE_SPACING_DEFAULT = 2.0f;
-
 	constexpr auto NO_TEX = -1;
 	constexpr auto NO_MODEL = -1;
 
@@ -31,14 +30,12 @@ namespace fileMapData
 	{
 		return (lhs.shape == rhs.shape) && (lhs.texture == rhs.texture) && (lhs.angle == rhs.angle) && (lhs.pitch == rhs.pitch);
 	}
-
 	inline bool operator!=(const Tile& lhs, const Tile& rhs)
 	{
 		return !(lhs == rhs);
 	}
 
 	enum class Direction { Z_POS, Z_NEG, X_POS, X_NEG, Y_POS, Y_NEG };
-
 
 	//Represents a 3 dimensional array of tiles and provides functions for converting coordinates.
 	template<class Cel>
@@ -53,7 +50,6 @@ namespace fileMapData
 			for (size_t i = 0; i < m_grid.size(); ++i) { m_grid[i] = fill; }
 		}
 		Grid(size_t width, size_t height, size_t length, float spacing) : Grid(width, height, length, spacing, Cel()) {}
-		virtual ~Grid() = default;
 
 		glm::vec3 WorldToGridPos(const glm::vec3& worldPos) const
 		{
@@ -181,7 +177,7 @@ namespace fileMapData
 		float m_spacing;
 	};
 
-	class TileGrid : public Grid<Tile>
+	class TileGrid final : public Grid<Tile>
 	{
 	public:
 		TileGrid() : TileGrid(0, 0, 0) {}
@@ -190,12 +186,9 @@ namespace fileMapData
 
 		Tile GetTile(int i, int j, int k) const;
 		Tile GetTile(int flatIndex) const;
-		void SetTile(int i, int j, int k, const Tile& tile);
-		void SetTile(int flatIndex, const Tile& tile);
 
-		//Returns a base64 encoded string with the binary representations of all tiles.
-		std::string GetTileDataBase64() const;
-		std::string GetOptimizedTileDataBase64() const;
+		//Returns a smaller TileGrid with a copy of the tile data in the rectangle defined by coordinates (i, j, k) and size (w, h, l).
+		TileGrid Subsection(int i, int j, int k, int w, int h, int l) const;
 
 		//Assigns tiles based on the binary data encoded in base 64. Assumes that the sizes of the data and the current grid are the same.
 		void SetTileDataBase64(std::string data);
@@ -204,28 +197,30 @@ namespace fileMapData
 	//This is short for "entity", because "entity" is difficult to type.
 	struct Ent
 	{
+		Ent() = default;
+		Ent(float radius);
+
 		enum class DisplayMode {
 			SPHERE,
 			MODEL,
 			SPRITE,
 		};
 
-		bool active;
+		bool active = false;
 
-		DisplayMode display;
-		Color color;
-		float radius;
-		glm::vec3 position; //World space coordinates
-		int yaw, pitch; //Degrees angle orientation
+		DisplayMode display = DisplayMode::SPHERE;
+		Color color = Color::White;
+		float radius = 0.0f;
+		glm::vec3 position = glm::vec3(0.0f); // World space coordinates
+		int yaw = 0, pitch = 0;               // Degrees angle orientation
+
+		std::string model = "";
+		std::string texture = "";
 
 		//Entity properties are key/value pairs. No data types are enforced, values are parsed as strings.
-		std::map<std::string, std::string> properties;
-
-		Ent();
-		Ent(float radius);
+		std::map<std::string, std::string> properties{};
 	};
 
-	void to_json(nlohmann::json& j, const Ent& ent);
 	void from_json(const nlohmann::json& j, Ent& ent);
 
 	//This represents a grid of entities. 
@@ -300,6 +295,15 @@ class LoaderMapData final
 public:
 	bool Setup(std::filesystem::path filePath);
 	void Shutdown();
+
+	const std::vector<std::filesystem::path>& GetTexturePaths() const { return m_texturePaths; }
+	const std::vector<std::filesystem::path>& GetModelPaths() const { return m_modelPaths; }
+
+	const fileMapData::TileGrid& GetTileGrid() const { return m_tileGrid; }
+	const fileMapData::EntGrid& GetEntityGrid() const { return m_entGrid; }
+
+	const glm::vec3& GetCameraPosition() const { return m_defaultCameraPosition; }
+	const glm::vec3& GetCameraAngles() const { return m_defaultCameraAngles; }
 
 private:
 	std::vector<std::filesystem::path> m_texturePaths;
