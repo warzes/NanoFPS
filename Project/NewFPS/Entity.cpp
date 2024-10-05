@@ -3,6 +3,18 @@
 #include "ShadowPass.h"
 #include "Light.h"
 
+// Draw uniform buffers
+struct GameEntityScene
+{
+	float4x4 ModelMatrix;                // Transforms object space to world space
+	float4x4 NormalMatrix;               // Transforms object space to normal space
+	float4   Ambient;                    // Object's ambient intensity
+	float4x4 CameraViewProjectionMatrix; // Camera's view projection matrix
+	float4   LightPosition;              // Light's position
+	float4x4 LightViewProjectionMatrix;  // Light's view projection matrix
+	uint4    UsePCF;                     // Enable/disable PCF
+};
+
 bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass)
 {
 	vkr::Geometry geo;
@@ -73,19 +85,7 @@ void GameEntity::UniformBuffer(const float4x4& viewProj, const DirectionalLight&
 	float4x4 S = glm::scale(scale);
 	float4x4 M = T * R * S;
 
-	// Draw uniform buffers
-	struct Scene
-	{
-		float4x4 ModelMatrix;                // Transforms object space to world space
-		float4x4 NormalMatrix;               // Transforms object space to normal space
-		float4   Ambient;                    // Object's ambient intensity
-		float4x4 CameraViewProjectionMatrix; // Camera's view projection matrix
-		float4   LightPosition;              // Light's position
-		float4x4 LightViewProjectionMatrix;  // Light's view projection matrix
-		uint4    UsePCF;                     // Enable/disable PCF
-	};
-
-	Scene scene = {};
+	GameEntityScene scene = {};
 	scene.ModelMatrix = M;
 	scene.NormalMatrix = glm::inverseTranspose(M);
 	scene.Ambient = float4(0.3f);

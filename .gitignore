@@ -21,6 +21,8 @@ Thumbs.db
 /bin/OldFPS_Release.*
 /bin/Editor_Debug.*
 /bin/Editor_Release.*
+/bin/MinimalVulkanTests_Debug.*
+/bin/MinimalVulkanTests_Release.*
 
 Project/3rdparty/lib/SPIRV-Tools-optd.lib
 Project/3rdparty/lib/SPIRV-Toolsd.lib

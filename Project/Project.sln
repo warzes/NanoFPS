@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OLD", "OLD", "{C78F840E-8BF
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Example", "Example\Example.vcxproj", "{BF18AC2D-C73F-4537-B654-71B7F6A23563}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MinimalVulkanTests", "MinimalVulkanTests\MinimalVulkanTests.vcxproj", "{F43A1FA0-40A5-4F3F-9915-A203E9F7DE43}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -57,6 +59,10 @@ Global
 		{BF18AC2D-C73F-4537-B654-71B7F6A23563}.Debug|x64.Build.0 = Debug|x64
 		{BF18AC2D-C73F-4537-B654-71B7F6A23563}.Release|x64.ActiveCfg = Release|x64
 		{BF18AC2D-C73F-4537-B654-71B7F6A23563}.Release|x64.Build.0 = Release|x64
+		{F43A1FA0-40A5-4F3F-9915-A203E9F7DE43}.Debug|x64.ActiveCfg = Debug|x64
+		{F43A1FA0-40A5-4F3F-9915-A203E9F7DE43}.Debug|x64.Build.0 = Debug|x64
+		{F43A1FA0-40A5-4F3F-9915-A203E9F7DE43}.Release|x64.ActiveCfg = Release|x64
+		{F43A1FA0-40A5-4F3F-9915-A203E9F7DE43}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
