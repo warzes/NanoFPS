@@ -3023,6 +3023,15 @@ TriMesh TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshO
 	return mesh;
 }
 
+TriMesh& TriMesh::operator+=(TriMesh rhs)
+{
+	uint32_t currentIndices = GetCountIndices();
+
+	auto newIndex = rhs.GetDataIndicesU32();
+
+	return *this;
+}
+
 #pragma endregion
 
 #pragma region WireMesh

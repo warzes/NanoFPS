@@ -222,6 +222,8 @@ bool World::loadMap(std::string_view mapFileName)
 
 	auto& tileGrid = m_mapData.GetTileGrid();
 	auto& tileModelFileName = m_mapData.GetModelPaths();
+
+	bool first = true;
 		
 	for (size_t x = 0; x < tileGrid.GetWidth(); x++)
 	{
@@ -234,18 +236,31 @@ bool World::loadMap(std::string_view mapFileName)
 				auto tile = tileGrid.GetTile(x, z, y);
 				if (tile.shape == fileMapData::NO_MODEL) continue;
 
-				// TODO: в будущем переделать чтобы оно не грузило одни и теже модели
-				// а также собирало батчи
-				vkr::TriMesh mesh = vkr::TriMesh::CreateFromOBJ(tileModelFileName[tile.shape], vkr::TriMeshOptions(options).ObjectColor(float3(0.7f, 0.2f, 1.0f)));
+				if (first)
+				{
+					m_mapMeshes = vkr::TriMesh::CreateFromOBJ(
+						tileModelFileName[tile.shape],
+						vkr::TriMeshOptions(options)
+						.ObjectColor(float3(0.3f, 0.2f, 1.0f)));
+					first = false;
+				}
+				else
+				{
+					auto mesh = vkr::TriMesh::CreateFromOBJ(
+						tileModelFileName[tile.shape],
+						vkr::TriMeshOptions(options)
+						.ObjectColor(float3(0.3f, 0.2f, 1.0f))
+						.Translate(float3{ x,y,z } *tileGrid.GetSpacing() ));
 
-				GameEntity entity;
-				entity.Setup(device, mesh, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-				entity.translate = float3(x, z, y) * 2.0f;
-				m_entities.emplace_back(entity);
-				puts(std::to_string(m_entities.size()).c_str());
+					m_mapMeshes += mesh;
+				}
 			}
 		}
 	}
+
+	GameEntity entity;
+	entity.Setup(device, m_mapMeshes, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+	m_entities.emplace_back(entity);
 
 	return true;
 }

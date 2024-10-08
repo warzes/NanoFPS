@@ -73,6 +73,9 @@
     <Filter Include="game\Map">
       <UniqueIdentifier>{11fcf822-6bb7-46b8-ad8d-350189766269}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework">
+      <UniqueIdentifier>{28957a5f-66ef-4fbf-b408-ad5699023383}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\BuildGameShader.bat">

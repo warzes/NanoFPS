@@ -1816,6 +1816,8 @@ public:
 	static Result  CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options, TriMesh* pTriMesh);
 	static TriMesh CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options = TriMeshOptions());
 
+	TriMesh& operator+=(TriMesh rhs);
+
 private:
 	void AppendIndexU16(uint16_t value);
 	void AppendIndexU32(uint32_t value);
