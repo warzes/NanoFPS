@@ -166,7 +166,7 @@ bool World::setupPipelineEntities()
 
 bool World::addTestEntities()
 {
-	auto& device = m_game->GetRenderDevice();
+	/*auto& device = m_game->GetRenderDevice();
 	auto& gameGraphics = m_game->GetGameGraphics();
 	vkr::DescriptorPoolPtr descriptorPool = gameGraphics.GetDescriptorPool();
 	ShadowPass& shadowPassData = gameGraphics.GetShadowPass();
@@ -194,7 +194,7 @@ bool World::addTestEntities()
 	mKnob.translate = float3(2, 1, 0);
 	mKnob.rotate = float3(0, glm::radians(180.0f), 0);
 	mKnob.scale = float3(2, 2, 2);
-	m_entities.emplace_back(mKnob);
+	m_entities.emplace_back(mKnob);*/
 
 	return true;
 }
@@ -250,7 +250,12 @@ bool World::loadMap(std::string_view mapFileName)
 						tileModelFileName[tile.shape],
 						vkr::TriMeshOptions(options)
 						.ObjectColor(float3(0.3f, 0.2f, 1.0f))
-						.Translate(float3{ x,y,z } *tileGrid.GetSpacing() ));
+						.Translate(float3{ x, z, y } * tileGrid.GetSpacing()));
+
+					// TODO: оптимизации
+					// - загрузить меши в вектор, а потом уже мержить (функция мержа меша и вектора)
+					// - возможно вмето += написать метод Merge в который передается как вектор, так и размеры всех мешей для ресерва (размеры подсчитать при загрузке меша)
+					// - не грузить в этот вектор те меши, которые уже там есть
 
 					m_mapMeshes += mesh;
 				}

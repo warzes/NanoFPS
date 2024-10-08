@@ -3023,13 +3023,45 @@ TriMesh TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshO
 	return mesh;
 }
 
-TriMesh& TriMesh::operator+=(TriMesh rhs)
+TriMesh& TriMesh::operator+=(const TriMesh& rhs)
 {
-	uint32_t currentIndices = GetCountIndices();
+	ASSERT_MSG(mIndexType == IndexType::Uint32, "only IndexType::Uint32 supported");
+	ASSERT_MSG(rhs.mIndexType == IndexType::Uint32, "only IndexType::Uint32 supported");
+	ASSERT_MSG(mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_2, "only IndexType::TRI_MESH_ATTRIBUTE_DIM_2 supported");
+	ASSERT_MSG(rhs.mTexCoordDim == TRI_MESH_ATTRIBUTE_DIM_2, "only IndexType::TRI_MESH_ATTRIBUTE_DIM_2 supported");
 
-	auto newIndex = rhs.GetDataIndicesU32();
+	uint32_t currentIndices = GetCountIndices();
+	uint32_t newIndices = rhs.GetCountIndices();
+
+	PreallocateForTriangleCount(rhs.GetCountTriangles(), rhs.GetCountColors() > 0, rhs.GetCountNormals() > 0, rhs.GetCountTexCoords() > 0, rhs.GetCountTangents() > 0);
+
+	for (size_t i = 0; i < newIndices; i++)
+		AppendIndexU32(*rhs.GetDataIndicesU32(i) + currentIndices);
+	
+	for (size_t i = 0; i < rhs.GetCountPositions(); i++)
+		AppendPosition(*rhs.GetDataPositions(i));
+	
+	for (size_t i = 0; i < rhs.GetCountColors(); i++)
+		AppendColor(*rhs.GetDataColors(i));
+	
+	for (size_t i = 0; i < rhs.GetCountNormals(); i++)
+		AppendNormal(*rhs.GetDataNormalls(i));
+	
+	for (size_t i = 0; i < rhs.GetCountTexCoords(); i++)
+		AppendTexCoord(*rhs.GetDataTexCoords2(i));
+
+	for (size_t i = 0; i < rhs.GetCountTangents(); i++)
+		AppendTangent(*rhs.GetDataTangents(i));
+
+	for (size_t i = 0; i < rhs.GetCountBitangents(); i++)
+		AppendBitangent(*rhs.GetDataBitangents(i));
 
 	return *this;
+}
+
+TriMesh& vkr::TriMesh::operator+=(const std::vector<TriMesh>& rhs)
+{
+	// TODO: вставьте здесь оператор return
 }
 
 #pragma endregion
