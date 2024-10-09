@@ -74,6 +74,9 @@ bool World::setupPipelineEntities()
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 0, vkr::DescriptorType::UniformBuffer, 1, vkr::SHADER_STAGE_ALL_GRAPHICS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 1, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
 		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 2, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 3, vkr::DescriptorType::SampledImage, 1, vkr::SHADER_STAGE_PS });
+		layoutCreateInfo.bindings.push_back(vkr::DescriptorBinding{ 4, vkr::DescriptorType::Sampler, 1, vkr::SHADER_STAGE_PS });
+
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateDescriptorSetLayout(layoutCreateInfo, &m_drawObjectSetLayout));
 	}
 
@@ -92,6 +95,7 @@ bool World::setupPipelineEntities()
 		vkr::ShaderModulePtr PS;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.ps", &PS));
 
+		
 		vkr::VertexAttribute vertexAttribute0 = {
 			.semanticName = "POSITION",
 			.location = 0,
@@ -123,18 +127,18 @@ bool World::setupPipelineEntities()
 		};
 
 		vkr::VertexAttribute vertexAttribute3 = {
-			.semanticName = "NORMAL",
+			.semanticName = "TEXCOORD",
 			.location = 3,
-			.format = vkr::Format::R32G32B32_FLOAT,
+			.format = vkr::Format::R32G32_FLOAT,
 			.binding = 3,
 			.offset = 0,
 			.inputRate = vkr::VertexInputRate::Vertex,
-			.semantic = vkr::VertexSemantic::Normal
+			.semantic = vkr::VertexSemantic::Texcoord
 		};
 
 		vkr::VertexBinding vertexBinding0{};
 		vertexBinding0.SetBinding(0);
-		vertexBinding0.SetStride(0);
+		vertexBinding0.SetStride(12);
 		vertexBinding0.AppendAttribute(vertexAttribute0);
 
 		vkr::VertexBinding vertexBinding1{};
@@ -147,13 +151,19 @@ bool World::setupPipelineEntities()
 		vertexBinding2.SetStride(12);
 		vertexBinding2.AppendAttribute(vertexAttribute2);
 
+		vkr::VertexBinding vertexBinding3{};
+		vertexBinding3.SetBinding(3);
+		vertexBinding3.SetStride(8);
+		vertexBinding3.AppendAttribute(vertexAttribute3);
+
 		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
 		gpCreateInfo.VS = { VS.Get(), "vsmain" };
 		gpCreateInfo.PS = { PS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 3;
+		gpCreateInfo.vertexInputState.bindingCount = 4;
 		gpCreateInfo.vertexInputState.bindings[0] = vertexBinding0;
 		gpCreateInfo.vertexInputState.bindings[1] = vertexBinding1;
 		gpCreateInfo.vertexInputState.bindings[2] = vertexBinding2;
+		gpCreateInfo.vertexInputState.bindings[3] = vertexBinding3;
 		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
 		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
@@ -207,11 +217,6 @@ bool World::addTestEntities()
 	m_entities.emplace_back(mKnob);*/
 
 	return true;
-}
-
-void MergeTriMesh(const vkr::TriMesh& inMesh, vkr::TriMesh& outMesh)
-{
-
 }
 
 bool World::loadMap(std::string_view mapFileName)
@@ -274,9 +279,13 @@ bool World::loadMap(std::string_view mapFileName)
 		}
 	}
 
+
 	GameEntity entity;
 	entity.Setup(device, m_mapMeshes, descriptorPool, m_drawObjectSetLayout, shadowPassData);
 	m_entities.emplace_back(entity);
+
+	auto tt = entity.mesh->GetDerivedVertexBindings();
+
 
 	return true;
 }

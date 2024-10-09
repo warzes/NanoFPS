@@ -9,12 +9,16 @@ struct GameEntity
 
 	void UniformBuffer(const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF);
 
-	float3                translate = float3(0, 0, 0);
-	float3                rotate = float3(0, 0, 0);
-	float3                scale = float3(1, 1, 1);
-	vkr::MeshPtr          mesh;
-	vkr::DescriptorSetPtr drawDescriptorSet;
-	vkr::BufferPtr        drawUniformBuffer;
-	vkr::DescriptorSetPtr shadowDescriptorSet;
-	vkr::BufferPtr        shadowUniformBuffer;
+	float3                   translate = float3(0, 0, 0);
+	float3                   rotate = float3(0, 0, 0);
+	float3                   scale = float3(1, 1, 1);
+	vkr::MeshPtr             mesh;
+	vkr::DescriptorSetPtr    drawDescriptorSet;
+	vkr::BufferPtr           drawUniformBuffer;
+	vkr::DescriptorSetPtr    shadowDescriptorSet;
+	vkr::BufferPtr           shadowUniformBuffer;
+
+	vkr::ImagePtr            image;
+	vkr::SampledImageViewPtr sampledImageView;
+	vkr::SamplerPtr          sampler;
 };

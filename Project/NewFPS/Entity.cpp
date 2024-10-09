@@ -21,6 +21,20 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
 	CHECKED_CALL(vkr::vkrUtil::CreateMeshFromGeometry(device.GetGraphicsQueue(), &geo, &this->mesh));
 
+	// Load textures
+	vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
+	CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &image, options, true));
+	vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(image);
+	CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &sampledImageView));
+
+	vkr::SamplerCreateInfo samplerCreateInfo = {};
+	samplerCreateInfo.magFilter = vkr::Filter::Linear;
+	samplerCreateInfo.minFilter = vkr::Filter::Linear;
+	samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
+	samplerCreateInfo.minLod = 0;
+	samplerCreateInfo.maxLod = FLT_MAX;
+	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &sampler));
+
 	// Draw uniform buffer
 	vkr::BufferCreateInfo bufferCreateInfo = {};
 	bufferCreateInfo.size = RoundUp(512, vkr::CONSTANT_BUFFER_ALIGNMENT);
@@ -41,23 +55,23 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 	// Shadow descriptor set
 	CHECKED_CALL(device.AllocateDescriptorSet(pDescriptorPool, shadowPass.GetDescriptorSetLayout(), &shadowDescriptorSet));
 
-	// Update draw descriptor set
-	vkr::WriteDescriptor write = {};
-	write.binding = 0;
-	write.type = vkr::DescriptorType::UniformBuffer;
-	write.bufferOffset = 0;
-	write.bufferRange = WHOLE_SIZE;
-	write.buffer = drawUniformBuffer;
-	CHECKED_CALL(drawDescriptorSet->UpdateDescriptors(1, &write));
-
 	// Update shadow descriptor set
-	write = {};
+	vkr::WriteDescriptor write = {};
 	write.binding = 0;
 	write.type = vkr::DescriptorType::UniformBuffer;
 	write.bufferOffset = 0;
 	write.bufferRange = WHOLE_SIZE;
 	write.buffer = shadowUniformBuffer;
 	CHECKED_CALL(shadowDescriptorSet->UpdateDescriptors(1, &write));
+
+	// Update draw descriptor set
+	write = {};
+	write.binding = 0;
+	write.type = vkr::DescriptorType::UniformBuffer;
+	write.bufferOffset = 0;
+	write.bufferRange = WHOLE_SIZE;
+	write.buffer = drawUniformBuffer;
+	CHECKED_CALL(drawDescriptorSet->UpdateDescriptors(1, &write));
 
 	{
 		vkr::WriteDescriptor writes[2] = {};
@@ -67,6 +81,19 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 		writes[1].binding = 2; // Shadow sampler
 		writes[1].type = vkr::DescriptorType::Sampler;
 		writes[1].sampler = shadowPass.GetSampler();
+
+		CHECKED_CALL_AND_RETURN_FALSE(drawDescriptorSet->UpdateDescriptors(2, writes));
+	}
+
+	// texture descriptor
+	{
+		vkr::WriteDescriptor writes[2] = {};
+		writes[0].binding = 3; // diffuse texture
+		writes[0].type = vkr::DescriptorType::SampledImage;
+		writes[0].imageView = sampledImageView;
+		writes[1].binding = 4; // diffuse sampler
+		writes[1].type = vkr::DescriptorType::Sampler;
+		writes[1].sampler = sampler;
 
 		CHECKED_CALL_AND_RETURN_FALSE(drawDescriptorSet->UpdateDescriptors(2, writes));
 	}

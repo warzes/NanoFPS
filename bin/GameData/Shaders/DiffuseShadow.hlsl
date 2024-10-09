@@ -20,14 +20,14 @@ Texture2D              ShadowDepthTexture : register(t1);
 SamplerComparisonState ShadowDepthSampler : register(s2);
 
 Texture2D              DiffuseTexture : register(t3);
-SamplerComparisonState DiffuseSampler : register(s4);
+SamplerState           DiffuseSampler : register(s4);
 
 struct VSOutput {
     float4 PositionWS : POSITION;
 	float4 Position   : SV_POSITION;
 	float3 Color      : COLOR;
     float3 Normal     : NORMAL;
-    float2 TexCoord   : TEXCOORD0;
+    float2 TexCoord   : TEXCOORD;
     float4 PositionLS : POSITIONLS;
 };
 
@@ -114,8 +114,11 @@ float4 psmain(VSOutput input) : SV_TARGET
     float3 N       = input.Normal;    
     float  diffuse = saturate(dot(N, L));
     
+    // Diffuse texture
+    float4 diffuseTex = DiffuseTexture.Sample(DiffuseSampler, input.TexCoord);
+    
     // Final output color
-    float  ambient = Scene.Ambient.x;   
-    float3 Co       = (diffuse * shadowFactor + ambient)  * input.Color;
-	return float4(Co, 1);
+    float  ambient = Scene.Ambient.x;
+    float3 Co = diffuseTex.rgb * (diffuse * shadowFactor + ambient) * input.Color;
+    return float4(Co, diffuseTex.a);
 }

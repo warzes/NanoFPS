@@ -1375,6 +1375,7 @@ public:
 	void            SetBinding(uint32_t binding);
 	const uint32_t& GetStride() const { return m_stride; } // Return a reference to member var so apps can take address of it
 	void            SetStride(uint32_t stride);
+	void            SetInputRate(VertexInputRate inputRate);
 	VertexInputRate GetInputRate() const { return m_inputRate; }
 	uint32_t        GetAttributeCount() const { return static_cast<uint32_t>(m_attributes.size()); }
 	Result          GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const;

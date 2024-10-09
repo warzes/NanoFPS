@@ -4,7 +4,7 @@
 
 bool DirectionalLight::Setup(GameApplication* game)
 {
-	mLightCamera = PerspectiveCamera(60.0f, 1.0f, 1.0f, 100.0f);
+	mLightCamera = PerspectiveCamera(60.0f, 1.0f, 1.0f, 1000.0f);
 
 	auto& device = game->GetRenderDevice();
 
@@ -91,9 +91,10 @@ void DirectionalLight::Shutdown()
 void DirectionalLight::Update(float deltaTime)
 {
 	// Update light position
-	float t = deltaTime / 2.0f;
-	float r = 7.0f;
-	mLightPosition = float3(r * cos(t), 5.0f, r * sin(t));
+	//static float t = 0.0;
+	//t += 0.001f;
+	//float r = 25.0f;
+	//mLightPosition = float3(r * cos(t), 15.0f, r * sin(t));
 
 	// Update camera(s)
 	mLightCamera.LookAt(mLightPosition, float3(0, 0, 0));

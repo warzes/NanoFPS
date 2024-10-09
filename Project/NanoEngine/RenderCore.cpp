@@ -385,6 +385,11 @@ void VertexBinding::SetStride(uint32_t stride)
 	m_stride = stride;
 }
 
+void VertexBinding::SetInputRate(VertexInputRate inputRate)
+{
+	m_inputRate = inputRate;
+}
+
 Result VertexBinding::GetAttribute(uint32_t index, const VertexAttribute** ppAttribute) const
 {
 	if (!IsIndexInRange(index, m_attributes)) {

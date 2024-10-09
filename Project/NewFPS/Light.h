@@ -22,6 +22,6 @@ private:
 	vkr::PipelineInterfacePtr   mLightPipelineInterface;
 	vkr::GraphicsPipelinePtr    mLightPipeline;
 	GameEntity                  mLight;
-	float3                      mLightPosition = float3(0, 5, 5);
-	PerspectiveCamera                 mLightCamera;
+	float3                      mLightPosition = float3(20, 5, 25);
+	PerspectiveCamera           mLightCamera;
 };
