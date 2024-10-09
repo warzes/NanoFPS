@@ -21,9 +21,9 @@ namespace fileMapData
 		}
 
 		ModelID shape = NO_MODEL;
-		int     angle = 0.0f; // Yaw in whole number of degrees
+		int     angle = 0; // Yaw in whole number of degrees
 		TexID   texture = NO_TEX;
-		int     pitch = 0;    // Pitch in whole number of degrees
+		int     pitch = 0; // Pitch in whole number of degrees
 	};
 
 	inline bool operator==(const Tile& lhs, const Tile& rhs)

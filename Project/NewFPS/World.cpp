@@ -122,6 +122,16 @@ bool World::setupPipelineEntities()
 			.semantic = vkr::VertexSemantic::Normal
 		};
 
+		vkr::VertexAttribute vertexAttribute3 = {
+			.semanticName = "NORMAL",
+			.location = 3,
+			.format = vkr::Format::R32G32B32_FLOAT,
+			.binding = 3,
+			.offset = 0,
+			.inputRate = vkr::VertexInputRate::Vertex,
+			.semantic = vkr::VertexSemantic::Normal
+		};
+
 		vkr::VertexBinding vertexBinding0{};
 		vertexBinding0.SetBinding(0);
 		vertexBinding0.SetStride(0);
@@ -231,8 +241,6 @@ bool World::loadMap(std::string_view mapFileName)
 		{
 			for (size_t z = 0; z < tileGrid.GetHeight(); z++)
 			{
-				if (m_entities.size() > 500) break;
-
 				auto tile = tileGrid.GetTile(x, z, y);
 				if (tile.shape == fileMapData::NO_MODEL) continue;
 
@@ -241,7 +249,7 @@ bool World::loadMap(std::string_view mapFileName)
 					m_mapMeshes = vkr::TriMesh::CreateFromOBJ(
 						tileModelFileName[tile.shape],
 						vkr::TriMeshOptions(options)
-						.ObjectColor(float3(0.3f, 0.2f, 1.0f)));
+						.ObjectColor(float3(0.3f, 0.6f, 1.0f)));
 					first = false;
 				}
 				else
@@ -249,8 +257,11 @@ bool World::loadMap(std::string_view mapFileName)
 					auto mesh = vkr::TriMesh::CreateFromOBJ(
 						tileModelFileName[tile.shape],
 						vkr::TriMeshOptions(options)
-						.ObjectColor(float3(0.3f, 0.2f, 1.0f))
-						.Translate(float3{ x, z, y } * tileGrid.GetSpacing()));
+						.ObjectColor(float3(0.3f, 0.6f, 1.0f))
+						.Translate(float3{ x, z, y } * tileGrid.GetSpacing())
+						.RotateX(glm::radians(float(-tile.pitch)))
+						.RotateY(glm::radians(float(-tile.angle)))
+					);
 
 					// TODO: оптимизации
 					// - загрузить меши в вектор, а потом уже мержить (функция мержа меша и вектора)

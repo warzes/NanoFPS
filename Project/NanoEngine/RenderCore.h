@@ -1704,6 +1704,7 @@ struct TriMeshVertexDataCompressed
 
 class TriMeshOptions
 {
+	friend class TriMesh;
 public:
 	//! Enable/disable indices
 	TriMeshOptions& Indices(bool value = true) { mEnableIndices = value; return *this; }
@@ -1719,6 +1720,8 @@ public:
 	TriMeshOptions& ObjectColor(const float3& color, bool enable = true) { mObjectColor = color; mEnableObjectColor = enable; return *this; }
 	//! Set the translate of geometry position, default is (0, 0, 0)
 	TriMeshOptions& Translate(const float3& translate) { mTranslate = translate; return *this; }
+	TriMeshOptions& RotateX(float angle) { m_rotateX = angle; return *this; }
+	TriMeshOptions& RotateY(float angle) { m_rotateY = angle; return *this; }
 	//! Set the scale of geometry position, default is (1, 1, 1)
 	TriMeshOptions& Scale(const float3& scale) { mScale = scale; return *this; }
 	//! Sets the UV texture coordinate scale, default is (1, 1)
@@ -1740,9 +1743,11 @@ private:
 	bool   mInvertWinding = false;
 	float3 mObjectColor = float3(0.7f);
 	float3 mTranslate = float3(0, 0, 0);
+	float  m_rotateX = 0.0f;
+	float  m_rotateY = 0.0f;
 	float3 mScale = float3(1, 1, 1);
 	float2 mTexCoordScale = float2(1, 1);
-	friend class TriMesh;
+
 };
 
 class TriMesh final

@@ -19,18 +19,23 @@ ConstantBuffer<SceneData> Scene : register(b0);
 Texture2D              ShadowDepthTexture : register(t1);
 SamplerComparisonState ShadowDepthSampler : register(s2);
 
+Texture2D              DiffuseTexture : register(t3);
+SamplerComparisonState DiffuseSampler : register(s4);
+
 struct VSOutput {
     float4 PositionWS : POSITION;
 	float4 Position   : SV_POSITION;
 	float3 Color      : COLOR;
     float3 Normal     : NORMAL;
+    float2 TexCoord   : TEXCOORD0;
     float4 PositionLS : POSITIONLS;
 };
 
 VSOutput vsmain(
     float4 Position : POSITION, 
     float3 Color    : COLOR, 
-    float3 Normal   : NORMAL)
+    float3 Normal   : NORMAL,
+    float2 TexCoord : TEXCOORD0)
 {
 	VSOutput result;
     
@@ -46,6 +51,9 @@ VSOutput vsmain(
     
     // Transform world space psoition into light's view
     result.PositionLS = mul(Scene.LightViewProjectionMatrix, result.PositionWS);
+    
+    // texture coord
+    result.TexCoord = TexCoord;
     
 	return result;
 }

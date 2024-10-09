@@ -2055,13 +2055,9 @@ uint64_t TriMesh::GetDataSizeBitangents() const
 
 const uint16_t* TriMesh::GetDataIndicesU16(uint32_t index) const
 {
-	if (mIndexType != IndexType::Uint16) {
-		return nullptr;
-	}
+	if (mIndexType != IndexType::Uint16) return nullptr;
 	uint32_t count = GetCountIndices();
-	if (index >= count) {
-		return nullptr;
-	}
+	if (index >= count) return nullptr;
 	size_t      offset = sizeof(uint16_t) * index;
 	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
 	return reinterpret_cast<const uint16_t*>(ptr);
@@ -2069,13 +2065,9 @@ const uint16_t* TriMesh::GetDataIndicesU16(uint32_t index) const
 
 const uint32_t* TriMesh::GetDataIndicesU32(uint32_t index) const
 {
-	if (mIndexType != IndexType::Uint32) {
-		return nullptr;
-	}
+	if (mIndexType != IndexType::Uint32) return nullptr;
 	uint32_t count = GetCountIndices();
-	if (index >= count) {
-		return nullptr;
-	}
+	if (index >= count) return nullptr;
 	size_t      offset = sizeof(uint32_t) * index;
 	const char* ptr = reinterpret_cast<const char*>(mIndices.data()) + offset;
 	return reinterpret_cast<const uint32_t*>(ptr);
@@ -2083,9 +2075,7 @@ const uint32_t* TriMesh::GetDataIndicesU32(uint32_t index) const
 
 const float3* TriMesh::GetDataPositions(uint32_t index) const
 {
-	if (index >= mPositions.size()) {
-		return nullptr;
-	}
+	if (index >= mPositions.size()) return nullptr;
 	size_t      offset = sizeof(float3) * index;
 	const char* ptr = reinterpret_cast<const char*>(mPositions.data()) + offset;
 	return reinterpret_cast<const float3*>(ptr);
@@ -2093,9 +2083,7 @@ const float3* TriMesh::GetDataPositions(uint32_t index) const
 
 const float3* TriMesh::GetDataColors(uint32_t index) const
 {
-	if (index >= mColors.size()) {
-		return nullptr;
-	}
+	if (index >= mColors.size()) return nullptr;
 	size_t      offset = sizeof(float3) * index;
 	const char* ptr = reinterpret_cast<const char*>(mColors.data()) + offset;
 	return reinterpret_cast<const float3*>(ptr);
@@ -2103,9 +2091,7 @@ const float3* TriMesh::GetDataColors(uint32_t index) const
 
 const float3* TriMesh::GetDataNormalls(uint32_t index) const
 {
-	if (index >= mNormals.size()) {
-		return nullptr;
-	}
+	if (index >= mNormals.size()) return nullptr;
 	size_t      offset = sizeof(float3) * index;
 	const char* ptr = reinterpret_cast<const char*>(mNormals.data()) + offset;
 	return reinterpret_cast<const float3*>(ptr);
@@ -2113,13 +2099,9 @@ const float3* TriMesh::GetDataNormalls(uint32_t index) const
 
 const float2* TriMesh::GetDataTexCoords2(uint32_t index) const
 {
-	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_2) {
-		return nullptr;
-	}
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_2) return nullptr;
 	uint32_t count = GetCountTexCoords();
-	if (index >= count) {
-		return nullptr;
-	}
+	if (index >= count) return nullptr;
 	size_t      offset = sizeof(float2) * index;
 	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
 	return reinterpret_cast<const float2*>(ptr);
@@ -2127,13 +2109,9 @@ const float2* TriMesh::GetDataTexCoords2(uint32_t index) const
 
 const float3* TriMesh::GetDataTexCoords3(uint32_t index) const
 {
-	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_3) {
-		return nullptr;
-	}
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_3) return nullptr;
 	uint32_t count = GetCountTexCoords();
-	if (index >= count) {
-		return nullptr;
-	}
+	if (index >= count) return nullptr;
 	size_t      offset = sizeof(float3) * index;
 	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
 	return reinterpret_cast<const float3*>(ptr);
@@ -2141,13 +2119,9 @@ const float3* TriMesh::GetDataTexCoords3(uint32_t index) const
 
 const float4* TriMesh::GetDataTexCoords4(uint32_t index) const
 {
-	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_4) {
-		return nullptr;
-	}
+	if (mTexCoordDim != TRI_MESH_ATTRIBUTE_DIM_4) return nullptr;
 	uint32_t count = GetCountTexCoords();
-	if (index >= count) {
-		return nullptr;
-	}
+	if (index >= count) return nullptr;
 	size_t      offset = sizeof(float4) * index;
 	const char* ptr = reinterpret_cast<const char*>(mTexCoords.data()) + offset;
 	return reinterpret_cast<const float4*>(ptr);
@@ -2155,9 +2129,7 @@ const float4* TriMesh::GetDataTexCoords4(uint32_t index) const
 
 const float4* TriMesh::GetDataTangents(uint32_t index) const
 {
-	if (index >= mTangents.size()) {
-		return nullptr;
-	}
+	if (index >= mTangents.size()) return nullptr;
 	size_t      offset = sizeof(float4) * index;
 	const char* ptr = reinterpret_cast<const char*>(mTangents.data()) + offset;
 	return reinterpret_cast<const float4*>(ptr);
@@ -2165,9 +2137,7 @@ const float4* TriMesh::GetDataTangents(uint32_t index) const
 
 const float3* TriMesh::GetDataBitangents(uint32_t index) const
 {
-	if (index >= mBitangents.size()) {
-		return nullptr;
-	}
+	if (index >= mBitangents.size()) return nullptr;
 	size_t      offset = sizeof(float3) * index;
 	const char* ptr = reinterpret_cast<const char*>(mBitangents.data()) + offset;
 	return reinterpret_cast<const float3*>(ptr);
@@ -2196,16 +2166,10 @@ void TriMesh::PreallocateForTriangleCount(size_t triangleCount, bool enableColor
 	// Reserve for triangles
 	switch (mIndexType)
 	{
-	case IndexType::Uint8:
-		mIndices.reserve(vertexCount * sizeof(uint8_t));
-		break;
-	case IndexType::Uint16:
-		mIndices.reserve(vertexCount * sizeof(uint16_t));
-		break;
-	case IndexType::Uint32:
-		mIndices.reserve(vertexCount * sizeof(uint32_t));
-		break;
-	case IndexType::Undefined:
+	case IndexType::Uint8: mIndices.reserve(vertexCount * sizeof(uint8_t)); break;
+	case IndexType::Uint16: mIndices.reserve(vertexCount * sizeof(uint16_t)); break;
+	case IndexType::Uint32: mIndices.reserve(vertexCount * sizeof(uint32_t)); break;
+	case IndexType::Undefined: 
 	default: return;
 	}
 
@@ -2260,7 +2224,8 @@ uint32_t TriMesh::AppendPosition(const float3& value)
 	mPositions.push_back(value);
 	// Update bounding box
 	uint32_t count = GetCountPositions();
-	if (count > 1) {
+	if (count > 1)
+	{
 		mBoundingBoxMin.x = std::min<float>(mBoundingBoxMin.x, value.x);
 		mBoundingBoxMin.y = std::min<float>(mBoundingBoxMin.y, value.y);
 		mBoundingBoxMin.z = std::min<float>(mBoundingBoxMin.z, value.z);
@@ -2907,7 +2872,8 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 			}
 
 			// Texture coordinates
-			if ((dataIdx0.texcoord_index != -1) && (dataIdx1.texcoord_index != -1) && (dataIdx2.texcoord_index != -1)) {
+			if ((dataIdx0.texcoord_index != -1) && (dataIdx1.texcoord_index != -1) && (dataIdx2.texcoord_index != -1))
+			{
 				int i0 = 2 * dataIdx0.texcoord_index + 0;
 				int i1 = 2 * dataIdx0.texcoord_index + 1;
 				vtx0.texCoord = float2(attrib.texcoords[static_cast<size_t>(i0)], attrib.texcoords[static_cast<size_t>(i1)]);
@@ -2925,11 +2891,40 @@ Result TriMesh::CreateFromOBJ(const std::filesystem::path& path, const TriMeshOp
 				vtx1.texCoord *= options.mTexCoordScale;
 				vtx2.texCoord *= options.mTexCoordScale;
 
-				if (options.mInvertTexCoordsV) {
+				if (options.mInvertTexCoordsV)
+				{
 					vtx0.texCoord.y = 1.0f - vtx0.texCoord.y;
 					vtx1.texCoord.y = 1.0f - vtx1.texCoord.y;
 					vtx2.texCoord.y = 1.0f - vtx2.texCoord.y;
 				}
+			}
+
+			// вращение нормалей
+			if (options.m_rotateY != 0.0f)
+			{
+				vtx0.normal = glm::normalize(glm::rotateY(vtx0.normal, options.m_rotateY));
+				vtx1.normal = glm::normalize(glm::rotateY(vtx1.normal, options.m_rotateY));
+				vtx2.normal = glm::normalize(glm::rotateY(vtx2.normal, options.m_rotateY));
+			}
+			if (options.m_rotateX != 0.0f)
+			{
+				vtx0.normal = glm::normalize(glm::rotateX(vtx0.normal, options.m_rotateX));
+				vtx1.normal = glm::normalize(glm::rotateX(vtx1.normal, options.m_rotateX));
+				vtx2.normal = glm::normalize(glm::rotateX(vtx2.normal, options.m_rotateX));
+			}
+			
+			// вращение позиции
+			if (options.m_rotateY != 0.0f)
+			{
+				vtx0.position = glm::rotateY(vtx0.position, options.m_rotateY);
+				vtx1.position = glm::rotateY(vtx1.position, options.m_rotateY);
+				vtx2.position = glm::rotateY(vtx2.position, options.m_rotateY);
+			}
+			if (options.m_rotateX != 0.0f)
+			{
+				vtx0.position = glm::rotateX(vtx0.position, options.m_rotateX);
+				vtx1.position = glm::rotateX(vtx1.position, options.m_rotateX);
+				vtx2.position = glm::rotateX(vtx2.position, options.m_rotateX);
 			}
 
 			float3 pos0 = (vtx0.position * options.mScale) + options.mTranslate;
@@ -3062,6 +3057,7 @@ TriMesh& TriMesh::operator+=(const TriMesh& rhs)
 TriMesh& vkr::TriMesh::operator+=(const std::vector<TriMesh>& rhs)
 {
 	// TODO: вставьте здесь оператор return
+	return *this;
 }
 
 #pragma endregion

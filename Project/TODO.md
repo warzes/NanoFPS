@@ -4,5 +4,7 @@
 https://github.com/gabime/spdlog - для лога
 physfs - для файловой системы
 simdjson - для json
+gainput - возможно для инпута
+https://github.com/jrouwe/JoltPhysics - возможно вместо physx
 
 вместо glfw - https://github.com/ColleagueRiley/RGFW
