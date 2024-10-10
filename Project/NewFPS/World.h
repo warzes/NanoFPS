@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "Light.h"
 #include "LoaderMapData.h"
+#include "TestPhysicalBox.h"
 
 struct WorldCreateInfo final
 {
@@ -48,6 +49,7 @@ private:
 		vkr::TriMesh mesh;
 		std::string diffuseTextureFileName;
 	};
-
 	std::vector<MeshBild> m_mapMeshes;
+
+	TestPhysicalBox m_phBox;
 };

@@ -143,6 +143,8 @@ Left handed
 
 #include <pcg32.h>
 
+#include <physx/PxPhysicsAPI.h>
+
 #undef near
 #undef far
 

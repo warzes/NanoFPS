@@ -40,6 +40,9 @@ EngineApplication::EngineApplication()
 
 EngineApplication::~EngineApplication()
 {
+	m_physicsScene.reset();
+	m_physicsCallback.reset();
+	m_physicsSystem.reset();
 	m_render.Shutdown();
 	m_input.Shutdown();
 	m_window.Shutdown();
@@ -68,6 +71,15 @@ void EngineApplication::Run()
 			m_window.Update();
 			m_input.Update();
 			m_render.Update();
+
+			// update physics
+			{
+				constexpr float timeScale = /*slowMotion ? 0.2f : */1.0f;
+				if (m_physicsScene->Update(m_deltaTime, timeScale))
+				{
+					FixedUpdate(m_physicsScene->GetFixedTimestep() * timeScale);
+				}
+			}
 			Update();
 
 			// Draw
@@ -92,6 +104,11 @@ bool EngineApplication::setup()
 		return false;
 	if (!m_render.Setup(createInfo.render))
 		return false;
+
+	m_physicsSystem = std::make_shared<PhysicsSystem>();
+	m_physicsCallback = std::make_shared<PhysicsSimulationEventCallback>();
+	m_physicsScene = std::make_shared<PhysicsScene>(m_physicsSystem.get());
+	m_physicsScene->SetSimulationEventCallback(m_physicsCallback.get());
 
 	if (!Setup())
 		return false;

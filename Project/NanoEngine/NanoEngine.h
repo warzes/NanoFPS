@@ -8,6 +8,7 @@
 #include "RenderResources.h"
 #include "RenderDevice.h"
 #include "RenderSystem.h"
+#include "Physics.h"
 #include "Graphics.h"
 #include "Scene.h"
 #include "Application.h"

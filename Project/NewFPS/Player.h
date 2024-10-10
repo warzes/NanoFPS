@@ -14,7 +14,7 @@ enum class MovementDirection
 
 struct PlayerCreateInfo final
 {
-	glm::vec3 position = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 position = glm::vec3(10.0f, 10.0f, 0.0f);
 };
 
 class Player final
@@ -62,7 +62,7 @@ private:
 	float m_altitude = pi<float>() / 2.0f;
 
 	// Rate of motion (grid units) and turning (radians).
-	float m_rateOfMove = 0.2f;
+	float m_rateOfMove = 0.05f;
 	float m_rateOfTurn = 0.02f;
 
 

@@ -7,6 +7,7 @@ bool World::Setup(GameApplication* game, const WorldCreateInfo& createInfo)
 	m_game = game;
 	if (!m_player.Setup(m_game, createInfo.player)) return false;
 	if (!m_mainLight.Setup(m_game)) return false;
+	if (!m_phBox.Setup(m_game)) return false;
 
 	if (!setupPipelineEntities()) return false;
 
@@ -18,6 +19,7 @@ bool World::Setup(GameApplication* game, const WorldCreateInfo& createInfo)
 void World::Shutdown()
 {
 	m_mapData.Shutdown();
+	m_phBox.Shutdown();
 	m_mainLight.Shutdown();
 	m_player.Shutdown();
 }
@@ -42,7 +44,8 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 	}
 
 	// Draw light
-	GetMainLight().DrawDebug(cmd);
+	m_mainLight.DrawDebug(cmd);
+	m_phBox.DrawDebug(cmd);
 }
 
 void World::UpdateUniformBuffer()
@@ -50,15 +53,23 @@ void World::UpdateUniformBuffer()
 	for (size_t i = 0; i < m_entities.size(); ++i)
 	{
 		GameEntity& entity = m_entities[i];
-		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), GetMainLight(), m_game->GetGameGraphics().GetShadowPass().UsePCF());
+		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), m_mainLight, m_game->GetGameGraphics().GetShadowPass().UsePCF());
 	}
 
 	// Update light uniform buffer
 	{
-		float4x4        T = glm::translate(GetMainLight().GetPosition());
+		float4x4        T = glm::translate(m_mainLight.GetPosition());
 		const float4x4& PV = GetPlayer().GetCamera().GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
-		GetMainLight().UpdateShaderUniform(sizeof(MVP), &MVP);
+		m_mainLight.UpdateShaderUniform(sizeof(MVP), &MVP);
+	}
+
+	// Update test physic model uniform buffer
+	{
+		float4x4        T = glm::translate(glm::vec3(10, 10, 10));
+		const float4x4& PV = GetPlayer().GetCamera().GetViewProjectionMatrix();
+		float4x4        MVP = PV * T; // Yes - the other is reversed
+		m_phBox.UpdateShaderUniform(sizeof(MVP), &MVP);
 	}
 }
 

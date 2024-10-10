@@ -2,6 +2,7 @@
 
 #include "Platform.h"
 #include "RenderSystem.h"
+#include "Physics.h"
 
 #pragma region Create Application Info
 
@@ -59,6 +60,7 @@ public:
 	virtual void Scroll([[maybe_unused]] float dx, [[maybe_unused]] float dy) {}
 
 	virtual void Update() {}
+	virtual void FixedUpdate([[maybe_unused]] float fixedDeltaTime) {}
 	virtual void Render() {}
 
 	void Quit();
@@ -73,6 +75,9 @@ public:
 	Input& GetInput() { return m_input; }
 	vkr::RenderSystem& GetRender() { return m_render; }
 	vkr::RenderDevice& GetRenderDevice() { return m_render.GetRenderDevice(); }
+
+	std::shared_ptr<PhysicsSystem> GetPhysicsSystem() { return m_physicsSystem; }
+	std::shared_ptr<PhysicsScene> GetPhysicsScene() { return m_physicsScene; }
 
 	const KeyState& GetKeyState(KeyCode code) const;
 
@@ -101,17 +106,21 @@ private:
 	void keyDownCallback(KeyCode key);
 	void keyUpCallback(KeyCode key);
 
-	std::ofstream     m_logFile;
-	Window            m_window;
-	Input             m_input;
-	vkr::RenderSystem m_render;
-	StatusApp         m_status = StatusApp::NonInit;
-	int32_t           m_previousMouseX = INT32_MAX;
-	int32_t           m_previousMouseY = INT32_MAX;
-	KeyState          m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
+	std::ofstream                                   m_logFile;
+	Window                                          m_window;
+	Input                                           m_input;
+	vkr::RenderSystem                               m_render;
+	StatusApp                                       m_status = StatusApp::NonInit;
+	int32_t                                         m_previousMouseX = INT32_MAX;
+	int32_t                                         m_previousMouseY = INT32_MAX;
+	KeyState                                        m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
 
-	float             m_lastFrameTime{};
-	float             m_deltaTime{};
+	float                                           m_lastFrameTime{};
+	float                                           m_deltaTime{};
+
+	std::shared_ptr<PhysicsSystem>                  m_physicsSystem; // TODO: переделать под остальную архитектуру, без new
+	std::shared_ptr<PhysicsSimulationEventCallback> m_physicsCallback;
+	std::shared_ptr<PhysicsScene>                   m_physicsScene; // TODO: в будущем создавать из physics system
 };
 
 #pragma endregion

@@ -28,6 +28,9 @@
     <ClCompile Include="LoaderMapData.cpp">
       <Filter>game\Map</Filter>
     </ClCompile>
+    <ClCompile Include="TestPhysicalBox.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApp.h" />
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="LoaderMapData.h">
       <Filter>game\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="TestPhysicalBox.h">
+      <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
