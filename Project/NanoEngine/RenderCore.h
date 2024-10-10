@@ -1823,7 +1823,6 @@ public:
 	static TriMesh CreateFromOBJ(const std::filesystem::path& path, const TriMeshOptions& options = TriMeshOptions());
 
 	TriMesh& operator+=(const TriMesh& rhs);
-	TriMesh& operator+=(const std::vector<TriMesh>& rhs);
 
 private:
 	void AppendIndexU16(uint16_t value);

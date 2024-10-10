@@ -616,11 +616,6 @@ void Transform::SetTranslation(const glm::vec3& value)
 	m_dirty.concatenated = true;
 }
 
-void Transform::SetTranslation(float x, float y, float z)
-{
-	SetTranslation(glm::vec3(x, y, z));
-}
-
 void Transform::SetRotation(const glm::vec3& value)
 {
 	m_rotation = value;
@@ -628,20 +623,10 @@ void Transform::SetRotation(const glm::vec3& value)
 	m_dirty.concatenated = true;
 }
 
-void Transform::SetRotation(float x, float y, float z)
-{
-	SetRotation(glm::vec3(x, y, z));
-}
-
 void Transform::SetScale(const glm::vec3& value)
 {
 	m_scale = value;
 	m_dirty.scale = true;
-}
-
-void Transform::SetScale(float x, float y, float z)
-{
-	SetScale(glm::vec3(x, y, z));
 }
 
 void Transform::SetRotationOrder(Transform::RotationOrder value)

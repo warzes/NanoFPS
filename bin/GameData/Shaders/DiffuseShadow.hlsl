@@ -121,4 +121,5 @@ float4 psmain(VSOutput input) : SV_TARGET
     float  ambient = Scene.Ambient.x;
     float3 Co = diffuseTex.rgb * (diffuse * shadowFactor + ambient) * input.Color;
     return float4(Co, diffuseTex.a);
+
 }

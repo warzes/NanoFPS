@@ -1551,11 +1551,8 @@ public:
 	RotationOrder GetRotationOrder() const { return m_rotationOrder; }
 
 	virtual void SetTranslation(const glm::vec3& value);
-	virtual void SetTranslation(float x, float y, float z);
 	virtual void SetRotation(const glm::vec3& value);
-	virtual void SetRotation(float x, float y, float z);
 	virtual void SetScale(const glm::vec3& value);
-	virtual void SetScale(float x, float y, float z);
 	virtual void SetRotationOrder(Transform::RotationOrder value);
 
 	const glm::mat4x4& GetTranslationMatrix() const;

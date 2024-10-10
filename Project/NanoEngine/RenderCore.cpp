@@ -3059,12 +3059,6 @@ TriMesh& TriMesh::operator+=(const TriMesh& rhs)
 	return *this;
 }
 
-TriMesh& vkr::TriMesh::operator+=(const std::vector<TriMesh>& rhs)
-{
-	// TODO: вставьте здесь оператор return
-	return *this;
-}
-
 #pragma endregion
 
 #pragma region WireMesh

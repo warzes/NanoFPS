@@ -43,6 +43,11 @@ private:
 	// Map
 	LoaderMapData m_mapData;
 
-	//std::vector<vkr::TriMesh> m_mapMeshes;
-	vkr::TriMesh m_mapMeshes;
+	struct MeshBild final
+	{
+		vkr::TriMesh mesh;
+		std::string diffuseTextureFileName;
+	};
+
+	std::vector<MeshBild> m_mapMeshes;
 };

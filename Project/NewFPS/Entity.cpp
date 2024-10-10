@@ -4,7 +4,7 @@
 #include "Light.h"
 
 // Draw uniform buffers
-struct GameEntityScene
+struct GameEntityScene final
 {
 	float4x4 ModelMatrix;                // Transforms object space to world space
 	float4x4 NormalMatrix;               // Transforms object space to normal space
@@ -15,7 +15,7 @@ struct GameEntityScene
 	uint4    UsePCF;                     // Enable/disable PCF
 };
 
-bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass)
+bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass)
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
@@ -23,14 +23,14 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr:
 
 	// Load textures
 	vkr::vkrUtil::ImageOptions options = vkr::vkrUtil::ImageOptions().MipLevelCount(RemainingMipLevels);
-	CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), "basic/textures/box_panel.jpg", &image, options, true));
+	CHECKED_CALL(vkr::vkrUtil::CreateImageFromFile(device.GetGraphicsQueue(), diffuseTextureFileName, &image, options, true));
 	vkr::SampledImageViewCreateInfo viewCreateInfo = vkr::SampledImageViewCreateInfo::GuessFromImage(image);
 	CHECKED_CALL(device.CreateSampledImageView(viewCreateInfo, &sampledImageView));
 
 	vkr::SamplerCreateInfo samplerCreateInfo = {};
-	samplerCreateInfo.magFilter = vkr::Filter::Linear;
-	samplerCreateInfo.minFilter = vkr::Filter::Linear;
-	samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Linear;
+	samplerCreateInfo.magFilter = vkr::Filter::Nearest;
+	samplerCreateInfo.minFilter = vkr::Filter::Nearest;
+	samplerCreateInfo.mipmapMode = vkr::SamplerMipmapMode::Nearest;
 	samplerCreateInfo.minLod = 0;
 	samplerCreateInfo.maxLod = FLT_MAX;
 	CHECKED_CALL(device.CreateSampler(samplerCreateInfo, &sampler));

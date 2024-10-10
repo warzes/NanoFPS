@@ -5,7 +5,7 @@ class DirectionalLight;
 
 struct GameEntity
 {
-	bool Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass);
+	bool Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass);
 
 	void UniformBuffer(const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF);
 

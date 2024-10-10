@@ -183,24 +183,24 @@ namespace scene
 	};
 
 	// Scene Graph Node
-	// This is the base class for scene graph nodes. It contains transform, parent, children, and visbility properties. scene::Node is instantiable and can be used as a locator/empty/group node that just contains children nodes.
+	// This is the base class for scene graph nodes. It contains transform, parent, children, and visibility properties. scene::Node is instantiable and can be used as a locator/empty/group node that just contains children nodes.
 	// This node objects can also be used as standalone objects outside of a scene. Standalone nodes will have neither a parent or children. Loader implementations must not populate a standalone node's parent or children if loading a standalone node.
 	// When used as a standalone node, scene::Node stores only transform information.
 	class Node : public Transform, public vkr::NamedObjectTrait
 	{
 	public:
 		Node(scene::Scene* pScene);
-		virtual ~Node();
+		~Node() override;
 
 		virtual scene::NodeType GetNodeType() const { return scene::NODE_TYPE_TRANSFORM; }
 
 		bool IsVisible() const { return mVisible; }
 		void SetVisible(bool visible, bool recursive = false);
 
-		virtual void SetTranslation(const float3& translation) override;
-		virtual void SetRotation(const float3& rotation) override;
-		virtual void SetScale(const float3& scale) override;
-		virtual void SetRotationOrder(Transform::RotationOrder rotationOrder) override;
+		void SetTranslation(const float3& translation) override;
+		void SetRotation(const float3& rotation) override;
+		void SetScale(const float3& scale) override;
+		void SetRotationOrder(Transform::RotationOrder rotationOrder) override;
 
 		const float4x4& GetEvaluatedMatrix() const;
 

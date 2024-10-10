@@ -346,7 +346,7 @@ namespace scene
 		bool hasNormalTex = HasNormalTexture();
 		bool hasOcclusionTex = HasOcclusionTexture();
 		bool hasEmissiveTex = HasEmissiveTexture();
-		bool hasTextures = hasBaseColorTex || hasMetallicRoughnessTex || hasNormalTex || hasOcclusionTex || hasNormalTex;
+		bool hasTextures = hasBaseColorTex || hasMetallicRoughnessTex || hasNormalTex || hasOcclusionTex || hasEmissiveTex;
 		return hasTextures;
 	}
 
@@ -657,25 +657,22 @@ namespace scene {
 		vkr::DescriptorBinding{MATERIAL_SAMPLERS_REGISTER,       vkr::DescriptorType::Sampler,              MAX_MATERIAL_SAMPLERS, vkr::SHADER_STAGE_ALL},
 		vkr::DescriptorBinding{MATERIAL_TEXTURES_REGISTER,       vkr::DescriptorType::SampledImage,        MAX_MATERIAL_TEXTURES, vkr::SHADER_STAGE_ALL},
 		};
-		// clang-format on
 
 		// Create descriptor pool
 		{
 			vkr::DescriptorPoolCreateInfo createInfo = {};
-			//
-			for (const auto& binding : bindings) {
-				// clang-format off
-				switch (binding.type) {
+			for (const auto& binding : bindings) 
+			{
+				switch (binding.type)
+				{
 				case vkr::DescriptorType::UniformBuffer: createInfo.uniformBuffer += binding.arrayCount; break;
 				case vkr::DescriptorType::ROStructuredBuffer: createInfo.structuredBuffer += binding.arrayCount; break;
 				case vkr::DescriptorType::Sampler: createInfo.sampler += binding.arrayCount; break;
 				case vkr::DescriptorType::SampledImage: createInfo.sampledImage += binding.arrayCount; break;
 				default:
-					Warning("Found a descriptor binding with unsupported "
-						"type " + std::to_string((int)binding.type) + "; ignoring");
+					Warning("Found a descriptor binding with unsupported type " + std::to_string((int)binding.type) + "; ignoring");
 					break;
 				}
-				// clang-format on
 			}
 
 			auto ppxres = pDevice->CreateDescriptorPool(createInfo, &mDescriptorPool);
@@ -1570,15 +1567,14 @@ namespace scene {
 
 	Result Scene::AddNode(scene::NodePtr&& node)
 	{
-		if (!node) {
-			return ERROR_UNEXPECTED_NULL_ARGUMENT;
-		}
+		if (!node) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
 		scene::MeshNode* pMeshNode = nullptr;
 		scene::CameraNode* pCameraNode = nullptr;
 		scene::LightNode* pLightNode = nullptr;
-		//
-		switch (node->GetNodeType()) {
+
+		switch (node->GetNodeType())
+		{
 		default: return ERROR_SCENE_UNSUPPORTED_NODE_TYPE;
 		case scene::NODE_TYPE_TRANSFORM: break;
 		case scene::NODE_TYPE_MESH: pMeshNode = static_cast<scene::MeshNode*>(node.get()); break;
@@ -1716,8 +1712,10 @@ namespace scene {
 		switch (pGltfAccessor->type) {
 		default: break;
 
-		case cgltf_type_scalar: {
-			switch (pGltfAccessor->component_type) {
+		case cgltf_type_scalar:
+		{
+			switch (pGltfAccessor->component_type)
+			{
 			default: return vkr::Format::Undefined;
 			case cgltf_component_type_r_8: return vkr::Format::R8_SINT;
 			case cgltf_component_type_r_8u: return vkr::Format::R8_UINT;

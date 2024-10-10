@@ -3,6 +3,7 @@
 #pragma region Header
 
 #if defined(_MSC_VER)
+#	pragma warning(disable : 4061)
 #	pragma warning(disable : 4514)
 #	pragma warning(disable : 4625)
 #	pragma warning(disable : 4626)

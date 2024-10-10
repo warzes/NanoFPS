@@ -156,25 +156,25 @@ bool World::setupPipelineEntities()
 		vertexBinding3.SetStride(8);
 		vertexBinding3.AppendAttribute(vertexAttribute3);
 
-		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo = {};
-		gpCreateInfo.VS = { VS.Get(), "vsmain" };
-		gpCreateInfo.PS = { PS.Get(), "psmain" };
-		gpCreateInfo.vertexInputState.bindingCount = 4;
-		gpCreateInfo.vertexInputState.bindings[0] = vertexBinding0;
-		gpCreateInfo.vertexInputState.bindings[1] = vertexBinding1;
-		gpCreateInfo.vertexInputState.bindings[2] = vertexBinding2;
-		gpCreateInfo.vertexInputState.bindings[3] = vertexBinding3;
-		gpCreateInfo.topology = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		gpCreateInfo.polygonMode = vkr::POLYGON_MODE_FILL;
-		gpCreateInfo.cullMode = vkr::CULL_MODE_BACK;
-		gpCreateInfo.frontFace = vkr::FRONT_FACE_CCW;
-		gpCreateInfo.depthReadEnable = true;
-		gpCreateInfo.depthWriteEnable = true;
-		gpCreateInfo.blendModes[0] = vkr::BLEND_MODE_NONE;
-		gpCreateInfo.outputState.renderTargetCount = 1;
+		vkr::GraphicsPipelineCreateInfo2 gpCreateInfo   = {};
+		gpCreateInfo.VS                                 = { VS.Get(), "vsmain" };
+		gpCreateInfo.PS                                 = { PS.Get(), "psmain" };
+		gpCreateInfo.vertexInputState.bindingCount      = 4;
+		gpCreateInfo.vertexInputState.bindings[0]       = vertexBinding0;
+		gpCreateInfo.vertexInputState.bindings[1]       = vertexBinding1;
+		gpCreateInfo.vertexInputState.bindings[2]       = vertexBinding2;
+		gpCreateInfo.vertexInputState.bindings[3]       = vertexBinding3;
+		gpCreateInfo.topology                           = vkr::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		gpCreateInfo.polygonMode                        = vkr::POLYGON_MODE_FILL;
+		gpCreateInfo.cullMode                           = vkr::CULL_MODE_BACK;
+		gpCreateInfo.frontFace                          = vkr::FRONT_FACE_CCW;
+		gpCreateInfo.depthReadEnable                    = true;
+		gpCreateInfo.depthWriteEnable                   = true;
+		gpCreateInfo.blendModes[0]                      = vkr::BLEND_MODE_NONE;
+		gpCreateInfo.outputState.renderTargetCount      = 1;
 		gpCreateInfo.outputState.renderTargetFormats[0] = swapChain.GetColorFormat(); // TODO: передавать через креатор
-		gpCreateInfo.outputState.depthStencilFormat = swapChain.GetDepthFormat(); // TODO: передавать через креатор
-		gpCreateInfo.pipelineInterface = m_drawObjectPipelineInterface;
+		gpCreateInfo.outputState.depthStencilFormat     = swapChain.GetDepthFormat(); // TODO: передавать через креатор
+		gpCreateInfo.pipelineInterface                  = m_drawObjectPipelineInterface;
 
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateGraphicsPipeline(gpCreateInfo, &m_drawObjectPipeline));
 		device.DestroyShaderModule(VS);
@@ -235,11 +235,10 @@ bool World::loadMap(std::string_view mapFileName)
 		.Normals()
 		.TexCoords();
 
-	auto& tileGrid = m_mapData.GetTileGrid();
-	auto& tileModelFileName = m_mapData.GetModelPaths();
-
-	bool first = true;
-		
+	const auto& tileGrid = m_mapData.GetTileGrid();
+	const auto& tileModelFileName = m_mapData.GetModelPaths();
+	const auto& tileTextureFileName = m_mapData.GetTexturePaths();
+			
 	for (size_t x = 0; x < tileGrid.GetWidth(); x++)
 	{
 		for (size_t y = 0; y < tileGrid.GetLength(); y++)
@@ -247,45 +246,46 @@ bool World::loadMap(std::string_view mapFileName)
 			for (size_t z = 0; z < tileGrid.GetHeight(); z++)
 			{
 				auto tile = tileGrid.GetTile(x, z, y);
-				if (tile.shape == fileMapData::NO_MODEL) continue;
+				if (!tile) continue;
 
-				if (first)
+				auto mesh = vkr::TriMesh::CreateFromOBJ(
+					tileModelFileName[tile.shape],
+					vkr::TriMeshOptions(options)
+					.ObjectColor(float3(1.0f, 1.0f, 1.0f))
+					.Translate(float3{ x, z, y } * tileGrid.GetSpacing())
+					.RotateX(glm::radians(float(-tile.pitch)))
+					.RotateY(glm::radians(float(-tile.angle)))
+				);
+
+				std::string textureName = tileTextureFileName[tile.texture].string();
+				bool isFind = false;
+				for (size_t i = 0; i < m_mapMeshes.size(); i++)
 				{
-					m_mapMeshes = vkr::TriMesh::CreateFromOBJ(
-						tileModelFileName[tile.shape],
-						vkr::TriMeshOptions(options)
-						.ObjectColor(float3(0.3f, 0.6f, 1.0f)));
-					first = false;
+					if (textureName == m_mapMeshes[i].diffuseTextureFileName)
+					{
+						isFind = true;
+						m_mapMeshes[i].mesh += mesh;
+						break;
+					}
 				}
-				else
+
+				if (!isFind)
 				{
-					auto mesh = vkr::TriMesh::CreateFromOBJ(
-						tileModelFileName[tile.shape],
-						vkr::TriMeshOptions(options)
-						.ObjectColor(float3(0.3f, 0.6f, 1.0f))
-						.Translate(float3{ x, z, y } * tileGrid.GetSpacing())
-						.RotateX(glm::radians(float(-tile.pitch)))
-						.RotateY(glm::radians(float(-tile.angle)))
-					);
-
-					// TODO: оптимизации
-					// - загрузить меши в вектор, а потом уже мержить (функция мержа меша и вектора)
-					// - возможно вмето += написать метод Merge в который передается как вектор, так и размеры всех мешей для ресерва (размеры подсчитать при загрузке меша)
-					// - не грузить в этот вектор те меши, которые уже там есть
-
-					m_mapMeshes += mesh;
+					MeshBild mb{};
+					mb.diffuseTextureFileName = textureName;
+					mb.mesh = mesh;
+					m_mapMeshes.emplace_back(mb);
 				}
 			}
 		}
 	}
 
-
-	GameEntity entity;
-	entity.Setup(device, m_mapMeshes, descriptorPool, m_drawObjectSetLayout, shadowPassData);
-	m_entities.emplace_back(entity);
-
-	auto tt = entity.mesh->GetDerivedVertexBindings();
-
+	for (size_t i = 0; i < m_mapMeshes.size(); i++)
+	{
+		GameEntity entity;
+		entity.Setup(device, m_mapMeshes[i].mesh, m_mapMeshes[i].diffuseTextureFileName, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+		m_entities.emplace_back(entity);
+	}
 
 	return true;
 }
