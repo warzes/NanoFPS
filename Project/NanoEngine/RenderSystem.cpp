@@ -12,7 +12,7 @@ namespace vkr {
 
 #pragma region VulkanInstance
 
-VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, [[maybe_unused]] void* pUserData)
 {
 	// Ignore these messages because they're nonsense
 	if (
@@ -215,8 +215,8 @@ std::optional<vkb::Instance> VulkanInstance::createInstance(const InstanceCreate
 
 VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationCallbacks* allocator)
 {
-	VkSurfaceKHR surface{ VK_NULL_HANDLE };
-	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &surface);
+	VkSurfaceKHR tempSurface{ VK_NULL_HANDLE };
+	VkResult err = glfwCreateWindowSurface(instance, window, allocator, &tempSurface);
 	if (err)
 	{
 		const char* errorMsg = nullptr;
@@ -227,12 +227,12 @@ VkSurfaceKHR VulkanInstance::createSurfaceGLFW(GLFWwindow* window, VkAllocationC
 			if (errorMsg != nullptr) text += std::string(errorMsg);
 			Fatal(text);
 		}
-		surface = VK_NULL_HANDLE;
+		tempSurface = VK_NULL_HANDLE;
 	}
-	return surface;
+	return tempSurface;
 }
 
-std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Instance& instance, const InstanceCreateInfo& createInfo)
+std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Instance& Instance, const InstanceCreateInfo& createInfo)
 {
 	// vulkan 1.0 features
 	VkPhysicalDeviceFeatures features10{};
@@ -265,7 +265,7 @@ std::optional<vkb::PhysicalDevice> VulkanInstance::selectDevice(const vkb::Insta
 	features13.dynamicRendering = VK_TRUE;
 	features13.synchronization2 = VK_TRUE;
 	
-	vkb::PhysicalDeviceSelector physicalDeviceSelector{ instance };
+	vkb::PhysicalDeviceSelector physicalDeviceSelector{ Instance };
 
 	auto physicalDeviceRet = physicalDeviceSelector
 		.set_minimum_version(1, 3)
@@ -331,7 +331,7 @@ bool VulkanInstance::initVma()
 	VkResult result = vmaCreateAllocator(&vmaCreateInfo, &vmaAllocator);
 	if (result != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vmaCreateAllocator failed: " + ToString(result));
+		Fatal("vmaCreateAllocator failed: " + ToString(result));
 		return false;
 	}
 
@@ -398,7 +398,7 @@ bool VulkanSurface::Setup()
 	result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &surfaceCaps);
 	if (result != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed: " + ToString(result));
+		Fatal("vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed: " + ToString(result));
 		return false;
 	}
 
@@ -413,7 +413,7 @@ bool VulkanSurface::Setup()
 		result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
 		if (result != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceFormatsKHR(0) failed: " + ToString(result));
+			Fatal("vkGetPhysicalDeviceSurfaceFormatsKHR(0) failed: " + ToString(result));
 			return false;
 		}
 
@@ -424,7 +424,7 @@ bool VulkanSurface::Setup()
 			result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, m_surfaceFormats.data());
 			if (result != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceFormatsKHR(1) failed: " + ToString(result));
+				Fatal("vkGetPhysicalDeviceSurfaceFormatsKHR(1) failed: " + ToString(result));
 				return false;
 			}
 		}
@@ -437,7 +437,7 @@ bool VulkanSurface::Setup()
 		result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
 		if (result != VK_SUCCESS)
 		{
-			ASSERT_MSG(false, "vkGetPhysicalDeviceSurfacePresentModesKHR(0) failed: " + ToString(result));
+			Fatal("vkGetPhysicalDeviceSurfacePresentModesKHR(0) failed: " + ToString(result));
 			return false;
 		}
 
@@ -448,7 +448,7 @@ bool VulkanSurface::Setup()
 			result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, m_presentModes.data());
 			if (result != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vkGetPhysicalDeviceSurfacePresentModesKHR(1) failed: " + ToString(result));
+				Fatal("vkGetPhysicalDeviceSurfacePresentModesKHR(1) failed: " + ToString(result));
 				return false;
 			}
 		}
@@ -466,7 +466,7 @@ VkSurfaceCapabilitiesKHR VulkanSurface::GetCapabilities() const
 		&surfaceCaps);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(1) failed: " + ToString(vkres));
+		Fatal("vkGetPhysicalDeviceSurfaceCapabilitiesKHR(1) failed: " + ToString(vkres));
 	}
 	return surfaceCaps;
 }
@@ -566,7 +566,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				}
 				if (!isImageCountValid)
 				{
-					ASSERT_MSG(false, "Invalid swapchain image count");
+					Fatal("Invalid swapchain image count");
 					return false;
 				}
 			}
@@ -577,7 +577,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				VkFormat format = ToVkEnum(m_createInfo.colorFormat);
 				if (format == VK_FORMAT_UNDEFINED)
 				{
-					ASSERT_MSG(false, "Invalid swapchain format");
+					Fatal("Invalid swapchain format");
 					return false;
 				}
 
@@ -591,7 +591,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 
 				if (it == std::end(surfaceFormats))
 				{
-					ASSERT_MSG(false, "Unsupported swapchain format");
+					Fatal("Unsupported swapchain format");
 					return false;
 				}
 
@@ -602,7 +602,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			VkPresentModeKHR presentMode = ToVkEnum(createInfo.presentMode);
 			if (presentMode == InvalidValue<VkPresentModeKHR>())
 			{
-				ASSERT_MSG(false, "Invalid swapchain present mode");
+				Fatal("Invalid swapchain present mode");
 				return false;
 			}
 			// Fall back if present mode isn't supported
@@ -611,7 +611,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				VkResult vkres = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, nullptr);
 				if (vkres != VK_SUCCESS)
 				{
-					ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+					Fatal("vkCreateSwapchainKHR failed: " + ToString(vkres));
 					return false;
 				}
 
@@ -619,7 +619,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				vkres = vkGetPhysicalDeviceSurfacePresentModesKHR(m_render.GetVkPhysicalDevice(), m_render.GetVkSurface(), &count, presentModes.data());
 				if (vkres != VK_SUCCESS)
 				{
-					ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+					Fatal("vkCreateSwapchainKHR failed: " + ToString(vkres));
 					return false;
 				}
 
@@ -670,7 +670,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			VkResult vkres = vkCreateSwapchainKHR(m_render.GetVkDevice(), &vkci, nullptr, &m_swapChain);
 			if (vkres != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vkCreateSwapchainKHR failed: " + ToString(vkres));
+				Fatal("vkCreateSwapchainKHR failed: " + ToString(vkres));
 				return false;
 			}
 
@@ -678,7 +678,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 			vkres = vkGetSwapchainImagesKHR(m_render.GetVkDevice(), m_swapChain, &imageCount, nullptr);
 			if (vkres != VK_SUCCESS)
 			{
-				ASSERT_MSG(false, "vkGetSwapchainImagesKHR(0) failed: " + ToString(vkres));
+				Fatal("vkGetSwapchainImagesKHR(0) failed: " + ToString(vkres));
 				return false;
 			}
 			Print("Vulkan swapchain image count: " + std::to_string(imageCount));
@@ -689,7 +689,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				vkres = vkGetSwapchainImagesKHR(m_render.GetVkDevice(), m_swapChain, &imageCount, colorImages.data());
 				if (vkres != VK_SUCCESS)
 				{
-					ASSERT_MSG(false, "vkGetSwapchainImagesKHR(1) failed: " + ToString(vkres));
+					Fatal("vkGetSwapchainImagesKHR(1) failed: " + ToString(vkres));
 					return false;
 				}
 			}
@@ -742,7 +742,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 					VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT); // newPipelineStage
 				if (vkres != VK_SUCCESS)
 				{
-					ASSERT_MSG(false, "Queue::TransitionImageLayout failed: " + ToString(vkres));
+					Fatal("Queue::TransitionImageLayout failed: " + ToString(vkres));
 					return false;
 				}
 			}
@@ -772,7 +772,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);
 				if (Failed(ppxres))
 				{
-					ASSERT_MSG(false, "image create failed");
+					Fatal("image create failed");
 					return false;
 				}
 
@@ -788,7 +788,7 @@ bool VulkanSwapChain::Setup(const VulkanSwapChainCreateInfo& createInfo)
 				Result ppxres = m_render.GetRenderDevice().CreateImage(imageCreateInfo, &image);
 				if (Failed(ppxres))
 				{
-					ASSERT_MSG(false, "image create failed");
+					Fatal("image create failed");
 					return false;
 				}
 
@@ -1057,8 +1057,9 @@ Result VulkanSwapChain::createRenderPasses()
 
 		RenderPassPtr renderPass;
 		auto ppxres = m_render.GetRenderDevice().CreateRenderPass(rpCreateInfo, &renderPass);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "Swapchain::CreateRenderPass(CLEAR) failed");
+		if (Failed(ppxres))
+		{
+			Fatal("Swapchain::CreateRenderPass(CLEAR) failed");
 			return ppxres;
 		}
 
@@ -1083,7 +1084,7 @@ Result VulkanSwapChain::createRenderPasses()
 		auto ppxres = m_render.GetRenderDevice().CreateRenderPass(rpCreateInfo, &renderPass);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "Swapchain::CreateRenderPass(LOAD) failed");
+			Fatal("Swapchain::CreateRenderPass(LOAD) failed");
 			return ppxres;
 		}
 
@@ -1130,7 +1131,7 @@ Result VulkanSwapChain::createRenderTargets()
 		Result ppxres = m_render.GetRenderDevice().CreateRenderTargetView(rtvCreateInfo, &rtv);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for LOAD_OP_CLEAR failed");
+			Fatal("Swapchain::CreateRenderTargets() for LOAD_OP_CLEAR failed");
 			return ppxres;
 		}
 		m_clearRenderTargets.push_back(rtv);
@@ -1139,7 +1140,7 @@ Result VulkanSwapChain::createRenderTargets()
 		ppxres = m_render.GetRenderDevice().CreateRenderTargetView(rtvCreateInfo, &rtv);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for LOAD_OP_LOAD failed");
+			Fatal("Swapchain::CreateRenderTargets() for LOAD_OP_LOAD failed");
 			return ppxres;
 		}
 		m_loadRenderTargets.push_back(rtv);
@@ -1157,7 +1158,7 @@ Result VulkanSwapChain::createRenderTargets()
 			ppxres = m_render.GetRenderDevice().CreateDepthStencilView(dsvCreateInfo, &clearDsv);
 			if (Failed(ppxres))
 			{
-				ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for depth stencil view failed");
+				Fatal("Swapchain::CreateRenderTargets() for depth stencil view failed");
 				return ppxres;
 			}
 
@@ -1169,7 +1170,7 @@ Result VulkanSwapChain::createRenderTargets()
 			ppxres = m_render.GetRenderDevice().CreateDepthStencilView(dsvCreateInfo, &loadDsv);
 			if (Failed(ppxres))
 			{
-				ASSERT_MSG(false, "Swapchain::CreateRenderTargets() for depth stencil view failed");
+				Fatal("Swapchain::CreateRenderTargets() for depth stencil view failed");
 				return ppxres;
 			}
 
@@ -1223,7 +1224,7 @@ Result VulkanSwapChain::acquireNextImageInternal(uint64_t timeout, Semaphore* pS
 	// Handle failure cases
 	if (vkres < VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkAcquireNextImageKHR failed: " + ToString(vkres));
+		Fatal("vkAcquireNextImageKHR failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 	// Handle warning cases
@@ -1258,7 +1259,7 @@ Result VulkanSwapChain::presentInternal(uint32_t imageIndex, uint32_t waitSemaph
 	// Handle failure cases
 	if (vkres < VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkQueuePresentKHR failed: " + ToString(vkres));
+		Fatal("vkQueuePresentKHR failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 	// Handle warning cases
@@ -1495,7 +1496,7 @@ Result ImGuiImpl::initApiObjects()
 		Result ppxres = m_render.GetGraphicsQueue()->CreateCommandBuffer(&commandBuffer, 0, 0);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "[imgui:vk] command buffer create failed");
+			Fatal("[imgui:vk] command buffer create failed");
 			return ppxres;
 		}
 
@@ -1503,7 +1504,7 @@ Result ImGuiImpl::initApiObjects()
 		ppxres = commandBuffer->Begin();
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "[imgui:vk] command buffer begin failed");
+			Fatal("[imgui:vk] command buffer begin failed");
 			return ppxres;
 		}
 
@@ -1511,7 +1512,7 @@ Result ImGuiImpl::initApiObjects()
 		ppxres = commandBuffer->End();
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "[imgui:vk] command buffer end failed");
+			Fatal("[imgui:vk] command buffer end failed");
 			return ppxres;
 		}
 
@@ -1523,7 +1524,7 @@ Result ImGuiImpl::initApiObjects()
 		ppxres = m_render.GetGraphicsQueue()->Submit(&submitInfo);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "[imgui:vk] command buffer submit failed");
+			Fatal("[imgui:vk] command buffer submit failed");
 			return ppxres;
 		}
 
@@ -1531,7 +1532,7 @@ Result ImGuiImpl::initApiObjects()
 		ppxres = m_render.GetGraphicsQueue()->WaitIdle();
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "[imgui:vk] queue wait idle failed");
+			Fatal("[imgui:vk] queue wait idle failed");
 			return ppxres;
 		}
 
@@ -1695,8 +1696,8 @@ uint32_t RenderSystem::GetUIHeight() const
 
 float2 RenderSystem::GetNormalizedDeviceCoordinates(int32_t x, int32_t y) const
 {
-	float  fx = x / static_cast<float>(m_engine.GetWindowWidth());
-	float  fy = y / static_cast<float>(m_engine.GetWindowHeight());
+	float  fx = static_cast<float>(x) / static_cast<float>(m_engine.GetWindowWidth());
+	float  fy = static_cast<float>(y) / static_cast<float>(m_engine.GetWindowHeight());
 	float2 ndc = float2(2.0f, -2.0f) * (float2(fx, fy) - float2(0.5f));
 	return ndc;
 }
@@ -1761,7 +1762,7 @@ bool RenderSystem::createSwapChains(const SwapChainCreateInfo& swapChain)
 
 	if (!m_swapChain.Setup(ci))
 	{
-		ASSERT_MSG(false, "RenderSystem::createSwapChains failed");
+		Fatal("RenderSystem::createSwapChains failed");
 		return false;
 	}
 

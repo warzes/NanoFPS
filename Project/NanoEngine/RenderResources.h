@@ -1196,7 +1196,7 @@ namespace internal
 		static constexpr size_t kMaxEncodedShadingRate = (2 << 2) | 2;
 
 		uint32_t encodeFragmentSizeImpl(uint8_t xDensity, uint8_t yDensity) const;
-		static uint32_t rawEncode(uint8_t width, uint8_t height);
+		static uint32_t rawEncode(uint32_t width, uint32_t height);
 
 		// Maps a requested shading rate to a supported shading rate.
 		// The fragment width/height of the supported shading rate will be no larger than the fragment width/height of the requested shading rate.
@@ -1629,16 +1629,16 @@ private:
 	Result createApiObjects(const GraphicsPipelineCreateInfo& createInfo) final;
 	void destroyApiObjects() final;
 
-	Result initializeShaderStages(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, VkGraphicsPipelineCreateInfo& vkCreateInfo);
+	Result initializeShaderStages(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages);
 	Result initializeVertexInput(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkVertexInputAttributeDescription>& attribues, std::vector<VkVertexInputBindingDescription>& bindings, VkPipelineVertexInputStateCreateInfo& stateCreateInfo);
 	Result initializeInputAssembly(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineInputAssemblyStateCreateInfo& stateCreateInfo);
 	Result initializeTessellation(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineTessellationDomainOriginStateCreateInfoKHR& domainOriginStateCreateInfo, VkPipelineTessellationStateCreateInfo& stateCreateInfo);
-	Result initializeViewports(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineViewportStateCreateInfo& stateCreateInfo);
+	Result initializeViewports(VkPipelineViewportStateCreateInfo& stateCreateInfo);
 	Result initializeRasterization(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineRasterizationDepthClipStateCreateInfoEXT& depthClipStateCreateInfo, VkPipelineRasterizationStateCreateInfo& stateCreateInfo);
 	Result initializeMultisample(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineMultisampleStateCreateInfo& stateCreateInfo);
 	Result initializeDepthStencil(const GraphicsPipelineCreateInfo& pCreateInfo, VkPipelineDepthStencilStateCreateInfo& stateCreateInfo);
 	Result initializeColorBlend(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkPipelineColorBlendAttachmentState>& attachments, VkPipelineColorBlendStateCreateInfo& stateCreateInfo);
-	Result initializeDynamicState(const GraphicsPipelineCreateInfo& pCreateInfo, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo);
+	Result initializeDynamicState(std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo);
 
 	VkPipelinePtr m_pipeline;
 };
@@ -1919,7 +1919,6 @@ public:
 	// TODO: add support for calling inside a dynamic render pass (i.e., BeginRendering and EndRendering).
 	void ClearRenderTarget(Image* pImage, const float4& clearValue);
 	void ClearDepthStencil(
-		Image* pImage,
 		const DepthStencilClearValue& clearValue,
 		uint32_t                            clearFlags);
 
@@ -2324,10 +2323,6 @@ public:
 		const std::vector<BufferToImageCopyInfo>& pCopyInfos,
 		Buffer* pSrcBuffer,
 		Image* pDstImage,
-		uint32_t                                        mipLevel,
-		uint32_t                                        mipLevelCount,
-		uint32_t                                        arrayLayer,
-		uint32_t                                        arrayLayerCount,
 		ResourceState                             stateBefore,
 		ResourceState                             stateAfter);
 

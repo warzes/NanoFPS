@@ -33,7 +33,7 @@ Result Fence::WaitAndReset(uint64_t timeout)
 Result Fence::createApiObjects(const FenceCreateInfo& createInfo)
 {
 	VkFenceCreateInfo vkci = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-	vkci.flags = createInfo.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
+	vkci.flags = createInfo.signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0u;
 
 	VkResult vkres = vkCreateFence(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_fence);
 	if (vkres != VK_SUCCESS)
@@ -148,8 +148,6 @@ Result Semaphore::timelineSignal(uint64_t value) const
 	// See header for explanation
 	if (value > m_timelineSignaledValue)
 	{
-		VkSemaphore semaphoreHandle = m_semaphore;
-
 		VkSemaphoreSignalInfo signalInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO };
 		signalInfo.semaphore             = m_semaphore;
 		signalInfo.value                 = value;
@@ -293,7 +291,7 @@ uint32_t Query::getQueryTypeSize(VkQueryType type, uint32_t multiplier) const
 
 #pragma region Buffer
 
-Result Buffer::MapMemory(uint64_t offset, void** mappedAddress)
+Result Buffer::MapMemory(uint64_t /*offset*/, void** mappedAddress)
 {
 	if (IsNull(mappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
@@ -407,7 +405,7 @@ Result Buffer::createApiObjects(const BufferCreateInfo& createInfo)
 		vmaAllocci.pool                    = VK_NULL_HANDLE;
 		vmaAllocci.pUserData               = nullptr;
 
-		VkResult vkres = vmaAllocateMemoryForBuffer(GetDevice()->GetVmaAllocator(), m_buffer, &vmaAllocci, &m_allocation, &m_allocationInfo);
+		vkres = vmaAllocateMemoryForBuffer(GetDevice()->GetVmaAllocator(), m_buffer, &vmaAllocci, &m_allocation, &m_allocationInfo);
 		if (vkres != VK_SUCCESS)
 		{
 			Fatal("vmaAllocateMemoryForBuffer failed: " + ToString(vkres));
@@ -417,7 +415,7 @@ Result Buffer::createApiObjects(const BufferCreateInfo& createInfo)
 
 	// Bind memory
 	{
-		VkResult vkres = vmaBindBufferMemory(GetDevice()->GetVmaAllocator(), m_allocation, m_buffer);
+		vkres = vmaBindBufferMemory(GetDevice()->GetVmaAllocator(), m_allocation, m_buffer);
 		if (vkres != VK_SUCCESS)
 		{
 			Fatal("vmaBindBufferMemory failed: " + ToString(vkres));
@@ -503,7 +501,7 @@ ImageCreateInfo ImageCreateInfo::RenderTarget2D(uint32_t width, uint32_t height,
 	return ci;
 }
 
-Result Image::MapMemory(uint64_t offset, void** mappedAddress)
+Result Image::MapMemory(uint64_t /*offset*/, void** mappedAddress)
 {
 	if (IsNull(mappedAddress)) return ERROR_UNEXPECTED_NULL_ARGUMENT;
 
@@ -1806,7 +1804,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& create
 {
 	bool hasDepthSencil = m_depthStencilView ? true : false;
 
-	uint32_t      depthStencilAttachment = -1;
+	uint32_t      depthStencilAttachment = 0;
 	size_t        rtvCount = CountU32(m_renderTargetViews);
 	VkImageLayout depthStencillayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
@@ -1861,7 +1859,7 @@ Result RenderPass::createRenderPass(const internal::RenderPassCreateInfo& create
 			desc.initialLayout = depthStencillayout;
 			desc.finalLayout = depthStencillayout;
 
-			depthStencilAttachment = attachmentDescs.size();
+			depthStencilAttachment = static_cast<uint32_t>(attachmentDescs.size());
 			attachmentDescs.push_back(desc);
 		}
 	}
@@ -2163,7 +2161,7 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 {
 	bool hasDepthSencil = (depthStencilFormat != VK_FORMAT_UNDEFINED);
 
-	uint32_t depthStencilAttachment = -1;
+	uint32_t depthStencilAttachment = 0;
 
 	std::vector<VkAttachmentDescription> attachmentDescs;
 	{
@@ -2187,7 +2185,7 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 			desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 			desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-			depthStencilAttachment = attachmentDescs.size();
+			depthStencilAttachment = static_cast<uint32_t>(attachmentDescs.size());
 			attachmentDescs.push_back(desc);
 		}
 	}
@@ -3196,7 +3194,7 @@ namespace internal
 
 	uint32_t FDMShadingRateEncoder::encodeFragmentDensityImpl(uint8_t xDensity, uint8_t yDensity)
 	{
-		return (static_cast<uint16_t>(yDensity) << 8) | xDensity;
+		return uint32_t((static_cast<uint16_t>(yDensity) << 8) | xDensity);
 	}
 
 	uint32_t FDMShadingRateEncoder::EncodeFragmentDensity(uint8_t xDensity, uint8_t yDensity) const
@@ -3209,10 +3207,10 @@ namespace internal
 		return encodeFragmentDensityImpl(255u / fragmentWidth, 255u / fragmentHeight);
 	}
 
-	uint32_t VRSShadingRateEncoder::rawEncode(uint8_t width, uint8_t height)
+	uint32_t VRSShadingRateEncoder::rawEncode(uint32_t width, uint32_t height)
 	{
-		uint32_t widthEnc = std::min<uint8_t>(width, 4) / 2;
-		uint32_t heightEnc = std::min<uint8_t>(height, 4) / 2;
+		uint32_t widthEnc = std::min(width, 4u) / 2u;
+		uint32_t heightEnc = std::min(height, 4u) / 2u;
 		return (widthEnc << 2) | heightEnc;
 	}
 
@@ -3224,11 +3222,12 @@ namespace internal
 		std::fill(m_mapRateToSupported.begin(), m_mapRateToSupported.end(), UINT8_MAX);
 
 		// Supported shading rates map to themselves.
-		for (const auto& rate : capabilities.vrs.supportedRates) {
+		for (const auto& rate : capabilities.vrs.supportedRates)
+		{
 			if ((rate.sampleCountMask & (uint32_t)sampleCount) != 0)
 			{
 				uint32_t encoded = rawEncode(rate.fragmentSize.width, rate.fragmentSize.height);
-				m_mapRateToSupported[encoded] = encoded;
+				m_mapRateToSupported[encoded] = static_cast<uint8_t>(encoded);
 			}
 		}
 
@@ -3612,7 +3611,7 @@ void ShadingRatePattern::FDMModifiedRenderPassCreateInfo::updateRenderPassForSha
 	m_attachments.push_back(densityMapDesc);
 
 	m_fdmInfo.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-	m_fdmInfo.fragmentDensityMapAttachment.attachment = m_attachments.size() - 1;
+	m_fdmInfo.fragmentDensityMapAttachment.attachment = static_cast<uint32_t>(m_attachments.size() - 1);
 
 	InsertPNext(vkci, m_fdmInfo);
 
@@ -3638,7 +3637,7 @@ void ShadingRatePattern::VRSModifiedRenderPassCreateInfo::updateRenderPassForSha
 	vkci.attachmentCount = CountU32(m_attachments);
 	vkci.pAttachments = DataPtr(m_attachments);
 
-	m_vrsAttachmentRef.attachment = m_attachments.size() - 1;
+	m_vrsAttachmentRef.attachment = static_cast<uint32_t>(m_attachments.size() - 1);
 	m_vrsAttachmentRef.layout = VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR;
 
 	m_vrsAttachmentInfo.pFragmentShadingRateAttachment = &m_vrsAttachmentRef;
@@ -3666,7 +3665,7 @@ void FillShadingRateUniformFragmentSize(ShadingRatePatternPtr pattern, uint32_t 
 void FillShadingRateUniformFragmentDensity(ShadingRatePatternPtr pattern, uint32_t xDensity, uint32_t yDensity, Bitmap* bitmap)
 {
 	auto     encoder = pattern->GetShadingRateEncoder();
-	uint32_t encoded = encoder->EncodeFragmentDensity(xDensity, yDensity);
+	uint32_t encoded = encoder->EncodeFragmentDensity(static_cast<uint8_t>(xDensity), static_cast<uint8_t>(yDensity));
 	uint8_t* encodedBytes = reinterpret_cast<uint8_t*>(&encoded);
 	bitmap->Fill<uint8_t>(encodedBytes[0], encodedBytes[1], 0, 0);
 }
@@ -3674,16 +3673,16 @@ void FillShadingRateUniformFragmentDensity(ShadingRatePatternPtr pattern, uint32
 void FillShadingRateRadial(ShadingRatePatternPtr pattern, float scale, Bitmap* bitmap)
 {
 	auto encoder = pattern->GetShadingRateEncoder();
-	scale /= std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight());
+	scale /= static_cast<float>(std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight()));
 	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j)
 	{
-		float    y = scale * (2.0 * j - bitmap->GetHeight());
+		float    y = scale * (2.0f * (float)j - (float)bitmap->GetHeight());
 		uint8_t* addr = bitmap->GetPixel8u(0, j);
 		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride())
 		{
-			float          x = scale * (2.0 * i - bitmap->GetWidth());
+			float          x = scale * (2.0f * (float)i - (float)bitmap->GetWidth());
 			float          r2 = x * x + y * y;
-			uint32_t       encoded = encoder->EncodeFragmentSize(r2 + 1, r2 + 1);
+			uint32_t       encoded = encoder->EncodeFragmentSize((uint8_t)r2 + 1u, (uint8_t)r2 + 1u);
 			const uint8_t* encodedBytes = reinterpret_cast<const uint8_t*>(&encoded);
 			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k)
 			{
@@ -3696,15 +3695,15 @@ void FillShadingRateRadial(ShadingRatePatternPtr pattern, float scale, Bitmap* b
 void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitmap* bitmap)
 {
 	auto encoder = pattern->GetShadingRateEncoder();
-	scale /= std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight());
+	scale /= static_cast<float>(std::min<uint32_t>(bitmap->GetWidth(), bitmap->GetHeight()));
 	for (uint32_t j = 0; j < bitmap->GetHeight(); ++j)
 	{
-		float    y = scale * (2.0 * j - bitmap->GetHeight());
+		float    y = scale * (2.0f * (float)j - (float)bitmap->GetHeight());
 		uint8_t* addr = bitmap->GetPixel8u(0, j);
 		for (uint32_t i = 0; i < bitmap->GetWidth(); ++i, addr += bitmap->GetPixelStride())
 		{
-			float          x = scale * (2.0 * i - bitmap->GetWidth());
-			uint32_t       encoded = encoder->EncodeFragmentSize(x * x + 1, y * y + 1);
+			float          x = scale * (2.0f * (float)i - (float)bitmap->GetWidth());
+			uint32_t       encoded = encoder->EncodeFragmentSize(uint8_t(x * x + 1.0f), uint8_t(y * y + 1.0f));
 			const uint8_t* encodedBytes = reinterpret_cast<const uint8_t*>(&encoded);
 			for (uint32_t k = 0; k < bitmap->GetChannelCount(); ++k)
 			{
@@ -4140,7 +4139,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& crea
 	VkGraphicsPipelineCreateInfo vkci = { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
 
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-	Result ppxres = initializeShaderStages(createInfo, shaderStages, vkci);
+	Result ppxres = initializeShaderStages(createInfo, shaderStages);
 
 	std::vector<VkVertexInputAttributeDescription> vertexAttributes;
 	std::vector<VkVertexInputBindingDescription> vertexBindings;
@@ -4164,7 +4163,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& crea
 
 	VkPipelineViewportStateCreateInfo viewportState = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
 
-	ppxres = initializeViewports(createInfo, viewportState);
+	ppxres = initializeViewports(viewportState);
 	if (Failed(ppxres)) return ppxres;
 
 	VkPipelineRasterizationDepthClipStateCreateInfoEXT depthClipStateCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT };
@@ -4189,7 +4188,7 @@ Result GraphicsPipeline::createApiObjects(const GraphicsPipelineCreateInfo& crea
 
 	std::vector<VkDynamicState> dynamicStatesArray;
 	VkPipelineDynamicStateCreateInfo dynamicState = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-	ppxres = initializeDynamicState(createInfo, dynamicStatesArray, dynamicState);
+	ppxres = initializeDynamicState(dynamicStatesArray, dynamicState);
 	if (Failed(ppxres)) return ppxres;
 
 	VkRenderPassPtr renderPass = VK_NULL_HANDLE;
@@ -4283,7 +4282,7 @@ void GraphicsPipeline::destroyApiObjects()
 	}
 }
 
-Result GraphicsPipeline::initializeShaderStages(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, VkGraphicsPipelineCreateInfo& vkCreateInfo)
+Result GraphicsPipeline::initializeShaderStages(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkPipelineShaderStageCreateInfo>& shaderStages)
 {
 	// VS
 	if (!IsNull(createInfo.VS.module))
@@ -4415,7 +4414,7 @@ Result GraphicsPipeline::initializeTessellation(const GraphicsPipelineCreateInfo
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeViewports(const GraphicsPipelineCreateInfo& createInfo, VkPipelineViewportStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeViewports(VkPipelineViewportStateCreateInfo& stateCreateInfo)
 {
 	stateCreateInfo.flags = 0;
 	stateCreateInfo.viewportCount = 1;
@@ -4525,7 +4524,7 @@ Result GraphicsPipeline::initializeColorBlend(const GraphicsPipelineCreateInfo& 
 	return SUCCESS;
 }
 
-Result GraphicsPipeline::initializeDynamicState(const GraphicsPipelineCreateInfo& createInfo, std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo)
+Result GraphicsPipeline::initializeDynamicState(std::vector<VkDynamicState>& dynamicStates, VkPipelineDynamicStateCreateInfo& stateCreateInfo)
 {
 	// NOTE: Since D3D12 doesn't have line width other than 1.0, dynamic line width is not supported.
 	dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
@@ -4706,7 +4705,7 @@ Result PipelineInterface::createApiObjects(const PipelineInterfaceCreateInfo& cr
 	vkci.flags = 0;
 	vkci.setLayoutCount = createInfo.setCount;
 	vkci.pSetLayouts = setLayouts;
-	vkci.pushConstantRangeCount = hasPushConstants ? 1 : 0;
+	vkci.pushConstantRangeCount = hasPushConstants ? 1u : 0u;
 	vkci.pPushConstantRanges = hasPushConstants ? &pushConstantsRange : nullptr;
 
 	VkResult vkres = vkCreatePipelineLayout(GetDevice()->GetVkDevice(), &vkci, nullptr, &m_pipelineLayout);
@@ -4750,7 +4749,7 @@ Result CommandPool::createApiObjects(const CommandPoolCreateInfo& pCreateInfo)
 		&mCommandPool);
 	if (vkres != VK_SUCCESS)
 	{
-		ASSERT_MSG(false, "vkCreateCommandPool failed: " + ToString(vkres));
+		Fatal("vkCreateCommandPool failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -4773,15 +4772,19 @@ bool CommandBuffer::HasActiveRenderPass() const
 
 void CommandBuffer::BeginRenderPass(const RenderPassBeginInfo* pBeginInfo)
 {
-	if (HasActiveRenderPass()) {
-		ASSERT_MSG(false, "cannot nest render passes");
+	if (HasActiveRenderPass())
+	{
+		Fatal("cannot nest render passes");
+		return;
 	}
 
 	if (pBeginInfo->pRenderPass->HasLoadOpClear()) {
 		uint32_t rtvCount = pBeginInfo->pRenderPass->GetRenderTargetCount();
 		uint32_t clearCount = pBeginInfo->RTVClearCount;
-		if (clearCount < rtvCount) {
-			ASSERT_MSG(false, "clear count cannot less than RTV count");
+		if (clearCount < rtvCount) 
+		{
+			Fatal("clear count cannot less than RTV count");
+			return;
 		}
 	}
 
@@ -4791,8 +4794,10 @@ void CommandBuffer::BeginRenderPass(const RenderPassBeginInfo* pBeginInfo)
 
 void CommandBuffer::EndRenderPass()
 {
-	if (IsNull(mCurrentRenderPass)) {
-		ASSERT_MSG(false, "no render pass to end");
+	if (IsNull(mCurrentRenderPass))
+	{
+		Fatal("no render pass to end");
+		return;
 	}
 	ASSERT_MSG(!mDynamicRenderPassActive, "Dynamic render pass active, use EndRendering instead");
 
@@ -4809,7 +4814,8 @@ void CommandBuffer::BeginRendering(const RenderingInfo* pRenderingInfo)
 	mDynamicRenderPassActive = true;
 	mDynamicRenderPassInfo.mRenderArea = pRenderingInfo->renderArea;
 	auto views = pRenderingInfo->pRenderTargetViews;
-	for (uint32_t i = 0; i < pRenderingInfo->renderTargetCount; ++i) {
+	for (uint32_t i = 0; i < pRenderingInfo->renderTargetCount; ++i)
+	{
 		const RenderTargetViewPtr& rtv = views[i];
 		mDynamicRenderPassInfo.mRenderTargetViews.push_back(rtv);
 	}
@@ -4819,7 +4825,7 @@ void CommandBuffer::BeginRendering(const RenderingInfo* pRenderingInfo)
 void CommandBuffer::EndRendering()
 {
 	ASSERT_MSG(mDynamicRenderPassActive, "no render pass to end")
-		ASSERT_MSG(IsNull(mCurrentRenderPass), "Non-dynamic render pass active, use EndRendering instead");
+	ASSERT_MSG(IsNull(mCurrentRenderPass), "Non-dynamic render pass active, use EndRendering instead");
 
 	EndRenderingImpl();
 	mDynamicRenderPassActive = false;
@@ -5272,8 +5278,9 @@ Result CommandBuffer::createApiObjects(const internal::CommandBufferCreateInfo& 
 		GetDevice()->GetVkDevice(),
 		&vkai,
 		&mCommandBuffer);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkAllocateCommandBuffers failed: " + ToString(vkres));
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkAllocateCommandBuffers failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -5282,7 +5289,8 @@ Result CommandBuffer::createApiObjects(const internal::CommandBufferCreateInfo& 
 
 void CommandBuffer::destroyApiObjects()
 {
-	if (mCommandBuffer) {
+	if (mCommandBuffer)
+	{
 		vkFreeCommandBuffers(
 			GetDevice()->GetVkDevice(),
 			m_createInfo.pPool->GetVkCommandPool(),
@@ -5298,8 +5306,9 @@ Result CommandBuffer::Begin()
 	VkCommandBufferBeginInfo vkbi = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 
 	VkResult vkres = vkBeginCommandBuffer(mCommandBuffer, &vkbi);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkBeginCommandBuffer failed: " + ToString(vkres));
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkBeginCommandBuffer failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -5309,8 +5318,9 @@ Result CommandBuffer::Begin()
 Result CommandBuffer::End()
 {
 	VkResult vkres = vkEndCommandBuffer(mCommandBuffer);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkEndCommandBuffer failed: " + ToString(vkres));
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkEndCommandBuffer failed: " + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -5428,8 +5438,9 @@ void CommandBuffer::PushDescriptorImpl(
 
 	// Determine pipeline bind point
 	VkPipelineBindPoint vulkanPipelineBindPoint = InvalidValue<VkPipelineBindPoint>();
-	switch (pipelineBindPoint) {
-	default: ASSERT_MSG(false, "invalid pipeline bindpoint"); break;
+	switch (pipelineBindPoint)
+	{
+	default: Fatal("invalid pipeline bindpoint"); break;
 	case COMMAND_TYPE_GRAPHICS: vulkanPipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS; break;
 	case COMMAND_TYPE_COMPUTE: vulkanPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE; break;
 	}
@@ -5441,8 +5452,9 @@ void CommandBuffer::PushDescriptorImpl(
 	const VkDescriptorBufferInfo* pBufferInfo = nullptr;
 	VkDescriptorType              vulkanDescriptorType = InvalidValue<VkDescriptorType>();
 
-	switch (descriptorType) {
-	default: ASSERT_MSG(false, "descriptor is not of pushable type binding=" + std::to_string(binding) + ", set=" + std::to_string(set)); break;
+	switch (descriptorType)
+	{
+	default: Fatal("descriptor is not of pushable type binding=" + std::to_string(binding) + ", set=" + std::to_string(set)); break;
 
 	case DescriptorType::Sampler: {
 		vulkanDescriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -5514,7 +5526,7 @@ void CommandBuffer::ClearRenderTarget(Image* pImage, const float4& clearValue)
 
 	Rect renderArea;
 	uint32_t   colorAttachment = UINT32_MAX;
-	uint32_t   baseArrayLayer;
+	uint32_t   baseArrayLayer = 0;
 
 	// Dynamic render pass
 	if (mDynamicRenderPassActive) {
@@ -5544,8 +5556,9 @@ void CommandBuffer::ClearRenderTarget(Image* pImage, const float4& clearValue)
 		baseArrayLayer = view->GetArrayLayer();
 	}
 
-	if (colorAttachment == UINT32_MAX) {
-		ASSERT_MSG(false, "Passed image is not a render target.");
+	if (colorAttachment == UINT32_MAX)
+	{
+		Fatal("Passed image is not a render target.");
 		return;
 	}
 
@@ -5574,7 +5587,6 @@ void CommandBuffer::ClearRenderTarget(Image* pImage, const float4& clearValue)
 }
 
 void CommandBuffer::ClearDepthStencil(
-	Image* pImage,
 	const DepthStencilClearValue& clearValue,
 	uint32_t                            clearFlags)
 {
@@ -5646,8 +5658,10 @@ void CommandBuffer::TransitionImageLayout(
 {
 	ASSERT_NULL_ARG(pImage);
 
-	if ((!IsNull(pSrcQueue) && IsNull(pDstQueue)) || (IsNull(pSrcQueue) && !IsNull(pDstQueue))) {
-		ASSERT_MSG(false, "queue family transfer requires both pSrcQueue and pDstQueue to be NOT NULL");
+	if ((!IsNull(pSrcQueue) && IsNull(pDstQueue)) || (IsNull(pSrcQueue) && !IsNull(pDstQueue)))
+	{
+		Fatal("queue family transfer requires both pSrcQueue and pDstQueue to be NOT NULL");
+		return;
 	}
 
 	uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -5741,8 +5755,10 @@ void CommandBuffer::BufferResourceBarrier(
 {
 	ASSERT_NULL_ARG(pBuffer);
 
-	if ((!IsNull(pSrcQueue) && IsNull(pDstQueue)) || (IsNull(pSrcQueue) && !IsNull(pDstQueue))) {
-		ASSERT_MSG(false, "queue family transfer requires both pSrcQueue and pDstQueue to be NOT NULL");
+	if ((!IsNull(pSrcQueue) && IsNull(pDstQueue)) || (IsNull(pSrcQueue) && !IsNull(pDstQueue)))
+	{
+		Fatal("queue family transfer requires both pSrcQueue and pDstQueue to be NOT NULL");
+		return;
 	}
 
 	uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -5865,8 +5881,10 @@ void CommandBuffer::BindDescriptorSets(
 
 	// setCount cannot exceed the number of sets in the pipeline interface
 	uint32_t setNumberCount = CountU32(setNumbers);
-	if (setCount > setNumberCount) {
-		ASSERT_MSG(false, "setCount exceeds the number of sets in pipeline interface");
+	if (setCount > setNumberCount)
+	{
+		Fatal("setCount exceeds the number of sets in pipeline interface");
+		return;
 	}
 
 	if (setCount > 0) {
@@ -5960,8 +5978,10 @@ void CommandBuffer::PushGraphicsConstants(
 	ASSERT_MSG(((dstOffset + count) <= MaxPushConstants), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 
 	const VkShaderStageFlags shaderStageFlags = pInterface->GetPushConstantShaderStageFlags();
-	if ((shaderStageFlags & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
-		ASSERT_MSG(false, "push constants shader visibility flags in pInterface does not have any graphics stages");
+	if ((shaderStageFlags & VK_SHADER_STAGE_ALL_GRAPHICS) == 0)
+	{
+		Fatal("push constants shader visibility flags in pInterface does not have any graphics stages");
+		return;
 	}
 
 	PushConstants(pInterface, count, pValues, dstOffset);
@@ -5994,8 +6014,10 @@ void CommandBuffer::PushComputeConstants(
 	ASSERT_MSG(((dstOffset + count) <= MaxPushConstants), "dstOffset + count (" + std::to_string(dstOffset + count) + ") exceeds PPX_MAX_PUSH_CONSTANTS (" + std::to_string(MaxPushConstants) + ")");
 
 	const VkShaderStageFlags shaderStageFlags = pInterface->GetPushConstantShaderStageFlags();
-	if ((shaderStageFlags & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
-		ASSERT_MSG(false, "push constants shader visibility flags in pInterface does not have compute stage");
+	if ((shaderStageFlags & VK_SHADER_STAGE_COMPUTE_BIT) == 0)
+	{
+		Fatal("push constants shader visibility flags in pInterface does not have compute stage");
+		return;
 	}
 
 	PushConstants(pInterface, count, pValues, dstOffset);
@@ -6107,9 +6129,9 @@ void CommandBuffer::CopyBufferToImage(
 		regions[i].imageSubresource.mipLevel = pCopyInfos[i].dstImage.mipLevel;
 		regions[i].imageSubresource.baseArrayLayer = pCopyInfos[i].dstImage.arrayLayer;
 		regions[i].imageSubresource.layerCount = pCopyInfos[i].dstImage.arrayLayerCount;
-		regions[i].imageOffset.x = pCopyInfos[i].dstImage.x;
-		regions[i].imageOffset.y = pCopyInfos[i].dstImage.y;
-		regions[i].imageOffset.z = pCopyInfos[i].dstImage.z;
+		regions[i].imageOffset.x = static_cast<int32_t>(pCopyInfos[i].dstImage.x);
+		regions[i].imageOffset.y = static_cast<int32_t>(pCopyInfos[i].dstImage.y);
+		regions[i].imageOffset.z = static_cast<int32_t>(pCopyInfos[i].dstImage.z);
 		regions[i].imageExtent.width = pCopyInfos[i].dstImage.width;
 		regions[i].imageExtent.height = pCopyInfos[i].dstImage.height;
 		regions[i].imageExtent.depth = pCopyInfos[i].dstImage.depth;
@@ -6146,9 +6168,9 @@ ImageToBufferOutputPitch CommandBuffer::CopyImageToBuffer(
 	region.imageSubresource.mipLevel = pCopyInfo->srcImage.mipLevel;
 	region.imageSubresource.baseArrayLayer = pCopyInfo->srcImage.arrayLayer;
 	region.imageSubresource.layerCount = pCopyInfo->srcImage.arrayLayerCount;
-	region.imageOffset.x = pCopyInfo->srcImage.offset.x;
-	region.imageOffset.y = pCopyInfo->srcImage.offset.y;
-	region.imageOffset.z = pCopyInfo->srcImage.offset.z;
+	region.imageOffset.x = static_cast<int32_t>(pCopyInfo->srcImage.offset.x);
+	region.imageOffset.y = static_cast<int32_t>(pCopyInfo->srcImage.offset.y);
+	region.imageOffset.z = static_cast<int32_t>(pCopyInfo->srcImage.offset.z);
 	region.imageExtent = { 0, 1, 1 };
 	region.imageExtent.width = pCopyInfo->extent.x;
 	if (pSrcImage->GetType() != ImageType::Image1D) { // Can only be set for 2D and 3D textures.
@@ -6169,7 +6191,7 @@ ImageToBufferOutputPitch CommandBuffer::CopyImageToBuffer(
 		// Compute the total size of the depth part to offset the stencil part.
 		// We always copy tightly-packed texels, so we don't have to worry
 		// about tiling.
-		size_t depthTexelBytes = srcDesc->bytesPerTexel - 1; // Stencil is always 1 byte.
+		size_t depthTexelBytes = srcDesc->bytesPerTexel - 1u; // Stencil is always 1 byte.
 		size_t depthTotalBytes = depthTexelBytes * pCopyInfo->extent.x * pCopyInfo->extent.y;
 
 		// Then copy stencil.
@@ -6470,10 +6492,6 @@ Result Queue::CopyBufferToImage(
 	const std::vector<BufferToImageCopyInfo>& pCopyInfos,
 	Buffer* pSrcBuffer,
 	Image* pDstImage,
-	uint32_t                                        mipLevel,
-	uint32_t                                        mipLevelCount,
-	uint32_t                                        arrayLayer,
-	uint32_t                                        arrayLayerCount,
 	ResourceState                             stateBefore,
 	ResourceState                             stateAfter)
 {
@@ -6545,8 +6563,9 @@ Result Queue::createApiObjects(const internal::QueueCreateInfo& createInfo)
 		&vkci,
 		nullptr,
 		&mTransientPool);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkCreateCommandPool failed" + ToString(vkres));
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkCreateCommandPool failed" + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -6576,8 +6595,9 @@ Result Queue::WaitIdle()
 	std::lock_guard<std::mutex> lock(mQueueMutex);
 
 	VkResult vkres = vkQueueWaitIdle(m_queue->Queue);
-	if (vkres != VK_SUCCESS) {
-		ASSERT_MSG(false, "vkQueueWaitIdle failed" + ToString(vkres));
+	if (vkres != VK_SUCCESS)
+	{
+		Fatal("vkQueueWaitIdle failed" + ToString(vkres));
 		return ERROR_API_FAILURE;
 	}
 
@@ -6755,9 +6775,11 @@ static VkResult CmdTransitionImageLayout(
 	VkAccessFlags        dstAccessMask = 0;
 	VkDependencyFlags    dependencyFlags = 0;
 
-	switch (oldLayout) {
-	default: {
-		ASSERT_MSG(false, "invalid value for oldLayout");
+	switch (oldLayout)
+	{
+	default:
+	{
+		Fatal("invalid value for oldLayout");
 		return VK_ERROR_INITIALIZATION_FAILED;
 	} break;
 
@@ -6838,7 +6860,7 @@ static VkResult CmdTransitionImageLayout(
 	switch (newLayout) {
 	default: {
 		// Note: VK_IMAGE_LAYOUT_UNDEFINED and VK_IMAGE_LAYOUT_PREINITIALIZED cannot be a destination layout.
-		ASSERT_MSG(false, "invalid value for newLayout");
+		Fatal("invalid value for newLayout");
 		return VK_ERROR_INITIALIZATION_FAILED;
 	} break;
 
@@ -6958,8 +6980,9 @@ VkResult Queue::TransitionImageLayout(
 			GetDevice()->GetVkDevice(),
 			&vkai,
 			&commandBuffer);
-		if (vkres != VK_SUCCESS) {
-			ASSERT_MSG(false, "vkAllocateCommandBuffers failed" + ToString(vkres));
+		if (vkres != VK_SUCCESS)
+		{
+			Fatal("vkAllocateCommandBuffers failed" + ToString(vkres));
 			return vkres;
 		}
 	}
@@ -6976,9 +6999,10 @@ VkResult Queue::TransitionImageLayout(
 	beginInfo.pInheritanceInfo = nullptr;
 
 	VkResult vkres = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-	if (vkres != VK_SUCCESS) {
+	if (vkres != VK_SUCCESS)
+	{
 		FreeCommandBuffer();
-		ASSERT_MSG(false, "vkBeginCommandBuffer failed" + ToString(vkres));
+		Fatal("vkBeginCommandBuffer failed" + ToString(vkres));
 		return vkres;
 	}
 
@@ -6993,16 +7017,18 @@ VkResult Queue::TransitionImageLayout(
 		oldLayout,
 		newLayout,
 		newPipelineStage);
-	if (vkres != VK_SUCCESS) {
+	if (vkres != VK_SUCCESS)
+	{
 		FreeCommandBuffer();
-		ASSERT_MSG(false, "CmdTransitionImageLayout failed" + ToString(vkres));
+		Fatal("CmdTransitionImageLayout failed" + ToString(vkres));
 		return vkres;
 	}
 
 	vkres = vkEndCommandBuffer(commandBuffer);
-	if (vkres != VK_SUCCESS) {
+	if (vkres != VK_SUCCESS)
+	{
 		FreeCommandBuffer();
-		ASSERT_MSG(false, "vkEndCommandBuffer failed" + ToString(vkres));
+		Fatal("vkEndCommandBuffer failed" + ToString(vkres));
 		return vkres;
 	}
 
@@ -7020,18 +7046,20 @@ VkResult Queue::TransitionImageLayout(
 		std::lock_guard<std::mutex> lock(mQueueMutex);
 
 		vkres = vkQueueSubmit(m_queue->Queue, 1, &submitInfo, VK_NULL_HANDLE);
-		if (vkres != VK_SUCCESS) {
+		if (vkres != VK_SUCCESS)
+		{
 			FreeCommandBuffer();
-			ASSERT_MSG(false, "vkQueueSubmit failed" + ToString(vkres));
+			Fatal("vkQueueSubmit failed" + ToString(vkres));
 			return vkres;
 		}
 
 		vkres = vkQueueWaitIdle(m_queue->Queue);
 	}
 
-	if (vkres != VK_SUCCESS) {
+	if (vkres != VK_SUCCESS)
+	{
 		FreeCommandBuffer();
-		ASSERT_MSG(false, "vkQueueWaitIdle failed" + ToString(vkres));
+		Fatal("vkQueueWaitIdle failed" + ToString(vkres));
 		return vkres;
 	}
 
@@ -7060,7 +7088,7 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 		ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
 		if (Failed(ppxres))
 		{
-			ASSERT_MSG(false, "failed creating pipeline interface");
+			Fatal("failed creating pipeline interface");
 			return ppxres;
 		}
 	}
@@ -7082,8 +7110,9 @@ Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateI
 		}
 
 		ppxres = GetDevice()->CreateGraphicsPipeline(createInfo, &mPipeline);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating graphics pipeline");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating graphics pipeline");
 			return ppxres;
 		}
 	}
@@ -7172,12 +7201,14 @@ ScopeDestroyer::~ScopeDestroyer()
 
 Result ScopeDestroyer::AddObject(Image* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7187,12 +7218,14 @@ Result ScopeDestroyer::AddObject(Image* pObject)
 
 Result ScopeDestroyer::AddObject(Buffer* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7202,12 +7235,14 @@ Result ScopeDestroyer::AddObject(Buffer* pObject)
 
 Result ScopeDestroyer::AddObject(Mesh* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7217,12 +7252,14 @@ Result ScopeDestroyer::AddObject(Mesh* pObject)
 
 Result ScopeDestroyer::AddObject(Texture* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7232,12 +7269,14 @@ Result ScopeDestroyer::AddObject(Texture* pObject)
 
 Result ScopeDestroyer::AddObject(Sampler* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7247,12 +7286,14 @@ Result ScopeDestroyer::AddObject(Sampler* pObject)
 
 Result ScopeDestroyer::AddObject(SampledImageView* pObject)
 {
-	if (IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7262,12 +7303,14 @@ Result ScopeDestroyer::AddObject(SampledImageView* pObject)
 
 Result ScopeDestroyer::AddObject(Queue* pParent, CommandBuffer* pObject)
 {
-	if (IsNull(pParent) || IsNull(pObject)) {
-		ASSERT_MSG(false, NULL_ARGUMENT_MSG);
+	if (IsNull(pParent) || IsNull(pObject))
+	{
+		Fatal(NULL_ARGUMENT_MSG);
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
-	if (pObject->GetOwnership() != Ownership::Reference) {
-		ASSERT_MSG(false, WRONG_OWNERSHIP_MSG);
+	if (pObject->GetOwnership() != Ownership::Reference)
+	{
+		Fatal(WRONG_OWNERSHIP_MSG);
 		return ERROR_GRFX_INVALID_OWNERSHIP;
 	}
 	pObject->SetOwnership(Ownership::Exclusive);
@@ -7360,7 +7403,7 @@ Result TextureFont::createApiObjects(const TextureFontCreateInfo& pCreateInfo)
 	}
 
 	// Storage bitmap
-	Bitmap bitmap = Bitmap::Create(bitmapWidth, bitmapHeight, Bitmap::Format::FORMAT_R_UINT8);
+	Bitmap bitmap = Bitmap::Create((uint32_t)bitmapWidth, (uint32_t)bitmapHeight, Bitmap::Format::FORMAT_R_UINT8);
 
 	// Render glyph bitmaps
 	const float    invBitmapWidth = 1.0f / static_cast<float>(bitmapWidth);
@@ -7385,21 +7428,19 @@ Result TextureFont::createApiObjects(const TextureFontCreateInfo& pCreateInfo)
 			mGlyphMetrics[glyphIndex].size.x = static_cast<float>(w);
 			mGlyphMetrics[glyphIndex].size.y = static_cast<float>(h);
 
-			mGlyphMetrics[glyphIndex].uvRect.u0 = x * invBitmapWidth;
-			mGlyphMetrics[glyphIndex].uvRect.v0 = y * invBitmapHeight;
-			mGlyphMetrics[glyphIndex].uvRect.u1 = (x + w - 1) * invBitmapWidth;
-			mGlyphMetrics[glyphIndex].uvRect.v1 = (y + h - 1) * invBitmapHeight;
+			mGlyphMetrics[glyphIndex].uvRect.u0 = static_cast<float>(x) * invBitmapWidth;
+			mGlyphMetrics[glyphIndex].uvRect.v0 = static_cast<float>(y) * invBitmapHeight;
+			mGlyphMetrics[glyphIndex].uvRect.u1 = static_cast<float>(x + w - 1) * invBitmapWidth;
+			mGlyphMetrics[glyphIndex].uvRect.v1 = static_cast<float>(y + h - 1) * invBitmapHeight;
 
 			x = x + w;
-			height = std::max<int32_t>(height, h);
+			height = std::max<uint32_t>(height, h);
 		}
 		y += height;
 	}
 
 	Result ppxres = vkrUtil::CreateTextureFromBitmap(GetDevice()->GetGraphicsQueue(), &bitmap, &mTexture);
-	if (Failed(ppxres)) {
-		return ppxres;
-	}
+	if (Failed(ppxres)) return ppxres;
 
 	// Release the font since we don't need it anymore
 	m_createInfo.font = Font();
@@ -7445,7 +7486,7 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 {
 	if (IsNull(pCreateInfo.pFont))
 	{
-		ASSERT_MSG(false, "Pointer to texture font object is null");
+		Fatal("Pointer to texture font object is null");
 		return ERROR_UNEXPECTED_NULL_ARGUMENT;
 	}
 
@@ -7460,8 +7501,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuIndexBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating CPU index buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating CPU index buffer");
 			return ppxres;
 		}
 
@@ -7472,8 +7514,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::IndexBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuIndexBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating GPU index buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating GPU index buffer");
 			return ppxres;
 		}
 
@@ -7493,8 +7536,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuVertexBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating CPU vertex buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating CPU vertex buffer");
 			return ppxres;
 		}
 
@@ -7505,8 +7549,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::VertexBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuVertexBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating GPU vertex buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating GPU vertex buffer");
 			return ppxres;
 		}
 
@@ -7534,8 +7579,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.borderColor = BorderColor::FloatTransparentBlack;
 
 		Result ppxres = GetDevice()->CreateSampler(createInfo, &sSampler);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating sampler");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating sampler");
 			return ppxres;
 		}
 	}
@@ -7551,8 +7597,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::CopySrc;
 
 		Result ppxres = GetDevice()->CreateBuffer(createInfo, &mCpuConstantBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating CPU constant buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating CPU constant buffer");
 			return ppxres;
 		}
 
@@ -7563,8 +7610,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.initialState = ResourceState::ConstantBuffer;
 
 		ppxres = GetDevice()->CreateBuffer(createInfo, &mGpuConstantBuffer);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating GPU constant buffer");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating GPU constant buffer");
 			return ppxres;
 		}
 	}
@@ -7577,15 +7625,17 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.uniformBuffer = 1;
 
 		Result ppxres = GetDevice()->CreateDescriptorPool(createInfo, &mDescriptorPool);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating descriptor pool");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating descriptor pool");
 			return ppxres;
 		}
 	}
 
 	// Descriptor set layout
 	{
-		std::vector<DescriptorBinding> bindings = {
+		std::vector<DescriptorBinding> bindings =
+		{
 			{0, DescriptorType::UniformBuffer, 1, SHADER_STAGE_ALL_GRAPHICS},
 			{1, DescriptorType::SampledImage, 1, SHADER_STAGE_ALL_GRAPHICS},
 			{2, DescriptorType::Sampler, 1, SHADER_STAGE_ALL_GRAPHICS},
@@ -7595,8 +7645,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.bindings = bindings;
 
 		Result ppxres = GetDevice()->CreateDescriptorSetLayout(createInfo, &mDescriptorSetLayout);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating descriptor set layout");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating descriptor set layout");
 			return ppxres;
 		}
 	}
@@ -7604,8 +7655,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 	// Descriptor Set
 	{
 		Result ppxres = GetDevice()->AllocateDescriptorSet(mDescriptorPool, mDescriptorSetLayout, &mDescriptorSet);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed allocating descriptor set");
+		if (Failed(ppxres))
+		{
+			Fatal("failed allocating descriptor set");
 			return ppxres;
 		}
 
@@ -7622,8 +7674,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.sets[0].layout = mDescriptorSetLayout;
 
 		Result ppxres = GetDevice()->CreatePipelineInterface(createInfo, &mPipelineInterface);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating pipeline interface");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating pipeline interface");
 			return ppxres;
 		}
 	}
@@ -7653,8 +7706,9 @@ Result TextDraw::createApiObjects(const TextDrawCreateInfo& pCreateInfo)
 		createInfo.pipelineInterface = mPipelineInterface;
 
 		Result ppxres = GetDevice()->CreateGraphicsPipeline(createInfo, &mPipeline);
-		if (Failed(ppxres)) {
-			ASSERT_MSG(false, "failed creating pipeline");
+		if (Failed(ppxres))
+		{
+			Fatal("failed creating pipeline");
 			return ppxres;
 		}
 	}

@@ -4,6 +4,7 @@
 
 #if defined(_MSC_VER)
 #	pragma warning(disable : 4061)
+#	pragma warning(disable : 4355)
 #	pragma warning(disable : 4514)
 #	pragma warning(disable : 4625)
 #	pragma warning(disable : 4626)
@@ -11,8 +12,15 @@
 #	pragma warning(disable : 5026)
 #	pragma warning(disable : 5027)
 #	pragma warning(disable : 5045)
+
 #	pragma warning(push, 3)
+#	pragma warning(disable : 4005)
 #	pragma warning(disable : 4191)
+#	pragma warning(disable : 4242)
+#	pragma warning(disable : 4355)
+#	pragma warning(disable : 4365)
+#	pragma warning(disable : 5039)
+#	pragma warning(disable : 5219)
 #endif
 
 #if defined(_MSC_VER)

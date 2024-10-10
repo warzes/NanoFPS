@@ -1853,34 +1853,35 @@ namespace scene {
 		return vkr::IndexType::Undefined;
 	}
 
-	// Calcualte a unique hash based a meshes primitive accessors
-	static uint64_t GetMeshAccessorsHash(
-		const cgltf_data* pGltfData,
-		const cgltf_mesh* pGltfMesh)
+	// Calculate a unique hash based a meshes primitive accessors
+	static uint64_t GetMeshAccessorsHash(const cgltf_data* pGltfData, const cgltf_mesh* pGltfMesh)
 	{
-		const auto kInvalidAccessorIndex = InvalidValue<cgltf_size>();
-
 		std::set<cgltf_size> uniqueAccessorIndices;
-		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx) {
+		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx)
+		{
 			const cgltf_primitive* pGltfPrimitive = &pGltfMesh->primitives[primIdx];
 
 			// Indices
-			if (!IsNull(pGltfPrimitive->indices)) {
+			if (!IsNull(pGltfPrimitive->indices))
+			{
 				cgltf_size accessorIndex = cgltf_accessor_index(pGltfData, pGltfPrimitive->indices);
 				uniqueAccessorIndices.insert(accessorIndex);
 			}
 
-			for (cgltf_size attrIdx = 0; attrIdx < pGltfPrimitive->attributes_count; ++attrIdx) {
+			for (cgltf_size attrIdx = 0; attrIdx < pGltfPrimitive->attributes_count; ++attrIdx)
+			{
 				const cgltf_attribute* pGltfAttr = &pGltfPrimitive->attributes[attrIdx];
 				cgltf_size             accessorIndex = cgltf_accessor_index(pGltfData, pGltfAttr->data);
 
-				switch (pGltfAttr->type) {
+				switch (pGltfAttr->type)
+				{
 				default: break;
 				case cgltf_attribute_type_position:
 				case cgltf_attribute_type_normal:
 				case cgltf_attribute_type_tangent:
 				case cgltf_attribute_type_color:
-				case cgltf_attribute_type_texcoord: {
+				case cgltf_attribute_type_texcoord:
+				{
 					uniqueAccessorIndices.insert(accessorIndex);
 				} break;
 				}
@@ -1894,13 +1895,10 @@ namespace scene {
 		std::sort(orderedAccessorIndices.begin(), orderedAccessorIndices.end());
 
 		uint64_t hash = 0;
-		if (!orderedAccessorIndices.empty()) {
+		if (!orderedAccessorIndices.empty())
+		{
 			const XXH64_hash_t kSeed = 0x5874bc9de50a7627;
-
-			hash = XXH64(
-				DataPtr(orderedAccessorIndices),
-				static_cast<size_t>(SizeInBytesU32(orderedAccessorIndices)),
-				kSeed);
+			hash = XXH64(DataPtr(orderedAccessorIndices), static_cast<size_t>(SizeInBytesU32(orderedAccessorIndices)), kSeed);
 		}
 
 		return hash;
@@ -2058,13 +2056,11 @@ namespace scene {
 
 		// Load GLTF buffers
 		{
-			cgltf_result res = cgltf_load_buffers(
-				&cgltfOptions,
-				pGltfData,
-				filePath.string().c_str());
-			if (res != cgltf_result_success) {
+			cgltf_result res = cgltf_load_buffers(&cgltfOptions, pGltfData, filePath.string().c_str());
+			if (res != cgltf_result_success)
+			{
 				cgltf_free(pGltfData);
-				ASSERT_MSG(false, "GLTF: cgltf_load_buffers failed (res=" + std::to_string(res) + ")");
+				Fatal("GLTF: cgltf_load_buffers failed (res=" + std::to_string(res) + ")");
 				return ERROR_SCENE_SOURCE_FILE_LOAD_FAILED;
 			}
 		}
@@ -2074,9 +2070,11 @@ namespace scene {
 
 		// Create material selector
 		const bool ownsMaterialSelector = IsNull(pMaterialSelector) ? true : false;
-		if (IsNull(pMaterialSelector)) {
+		if (IsNull(pMaterialSelector))
+		{
 			pMaterialSelector = new GltfMaterialSelector();
-			if (IsNull(pMaterialSelector)) {
+			if (IsNull(pMaterialSelector))
+			{
 				cgltf_free(pGltfData);
 				return ERROR_ALLOCATION_FAILED;
 			}
@@ -2743,29 +2741,23 @@ namespace scene {
 
 		// Create material - this should never return a NULL object
 		auto pMaterial = loadParams.pMaterialFactory->CreateMaterial(materialIdent);
-		if (IsNull(pMaterial)) {
-			ASSERT_MSG(false, "Material factory returned a NULL material");
+		if (IsNull(pMaterial))
+		{
+			Fatal("Material factory returned a NULL material");
+			return ERROR_UNEXPECTED_NULL_ARGUMENT;
 		}
 
 		// Load Unlit
-		if (pMaterial->GetIdentString() == MATERIAL_IDENT_UNLIT) {
-			auto ppxres = LoadUnlitMaterialInternal(
-				loadParams,
-				pGltfMaterial,
-				static_cast<scene::UnlitMaterial*>(pMaterial));
-			if (Failed(ppxres)) {
-				return ppxres;
-			}
+		if (pMaterial->GetIdentString() == MATERIAL_IDENT_UNLIT)
+		{
+			auto ppxres = LoadUnlitMaterialInternal(loadParams, pGltfMaterial, static_cast<scene::UnlitMaterial*>(pMaterial));
+			if (Failed(ppxres)) return ppxres;
 		}
 		// Load MetallicRoughness
-		else if (pMaterial->GetIdentString() == MATERIAL_IDENT_STANDARD) {
-			auto ppxres = LoadPbrMetallicRoughnessMaterialInternal(
-				loadParams,
-				pGltfMaterial,
-				static_cast<scene::StandardMaterial*>(pMaterial));
-			if (Failed(ppxres)) {
-				return ppxres;
-			}
+		else if (pMaterial->GetIdentString() == MATERIAL_IDENT_STANDARD)
+		{
+			auto ppxres = LoadPbrMetallicRoughnessMaterialInternal(loadParams, pGltfMaterial, static_cast<scene::StandardMaterial*>(pMaterial));
+			if (Failed(ppxres)) return ppxres;
 		}
 
 		// Set name
@@ -2865,10 +2857,10 @@ namespace scene {
 		auto targetTangentFormat = loadParams.requiredVertexAttributes.bits.tangents ? scene::kVertexAttributeTagentFormat : vkr::Format::Undefined;
 		auto targetColorFormat = loadParams.requiredVertexAttributes.bits.colors ? scene::kVertexAttributeColorFormat : vkr::Format::Undefined;
 
-		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0;
-		const uint32_t targetNormalElementSize = (targetNormalFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0;
-		const uint32_t targetTangentElementSize = (targetTangentFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0;
-		const uint32_t targetColorElementSize = (targetColorFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0;
+		const uint32_t targetTexCoordElementSize = (targetTexCoordFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTexCoordFormat)->bytesPerTexel : 0u;
+		const uint32_t targetNormalElementSize = (targetNormalFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetNormalFormat)->bytesPerTexel : 0u;
+		const uint32_t targetTangentElementSize = (targetTangentFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetTangentFormat)->bytesPerTexel : 0u;
+		const uint32_t targetColorElementSize = (targetColorFormat != vkr::Format::Undefined) ? vkr::GetFormatDescription(targetColorFormat)->bytesPerTexel : 0u;
 
 		const uint32_t targetPositionElementSize = vkr::GetFormatDescription(targetPositionFormat)->bytesPerTexel;
 		const uint32_t targetAttributesElementSize = targetTexCoordElementSize + targetNormalElementSize + targetTangentElementSize + targetColorElementSize;
@@ -2890,21 +2882,23 @@ namespace scene {
 
 		// Build out batch infos
 		std::vector<BatchInfo> batchInfos;
-		//
+
 		uint32_t totalDataSize = 0;
-		//
-		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx) {
+		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx)
+		{
 			const cgltf_primitive* pGltfPrimitive = &pGltfMesh->primitives[primIdx];
 
 			// Only triangle geometry right now
-			if (pGltfPrimitive->type != cgltf_primitive_type_triangles) {
-				ASSERT_MSG(false, "GLTF: only triangle primitives are supported");
+			if (pGltfPrimitive->type != cgltf_primitive_type_triangles)
+			{
+				Fatal("GLTF: only triangle primitives are supported");
 				return ERROR_SCENE_UNSUPPORTED_TOPOLOGY_TYPE;
 			}
 
 			// We require index data so bail if there isn't index data.
-			if (IsNull(pGltfPrimitive->indices)) {
-				ASSERT_MSG(false, "GLTF mesh primitive does not have index data");
+			if (IsNull(pGltfPrimitive->indices))
+			{
+				Fatal("GLTF mesh primitive does not have index data");
 				return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA;
 			}
 
@@ -2912,10 +2906,10 @@ namespace scene {
 			//
 			// It's valid for this to be UNDEFINED, means the primitive doesn't have any index data.
 			// However, if it's not UNDEFINED, UINT16, or UINT32 then it's a format we can't handle.
-			//
 			auto indexFormat = GetFormat(pGltfPrimitive->indices);
-			if ((indexFormat != vkr::Format::Undefined) && (indexFormat != vkr::Format::R16_UINT) && (indexFormat != vkr::Format::R32_UINT)) {
-				ASSERT_MSG(false, "GLTF mesh primitive has unrecognized index format");
+			if ((indexFormat != vkr::Format::Undefined) && (indexFormat != vkr::Format::R16_UINT) && (indexFormat != vkr::Format::R32_UINT))
+			{
+				Fatal("GLTF mesh primitive has unrecognized index format");
 				return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_TYPE;
 			}
 
@@ -2926,8 +2920,9 @@ namespace scene {
 
 			// Get position accessor
 			const VertexAccessors gltflAccessors = GetVertexAccessors(pGltfPrimitive);
-			if (IsNull(gltflAccessors.pPositions)) {
-				ASSERT_MSG(false, "GLTF mesh primitive position accessor is NULL");
+			if (IsNull(gltflAccessors.pPositions))
+			{
+				Fatal("GLTF mesh primitive position accessor is NULL");
 				return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_VERTEX_DATA;
 			}
 
@@ -2970,13 +2965,15 @@ namespace scene {
 				}
 				else {
 					auto pMaterial = loadParams.pMaterialFactory->CreateMaterial(MATERIAL_IDENT_ERROR);
-					if (IsNull(pMaterial)) {
-						ASSERT_MSG(false, "could not create ErrorMaterial for GLTF mesh primitive");
+					if (IsNull(pMaterial))
+					{
+						Fatal("could not create ErrorMaterial for GLTF mesh primitive");
 						return ERROR_SCENE_INVALID_SOURCE_MATERIAL;
 					}
 
 					batchInfo.material = scene::MakeRef(pMaterial);
-					if (!batchInfo.material) {
+					if (!batchInfo.material)
+					{
 						delete pMaterial;
 						return ERROR_ALLOCATION_FAILED;
 					}
@@ -2990,8 +2987,8 @@ namespace scene {
 
 		// Create GPU buffer and copy geometry data to it
 		vkr::BufferPtr targetGpuBuffer = outMeshData ? outMeshData->GetGpuBuffer() : nullptr;
-		//
-		if (!targetGpuBuffer) {
+		if (!targetGpuBuffer)
+		{
 			vkr::BufferCreateInfo bufferCreateInfo = {};
 			bufferCreateInfo.size = totalDataSize;
 			bufferCreateInfo.usageFlags.bits.transferSrc = true;
@@ -2999,11 +2996,11 @@ namespace scene {
 			bufferCreateInfo.initialState = vkr::ResourceState::CopySrc;
 
 			// Create staging buffer
-			//
 			vkr::BufferPtr stagingBuffer;
 			auto            ppxres = loadParams.pDevice->CreateBuffer(bufferCreateInfo, &stagingBuffer);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "staging buffer creation failed");
+			if (Failed(ppxres))
+			{
+				Fatal("staging buffer creation failed");
 				return ppxres;
 			}
 
@@ -3019,8 +3016,9 @@ namespace scene {
 			bufferCreateInfo.initialState = vkr::ResourceState::General;
 			//
 			ppxres = loadParams.pDevice->CreateBuffer(bufferCreateInfo, &targetGpuBuffer);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "GPU buffer creation failed");
+			if (Failed(ppxres))
+			{
+				Fatal("GPU buffer creation failed");
 				return ppxres;
 			}
 			SCOPED_DESTROYER.AddObject(targetGpuBuffer);
@@ -3028,8 +3026,9 @@ namespace scene {
 			// Map staging buffer
 			char* pStagingBaseAddr = nullptr;
 			ppxres = stagingBuffer->MapMemory(0, reinterpret_cast<void**>(&pStagingBaseAddr));
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "staging buffer mapping failed");
+			if (Failed(ppxres))
+			{
+				Fatal("staging buffer mapping failed");
 				return ppxres;
 			}
 
@@ -3049,10 +3048,11 @@ namespace scene {
 				// Create genTopologyIndices so we can repack gemetry data into position planar + packed vertex attributes.
 				vkr::Geometry   targetGeometry = {};
 				const bool hasAttributes = (loadParams.requiredVertexAttributes.mask != 0);
-				//
+
 				{
 					auto createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU16() : vkr::GeometryCreateInfo::PlanarU16();
-					if (batch.indexFormat == vkr::Format::R32_UINT) {
+					if (batch.indexFormat == vkr::Format::R32_UINT)
+					{
 						createInfo = hasAttributes ? vkr::GeometryCreateInfo::PositionPlanarU32() : vkr::GeometryCreateInfo::PlanarU32();
 					}
 					if (loadParams.requiredVertexAttributes.bits.texCoords) createInfo.AddTexCoord(targetTexCoordFormat);
@@ -3060,18 +3060,16 @@ namespace scene {
 					if (loadParams.requiredVertexAttributes.bits.tangents) createInfo.AddTangent(targetTangentFormat);
 					if (loadParams.requiredVertexAttributes.bits.colors) createInfo.AddColor(targetColorFormat);
 
-					auto ppxres = vkr::Geometry::Create(createInfo, &targetGeometry);
-					if (Failed(ppxres)) {
-						return ppxres;
-					}
+					ppxres = vkr::Geometry::Create(createInfo, &targetGeometry);
+					if (Failed(ppxres)) return ppxres;
 				}
 
 				// Repack geometry data for batch
 				{
 					// Process indices
-					//
 					// REMINDER: It's possible for a primitive to not have index data
-					if (!IsNull(pGltfPrimitive->indices)) {
+					if (!IsNull(pGltfPrimitive->indices))
+					{
 						// Get start of index data
 						auto pGltfAccessor = pGltfPrimitive->indices;
 						auto pGltfIndices = GetStartAddress(mGltfData, pGltfAccessor);
@@ -3097,17 +3095,17 @@ namespace scene {
 				// Vertices
 				{
 					VertexAccessors gltflAccessors = GetVertexAccessors(pGltfPrimitive);
-					//
 					// Bail if position accessor is NULL: no vertex positions, no geometry data
-					//
-					if (IsNull(gltflAccessors.pPositions)) {
-						ASSERT_MSG(false, "GLTF mesh primitive is missing position data");
+					if (IsNull(gltflAccessors.pPositions))
+					{
+						Fatal("GLTF mesh primitive is missing position data");
 						return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_VERTEX_DATA;
 					}
 
 					// Bounding box
 					bool hasBoundingBox = (gltflAccessors.pPositions->has_min && gltflAccessors.pPositions->has_max);
-					if (hasBoundingBox) {
+					if (hasBoundingBox)
+					{
 						batch.boundingBox = AABB(
 							*reinterpret_cast<const float3*>(gltflAccessors.pPositions->min),
 							*reinterpret_cast<const float3*>(gltflAccessors.pPositions->max));
@@ -3117,10 +3115,9 @@ namespace scene {
 					//
 					// Assume we have to procss the vertices
 					bool processVertices = true;
-					if (hasCachedGeometry) {
-						// If we have cached geometry, we only process the vertices if
-						// we need the bounding box.
-						//
+					if (hasCachedGeometry)
+					{
+						// If we have cached geometry, we only process the vertices if we need the bounding box.
 						processVertices = !hasBoundingBox;
 					}
 
@@ -3130,9 +3127,9 @@ namespace scene {
 					auto normalFormat = GetFormat(gltflAccessors.pNormals);
 					auto tangentFormat = GetFormat(gltflAccessors.pTangents);
 					auto colorFormat = GetFormat(gltflAccessors.pColors);
-					//
+
 					ASSERT_MSG((positionFormat == targetPositionFormat), "GLTF: vertex positions format is not supported");
-					//
+
 					if (loadParams.requiredVertexAttributes.bits.texCoords && !IsNull(gltflAccessors.pTexCoords)) {
 						ASSERT_MSG((texCoordFormat == targetTexCoordFormat), "GLTF: vertex tex coords sourceIndexTypeFormat is not supported");
 					}
@@ -3205,16 +3202,19 @@ namespace scene {
 				const uint32_t repackedIndexBufferSize = targetGeometry.GetIndexBuffer()->GetSize();
 				const uint32_t repackedPositionBufferSize = targetGeometry.GetVertexBuffer(0)->GetSize();
 				const uint32_t repackedAttributeBufferSize = hasAttributes ? targetGeometry.GetVertexBuffer(1)->GetSize() : 0;
-				if (repackedIndexBufferSize != batch.indexDataSize) {
-					ASSERT_MSG(false, "repacked index buffer size does not match batch's index data size");
+				if (repackedIndexBufferSize != batch.indexDataSize)
+				{
+					Fatal("repacked index buffer size does not match batch's index data size");
 					return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA;
 				}
-				if (repackedPositionBufferSize != batch.positionDataSize) {
-					ASSERT_MSG(false, "repacked position buffer size does not match batch's position data size");
+				if (repackedPositionBufferSize != batch.positionDataSize)
+				{
+					Fatal("repacked position buffer size does not match batch's position data size");
 					return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA;
 				}
-				if (repackedAttributeBufferSize != batch.attributeDataSize) {
-					ASSERT_MSG(false, "repacked attribute buffer size does not match batch's attribute data size");
+				if (repackedAttributeBufferSize != batch.attributeDataSize)
+				{
+					Fatal("repacked attribute buffer size does not match batch's attribute data size");
 					return ERROR_SCENE_INVALID_SOURCE_GEOMETRY_INDEX_DATA;
 				}
 
@@ -3233,7 +3233,8 @@ namespace scene {
 					memcpy(pDstData, pSrcData, repackedPositionBufferSize);
 
 					// Attributes
-					if (hasAttributes) {
+					if (hasAttributes)
+					{
 						pSrcData = targetGeometry.GetVertexBuffer(1)->GetData();
 						pDstData = pStagingBaseAddr + batch.attributeDataOffset;
 						ASSERT_MSG((static_cast<uint32_t>((pDstData + repackedAttributeBufferSize) - pStagingBaseAddr) <= stagingBuffer->GetSize()), "attribute data exceeds buffer range");
@@ -3254,8 +3255,9 @@ namespace scene {
 				targetGpuBuffer,
 				vkr::ResourceState::General,
 				vkr::ResourceState::General);
-			if (Failed(ppxres)) {
-				ASSERT_MSG(false, "staging buffer to GPU buffer copy failed");
+			if (Failed(ppxres))
+			{
+				Fatal("staging buffer to GPU buffer copy failed");
 				return ppxres;
 			}
 
@@ -4175,7 +4177,7 @@ namespace scene {
 		vkr::RenderDevice* pDevice,
 		uint32_t                  materialIndex,
 		scene::Material** ppTargetMaterial,
-		const scene::LoadOptions& loadOptions)
+		const scene::LoadOptions& /*loadOptions*/)
 	{
 		if (IsNull(pDevice)) {
 			return ERROR_UNEXPECTED_NULL_ARGUMENT;

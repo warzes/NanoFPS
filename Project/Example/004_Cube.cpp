@@ -247,7 +247,7 @@ void Example_004::Render()
 		frame.cmd->BeginRenderPass(&beginInfo);
 		{
 			frame.cmd->ClearRenderTarget(renderPass->GetRenderTargetImage(0), rtvClearValue);
-			frame.cmd->ClearDepthStencil(renderPass->GetDepthStencilImage(), dsvClearValue, vkr::CLEAR_FLAG_DEPTH);
+			frame.cmd->ClearDepthStencil(dsvClearValue, vkr::CLEAR_FLAG_DEPTH);
 			frame.cmd->SetScissors(render.GetScissor());
 			frame.cmd->SetViewports(render.GetViewport());
 			frame.cmd->BindGraphicsDescriptorSets(mPipelineInterface, 1, &mDescriptorSet);

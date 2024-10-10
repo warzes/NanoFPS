@@ -3035,25 +3035,25 @@ TriMesh& TriMesh::operator+=(const TriMesh& rhs)
 
 	PreallocateForTriangleCount(rhs.GetCountTriangles(), rhs.GetCountColors() > 0, rhs.GetCountNormals() > 0, rhs.GetCountTexCoords() > 0, rhs.GetCountTangents() > 0);
 
-	for (size_t i = 0; i < newIndices; i++)
+	for (uint32_t i = 0; i < newIndices; i++)
 		AppendIndexU32(*rhs.GetDataIndicesU32(i) + currentIndices);
 	
-	for (size_t i = 0; i < rhs.GetCountPositions(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountPositions(); i++)
 		AppendPosition(*rhs.GetDataPositions(i));
 	
-	for (size_t i = 0; i < rhs.GetCountColors(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountColors(); i++)
 		AppendColor(*rhs.GetDataColors(i));
 	
-	for (size_t i = 0; i < rhs.GetCountNormals(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountNormals(); i++)
 		AppendNormal(*rhs.GetDataNormalls(i));
 	
-	for (size_t i = 0; i < rhs.GetCountTexCoords(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountTexCoords(); i++)
 		AppendTexCoord(*rhs.GetDataTexCoords2(i));
 
-	for (size_t i = 0; i < rhs.GetCountTangents(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountTangents(); i++)
 		AppendTangent(*rhs.GetDataTangents(i));
 
-	for (size_t i = 0; i < rhs.GetCountBitangents(); i++)
+	for (uint32_t i = 0; i < rhs.GetCountBitangents(); i++)
 		AppendBitangent(*rhs.GetDataBitangents(i));
 
 	return *this;
@@ -5120,10 +5120,6 @@ namespace vkrUtil
 			std::vector<BufferToImageCopyInfo>{copyInfo},
 			stagingBuffer,
 			pImage,
-			mipLevel,
-			1,
-			arrayLayer,
-			1,
 			stateBefore,
 			stateAfter);
 		if (Failed(ppxres)) {
@@ -5717,7 +5713,6 @@ namespace vkrUtil
 			copyInfos,
 			stagingBuffer,
 			targetImage,
-			ALL_SUBRESOURCES,
 			ResourceState::Undefined,
 			ResourceState::ShaderResource);
 		if (Failed(ppxres)) {
@@ -6263,12 +6258,9 @@ namespace vkrUtil
 				copyInfos,
 				stagingBuffer,
 				targetImage,
-				ALL_SUBRESOURCES,
 				ResourceState::Undefined,
 				ResourceState::ShaderResource);
-			if (Failed(ppxres)) {
-				return ppxres;
-			}
+			if (Failed(ppxres)) return ppxres;
 		}
 
 		// Change ownership to reference so object doesn't get destroyed

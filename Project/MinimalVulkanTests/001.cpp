@@ -122,23 +122,23 @@ void Test001::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemory
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create vertex buffer!");
 	}
 
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
+	vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate vertex buffer memory!");
 	}
 
-	vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+	vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
 }
 
 bool Test001::checkValidationLayerSupport()
