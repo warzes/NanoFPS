@@ -1,26 +1,5 @@
 ﻿#pragma once
 
-#pragma region Physics Utilities
-
-template<class Func>
-inline std::vector<physx::PxShape*> PhysicsForEachActorShape(physx::PxRigidActor* actor, Func&& func)
-{
-	std::vector<physx::PxShape*> shapes(actor->getNbShapes());
-	actor->getShapes(shapes.data(), static_cast<physx::PxU32>(shapes.size()));
-	for (physx::PxShape* shape : shapes)
-	{
-		func(shape);
-	}
-	return shapes;
-}
-
-inline void PhysicsSetActorMaterial(physx::PxRigidActor* actor, physx::PxMaterial* material)
-{
-	PhysicsForEachActorShape(actor, [material](physx::PxShape* shape) { shape->setMaterials(&material, 1); });
-}
-
-#pragma endregion
-
 #pragma region Physics Error Callback
 
 class PhysicsErrorCallback : public physx::PxErrorCallback

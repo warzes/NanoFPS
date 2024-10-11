@@ -84,6 +84,14 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem->GetPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material);
 	phscene->GetScene()->addActor(*groundPlane);
 
+	physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
+	auto geometry = physx::PxSphereGeometry(1);
+	physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
+	m_dynamic = physx::PxCreateDynamic(*phsystem->GetPhysics(), t, geometry, *m_material, 5.0f);
+	m_dynamic->setAngularDamping(0.5f);
+	m_dynamic->setLinearVelocity(velocity);
+	phscene->GetScene()->addActor(*m_dynamic);
+
 	return true;
 }
 
@@ -91,16 +99,22 @@ void TestPhysicalBox::Shutdown()
 {
 }
 
-void TestPhysicalBox::DrawDebug(vkr::CommandBufferPtr cmd)
+void TestPhysicalBox::DrawDebug(vkr::CommandBufferPtr cmd, const float4x4& matPV)
 {
+	{
+		const physx::PxTransform transform = m_dynamic->getGlobalPose();
+		const glm::vec3 position = { transform.p.x, transform.p.y, transform.p.z };
+		//m_velocity = (m_position - lastPosition) / fixedDeltaTime; // от текущей отнять пред
+		//auto rotationMatrix = glm::mat4_cast(glm::quat{ transform.q.w, transform.q.x, transform.q.y, transform.q.z });
+
+		float4x4 T = glm::translate(position);
+		float4x4 MVP = matPV * T;
+		m_model.drawUniformBuffer->CopyFromSource(sizeof(MVP), &MVP);
+	}
+
 	cmd->BindGraphicsPipeline(m_pipeline);
 	cmd->BindGraphicsDescriptorSets(m_pipelineInterface, 1, &m_model.drawDescriptorSet);
 	cmd->BindIndexBuffer(m_model.mesh);
 	cmd->BindVertexBuffers(m_model.mesh);
 	cmd->DrawIndexed(m_model.mesh->GetIndexCount());
-}
-
-void TestPhysicalBox::UpdateShaderUniform(uint32_t dataSize, const void* srcData)
-{
-	m_model.drawUniformBuffer->CopyFromSource(dataSize, srcData);
 }

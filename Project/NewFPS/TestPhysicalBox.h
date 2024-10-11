@@ -10,9 +10,9 @@ public:
 	bool Setup(GameApplication* game);
 	void Shutdown();
 
-	void DrawDebug(vkr::CommandBufferPtr cmd);
+	void DrawDebug(vkr::CommandBufferPtr cmd, const float4x4& matPV);
 
-	void UpdateShaderUniform(uint32_t dataSize, const void* srcData);
+	//void UpdateShaderUniform(uint32_t dataSize, const void* srcData);
 
 private:
 	vkr::DescriptorSetLayoutPtr m_setLayout;
@@ -21,4 +21,5 @@ private:
 	GameEntity                  m_model;
 
 	physx::PxMaterial* m_material = nullptr;
+	physx::PxRigidDynamic* m_dynamic = nullptr;
 };

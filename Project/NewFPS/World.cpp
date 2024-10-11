@@ -45,7 +45,7 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 
 	// Draw light
 	m_mainLight.DrawDebug(cmd);
-	m_phBox.DrawDebug(cmd);
+	m_phBox.DrawDebug(cmd, GetPlayer().GetCamera().GetViewProjectionMatrix());
 }
 
 void World::UpdateUniformBuffer()
@@ -62,14 +62,6 @@ void World::UpdateUniformBuffer()
 		const float4x4& PV = GetPlayer().GetCamera().GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
 		m_mainLight.UpdateShaderUniform(sizeof(MVP), &MVP);
-	}
-
-	// Update test physic model uniform buffer
-	{
-		float4x4        T = glm::translate(glm::vec3(10, 10, 10));
-		const float4x4& PV = GetPlayer().GetCamera().GetViewProjectionMatrix();
-		float4x4        MVP = PV * T; // Yes - the other is reversed
-		m_phBox.UpdateShaderUniform(sizeof(MVP), &MVP);
 	}
 }
 
