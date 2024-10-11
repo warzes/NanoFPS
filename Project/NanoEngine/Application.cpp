@@ -35,15 +35,14 @@ EngineApplication::EngineApplication()
 	: m_window(*this)
 	, m_input(*this)
 	, m_render(*this)
+	, m_physics(*this)
 {
 	thisEngineApplication = this;
 }
 
 EngineApplication::~EngineApplication()
 {
-	m_physicsScene.reset();
-	m_physicsCallback.reset();
-	m_physicsSystem.reset();
+	m_physics.Shutdown();
 	m_render.Shutdown();
 	m_input.Shutdown();
 	m_window.Shutdown();
@@ -67,20 +66,21 @@ void EngineApplication::Run()
 			float currentFrame = static_cast<float>(glfwGetTime());
 			m_deltaTime = currentFrame - m_lastFrameTime;
 			m_lastFrameTime = currentFrame;
+			m_timeSinceLastTick += m_deltaTime;
 
 			// Update
 			m_window.Update();
 			m_input.Update();
 			m_render.Update();
 
-			// update physics
+			// Fixed Update
+			if (m_timeSinceLastTick >= m_fixedTimestep)
 			{
-				constexpr float timeScale = /*slowMotion ? 0.2f : */1.0f;
-				if (m_physicsScene->Update(m_deltaTime, timeScale))
-				{
-					FixedUpdate(m_physicsScene->GetFixedTimestep() * timeScale);
-				}
+				m_physics.FixedUpdate();
+				FixedUpdate(m_fixedTimestep);
+				m_timeSinceLastTick -= m_fixedTimestep;
 			}
+
 			Update();
 
 			// Draw
@@ -105,11 +105,8 @@ bool EngineApplication::setup()
 		return false;
 	if (!m_render.Setup(createInfo.render))
 		return false;
-
-	m_physicsSystem = std::make_shared<PhysicsSystem>();
-	m_physicsCallback = std::make_shared<PhysicsSimulationEventCallback>();
-	m_physicsScene = std::make_shared<PhysicsScene>(m_physicsSystem.get());
-	m_physicsScene->SetSimulationEventCallback(m_physicsCallback.get());
+	if (!m_physics.Setup(createInfo.physics))
+		return false;
 
 	if (!Setup())
 		return false;
@@ -194,11 +191,6 @@ bool EngineApplication::IsWindowIconified() const
 bool EngineApplication::IsWindowMaximized() const
 {
 	return m_window.IsMaximized();
-}
-
-float EngineApplication::GetDeltaTime() const
-{
-	return m_deltaTime;
 }
 
 void EngineApplication::resizeCallback(uint32_t width, uint32_t height)

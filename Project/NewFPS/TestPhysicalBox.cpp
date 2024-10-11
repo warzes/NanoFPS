@@ -79,18 +79,18 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 		device.DestroyShaderModule(PS);
 	}
 
-	m_material = phsystem->CreateMaterial(0.5f, 0.5f, 0.6f);
+	m_material = phsystem.CreateMaterial(0.8f, 0.8f, 0.25f);
 
-	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem->GetPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material);
-	phscene->GetScene()->addActor(*groundPlane);
+	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem.GetPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material);
+	phscene.GetPxScene()->addActor(*groundPlane);
 
 	physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
 	auto geometry = physx::PxSphereGeometry(1);
 	physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
-	m_dynamic = physx::PxCreateDynamic(*phsystem->GetPhysics(), t, geometry, *m_material, 5.0f);
+	m_dynamic = physx::PxCreateDynamic(*phsystem.GetPhysics(), t, geometry, *m_material, 5.0f);
 	m_dynamic->setAngularDamping(0.5f);
 	m_dynamic->setLinearVelocity(velocity);
-	phscene->GetScene()->addActor(*m_dynamic);
+	phscene.GetPxScene()->addActor(*m_dynamic);
 
 	return true;
 }

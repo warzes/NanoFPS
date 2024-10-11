@@ -11,6 +11,8 @@ EngineApplicationCreateInfo GameApplication::Config() const
 	EngineApplicationCreateInfo createInfo{};
 	createInfo.render.swapChain.depthFormat = vkr::Format::D32_FLOAT;
 	createInfo.render.showImgui = true;
+
+	createInfo.physics.enable = true;
 	return createInfo;
 }
 

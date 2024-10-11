@@ -1,7 +1,11 @@
 ﻿#pragma once
 
+class EngineApplication;
+
+namespace ph {
+
 //=============================================================================
-#pragma region [ Physics Utilities ]
+#pragma region [ Core Utilities ]
 
 template<class Func>
 inline std::vector<physx::PxShape*> PhysicsForEachActorShape(physx::PxRigidActor* actor, Func&& func)
@@ -23,18 +27,34 @@ inline void PhysicsSetActorMaterial(physx::PxRigidActor* actor, physx::PxMateria
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Physics Error Callback ]
+#pragma region [ Error Callback ]
 
-class PhysicsErrorCallback : public physx::PxErrorCallback
+class PhysicsErrorCallback final : public physx::PxErrorCallback
 {
 public:
-	void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) override;
+	void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) final;
 };
 
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Physics Layers ]
+#pragma region [ Simulation Event Callback ]
+
+class PhysicsSimulationEventCallback final : public physx::PxSimulationEventCallback
+{
+public:
+	void onConstraintBreak(physx::PxConstraintInfo* /*constraints*/, physx::PxU32 /*count*/) final {}
+	void onWake(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
+	void onSleep(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
+	void onContact(const physx::PxContactPairHeader& /*pairHeader*/, const physx::PxContactPair* /*pairs*/, physx::PxU32 /*nbPairs*/) final {}
+	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final;
+	void onAdvance(const physx::PxRigidBody* const* /*bodyBuffer*/, const physx::PxTransform* /*poseBuffer*/, const physx::PxU32 /*count*/) final {}
+};
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Layers ]
 
 enum PhysicsLayer : physx::PxU32
 {
@@ -97,28 +117,85 @@ public:
 #pragma endregion
 
 //=============================================================================
+#pragma region Physics Material
+
+enum class PhysicsMaterialFlag 
+{
+	DisableFriction = 1 << 0,
+	DisableStrongFriction = 1 << 1
+};
+
+enum class PhysicsCombineMode
+{
+	Average = 0,
+	Min = 1,
+	Multiply = 2,
+	Max = 3,
+	NValues = 4,
+	Pad32 = 0x7fffffff
+};
+
+class Material final
+{
+public:
+	Material(EngineApplication& engine, float staticFriction = 1.0f, float dynamicFriction = 1.0f, float restitution = 1.0f);
+	~Material();
+
+	void SetStaticFriction(float staticFriction);
+	void SetDynamicFriction(float dynamicFriction);
+	void SetRestitution(float restitution);
+	void SetFrictionCombineMode(PhysicsCombineMode mode);
+	void SetRestitutionCombineMode(PhysicsCombineMode mode);
+
+	float GetStaticFriction() const;
+	float GetDynamicFriction() const;
+	float GetRestitution() const;
+	PhysicsCombineMode GetFrictionCombineMode() const;
+	PhysicsCombineMode GetRestitutionCombineMode() const;
+
+	const physx::PxMaterial* GetPxMaterial() const { return m_material; }
+private:
+	EngineApplication& m_engine;
+	physx::PxMaterial* m_material{ nullptr };
+};
+using MaterialPtr = std::shared_ptr<Material>;
+
+#pragma endregion
+
+
+//=============================================================================
 #pragma region [ Physics Scene ]
 
 class PhysicsSystem;
 
+struct PhysicsSceneCreateInfo final
+{
+	uint8_t   cpuDispatcherNum = 2;
+	glm::vec3 gravity{ 0.0f, -9.81f, 0.0f };
+
+	struct DefaultMaterial
+	{
+		float staticFriction = 0.8f;
+		float dynamicFriction = 0.8f;
+		float restitution = 0.25f;
+	} defaultMaterial;
+};
+
 class PhysicsScene final
 {
+	friend EngineApplication;
 public:
-	explicit PhysicsScene(PhysicsSystem* physicsSystem);
-	PhysicsScene(const PhysicsScene&) = delete;
-	PhysicsScene(PhysicsScene&&) = delete;
-	~PhysicsScene();
+	PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine);
 
-	PhysicsScene& operator=(const PhysicsScene&) = delete;
-	PhysicsScene& operator=(PhysicsScene&&) = delete;
+	[[nodiscard]] bool Setup(const PhysicsSceneCreateInfo& createInfo);
+	void Shutdown();
 
-	bool Update(float deltaTime, float timeScale);
+	void FixedUpdate();
 
 	void SetSimulationEventCallback(physx::PxSimulationEventCallback* callback);
 
-	[[nodiscard]] float GetFixedTimestep() const { return m_fixedTimestep; }
+	physx::PxScene* GetPxScene() { return m_scene; }
 
-	[[nodiscard]] float GetFixedUpdateTimeError() const { return m_timeSinceLastTick; }
 
 	physx::PxController* CreateController(const physx::PxVec3& position, float radius, float height, PhysicsLayer queryLayer = PHYSICS_LAYER_1);
 
@@ -151,18 +228,17 @@ public:
 		PhysicsLayer              layer
 	) const;
 
-	physx::PxScene* GetScene() { return m_scene; }
+
 
 private:
-	physx::PxPhysics* m_physics = nullptr;
-
-	physx::PxDefaultCpuDispatcher* m_defaultCpuDispatcher = nullptr;
-	physx::PxMaterial* m_defaultMaterial = nullptr;
-	physx::PxScene* m_scene = nullptr;
-	physx::PxControllerManager* m_controllerManager = nullptr;
-
-	float m_fixedTimestep = 0.02f;
-	float m_timeSinceLastTick = 0.0f;
+	EngineApplication&             m_engine;
+	PhysicsSystem&                 m_system;
+	PhysicsSimulationEventCallback m_physicsCallback;
+	physx::PxPhysics*              m_physics{ nullptr };
+	physx::PxDefaultCpuDispatcher* m_cpuDispatcher{ nullptr };
+	physx::PxScene*                m_scene{ nullptr };
+	physx::PxMaterial*             m_defaultMaterial{ nullptr };
+	physx::PxControllerManager*    m_controllerManager{ nullptr };
 };
 
 #pragma endregion
@@ -170,53 +246,59 @@ private:
 //=============================================================================
 #pragma region [ Physics System ]
 
+struct PhysicsCreateInfo final
+{
+	PhysicsSceneCreateInfo scene;
+	bool enable = false;
+};
+
 class PhysicsSystem final
 {
+	friend EngineApplication;
+	friend class PhysicsScene;
 public:
-	PhysicsSystem();
-	PhysicsSystem(const PhysicsSystem&) = delete;
-	PhysicsSystem(PhysicsSystem&&) = delete;
-	~PhysicsSystem();
+	PhysicsSystem(EngineApplication& engine);
 
-	PhysicsSystem& operator=(const PhysicsSystem&) = delete;
-	PhysicsSystem& operator=(PhysicsSystem&&) = delete;
+	[[nodiscard]] bool Setup(const PhysicsCreateInfo& createInfo);
+	void Shutdown();
 
-	physx::PxMaterial* CreateMaterial(physx::PxReal staticFriction, physx::PxReal dynamicFriction, physx::PxReal restitution);
+	[[nodiscard]] bool IsEnable() const { return m_enable; }
+	[[nodiscard]] PhysicsScene& GetScene() { return m_scene; }
 
-	physx::PxConvexMesh* CreateConvexMesh(
+	void FixedUpdate();
+
+
+
+
+
+
+
+
+	[[nodiscard]] physx::PxMaterial* CreateMaterial(physx::PxReal staticFriction, physx::PxReal dynamicFriction, physx::PxReal restitution);
+
+	[[nodiscard]] physx::PxConvexMesh* CreateConvexMesh(
 		physx::PxU32         count,
 		const physx::PxVec3* vertices,
 		// The number of vertices and faces of a convex mesh in PhysX is limited to 255.
 		physx::PxU16         vertexLimit = 255
 	);
 
-	physx::PxTriangleMesh* CreateTriangleMesh(physx::PxU32 count, const physx::PxVec3* vertices);
+	[[nodiscard]] physx::PxTriangleMesh* CreateTriangleMesh(physx::PxU32 count, const physx::PxVec3* vertices);
 
-	physx::PxPhysics* GetPhysics() { return m_physics; }
+	[[nodiscard]] physx::PxPhysics* GetPhysics() { return m_physics; }
 
 private:
-	friend class PhysicsScene;
+	EngineApplication&     m_engine;
+	physx::PxFoundation*   m_foundation{ nullptr };
+	physx::PxPvdTransport* m_pvdTransport{ nullptr };
+	physx::PxPvd*          m_pvd{ nullptr };
+	physx::PxPhysics*      m_physics{ nullptr };
 
-	physx::PxFoundation* m_foundation = nullptr;
-	physx::PxPvdTransport* m_pvdTransport = nullptr;
-	physx::PxPvd* m_pvd = nullptr;
-	physx::PxPhysics* m_physics = nullptr;
+	ph::PhysicsScene m_scene; // TODO: в будущем создавать из physics system
+
+	bool                   m_enable{ false };
 };
 
 #pragma endregion
 
-//=============================================================================
-#pragma region [ Physics Simulation Event Callback ]
-
-class PhysicsSimulationEventCallback final : public physx::PxSimulationEventCallback
-{
-public:
-	void onConstraintBreak([[maybe_unused]] physx::PxConstraintInfo* constraints, [[maybe_unused]] physx::PxU32 count) final {}
-	void onWake([[maybe_unused]] physx::PxActor** actors, [[maybe_unused]] physx::PxU32 count) final {}
-	void onSleep([[maybe_unused]] physx::PxActor** actors, [[maybe_unused]] physx::PxU32 count) final {}
-	void onContact([[maybe_unused]] const physx::PxContactPairHeader& pairHeader, [[maybe_unused]] const physx::PxContactPair* pairs, [[maybe_unused]] physx::PxU32 nbPairs) final {}
-	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final;
-	void onAdvance([[maybe_unused]] const physx::PxRigidBody* const* bodyBuffer, [[maybe_unused]] const physx::PxTransform* poseBuffer, [[maybe_unused]] physx::PxU32 count) final {}
-};
-
-#pragma endregion
+} // namespace ph

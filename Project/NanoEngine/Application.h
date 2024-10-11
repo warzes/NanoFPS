@@ -9,10 +9,10 @@
 
 struct EngineApplicationCreateInfo final
 {
-	std::string_view logFilePath = "Log.txt";
-
-	WindowCreateInfo window{};
+	std::string_view      logFilePath = "Log.txt";
+	WindowCreateInfo      window{};
 	vkr::RenderCreateInfo render{};
+	ph::PhysicsCreateInfo physics{};
 };
 
 #pragma endregion
@@ -78,8 +78,8 @@ public:
 	vkr::RenderSystem& GetRender() { return m_render; }
 	vkr::RenderDevice& GetRenderDevice() { return m_render.GetRenderDevice(); }
 
-	std::shared_ptr<PhysicsSystem> GetPhysicsSystem() { return m_physicsSystem; }
-	std::shared_ptr<PhysicsScene> GetPhysicsScene() { return m_physicsScene; }
+	ph::PhysicsSystem& GetPhysicsSystem() { return m_physics; }
+	ph::PhysicsScene& GetPhysicsScene() { return m_physics.GetScene(); }
 
 	const KeyState& GetKeyState(KeyCode code) const;
 
@@ -90,7 +90,9 @@ public:
 	bool IsWindowIconified() const;
 	bool IsWindowMaximized() const;
 
-	float GetDeltaTime() const;
+	[[nodiscard]] float GetDeltaTime() const { return m_deltaTime; }
+	[[nodiscard]] float GetFixedTimestep() const { return m_fixedTimestep; }
+	[[nodiscard]] float GetFixedUpdateTimeError() const { return m_timeSinceLastTick; }
 
 private:
 	bool setup();
@@ -108,21 +110,20 @@ private:
 	void keyDownCallback(KeyCode key);
 	void keyUpCallback(KeyCode key);
 
-	std::ofstream                                   m_logFile;
-	Window                                          m_window;
-	Input                                           m_input;
-	vkr::RenderSystem                               m_render;
-	StatusApp                                       m_status = StatusApp::NonInit;
-	int32_t                                         m_previousMouseX = INT32_MAX;
-	int32_t                                         m_previousMouseY = INT32_MAX;
-	KeyState                                        m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
+	std::ofstream     m_logFile;
+	Window            m_window;
+	Input             m_input;
+	vkr::RenderSystem m_render;
+	ph::PhysicsSystem m_physics;
+	StatusApp         m_status = StatusApp::NonInit;
+	int32_t           m_previousMouseX = INT32_MAX;
+	int32_t           m_previousMouseY = INT32_MAX;
+	KeyState          m_keyStates[TOTAL_KEY_COUNT] = { {false, 0.0f} };
 
-	float                                           m_lastFrameTime{};
-	float                                           m_deltaTime{};
-
-	std::shared_ptr<PhysicsSystem>                  m_physicsSystem; // TODO: переделать под остальную архитектуру, без new
-	std::shared_ptr<PhysicsSimulationEventCallback> m_physicsCallback;
-	std::shared_ptr<PhysicsScene>                   m_physicsScene; // TODO: в будущем создавать из physics system
+	float             m_lastFrameTime{};
+	float             m_deltaTime{};
+	float             m_fixedTimestep{ 0.02f };
+	float             m_timeSinceLastTick{ 0.0f };
 };
 
 #pragma endregion

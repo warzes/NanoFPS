@@ -1,6 +1,11 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
 #include "Physics.h"
+#include "Application.h"
+
+namespace ph {
+
+using namespace physx;
 
 #pragma comment( lib, "PhysX_64.lib" )
 #pragma comment( lib, "PhysXFoundation_64.lib" )
@@ -15,82 +20,164 @@
 #pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
 
 //=============================================================================
-#pragma region [ Physics Layers ]
+#pragma region [ Error Callback ]
 
-void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer)
+void info(const std::string& error, const std::string& message) noexcept
 {
-	const physx::PxFilterData filterData = PhysicsFilterDataFromLayer(layer);
-	PhysicsForEachActorShape(actor, [&filterData](physx::PxShape* shape) { shape->setQueryFilterData(filterData); });
+	Print("PhysX " + error + ": " + message);
+}
+
+void warning(const std::string& error, const std::string& message) noexcept
+{
+	Warning("PhysX " + error + ": " + message);
+}
+
+void error(const std::string& error, const std::string& message) noexcept
+{
+	Error("PhysX " + error + ": " + message);
+}
+
+void PhysicsErrorCallback::reportError(PxErrorCode::Enum code, const char* message, [[maybe_unused]] const char* file, [[maybe_unused]] int line)
+{
+	const char* msgType = "Unknown Error";
+	void (*loggingCallback)(const std::string&, const std::string&) = error;
+	switch (code)
+	{
+	case physx::PxErrorCode::eNO_ERROR:          msgType = "No Error";            loggingCallback = info; break;
+	case physx::PxErrorCode::eDEBUG_INFO:        msgType = "Debug Info";          loggingCallback = info; break;
+	case physx::PxErrorCode::eDEBUG_WARNING:     msgType = "Debug Warning";       loggingCallback = warning; break;
+	case physx::PxErrorCode::eINVALID_PARAMETER: msgType = "Invalid Parameter";   loggingCallback = error; break;
+	case physx::PxErrorCode::eINVALID_OPERATION: msgType = "Invalid Operation";   loggingCallback = error; break;
+	case physx::PxErrorCode::eOUT_OF_MEMORY:     msgType = "Out of Memory";       loggingCallback = error; break;
+	case physx::PxErrorCode::eINTERNAL_ERROR:    msgType = "Internal Error";      loggingCallback = error; break;
+	case physx::PxErrorCode::eABORT:             msgType = "Abort";               loggingCallback = error; break;
+	case physx::PxErrorCode::ePERF_WARNING:      msgType = "Performance Warning"; loggingCallback = warning; break;
+	default: break;
+	}
+	loggingCallback(msgType, message);
 }
 
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Physics Error Callback ]
+#pragma region [ Simulation Event Callback ]
 
-void Info(const char* error, const char* message) noexcept
+void PhysicsSimulationEventCallback::onTrigger(PxTriggerPair* pairs, PxU32 count)
 {
-	Print("PhysX " + std::string(error) + ": " + message);
-}
-
-void Warning(const char* error, const char* message) noexcept
-{
-	Warning("PhysX " + std::string(error) + ": " + message);
-}
-
-void Error(const char* error, const char* message) noexcept
-{
-	Error("PhysX " + std::string(error) + ": " + message);
-}
-
-void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char* message, [[maybe_unused]] const char* file, [[maybe_unused]] int line)
-{
-	const char* error = nullptr;
-	void (*loggingCallback)(const char*, const char*) = nullptr;
-	switch (code)
+	for (uint32_t i = 0; i < count; i++)
 	{
-	case physx::PxErrorCode::eNO_ERROR:
-		error = "No Error";
-		loggingCallback = Info;
-		break;
-	case physx::PxErrorCode::eDEBUG_INFO:
-		error = "Debug Info";
-		loggingCallback = Info;
-		break;
-	case physx::PxErrorCode::eDEBUG_WARNING:
-		error = "Debug Warning";
-		loggingCallback = Warning;
-		break;
-	case physx::PxErrorCode::eINVALID_PARAMETER:
-		error = "Invalid Parameter";
-		loggingCallback = Error;
-		break;
-	case physx::PxErrorCode::eINVALID_OPERATION:
-		error = "Invalid Operation";
-		loggingCallback = Error;
-		break;
-	case physx::PxErrorCode::eOUT_OF_MEMORY:
-		error = "Out of Memory";
-		loggingCallback = Error;
-		break;
-	case physx::PxErrorCode::eINTERNAL_ERROR:
-		error = "Internal Error";
-		loggingCallback = Error;
-		break;
-	case physx::PxErrorCode::eABORT:
-		error = "Abort";
-		loggingCallback = Error;
-		break;
-	case physx::PxErrorCode::ePERF_WARNING:
-		error = "Performance Warning";
-		loggingCallback = Warning;
-		break;
-	case physx::PxErrorCode::eMASK_ALL:
-		error = "Unknown Error";
-		loggingCallback = Error;
-		break;
+		const PxTriggerPair& pair = pairs[i];
+		if (pair.flags == PxTriggerPairFlag::eREMOVED_SHAPE_OTHER || pair.flags == PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER)
+		{
+			// ignore events caused by shape removal
+			continue;
+		}
+
+		auto triggerActor = static_cast<PhysicsActor*>(pair.triggerActor->userData);
+		auto otherActor = static_cast<PhysicsActor*>(pair.otherActor->userData);
+
+		switch (pair.status)
+		{
+		case PxPairFlag::eNOTIFY_TOUCH_FOUND:
+			triggerActor->OnTriggerEnter(otherActor);
+			break;
+		case PxPairFlag::eNOTIFY_TOUCH_LOST:
+			triggerActor->OnTriggerExit(otherActor);
+			break;
+		default:
+			Error("Invalid trigger pair status " + std::to_string(pair.status));
+			break;
+		}
 	}
-	loggingCallback(error, message);
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Layers ]
+
+void PhysicsSetQueryLayer(PxRigidActor* actor, PhysicsLayer layer)
+{
+	const PxFilterData filterData = PhysicsFilterDataFromLayer(layer);
+	PhysicsForEachActorShape(actor, [&filterData](PxShape* shape) { shape->setQueryFilterData(filterData); });
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region Physics Material
+
+Material::Material(EngineApplication& engine, float staticFriction, float dynamicFriction, float restitution)
+	: m_engine(engine)
+{
+	m_material = m_engine.GetPhysicsSystem().GetPhysics()->createMaterial(staticFriction, dynamicFriction, restitution);
+
+	Rav
+}
+
+Material::~Material()
+{
+	PX_RELEASE(m_material);
+}
+
+void Material::SetStaticFriction(float staticFriction)
+{
+	assert(m_material);
+	m_material->setStaticFriction(staticFriction);
+}
+
+void Material::SetDynamicFriction(float dynamicFriction)
+{
+	assert(m_material);
+	m_material->setDynamicFriction(dynamicFriction);
+}
+
+void Material::SetRestitution(float restitution)
+{
+	assert(m_material);
+	m_material->setRestitution(restitution);
+}
+
+void Material::SetFrictionCombineMode(PhysicsCombineMode mode)
+{
+	assert(m_material);
+	m_material->setFrictionCombineMode(static_cast<PxCombineMode::Enum>(static_cast<std::underlying_type<PhysicsCombineMode>::type>(mode)));
+}
+
+void Material::SetRestitutionCombineMode(PhysicsCombineMode mode)
+{
+	assert(m_material);
+	m_material->setRestitutionCombineMode(static_cast<PxCombineMode::Enum>(static_cast<std::underlying_type<PhysicsCombineMode>::type>(mode)));
+}
+
+float Material::GetStaticFriction() const
+{
+	assert(m_material);
+	return m_material->getStaticFriction();
+}
+
+float Material::GetDynamicFriction() const
+{
+	assert(m_material);
+	return m_material->getDynamicFriction();
+}
+
+float Material::GetRestitution() const
+{
+	assert(m_material);
+	return m_material->getRestitution();
+}
+
+PhysicsCombineMode Material::GetFrictionCombineMode() const
+{
+	assert(m_material);
+	return PhysicsCombineMode(m_material->getFrictionCombineMode());
+}
+
+PhysicsCombineMode Material::GetRestitutionCombineMode() const
+{
+	assert(m_material);
+	return PhysicsCombineMode(m_material->getRestitutionCombineMode());
 }
 
 #pragma endregion
@@ -98,59 +185,71 @@ void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char
 //=============================================================================
 #pragma region [ Physics Scene ]
 
-PhysicsScene::PhysicsScene(PhysicsSystem* physicsSystem)
-	: m_physics(physicsSystem->m_physics)
+PhysicsScene::PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine)
+	: m_engine(engine)
+	, m_system(physicsEngine)
 {
-	m_defaultCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
-	if (!m_defaultCpuDispatcher)
+}
+
+bool PhysicsScene::Setup(const PhysicsSceneCreateInfo& createInfo)
+{
+	m_physics = m_system.m_physics;
+
+	m_cpuDispatcher = PxDefaultCpuDispatcherCreate(createInfo.cpuDispatcherNum);
+	if (!m_cpuDispatcher)
+	{
 		Fatal("Failed to create default PhysX CPU dispatcher.");
+		return false;
+	}
 
-	m_defaultMaterial = m_physics->createMaterial(0.8f, 0.8f, 0.25f);
-	if (!m_defaultMaterial)
-		Fatal("Failed to create default PhysX material.");
-
-	physx::PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
-	sceneDesc.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
-	sceneDesc.cpuDispatcher = m_defaultCpuDispatcher;
-	sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+	PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
+	sceneDesc.gravity                 = { createInfo.gravity.x, createInfo.gravity.y, createInfo.gravity.z };
+	sceneDesc.cpuDispatcher           = m_cpuDispatcher;
+	sceneDesc.filterShader            = PxDefaultSimulationFilterShader;
+	sceneDesc.simulationEventCallback = &m_physicsCallback;
 	m_scene = m_physics->createScene(sceneDesc);
 	if (!m_scene)
-		Fatal("Failed to create PhysX scene.");
-
-	if (physx::PxPvdSceneClient* pvdClient = m_scene->getScenePvdClient())
 	{
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+		Fatal("Failed to create PhysX scene.");
+		return false;
+	}
+
+	if (PxPvdSceneClient* pvdClient = m_scene->getScenePvdClient())
+	{
+		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+	}
+
+	m_defaultMaterial = m_physics->createMaterial(createInfo.defaultMaterial.staticFriction, createInfo.defaultMaterial.dynamicFriction, createInfo.defaultMaterial.restitution);
+	if (!m_defaultMaterial)
+	{
+		Fatal("Failed to create default PhysX material.");
+		return false;
 	}
 
 	m_controllerManager = PxCreateControllerManager(*m_scene);
 	if (!m_controllerManager)
-		Fatal("Failed to create PhysX controller manager.");
-}
-
-PhysicsScene::~PhysicsScene()
-{
-	PX_RELEASE(m_controllerManager)
-	PX_RELEASE(m_scene)
-	PX_RELEASE(m_defaultMaterial)
-	PX_RELEASE(m_defaultCpuDispatcher)
-}
-
-bool PhysicsScene::Update(const float deltaTime, const float timeScale)
-{
-	m_timeSinceLastTick += deltaTime * timeScale;
-
-	const float scaledTimestep = m_fixedTimestep * timeScale;
-	if (m_timeSinceLastTick < scaledTimestep)
 	{
+		Fatal("Failed to create PhysX controller manager.");
 		return false;
 	}
-
-	m_scene->simulate(scaledTimestep);
-	m_scene->fetchResults(true);
-	m_timeSinceLastTick -= scaledTimestep;
+	
 	return true;
+}
+
+void PhysicsScene::Shutdown()
+{
+	PX_RELEASE(m_controllerManager);
+	PX_RELEASE(m_defaultMaterial);
+	PX_RELEASE(m_scene);
+	PX_RELEASE(m_cpuDispatcher);
+}
+
+void PhysicsScene::FixedUpdate()
+{
+	m_scene->simulate(m_engine.GetFixedTimestep());
+	m_scene->fetchResults(true);
 }
 
 void PhysicsScene::SetSimulationEventCallback(physx::PxSimulationEventCallback* callback)
@@ -253,40 +352,87 @@ physx::PxSweepBuffer PhysicsScene::Sweep(
 //=============================================================================
 #pragma region [ Physics System ]
 
-static physx::PxDefaultAllocator s_Allocator;
-static PhysicsErrorCallback      s_ErrorCallback;
+PxDefaultAllocator   gDefaultAllocatorCallback;
+PhysicsErrorCallback gErrorCallback;
 
-PhysicsSystem::PhysicsSystem()
+PhysicsSystem::PhysicsSystem(EngineApplication& engine)
+	: m_engine(engine)
+	, m_scene(engine, *this)
 {
-	m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_Allocator, s_ErrorCallback);
-	if (!m_foundation)
-		Fatal("Failed to create PhysX foundation.");
+}
 
-	m_pvdTransport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-	if (!m_pvdTransport)
-		Fatal("Failed to create PhysX PVD transport.");
+bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
+{
+	m_enable = createInfo.enable;
+
+	m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gErrorCallback);
+	if (!m_foundation)
+	{
+		Fatal("PhysX foundation failed to create.");
+		return false;
+	}
 
 	m_pvd = PxCreatePvd(*m_foundation);
 	if (!m_pvd)
+	{
 		Fatal("Failed to create PhysX PVD.");
-
-	if (!m_pvd->connect(*m_pvdTransport, physx::PxPvdInstrumentationFlag::eALL))
+		return false;
+	}
+	
+	m_pvdTransport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+	if (!m_pvdTransport)
+	{
+		Fatal("Failed to create PhysX PVD transport.");
+		return false;
+	}
+	
+	if (!m_pvd->connect(*m_pvdTransport, PxPvdInstrumentationFlag::eALL))
 		Warning("Failed to connect to PVD.");
 
-	m_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, physx::PxTolerancesScale(), true, m_pvd);
+	bool recordMemoryAllocations = true;
+	m_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, PxTolerancesScale(), recordMemoryAllocations, m_pvd);
 	if (!m_physics)
+	{
 		Fatal("Failed to create PhysX physics.");
+		return false;
+	}
 
-	Print("PhysX " + std::to_string(PX_PHYSICS_VERSION_MAJOR) + "." + std::to_string(PX_PHYSICS_VERSION_MINOR) + "." + std::to_string(PX_PHYSICS_VERSION_BUGFIX));
+	Print("PhysX Init " + std::to_string(PX_PHYSICS_VERSION_MAJOR) + "." + std::to_string(PX_PHYSICS_VERSION_MINOR) + "." + std::to_string(PX_PHYSICS_VERSION_BUGFIX));
+
+	// initialize extensions (can be omitted, these are optional components)
+	if (!PxInitExtensions(*m_physics, m_pvd))
+	{
+		Fatal("Unable to initialize PhysX");
+		return false;
+	}
+
+	if (!m_scene.Setup(createInfo.scene)) return false;
+
+	return true;
 }
 
-PhysicsSystem::~PhysicsSystem()
+void PhysicsSystem::Shutdown()
 {
-	PX_RELEASE(m_physics)
-	PX_RELEASE(m_pvd)
-	PX_RELEASE(m_pvdTransport)
-	PX_RELEASE(m_foundation)
+	PX_RELEASE(m_physics);
+	PX_RELEASE(m_pvd);
+	PX_RELEASE(m_pvdTransport);
+	PX_RELEASE(m_foundation);
 }
+
+void PhysicsSystem::FixedUpdate()
+{
+	if (IsEnable())
+		m_scene.FixedUpdate();
+}
+
+
+
+
+
+
+
+
+
 
 physx::PxMaterial* PhysicsSystem::CreateMaterial(physx::PxReal staticFriction, physx::PxReal dynamicFriction, physx::PxReal restitution)
 {
@@ -343,36 +489,5 @@ physx::PxTriangleMesh* PhysicsSystem::CreateTriangleMesh(physx::PxU32 count, con
 
 #pragma endregion
 
-//=============================================================================
-#pragma region [ Physics Simulation Event Callback ]
 
-void PhysicsSimulationEventCallback::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
-{
-	for (int i = 0; i < count; i++)
-	{
-		const physx::PxTriggerPair& pair = pairs[i];
-		if (pair.flags == physx::PxTriggerPairFlag::eREMOVED_SHAPE_OTHER || pair.flags == physx::PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER)
-		{
-			// ignore events caused by shape removal
-			continue;
-		}
-
-		auto triggerActor = static_cast<PhysicsActor*>(pair.triggerActor->userData);
-		auto otherActor = static_cast<PhysicsActor*>(pair.otherActor->userData);
-
-		switch (pair.status)
-		{
-		case physx::PxPairFlag::eNOTIFY_TOUCH_FOUND:
-			triggerActor->OnTriggerEnter(otherActor);
-			break;
-		case physx::PxPairFlag::eNOTIFY_TOUCH_LOST:
-			triggerActor->OnTriggerExit(otherActor);
-			break;
-		default:
-			Error("Invalid trigger pair status " + std::to_string(pair.status));
-			break;
-		}
-	}
-}
-
-#pragma endregion
+} // namespace ph
