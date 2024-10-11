@@ -6,7 +6,8 @@
 
 namespace vkr {
 
-#pragma region Generate mip shader VK
+//=============================================================================
+#pragma region [ Generate mip shader VK ]
 
 #if 0
 RWTexture2D<float4> dstTex : register(u0); // Destination texture
@@ -169,7 +170,8 @@ constexpr unsigned char GenerateMipShaderVK[] = {
 
 #pragma endregion
 
-#pragma region Format
+//=============================================================================
+#pragma region [ Format ]
 
 #define UNCOMPRESSED_FORMAT(Name, Type, Aspect, BytesPerTexel, BytesPerComponent, Layout, Component, ComponentOffsets) \
 	{                                                                                                                  \
@@ -358,7 +360,8 @@ std::string ToString(Format format)
 
 #pragma endregion
 
-#pragma region Helper
+//=============================================================================
+#pragma region [ Helper ]
 
 ColorComponentFlags ColorComponentFlags::RGBA()
 {
@@ -505,7 +508,8 @@ Result VertexDescription::AppendBinding(const VertexBinding& binding)
 }
 #pragma endregion
 
-#pragma region Utils
+//=============================================================================
+#pragma region [ Utils ]
 
 std::string ToString(DescriptorType value)
 {
@@ -897,7 +901,8 @@ std::string ToString(const gli::format& format)
 
 #pragma endregion
 
-#pragma region Vk Utils
+//=============================================================================
+#pragma region [ Vk Utils ]
 
 std::string ToString(VkResult value)
 {
@@ -1886,7 +1891,8 @@ VkSamplerYcbcrRange ToVkEnum(YcbcrRange value)
 
 #pragma endregion
 
-#pragma region DeviceQueue
+//=============================================================================
+#pragma region [ DeviceQueue ]
 
 bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
 {
@@ -1919,7 +1925,8 @@ bool DeviceQueue::init(vkb::Device& vkbDevice, vkb::QueueType type)
 
 #pragma endregion
 
-#pragma region TriMesh
+//=============================================================================
+#pragma region [ TriMesh ]
 
 TriMesh::TriMesh()
 {
@@ -3061,7 +3068,8 @@ TriMesh& TriMesh::operator+=(const TriMesh& rhs)
 
 #pragma endregion
 
-#pragma region WireMesh
+//=============================================================================
+#pragma region [ WireMesh ]
 
 WireMesh::WireMesh(IndexType indexType)
 	: mIndexType(indexType)
@@ -3647,7 +3655,8 @@ WireMesh WireMesh::CreateSphere(float radius, uint32_t usegs, uint32_t vsegs, co
 
 #pragma endregion
 
-#pragma region Geometry
+//=============================================================================
+#pragma region [ Geometry ]
 
 #define NOT_INTERLEAVED_MSG "cannot append interleaved data if attribute layout is not interleaved"
 #define NOT_PLANAR_MSG      "cannot append planar data if attribute layout is not planar"
@@ -4962,7 +4971,8 @@ void Geometry::AppendEdge(const WireMeshVertexData& vtx0, const WireMeshVertexDa
 
 #pragma endregion
 
-#pragma region grfx util
+//=============================================================================
+#pragma region [ grfx util ]
 
 namespace vkrUtil
 {

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#pragma region Camera
+//=============================================================================
+#pragma region [ Camera ]
 
 constexpr auto CAMERA_DEFAULT_NEAR_CLIP      = 0.1f;
 constexpr auto CAMERA_DEFAULT_FAR_CLIP       = 10000.0f;

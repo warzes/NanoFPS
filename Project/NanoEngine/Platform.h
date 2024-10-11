@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#pragma region Window
+//=============================================================================
+#pragma region [ Window ]
 
 class EngineApplication;
 
@@ -54,7 +55,8 @@ private:
 
 #pragma endregion
 
-#pragma region Key Code
+//=============================================================================
+#pragma region [ Key Code ]
 
 enum class MouseButton : int8_t
 {
@@ -209,7 +211,8 @@ struct KeyState final
 
 #pragma endregion
 
-#pragma region Input
+//=============================================================================
+#pragma region [ Input ]
 
 class Input final
 {

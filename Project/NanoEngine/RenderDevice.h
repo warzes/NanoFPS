@@ -9,7 +9,8 @@ namespace vkr {
 class RenderSystem;
 class DeviceQueue;
 
-#pragma region RenderDevice
+//=============================================================================
+#pragma region [ RenderDevice ]
 
 class RenderDevice final
 {

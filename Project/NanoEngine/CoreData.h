@@ -2,7 +2,8 @@
 
 // TODO: сюда также загрузку шрифтов и мешей. А также все что грузится в данные и не завязано на рендер (шейдеры например в рендер... но возможно код шейдеров здесь)
 
-#pragma region Bitmap
+//=============================================================================
+#pragma region [ Bitmap ]
 
 class Bitmap final
 {
@@ -206,7 +207,8 @@ void Bitmap::Fill(PixelDataType r, PixelDataType g, PixelDataType b, PixelDataTy
 
 #pragma endregion
 
-#pragma region Mipmap
+//=============================================================================
+#pragma region [ Mipmap ]
 
 constexpr auto RemainingMipLevels = UINT32_MAX;
 
@@ -260,7 +262,8 @@ private:
 
 #pragma endregion
 
-#pragma region Font
+//=============================================================================
+#pragma region [ Font ]
 
 struct FontMetrics final
 {

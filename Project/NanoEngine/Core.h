@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#pragma region Macros
+//=============================================================================
+#pragma region [ Macros ]
 
 #define STRINGIFY_(x)   #x
 #define STRINGIFY(x)    STRINGIFY_(x)
@@ -10,7 +11,8 @@
 
 #pragma endregion
 
-#pragma region Constants
+//=============================================================================
+#pragma region [ Constants ]
 
 constexpr auto WHOLE_SIZE = UINT64_MAX;
 constexpr auto VALUE_IGNORED = UINT32_MAX;
@@ -18,7 +20,8 @@ constexpr auto APPEND_OFFSET_ALIGNED = UINT32_MAX;
 
 #pragma endregion
 
-#pragma region Base Types
+//=============================================================================
+#pragma region [ Base Types ]
 
 // Import GLM types as HLSL friendly names
 
@@ -203,7 +206,8 @@ constexpr T pi()
 }
 #pragma endregion
 
-#pragma region Core Func
+//=============================================================================
+#pragma region [ Core Func ]
 
 template <typename T>
 [[nodiscard]] constexpr T RoundUp(T value, T multiple)
@@ -383,7 +387,8 @@ inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
 
 #pragma endregion
 
-#pragma region Ptr
+//=============================================================================
+#pragma region [ Ptr ]
 
 template <typename ObjectT>
 class ObjPtrRef final
@@ -462,7 +467,8 @@ private:
 
 #pragma endregion
 
-#pragma region Time
+//=============================================================================
+#pragma region [ Time ]
 
 class Time final
 {
@@ -538,7 +544,8 @@ private:
 
 #pragma endregion
 
-#pragma region IO
+//=============================================================================
+#pragma region [ IO ]
 
 class File final
 {
@@ -576,7 +583,8 @@ std::optional<std::vector<char>> LoadFile(const std::filesystem::path& path);
 
 #pragma endregion
 
-#pragma region Log
+//=============================================================================
+#pragma region [ Log ]
 
 void Print(const std::string& msg);
 void Warning(const std::string& msg);
@@ -843,7 +851,8 @@ inline bool Failed(Result value)
 
 #pragma endregion
 
-#pragma region Core Math
+//=============================================================================
+#pragma region [ Core Math ]
 
 #define SMALL_NUMBER       (1.e-8f)
 #define KINDA_SMALL_NUMBER (1.e-4f)
@@ -943,7 +952,8 @@ inline float3 SphericalTangent(float theta, [[maybe_unused]] float phi)
 
 #pragma endregion
 
-#pragma region Color
+//=============================================================================
+#pragma region [ Color ]
 
 class Color;
 
@@ -1309,7 +1319,8 @@ inline LinearColor operator*(float scalar, const LinearColor& Color)
 
 #pragma endregion
 
-#pragma region Math Geometry
+//=============================================================================
+#pragma region [ Math Geometry ]
 
 class OBB;
 
@@ -1595,7 +1606,8 @@ protected:
 
 #pragma endregion
 
-#pragma region Random
+//=============================================================================
+#pragma region [ Random ]
 
 class Random final
 {

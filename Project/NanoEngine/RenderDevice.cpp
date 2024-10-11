@@ -7,7 +7,8 @@
 
 namespace vkr {
 
-#pragma region RenderDevice
+//=============================================================================
+#pragma region [ RenderDevice ]
 
 RenderDevice::RenderDevice(EngineApplication& engine, RenderSystem& render)
 	: m_engine(engine)

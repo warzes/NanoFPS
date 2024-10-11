@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#pragma region Physics Utilities
+//=============================================================================
+#pragma region [ Physics Utilities ]
 
 template<class Func>
 inline std::vector<physx::PxShape*> PhysicsForEachActorShape(physx::PxRigidActor* actor, Func&& func)
@@ -21,7 +22,8 @@ inline void PhysicsSetActorMaterial(physx::PxRigidActor* actor, physx::PxMateria
 
 #pragma endregion
 
-#pragma region Physics Error Callback
+//=============================================================================
+#pragma region [ Physics Error Callback ]
 
 class PhysicsErrorCallback : public physx::PxErrorCallback
 {
@@ -31,7 +33,8 @@ public:
 
 #pragma endregion
 
-#pragma region Physics Layers
+//=============================================================================
+#pragma region [ Physics Layers ]
 
 enum PhysicsLayer : physx::PxU32
 {
@@ -78,7 +81,8 @@ void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer);
 
 #pragma endregion
 
-#pragma region Physics Actor
+//=============================================================================
+#pragma region [ Physics Actor ]
 
 class PhysicsActor
 {
@@ -92,7 +96,8 @@ public:
 
 #pragma endregion
 
-#pragma region Physics Scene
+//=============================================================================
+#pragma region [ Physics Scene ]
 
 class PhysicsSystem;
 
@@ -162,7 +167,8 @@ private:
 
 #pragma endregion
 
-#pragma region Physics System
+//=============================================================================
+#pragma region [ Physics System ]
 
 class PhysicsSystem final
 {
@@ -199,7 +205,8 @@ private:
 
 #pragma endregion
 
-#pragma region PhysicsSimulationEventCallback
+//=============================================================================
+#pragma region [ Physics Simulation Event Callback ]
 
 class PhysicsSimulationEventCallback final : public physx::PxSimulationEventCallback
 {

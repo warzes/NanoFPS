@@ -14,7 +14,8 @@
 #pragma comment( lib, "PhysXExtensions_static_64.lib" )
 #pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
 
-#pragma region Physics Layers
+//=============================================================================
+#pragma region [ Physics Layers ]
 
 void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer)
 {
@@ -24,7 +25,8 @@ void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer)
 
 #pragma endregion
 
-#pragma region Physics Error Callback
+//=============================================================================
+#pragma region [ Physics Error Callback ]
 
 void Info(const char* error, const char* message) noexcept
 {
@@ -93,7 +95,8 @@ void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char
 
 #pragma endregion
 
-#pragma region Physics Scene
+//=============================================================================
+#pragma region [ Physics Scene ]
 
 PhysicsScene::PhysicsScene(PhysicsSystem* physicsSystem)
 	: m_physics(physicsSystem->m_physics)
@@ -247,7 +250,8 @@ physx::PxSweepBuffer PhysicsScene::Sweep(
 
 #pragma endregion
 
-#pragma region PhysicsSystem
+//=============================================================================
+#pragma region [ Physics System ]
 
 static physx::PxDefaultAllocator s_Allocator;
 static PhysicsErrorCallback      s_ErrorCallback;
@@ -339,7 +343,8 @@ physx::PxTriangleMesh* PhysicsSystem::CreateTriangleMesh(physx::PxU32 count, con
 
 #pragma endregion
 
-#pragma region PhysicsSimulationEventCallback
+//=============================================================================
+#pragma region [ Physics Simulation Event Callback ]
 
 void PhysicsSimulationEventCallback::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
 {

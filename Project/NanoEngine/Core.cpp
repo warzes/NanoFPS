@@ -1,7 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
 
-#pragma region Base Types
+//=============================================================================
+#pragma region [ Base Types ]
 
 std::ostream& operator<<(std::ostream& os, const float2& i)
 {
@@ -29,7 +30,8 @@ std::ostream& operator<<(std::ostream& os, const uint3& i)
 
 #pragma endregion
 
-#pragma region Clock
+//=============================================================================
+#pragma region [ Clock ]
 
 Time Clock::GetElapsedTime() const
 {
@@ -76,7 +78,8 @@ inline Time Clock::Reset()
 
 #pragma endregion
 
-#pragma region IO
+//=============================================================================
+#pragma region [ IO ]
 
 File::~File()
 {
@@ -189,7 +192,8 @@ std::optional<std::string> LoadSourceFile(const std::filesystem::path& path)
 
 #pragma endregion
 
-#pragma region Color
+//=============================================================================
+#pragma region [ Color ]
 
 const LinearColor LinearColor::White(1.f, 1.f, 1.f);
 const LinearColor LinearColor::Gray(0.5f, 0.5f, 0.5f);
@@ -539,7 +543,8 @@ Color Color::MakeRedToGreenColorFromScalar(float Scalar)
 
 #pragma endregion
 
-#pragma region Math Geometry
+//=============================================================================
+#pragma region [ Math Geometry ]
 
 AABB::AABB(const OBB& obb)
 {

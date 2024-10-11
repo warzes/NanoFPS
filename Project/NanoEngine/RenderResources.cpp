@@ -5,7 +5,8 @@
 
 namespace vkr {
 
-#pragma region VulkanFence
+//=============================================================================
+#pragma region [ Fence ]
 
 Result Fence::Wait(uint64_t timeout)
 {
@@ -56,7 +57,8 @@ void Fence::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region VulkanSemaphore
+//=============================================================================
+#pragma region [ Semaphore ]
 
 #define REQUIRES_TIMELINE_MSG "invalid semaphore type: operation requires timeline semaphore"
 
@@ -171,7 +173,8 @@ uint64_t Semaphore::timelineCounterValue() const
 
 #pragma endregion
 
-#pragma region Query
+//=============================================================================
+#pragma region [ Query ]
 
 VkBufferPtr Query::GetReadBackBuffer() const
 {
@@ -289,7 +292,8 @@ uint32_t Query::getQueryTypeSize(VkQueryType type, uint32_t multiplier) const
 
 #pragma endregion
 
-#pragma region Buffer
+//=============================================================================
+#pragma region [ Buffer ]
 
 Result Buffer::MapMemory(uint64_t /*offset*/, void** mappedAddress)
 {
@@ -444,7 +448,8 @@ void Buffer::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region Image
+//=============================================================================
+#pragma region [ Image ]
 
 ImageCreateInfo ImageCreateInfo::SampledImage2D(uint32_t width, uint32_t height, Format format, SampleCount sampleCount, MemoryUsage memoryUsage)
 {
@@ -1032,7 +1037,8 @@ void StorageImageView::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region Texture
+//=============================================================================
+#pragma region [ Texture ]
 
 ImageType Texture::GetImageType() const
 {
@@ -1270,7 +1276,8 @@ void Texture::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region RenderPass
+//=============================================================================
+#pragma region [ RenderPass ]
 
 void RenderPassCreateInfo::SetAllRenderTargetClearValue(const float4& value)
 {
@@ -2266,7 +2273,8 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 #pragma endregion
 
-#pragma region DrawPass
+//=============================================================================
+#pragma region [ DrawPass ]
 
 namespace internal
 {
@@ -2750,7 +2758,8 @@ void DrawPass::PrepareRenderPassBeginInfo(const DrawPassClearFlags& clearFlags, 
 
 #pragma endregion
 
-#pragma region Descriptor
+//=============================================================================
+#pragma region [ Descriptor ]
 
 Result DescriptorPool::createApiObjects(const DescriptorPoolCreateInfo& createInfo)
 {
@@ -3157,7 +3166,8 @@ Result DescriptorSetLayout::validateDescriptorBindingFlags(const DescriptorBindi
 
 #pragma endregion
 
-#pragma region Shader
+//=============================================================================
+#pragma region [ Shader ]
 
 Result ShaderModule::createApiObjects(const ShaderModuleCreateInfo& createInfo)
 {
@@ -3187,7 +3197,8 @@ void ShaderModule::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region ShadingRate
+//=============================================================================
+#pragma region [ ShadingRate ]
 
 namespace internal
 {
@@ -3655,7 +3666,8 @@ void ShadingRatePattern::VRSModifiedRenderPassCreateInfo::updateRenderPassForSha
 
 #pragma endregion
 
-#pragma region Shading Rate Util
+//=============================================================================
+#pragma region [ Shading Rate Util ]
 
 void FillShadingRateUniformFragmentSize(ShadingRatePatternPtr pattern, uint32_t fragmentWidth, uint32_t fragmentHeight, Bitmap* bitmap)
 {
@@ -3715,7 +3727,8 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 
 #pragma endregion
 
-#pragma region Mesh
+//=============================================================================
+#pragma region [ Mesh ]
 
 MeshCreateInfo::MeshCreateInfo(const Geometry& geometry)
 {
@@ -3905,7 +3918,8 @@ const MeshVertexBufferDescription* Mesh::GetVertexBufferDescription(uint32_t ind
 
 #pragma endregion
 
-#pragma region Pipeline
+//=============================================================================
+#pragma region [ Pipeline ]
 
 Result ComputePipeline::createApiObjects(const ComputePipelineCreateInfo& createInfo)
 {
@@ -4729,7 +4743,8 @@ void PipelineInterface::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region Command
+//=============================================================================
+#pragma region [ Command ]
 
 CommandType CommandPool::GetCommandType() const
 {
@@ -6375,7 +6390,8 @@ void CommandBuffer::ResolveQueryData(
 
 #pragma endregion
 
-#pragma region Queue
+//=============================================================================
+#pragma region [ Queue ]
 
 Result Queue::CreateCommandBuffer(
 	CommandBuffer** ppCommandBuffer,
@@ -7070,7 +7086,8 @@ VkResult Queue::TransitionImageLayout(
 
 #pragma endregion
 
-#pragma region FullscreenQuad
+//=============================================================================
+#pragma region [ FullscreenQuad ]
 
 Result FullscreenQuad::createApiObjects(const FullscreenQuadCreateInfo& pCreateInfo)
 {
@@ -7137,7 +7154,8 @@ void FullscreenQuad::destroyApiObjects()
 
 #pragma endregion
 
-#pragma region Scope
+//=============================================================================
+#pragma region [ Scope ]
 
 #define NULL_ARGUMENT_MSG   "unexpected null argument"
 #define WRONG_OWNERSHIP_MSG "object has invalid ownership value"
@@ -7331,7 +7349,8 @@ void ScopeDestroyer::ReleaseAll()
 
 #pragma endregion
 
-#pragma region Text Draw
+//=============================================================================
+#pragma region [ Text Draw ]
 
 std::string TextureFont::GetDefaultCharacters()
 {

@@ -4,7 +4,8 @@
 
 namespace vkr {
 
-#pragma region Fence
+//=============================================================================
+#pragma region [ Fence ]
 
 struct FenceCreateInfo final
 {
@@ -31,7 +32,8 @@ private:
 
 #pragma endregion
 
-#pragma region Semaphore
+//=============================================================================
+#pragma region [ Semaphore ]
 
 struct SemaphoreCreateInfo final
 {
@@ -78,7 +80,8 @@ private:
 
 #pragma endregion
 
-#pragma region Query
+//=============================================================================
+#pragma region [ Query ]
 
 struct PipelineStatistics final
 {
@@ -129,7 +132,8 @@ private:
 
 #pragma endregion
 
-#pragma region Buffer
+//=============================================================================
+#pragma region [ Buffer ]
 
 struct BufferCreateInfo final
 {
@@ -189,7 +193,8 @@ struct VertexBufferView final
 
 #pragma endregion
 
-#pragma region Image
+//=============================================================================
+#pragma region [ Image ]
 
 struct ImageCreateInfo final
 {
@@ -520,7 +525,8 @@ private:
 
 #pragma endregion
 
-#pragma region Texture
+//=============================================================================
+#pragma region [ Texture ]
 
 struct TextureCreateInfo final
 {
@@ -588,7 +594,8 @@ private:
 
 #pragma endregion
 
-#pragma region RenderPass
+//=============================================================================
+#pragma region [ RenderPass ]
 
 // Use this if the RTVs and/or the DSV exists.
 struct RenderPassCreateInfo final
@@ -811,7 +818,8 @@ VkResult CreateTransientRenderPass(RenderDevice* device, uint32_t renderTargetCo
 
 #pragma endregion
 
-#pragma region DrawPass
+//=============================================================================
+#pragma region [ DrawPass ]
 
 struct RenderPassBeginInfo;
 
@@ -957,7 +965,8 @@ private:
 
 #pragma endregion
 
-#pragma region Descriptor
+//=============================================================================
+#pragma region [ Descriptor ]
 
 struct DescriptorBinding final
 {
@@ -1092,7 +1101,8 @@ private:
 
 #pragma endregion
 
-#pragma region Shader
+//=============================================================================
+#pragma region [ Shader ]
 
 struct ShaderModuleCreateInfo final
 {
@@ -1114,7 +1124,8 @@ private:
 
 #pragma endregion
 
-#pragma region ShadingRate
+//=============================================================================
+#pragma region [ ShadingRate ]
 
 // A supported shading rate supported by the device.
 struct SupportedShadingRate final
@@ -1354,7 +1365,8 @@ private:
 
 #pragma endregion
 
-#pragma region Shading Rate Util
+//=============================================================================
+#pragma region [ Shading Rate Util ]
 
 // These set of functions create a bitmap.The bitmap can be used to produce a ShadingRatePattern that in tun can be used in a render pass creation to specify a non - uniform shading pattern.
 
@@ -1369,7 +1381,8 @@ void FillShadingRateAnisotropic(ShadingRatePatternPtr pattern, float scale, Bitm
 
 #pragma endregion
 
-#pragma region Mesh
+//=============================================================================
+#pragma region [ Mesh ]
 
 struct MeshVertexAttribute final
 {
@@ -1447,7 +1460,8 @@ private:
 
 #pragma endregion
 
-#pragma region Pipeline
+//=============================================================================
+#pragma region [ Pipeline ]
 
 struct ShaderStageInfo final
 {
@@ -1690,7 +1704,8 @@ private:
 
 #pragma endregion
 
-#pragma region Command
+//=============================================================================
+#pragma region [ Command ]
 
 struct BufferToBufferCopyInfo
 {
@@ -2263,7 +2278,8 @@ private:
 
 #pragma endregion
 
-#pragma region Queue
+//=============================================================================
+#pragma region [ Queue ]
 
 struct SubmitInfo final
 {
@@ -2357,7 +2373,8 @@ private:
 
 #pragma endregion
 
-#pragma region FullscreenQuad
+//=============================================================================
+#pragma region [ FullscreenQuad ]
 
 /*
 
@@ -2434,7 +2451,8 @@ private:
 
 #pragma endregion
 
-#pragma region Scope
+//=============================================================================
+#pragma region [ Scope ]
 
 class ScopeDestroyer
 {
@@ -2466,7 +2484,8 @@ private:
 
 #pragma endregion
 
-#pragma region Text Draw
+//=============================================================================
+#pragma region [ Text Draw ]
 
 struct TextureFontUVRect
 {

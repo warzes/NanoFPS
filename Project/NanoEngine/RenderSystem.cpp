@@ -10,7 +10,8 @@
 
 namespace vkr {
 
-#pragma region VulkanInstance
+//=============================================================================
+#pragma region [ Vulkan Instance ]
 
 VkBool32 VKAPI_PTR DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, [[maybe_unused]] void* pUserData)
 {
@@ -384,7 +385,8 @@ bool VulkanInstance::getDeviceInfo()
 
 #pragma endregion
 
-#pragma region VulkanSurface
+//=============================================================================
+#pragma region [ Vulkan Surface ]
 
 VulkanSurface::VulkanSurface(RenderSystem& render)
 	: m_render(render)
@@ -525,7 +527,8 @@ uint32_t VulkanSurface::GetCurrentImageHeight() const
 
 #pragma endregion
 
-#pragma region VulkanSwapchain
+//=============================================================================
+#pragma region [ Vulkan Swapchain ]
 
 VulkanSwapChain::VulkanSwapChain(RenderSystem& render)
 	: m_render(render)
@@ -1340,7 +1343,8 @@ VkImageView& VulkanSwapChain::GetImageView(size_t i)
 
 #pragma endregion
 
-#pragma region ImGui
+//=============================================================================
+#pragma region [ ImGui ]
 
 ImGuiImpl::ImGuiImpl(RenderSystem& render)
 	: m_render(render)
@@ -1552,7 +1556,8 @@ void ImGuiImpl::setColorStyle()
 
 #pragma endregion
 
-#pragma region RenderSystem
+//=============================================================================
+#pragma region [ Render System ]
 
 RenderSystem::RenderSystem(EngineApplication& engine)
 	: m_engine(engine)

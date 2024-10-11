@@ -2,7 +2,8 @@
 #include "Core.h"
 #include "Application.h"
 
-#pragma region Engine Application
+//=============================================================================
+#pragma region [ Engine Application ]
 
 EngineApplication* thisEngineApplication = nullptr;
 

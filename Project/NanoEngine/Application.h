@@ -4,7 +4,8 @@
 #include "RenderSystem.h"
 #include "Physics.h"
 
-#pragma region Create Application Info
+//=============================================================================
+#pragma region [ Create Application Info ]
 
 struct EngineApplicationCreateInfo final
 {
@@ -16,7 +17,8 @@ struct EngineApplicationCreateInfo final
 
 #pragma endregion
 
-#pragma region Engine Application
+//=============================================================================
+#pragma region [ Engine Application ]
 
 enum class StatusApp : uint8_t
 {

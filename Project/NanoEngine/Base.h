@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#pragma region Header
-
 #if defined(_MSC_VER)
 #	pragma warning(disable : 4061)
 #	pragma warning(disable : 4355)
@@ -66,7 +64,6 @@
 #include <mutex>
 
 #define VK_NO_PROTOTYPES
-
 #include <vulkan/vulkan_core.h>
 #include <VkBootstrap/VkBootstrap.h>
 #include <vulkan/vk_enum_string_helper.h>
@@ -75,19 +72,8 @@
 
 #include <volk/volk.h>
 
-//#include <glslang/Public/ResourceLimits.h>
-//#include <glslang/Public/ShaderLang.h>
-//#include <glslang/SPIRV/GlslangToSpv.h>
-//#include <glslang/Include/glslang_c_interface.h>
-//#include <glslang/Public/resource_limits_c.h>
-
 #define GLFW_INCLUDE_NONE
-//#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-//#if defined(_WIN32)
-//#	define GLFW_EXPOSE_NATIVE_WIN32
-//#endif
-//#include <GLFW/glfw3native.h>
 
 #if defined(_WIN32)
 #	include <ShellScalingApi.h>
@@ -151,5 +137,3 @@ Left handed
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif
-
-#pragma endregion

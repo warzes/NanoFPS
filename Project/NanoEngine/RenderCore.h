@@ -4,7 +4,8 @@
 
 namespace vkr {
 
-#pragma region VkHandlePtr
+//=============================================================================
+#pragma region [ VkHandlePtr ]
 
 template <typename VkHandleT>
 class VkHandlePtrRef final
@@ -76,7 +77,8 @@ private:
 
 #pragma endregion
 
-#pragma region Decl Class
+//=============================================================================
+#pragma region [ Decl Class ]
 
 class RenderDevice;
 
@@ -174,7 +176,8 @@ using VmaAllocatorPtr = VkHandlePtr<VmaAllocator>;
 
 #pragma endregion
 
-#pragma region Render Constants
+//=============================================================================
+#pragma region [ Render Constants ]
 
 constexpr auto MaxRenderTargets = 8u;
 constexpr auto MaxViewports = 16u;
@@ -220,7 +223,8 @@ constexpr auto SEMANTIC_NAME_CUSTOM = "CUSTOM";
 
 #pragma endregion
 
-#pragma region Enums
+//=============================================================================
+#pragma region [ Enums ]
 
 enum class AttachmentLoadOp : uint8_t
 {
@@ -744,7 +748,8 @@ enum class YcbcrRange : uint8_t
 
 #pragma endregion
 
-#pragma region Format
+//=============================================================================
+#pragma region [ Format ]
 
 enum class Format : uint8_t
 {
@@ -991,7 +996,8 @@ std::string ToString(Format format);
 
 #pragma endregion
 
-#pragma region Helper
+//=============================================================================
+#pragma region [ Helper ]
 
 struct BufferUsageFlags final
 {
@@ -1408,7 +1414,8 @@ private:
 
 #pragma endregion
 
-#pragma region Utils
+//=============================================================================
+#pragma region [ Utils ]
 
 std::string ToString(DescriptorType value);
 std::string ToString(VertexSemantic value);
@@ -1422,7 +1429,8 @@ std::string ToString(const gli::format& format);
 
 #pragma endregion
 
-#pragma region Core Struct
+//=============================================================================
+#pragma region [ Core Struct ]
 
 struct Extent2D final
 {
@@ -1567,7 +1575,8 @@ struct CompilerOptions final
 
 #pragma endregion
 
-#pragma region Vk Utils
+//=============================================================================
+#pragma region [ Vk Utils ]
 
 const uint32_t kAllQueueMask      = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 const uint32_t kGraphicsQueueMask = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
@@ -1647,7 +1656,8 @@ void InsertPNext(TVkStruct1& baseStruct, TVkStruct2& nextStruct)
 
 #pragma endregion
 
-#pragma region DeviceQueue
+//=============================================================================
+#pragma region [ DeviceQueue ]
 
 class DeviceQueue final
 {
@@ -1663,7 +1673,8 @@ using DeviceQueuePtr = std::shared_ptr<DeviceQueue>;
 
 #pragma endregion
 
-#pragma region TriMesh
+//=============================================================================
+#pragma region [ TriMesh ]
 
 enum TriMeshAttributeDim
 {
@@ -1851,7 +1862,8 @@ private:
 
 #pragma endregion
 
-#pragma region WireMesh
+//=============================================================================
+#pragma region [ WireMesh ]
 
 enum WireMeshPlane
 {
@@ -1950,7 +1962,8 @@ private:
 
 #pragma endregion
 
-#pragma region Geometry
+//=============================================================================
+#pragma region [ Geometry ]
 
 template <typename T>
 class VertexDataProcessorBase;
@@ -2197,7 +2210,8 @@ private:
 
 #pragma endregion
 
-#pragma region vkr util
+//=============================================================================
+#pragma region [ vkr util ]
 
 namespace vkrUtil
 {

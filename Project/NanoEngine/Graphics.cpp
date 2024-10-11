@@ -2,7 +2,8 @@
 #include "Core.h"
 #include "Graphics.h"
 
-#pragma region Camera
+//=============================================================================
+#pragma region [ Camera ]
 
 Camera::Camera(bool pixelAligned)
 	: m_pixelAligned(pixelAligned)

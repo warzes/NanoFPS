@@ -6,10 +6,10 @@ class EngineApplication;
 
 namespace vkr {
 
-
 class RenderSystem;
 
-#pragma region VulkanInstance
+//=============================================================================
+#pragma region [ Vulkan Instance ]
 
 struct InstanceCreateInfo final
 {
@@ -104,7 +104,8 @@ private:
 
 #pragma endregion
 
-#pragma region VulkanSurface
+//=============================================================================
+#pragma region [ Vulkan Surface ]
 
 class VulkanSurface final
 {
@@ -136,7 +137,8 @@ private:
 
 #pragma endregion
 
-#pragma region VulkanSwapchain
+//=============================================================================
+#pragma region [ Vulkan Swapchain ]
 
 struct VulkanSwapChainCreateInfo final
 {
@@ -262,7 +264,8 @@ private:
 
 #pragma endregion
 
-#pragma region ImGui
+//=============================================================================
+#pragma region [ ImGui ]
 
 class ImGuiImpl
 {
@@ -286,7 +289,8 @@ private:
 
 #pragma endregion
 
-#pragma region RenderSystem
+//=============================================================================
+#pragma region [ Render System ]
 
 struct RenderCreateInfo final
 {

@@ -2,7 +2,8 @@
 #include "Core.h"
 #include "CoreData.h"
 
-#pragma region Bitmap
+//=============================================================================
+#pragma region [ Bitmap ]
 
 constexpr const char* kRadianceSig = "#?RADIANCE";
 constexpr size_t kRadianceSigSize = 10;
@@ -627,7 +628,8 @@ Result Bitmap::LoadFromMemory(const size_t dataSize, const void* pData, Bitmap* 
 
 #pragma endregion
 
-#pragma region Mipmap
+//=============================================================================
+#pragma region [ Mipmap ]
 
 uint32_t CalculatActualLevelCount(uint32_t width, uint32_t height, uint32_t levelCount)
 {
@@ -908,7 +910,8 @@ Result Mipmap::LoadFile(const std::filesystem::path& path, uint32_t baseWidth, u
 
 #pragma endregion
 
-#pragma region Font
+//=============================================================================
+#pragma region [ Font ]
 
 void Font::AcquireFontMetrics()
 {

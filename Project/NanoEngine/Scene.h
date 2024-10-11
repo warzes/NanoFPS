@@ -3,7 +3,8 @@
 #include "RenderSystem.h"
 #include "Graphics.h"
 
-#pragma region Scene Core
+//=============================================================================
+#pragma region [ Scene Core ]
 
 namespace scene
 {
@@ -169,7 +170,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene Node
+//=============================================================================
+#pragma region [ Scene Node ]
 
 namespace scene
 {
@@ -310,7 +312,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene Material
+//=============================================================================
+#pragma region [ Scene Material ]
 
 // TODO: возможно это надо в графику
 
@@ -552,7 +555,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene Pipeline Args
+//=============================================================================
+#pragma region [ Scene Pipeline Args ]
 
 namespace scene
 {
@@ -737,7 +741,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene Resource Manager
+//=============================================================================
+#pragma region [ Scene Resource Manager ]
 
 namespace scene
 {
@@ -822,7 +827,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene Mesh
+//=============================================================================
+#pragma region [ Scene Mesh ]
 
 namespace scene
 {
@@ -921,7 +927,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene
+//=============================================================================
+#pragma region [ Scene ]
 
 namespace scene
 {
@@ -1025,7 +1032,8 @@ namespace scene
 } // namespace scene
 #pragma endregion
 
-#pragma region Scene Loader
+//=============================================================================
+#pragma region [ Scene Loader ]
 
 namespace scene
 {
@@ -1075,7 +1083,8 @@ namespace scene
 
 #pragma endregion
 
-#pragma region Scene gltf Loader
+//=============================================================================
+#pragma region [ Scene gltf Loader ]
 
 #if defined(WIN32) && defined(LoadImage)
 #define _SAVE_MACRO_LoadImage LoadImage

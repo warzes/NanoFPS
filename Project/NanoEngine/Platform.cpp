@@ -10,7 +10,8 @@
 #	endif
 #endif
 
-#pragma region Window
+//=============================================================================
+#pragma region [ Window ]
 
 Window* currentWindow = nullptr;
 Input* currentInput = nullptr;
@@ -329,7 +330,8 @@ uint32_t Window::GetHeight() const
 
 #pragma endregion
 
-#pragma region Key Code
+//=============================================================================
+#pragma region [ Key Code ]
 
 static std::map<uint32_t, const char*> sKeyCodeString =
 {
@@ -465,7 +467,8 @@ const char* GetKeyCodeString(KeyCode code)
 
 #pragma endregion
 
-#pragma region Input
+//=============================================================================
+#pragma region [ Input ]
 
 Input::Input(EngineApplication& engine)
 	: m_engine(engine)
