@@ -14,6 +14,16 @@
 #pragma comment( lib, "PhysXExtensions_static_64.lib" )
 #pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
 
+#pragma region Physics Layers
+
+void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer)
+{
+	const physx::PxFilterData filterData = PhysicsFilterDataFromLayer(layer);
+	PhysicsForEachActorShape(actor, [&filterData](physx::PxShape* shape) { shape->setQueryFilterData(filterData); });
+}
+
+#pragma endregion
+
 #pragma region Physics Error Callback
 
 void Info(const char* error, const char* message) noexcept
@@ -79,16 +89,6 @@ void PhysicsErrorCallback::reportError(physx::PxErrorCode::Enum code, const char
 		break;
 	}
 	loggingCallback(error, message);
-}
-
-#pragma endregion
-
-#pragma region Physics Layers
-
-void PhysicsSetQueryLayer(physx::PxRigidActor* actor, PhysicsLayer layer)
-{
-	const physx::PxFilterData filterData = PhysicsFilterDataFromLayer(layer);
-	PhysicsForEachActorShape(actor, [&filterData](physx::PxShape* shape) { shape->setQueryFilterData(filterData); });
 }
 
 #pragma endregion

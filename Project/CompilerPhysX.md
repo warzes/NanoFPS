@@ -1,0 +1,1 @@
+﻿нужно устанавливать NV_USE_STATIC_WINCRT на false
