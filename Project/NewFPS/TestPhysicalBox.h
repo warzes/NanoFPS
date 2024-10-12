@@ -20,6 +20,6 @@ private:
 	vkr::GraphicsPipelinePtr    m_pipeline;
 	GameEntity                  m_model;
 
-	physx::PxMaterial* m_material = nullptr;
+	ph::MaterialPtr m_material = nullptr;
 	physx::PxRigidDynamic* m_dynamic = nullptr;
 };

@@ -81,13 +81,13 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 
 	m_material = phsystem.CreateMaterial(0.8f, 0.8f, 0.25f);
 
-	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem.GetPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material);
+	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem.GetPxPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material->GetPxMaterial());
 	phscene.GetPxScene()->addActor(*groundPlane);
 
 	physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
-	auto geometry = physx::PxSphereGeometry(1);
+	auto geometry = physx::PxBoxGeometry({ 1,1,1 });
 	physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
-	m_dynamic = physx::PxCreateDynamic(*phsystem.GetPhysics(), t, geometry, *m_material, 5.0f);
+	m_dynamic = physx::PxCreateDynamic(*phsystem.GetPxPhysics(), t, geometry, *m_material->GetPxMaterial(), 5.0f);
 	m_dynamic->setAngularDamping(0.5f);
 	m_dynamic->setLinearVelocity(velocity);
 	phscene.GetPxScene()->addActor(*m_dynamic);

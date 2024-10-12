@@ -46,6 +46,7 @@
 #include <chrono>
 #include <memory>
 #include <filesystem>
+#include <functional>
 #include <ostream>
 #include <fstream>
 #include <sstream>
@@ -60,6 +61,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <unordered_set>
 #include <unordered_map>
 #include <mutex>
 
