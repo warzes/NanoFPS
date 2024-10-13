@@ -84,26 +84,38 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem.GetPxPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material->GetPxMaterial());
 	phscene.GetPxScene()->addActor(*groundPlane);
 
-	physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
-	auto geometry = physx::PxBoxGeometry({ 1,1,1 });
-	physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
-	m_dynamic = physx::PxCreateDynamic(*phsystem.GetPxPhysics(), t, geometry, *m_material->GetPxMaterial(), 5.0f);
-	m_dynamic->setAngularDamping(0.5f);
-	m_dynamic->setLinearVelocity(velocity);
-	phscene.GetPxScene()->addActor(*m_dynamic);
+	//physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
+	//auto geometry = physx::PxBoxGeometry({ 1,1,1 });
+	//physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
+	//m_dynamic = physx::PxCreateDynamic(*phsystem.GetPxPhysics(), t, geometry, *m_material->GetPxMaterial(), 5.0f);
+	//m_dynamic->setAngularDamping(0.5f);
+	//m_dynamic->setLinearVelocity(velocity);
+	//phscene.GetPxScene()->addActor(*m_dynamic);
+
+	ph::RigidBodyCreateInfo rbci{};
+	rbci.worldPosition = { 20, 20, 20 };
+	rb = std::make_shared<ph::RigidBody>(*game, rbci);
+
+	ph::BoxColliderCreateInfo bcci{};
+	bcci.extent = { 1,1,1 };
+
+	rb->EmplaceCollider<ph::BoxCollider>(bcci);
+
+	//rb->SetLinearVelocity({ 0, -1, -2 }, true);
 
 	return true;
 }
 
 void TestPhysicalBox::Shutdown()
 {
+	rb.reset();
 }
 
 void TestPhysicalBox::DrawDebug(vkr::CommandBufferPtr cmd, const float4x4& matPV)
 {
 	{
-		const physx::PxTransform transform = m_dynamic->getGlobalPose();
-		const glm::vec3 position = { transform.p.x, transform.p.y, transform.p.z };
+		auto transform = rb->GetDynamicsWorldPose();
+		const glm::vec3 position = transform.first;
 		//m_velocity = (m_position - lastPosition) / fixedDeltaTime; // от текущей отнять пред
 		//auto rotationMatrix = glm::mat4_cast(glm::quat{ transform.q.w, transform.q.x, transform.q.y, transform.q.z });
 

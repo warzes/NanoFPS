@@ -118,22 +118,40 @@ Material::~Material()
 	PX_RELEASE(m_material);
 }
 
-void Material::SetStaticFriction(float staticFriction)
+void Material::SetStaticFriction(float value)
 {
 	assert(m_material);
-	m_material->setStaticFriction(staticFriction);
+	m_material->setStaticFriction(value);
 }
 
-void Material::SetDynamicFriction(float dynamicFriction)
+float Material::GetStaticFriction() const
 {
 	assert(m_material);
-	m_material->setDynamicFriction(dynamicFriction);
+	return m_material->getStaticFriction();
 }
 
-void Material::SetRestitution(float restitution)
+void Material::SetDynamicFriction(float value)
 {
 	assert(m_material);
-	m_material->setRestitution(restitution);
+	m_material->setDynamicFriction(value);
+}
+
+float Material::GetDynamicFriction() const
+{
+	assert(m_material);
+	return m_material->getDynamicFriction();
+}
+
+void Material::SetRestitution(float value)
+{
+	assert(m_material);
+	m_material->setRestitution(value);
+}
+
+float Material::GetRestitution() const
+{
+	assert(m_material);
+	return m_material->getRestitution();
 }
 
 void Material::SetFrictionCombineMode(PhysicsCombineMode mode)
@@ -146,24 +164,6 @@ void Material::SetRestitutionCombineMode(PhysicsCombineMode mode)
 {
 	assert(m_material);
 	m_material->setRestitutionCombineMode(static_cast<PxCombineMode::Enum>(static_cast<std::underlying_type<PhysicsCombineMode>::type>(mode)));
-}
-
-float Material::GetStaticFriction() const
-{
-	assert(m_material);
-	return m_material->getStaticFriction();
-}
-
-float Material::GetDynamicFriction() const
-{
-	assert(m_material);
-	return m_material->getDynamicFriction();
-}
-
-float Material::GetRestitution() const
-{
-	assert(m_material);
-	return m_material->getRestitution();
 }
 
 PhysicsCombineMode Material::GetFrictionCombineMode() const
@@ -197,6 +197,7 @@ PhysicsBody::~PhysicsBody()
 		scene->removeActor(*(m_rigidActor));
 		scene->unlockWrite();
 		m_rigidActor->release();
+		m_rigidActor = nullptr;
 
 		for (auto& receiver : m_receivers)
 		{
@@ -304,14 +305,6 @@ void PhysicsBody::OnTriggerExit(PhysicsBody* other)
 	}
 }
 
-void PhysicsBody::construction()
-{
-	auto scene = m_rigidActor->getScene();
-	scene->lockWrite();
-	scene->addActor(*(m_rigidActor));
-	scene->unlockWrite();
-}
-
 #pragma endregion
 
 //=============================================================================
@@ -323,8 +316,12 @@ RigidBody::RigidBody(EngineApplication& engine, const RigidBodyCreateInfo& creat
 	m_filterGroup = createInfo.filterGroup;
 	m_filterMask = createInfo.filterMask;
 
+	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
+
 	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
-	construction();
+	scene->lockWrite();
+	scene->addActor(*(m_rigidActor));
+	scene->unlockWrite();
 	SetDynamicsWorldPose(createInfo.worldPosition, createInfo.worldRotation);
 }
 
@@ -452,11 +449,32 @@ StaticBody::StaticBody(EngineApplication& engine, const StaticBodyCreateInfo& cr
 	m_filterGroup = createInfo.filterGroup;
 	m_filterMask = createInfo.filterMask;
 
-	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidStatic(PxTransform(PxVec3(0, 0, 0)));
-	construction();
+	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
+
+	PxTransform transform{ PxVec3(createInfo.worldPosition.x, createInfo.worldPosition.y, createInfo.worldPosition.z), PxQuat(createInfo.worldRotation.x, createInfo.worldRotation.y, createInfo.worldRotation.z, createInfo.worldRotation.w)};
+
+	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidStatic(transform);
+	scene->lockWrite();
+	scene->addActor(*(m_rigidActor));
+	scene->unlockWrite();
 }
 
 StaticBody::~StaticBody()
+{
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Character Body ]
+
+CharacterControllers::CharacterControllers(EngineApplication& engine, const CharacterControllersCreateInfo& createInfo)
+{
+	тут
+		возможно не нужно на
+}
+
+CharacterControllers::~CharacterControllers()
 {
 }
 
@@ -486,7 +504,7 @@ Collider::Collider(EngineApplication& engine, MaterialPtr material)
 
 Collider::~Collider()
 {
-	PX_RELEASE(m_collider);
+	//PX_RELEASE(m_collider);
 }
 
 void Collider::SetType(CollisionType type)

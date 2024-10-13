@@ -7,11 +7,13 @@ namespace ph {
 //=============================================================================
 #pragma region [ Decl Class ]
 
+class Material;
 class Collider;
 class PhysicsBody;
 class RigidBody;
 class PhysicsCallback;
 
+using MaterialPtr = std::shared_ptr<Material>;
 using ColliderPtr = std::shared_ptr<Collider>;
 using RigidBodyPtr = std::shared_ptr<RigidBody>;
 using PhysicsCallbackPtr = std::shared_ptr<PhysicsCallback>;
@@ -131,7 +133,7 @@ public:
 #pragma endregion
 
 //=============================================================================
-#pragma region Physics Material
+#pragma region [ Physics Material ]
 
 enum class PhysicsMaterialFlag 
 {
@@ -149,33 +151,38 @@ enum class PhysicsCombineMode
 	Pad32 = 0x7fffffff
 };
 
+// Material that controls how two physical objects interact with each other. Materials of both objects are used during their interaction and their combined values are used.
 class Material final
 {
 public:
 	Material(EngineApplication& engine, float staticFriction = 1.0f, float dynamicFriction = 1.0f, float restitution = 1.0f);
 	~Material();
 
-	void SetStaticFriction(float staticFriction);
-	void SetDynamicFriction(float dynamicFriction);
-	void SetRestitution(float restitution);
+	// Controls friction when two in-contact objects are not moving lateral to each other (for example how difficult it is to get an object moving from a static state while it is in contact with other object(s)).
+	void SetStaticFriction(float value);
+	float GetStaticFriction() const;
+
+	// Controls friction when two in-contact objects are moving lateral to each other (for example how quickly does an object slow down when sliding along another object).
+	void SetDynamicFriction(float value);
+	float GetDynamicFriction() const;
+
+	// Controls "bounciness" of an object during a collision. Value of 1 means the collision is elastic, and value of 0 means the value is inelastic. Must be in [0, 1] range.
+	void SetRestitution(float value);
+	float GetRestitution() const;
+
 	void SetFrictionCombineMode(PhysicsCombineMode mode);
 	void SetRestitutionCombineMode(PhysicsCombineMode mode);
 
-	float GetStaticFriction() const;
-	float GetDynamicFriction() const;
-	float GetRestitution() const;
 	PhysicsCombineMode GetFrictionCombineMode() const;
 	PhysicsCombineMode GetRestitutionCombineMode() const;
 
 	physx::PxMaterial* GetPxMaterial() { return m_material; }
-	const physx::PxMaterial* GetPxMaterial() const { return m_material; }
 
 	bool IsValid() const { return m_material != nullptr; }
 private:
 	EngineApplication& m_engine;
 	physx::PxMaterial* m_material{ nullptr };
 };
-using MaterialPtr = std::shared_ptr<Material>;
 
 #pragma endregion
 
@@ -256,8 +263,6 @@ public:
 	[[nodiscard]] auto GetPxScene() const { return m_rigidActor->getScene(); }
 
 protected:
-	void construction();
-
 	template<typename T>
 	void lockWrite(const T& func)
 	{
@@ -364,14 +369,33 @@ struct StaticBodyCreateInfo final
 {
 	uint32_t filterGroup = 0;
 	uint32_t filterMask = 0;
+
+	glm::vec3 worldPosition{ glm::vec3(0.0f) };
+	glm::quat worldRotation{ glm::quat{1.0f, 0.0f, 0.0f, 0.0f} };
 };
 
 class StaticBody final : public PhysicsBody
 {
 public:
 	StaticBody(EngineApplication& engine, const StaticBodyCreateInfo& createInfo);
-	~StaticBody();
-	
+	~StaticBody();	
+};
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Character Body ]
+
+struct CharacterControllersCreateInfo final
+{
+
+};
+
+class CharacterControllers final
+{
+public:
+	CharacterControllers(EngineApplication& engine, const CharacterControllersCreateInfo& createInfo);
+	~CharacterControllers();
 };
 
 #pragma endregion
@@ -394,7 +418,7 @@ public:
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Physics Collider ]
+#pragma region [ Collider ]
 
 enum class CollisionType 
 { 
