@@ -557,15 +557,14 @@ private:
 struct MeshColliderCreateInfo final
 {
 	MaterialPtr material{ nullptr };
-	glm::vec3   position{ glm::vec3(0.0f) };
-	glm::quat   rotation{ glm::quat(1.0, 0.0, 0.0, 0.0) };
+	std::vector<glm::vec3> vertices;
+	std::vector<uint32_t> indices;
 };
 
 class MeshCollider final : public Collider
 {
 public:
 	MeshCollider(EngineApplication& engine, PhysicsBody* owner, const MeshColliderCreateInfo& createInfo);
-	~MeshCollider();
 };
 
 #pragma endregion

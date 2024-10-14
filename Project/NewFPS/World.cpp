@@ -315,7 +315,7 @@ bool World::loadMap(std::string_view mapFileName)
 	for (size_t i = 0; i < m_mapMeshes.size(); i++)
 	{
 		GameEntity entity;
-		entity.Setup(device, m_mapMeshes[i].mesh, m_mapMeshes[i].diffuseTextureFileName, descriptorPool, m_drawObjectSetLayout, shadowPassData);
+		entity.Setup(m_game, device, m_mapMeshes[i].mesh, m_mapMeshes[i].diffuseTextureFileName, descriptorPool, m_drawObjectSetLayout, shadowPassData);
 		m_entities.emplace_back(entity);
 	}
 

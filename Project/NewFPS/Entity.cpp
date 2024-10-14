@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "ShadowPass.h"
 #include "Light.h"
+#include "GameApp.h"
 
 // Draw uniform buffers
 struct GameEntityScene final
@@ -15,7 +16,7 @@ struct GameEntityScene final
 	uint4    UsePCF;                     // Enable/disable PCF
 };
 
-bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass)
+bool GameEntity::Setup(GameApplication* game, vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass)
 {
 	vkr::Geometry geo;
 	CHECKED_CALL(vkr::Geometry::Create(mesh, &geo));
@@ -96,6 +97,32 @@ bool GameEntity::Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, cons
 		writes[1].sampler = sampler;
 
 		CHECKED_CALL_AND_RETURN_FALSE(drawDescriptorSet->UpdateDescriptors(2, writes));
+	}
+
+	// load raw vertex
+	{
+		for (size_t i = 0; i < mesh.GetCountPositions(); i++)
+		{
+			auto vert = mesh.GetDataPositions(i);
+			rawVertex.push_back(*vert);
+		}
+		for (size_t i = 0; i < mesh.GetCountIndices(); i++)
+		{
+			auto index = mesh.GetDataIndicesU32(i);
+			rawIndex.push_back(*index);
+		}
+	}
+
+	// create physics body
+	{
+		ph::StaticBodyCreateInfo sbci{};
+		sbci.worldPosition = translate;
+		phBody = std::make_shared<ph::StaticBody>(*game, sbci);
+
+		ph::MeshColliderCreateInfo mcci{};
+		mcci.vertices = rawVertex;
+		mcci.indices = rawIndex;
+		phBody->EmplaceCollider<ph::MeshCollider>(mcci);
 	}
 
 	return true;

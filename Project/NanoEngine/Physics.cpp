@@ -655,10 +655,39 @@ CapsuleCollider::CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, 
 MeshCollider::MeshCollider(EngineApplication& engine, PhysicsBody* owner, const MeshColliderCreateInfo& createInfo)
 	: Collider(engine, createInfo.material)
 {
-}
+	physx::PxTriangleMeshDesc desc{};
+	desc.setToDefault();
+	// vertex data
+	desc.points.data = &createInfo.vertices[0];
+	desc.points.stride = sizeof(createInfo.vertices[0]);
+	assert(createInfo.vertices.size() < std::numeric_limits<physx::PxU32>::max());
+	desc.points.count = static_cast<physx::PxU32>(createInfo.vertices.size());
 
-MeshCollider::~MeshCollider()
-{
+	// index data
+	assert(createInfo.indices.size() / 3 < std::numeric_limits<physx::PxU32>::max());
+	desc.triangles.count = static_cast<physx::PxU32>(createInfo.indices.size() / 3);
+	desc.triangles.stride = 3 * sizeof(createInfo.indices[0]);
+	desc.triangles.data = &createInfo.indices[0];
+
+	if (sizeof(createInfo.indices[0]) == sizeof(uint16_t))
+	{
+		desc.flags = PxMeshFlag::e16_BIT_INDICES; // TODO:
+	}  //otherwise assume 32 bit
+
+	physx::PxDefaultMemoryOutputStream buffer;
+	const physx::PxCookingParams cookingParams(engine.GetPhysicsSystem().GetPxPhysics()->getTolerancesScale()); // TODO: save init
+	if (!PxCookTriangleMesh(cookingParams, desc, buffer))
+	{
+		Fatal("Failed to create triangle PhysX mesh.");
+		return;
+	}
+
+	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
+	physx::PxTriangleMesh* triMesh = engine.GetPhysicsSystem().GetPxPhysics()->createTriangleMesh(input);
+
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxTriangleMeshGeometry(triMesh), *m_material->GetPxMaterial());
+	triMesh->release();
+	UpdateFilterData(owner);
 }
 
 #pragma endregion

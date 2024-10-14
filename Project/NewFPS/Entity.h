@@ -2,10 +2,11 @@
 
 class ShadowPass;
 class DirectionalLight;
+class GameApplication;
 
 struct GameEntity
 {
-	bool Setup(vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass);
+	bool Setup(GameApplication* game, vkr::RenderDevice& device, const vkr::TriMesh& mesh, const std::filesystem::path& diffuseTextureFileName, vkr::DescriptorPool* pDescriptorPool, const vkr::DescriptorSetLayout* pDrawSetLayout, ShadowPass& shadowPass);
 
 	void UniformBuffer(const float4x4& viewProj, const DirectionalLight& mainLight, bool UsePCF);
 
@@ -21,4 +22,8 @@ struct GameEntity
 	vkr::ImagePtr            image;
 	vkr::SampledImageViewPtr sampledImageView;
 	vkr::SamplerPtr          sampler;
+
+	std::vector<glm::vec3> rawVertex;
+	std::vector<uint32_t>  rawIndex;
+	ph::StaticBodyPtr      phBody;
 };
