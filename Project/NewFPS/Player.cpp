@@ -6,93 +6,61 @@ bool Player::Setup(GameApplication* game, const PlayerCreateInfo& createInfo)
 {
 	m_game = game;
 
-	m_position = createInfo.position;
+	m_transform.SetRotationOrder(Transform::RotationOrder::YXZ);
+	m_transform.RotateY(createInfo.yaw);
 
-	setupCamera();
+
+	m_movement.Setup(game, createInfo.position);
 		
 	return true;
 }
 
 void Player::Shutdown()
 {
-}
-
-void Player::ProcessInput(const std::set<KeyCode>& pressedKeys)
-{
-	if (pressedKeys.count(KEY_LEFT) > 0) Turn(-GetRateOfTurn(), 0);
-	if (pressedKeys.count(KEY_RIGHT) > 0) Turn(GetRateOfTurn(), 0);
-	if (pressedKeys.count(KEY_UP) > 0) Turn(0, -GetRateOfTurn());
-	if (pressedKeys.count(KEY_DOWN) > 0) Turn(0, GetRateOfTurn());
-
-	if (pressedKeys.count(KEY_W) > 0) move(MovementDirection::Forward, GetRateOfMove());
-	if (pressedKeys.count(KEY_A) > 0) move(MovementDirection::Left, GetRateOfMove());
-	if (pressedKeys.count(KEY_S) > 0) move(MovementDirection::Backward, GetRateOfMove());
-	if (pressedKeys.count(KEY_D) > 0) move(MovementDirection::Right, GetRateOfMove());
-	if (pressedKeys.count(KEY_E) > 0) move(MovementDirection::Up, GetRateOfMove());
-	if (pressedKeys.count(KEY_Q) > 0) move(MovementDirection::Down, GetRateOfMove());
-
-	updateCamera();
+	m_movement.Shutdown();
 }
 
 void Player::Update(float deltaTime)
 {
+	Transform& transform = GetTransform();
+
+	// turn
+	{
+		const float mouseSpeed = /*slowMotion ? m_mouseSpeed * 0.4f :*/ m_mouseSpeed;
+		const glm::vec2& deltaMousePos = m_game->GetInput().GetDeltaPosition();
+		transform
+			.RotateX(mouseSpeed * deltaMousePos.y)
+			.RotateY(-mouseSpeed * deltaMousePos.x)
+			.ClampPitch();
+	}
+
+	// move
+	{
+		glm::vec3 movementInput = 
+			transform.GetHorizontalRightVector() 
+			* m_game->GetInput().GetKeyAxis(GLFW_KEY_A, GLFW_KEY_D) + transform.GetHorizontalForwardVector() 
+			* m_game->GetInput().GetKeyAxis(GLFW_KEY_W, GLFW_KEY_S);
+		if (movementInput.x != 0 || movementInput.y != 0 || movementInput.z != 0)
+		{
+			movementInput = glm::normalize(movementInput);
+		}
+		m_movement.SetMovementInput(movementInput);
+	}
+
+	// jump
+	/*{
+		bool currSpace = glfwGetKey(Window::GetWindow(), GLFW_KEY_SPACE);
+		if (!m_prevSpace && currSpace)
+		{
+			m_movement.Jump();
+		}
+		m_prevSpace = currSpace;
+	}*/
+
+	m_movement.Update(deltaTime);
 }
 
-void Player::move(MovementDirection dir, float distance)
+void Player::FixedUpdate(float fixedDeltaTime)
 {
-	if (dir == MovementDirection::Forward)
-	{
-		m_position += float3(distance * std::cos(m_azimuth), 0, distance * std::sin(m_azimuth));
-	}
-	else if (dir == MovementDirection::Left)
-	{
-		float perpendicularDir = m_azimuth - pi<float>() / 2.0f;
-		m_position += float3(distance * std::cos(perpendicularDir), 0, distance * std::sin(perpendicularDir));
-	}
-	else if (dir == MovementDirection::Right)
-	{
-		float perpendicularDir = m_azimuth + pi<float>() / 2.0f;
-		m_position += float3(distance * std::cos(perpendicularDir), 0, distance * std::sin(perpendicularDir));
-	}
-	else if (dir == MovementDirection::Backward)
-	{
-		m_position += float3(-distance * std::cos(m_azimuth), 0, -distance * std::sin(m_azimuth));
-	}
-	else if (dir == MovementDirection::Up)
-	{
-		m_position += float3(0, distance, 0);
-	}
-	else if (dir == MovementDirection::Down)
-	{
-		m_position -= float3(0, distance, 0);
-	}
-}
-
-void Player::Turn(float deltaAzimuth, float deltaAltitude)
-{
-	m_azimuth += deltaAzimuth;
-	m_altitude += deltaAltitude;
-
-	// Saturate azimuth values by making wrap around.
-	if (m_azimuth < 0.0f) m_azimuth = 2.0f * pi<float>();
-	else if (m_azimuth > 2.0f * pi<float>()) m_azimuth = 0.0f;
-
-	// Altitude is saturated by making it stop, so the world doesn't turn upside down.
-	if (m_altitude < 0.0f) m_altitude = 0.0f;
-	else if (m_altitude > pi<float>()) m_altitude = pi<float>();
-
-	updateCamera();
-}
-
-void Player::setupCamera()
-{
-	m_perspCamera = PerspectiveCamera(60.0f, m_game->GetWindowAspect());
-	updateCamera();
-}
-
-void Player::updateCamera()
-{
-	float3 cameraPosition = GetPosition();
-	m_perspCamera.LookAt(cameraPosition, GetLookAt(), CAMERA_DEFAULT_WORLD_UP);
-	m_perspCamera.SetPerspective(60.f, m_game->GetWindowAspect());
+	m_movement.FixedUpdate(fixedDeltaTime);
 }

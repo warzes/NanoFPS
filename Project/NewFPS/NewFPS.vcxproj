@@ -107,6 +107,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerFrame.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerMovement.cpp" />
     <ClCompile Include="ShadowPass.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -123,6 +124,7 @@
     <ClInclude Include="LoaderMapData.h" />
     <ClInclude Include="PerFrame.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerMovement.h" />
     <ClInclude Include="ShadowPass.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TestPhysicalBox.h" />

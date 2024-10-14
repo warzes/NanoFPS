@@ -217,6 +217,7 @@ struct KeyState final
 class Input final
 {
 	friend class WindowEvents;
+	friend class EngineApplication;
 public:
 
 	Input(EngineApplication& engine);
@@ -224,6 +225,7 @@ public:
 	[[nodiscard]] bool Setup();
 	void Shutdown();
 
+	void ClearState();
 	void Update();
 
 	// Keyboard

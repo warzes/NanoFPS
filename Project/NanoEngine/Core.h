@@ -1562,14 +1562,26 @@ public:
 	RotationOrder GetRotationOrder() const { return m_rotationOrder; }
 
 	virtual void SetTranslation(const glm::vec3& value);
-	virtual void SetRotation(const glm::vec3& value);
+	virtual void SetRotation(const glm::vec3& eulerAngles);
 	virtual void SetScale(const glm::vec3& value);
 	virtual void SetRotationOrder(Transform::RotationOrder value);
+
+	Transform& Translate(const glm::vec3& translation);
+	Transform& RotateX(const float radians);
+	Transform& RotateY(const float radians);
+	Transform& RotateZ(const float radians);
+	Transform& ClampPitch();
 
 	const glm::mat4x4& GetTranslationMatrix() const;
 	const glm::mat4x4& GetRotationMatrix() const;
 	const glm::mat4x4& GetScaleMatrix() const;
 	const glm::mat4x4& GetConcatenatedMatrix() const;
+
+	[[nodiscard]] glm::vec3 GetRightVector() const;
+	[[nodiscard]] glm::vec3 GetUpVector() const;
+	[[nodiscard]] glm::vec3 GetForwardVector() const;
+	[[nodiscard]] glm::vec3 GetHorizontalRightVector() const;
+	[[nodiscard]] glm::vec3 GetHorizontalForwardVector() const;
 
 protected:
 #if defined(_MSC_VER)
@@ -1594,14 +1606,18 @@ protected:
 #	pragma warning(pop)
 #endif
 
+	float clampPitch(const float radians) { return glm::clamp(radians, -glm::half_pi<float>(), glm::half_pi<float>()); }
+	// Wrap to (-PI..PI]
+	float wrapAngle(const float radians) { return std::remainder(radians, glm::two_pi<float>()); }
+
 	glm::vec3           m_translation = glm::vec3(0, 0, 0);
 	glm::vec3           m_rotation = glm::vec3(0, 0, 0);
 	glm::vec3           m_scale = glm::vec3(1, 1, 1);
 	RotationOrder       m_rotationOrder = RotationOrder::XYZ;
-	mutable glm::mat4x4 m_translationMatrix;
-	mutable glm::mat4x4 m_rotationMatrix;
-	mutable glm::mat4x4 m_scaleMatrix;
-	mutable glm::mat4x4 m_concatenatedMatrix;
+	mutable glm::mat4x4 m_translationMatrix{ 1.0f };
+	mutable glm::mat4x4 m_rotationMatrix{ 1.0f };
+	mutable glm::mat4x4 m_scaleMatrix{ 1.0f };
+	mutable glm::mat4x4 m_concatenatedMatrix{ 1.0f };
 };
 
 #pragma endregion

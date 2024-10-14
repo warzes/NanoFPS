@@ -81,27 +81,31 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 
 	m_material = phsystem.CreateMaterial(0.8f, 0.8f, 0.25f);
 
-	physx::PxRigidStatic* groundPlane = physx::PxCreatePlane(*phsystem.GetPxPhysics(), physx::PxPlane(0, 1, 0, 0), *m_material->GetPxMaterial());
-	phscene.GetPxScene()->addActor(*groundPlane);
+	// plane
+	{
+		ph::StaticBodyCreateInfo sbci{};
+		plane = std::make_shared<ph::StaticBody>(*game, sbci);
 
-	//physx::PxTransform t = physx::PxTransform(physx::PxVec3(20, 20, 20));
-	//auto geometry = physx::PxBoxGeometry({ 1,1,1 });
-	//physx::PxVec3 velocity = physx::PxVec3(0, -1, -2);
-	//m_dynamic = physx::PxCreateDynamic(*phsystem.GetPxPhysics(), t, geometry, *m_material->GetPxMaterial(), 5.0f);
-	//m_dynamic->setAngularDamping(0.5f);
-	//m_dynamic->setLinearVelocity(velocity);
-	//phscene.GetPxScene()->addActor(*m_dynamic);
+		ph::BoxColliderCreateInfo bcci{};
+		bcci.extent = { 1000,1,1000 };
 
-	ph::RigidBodyCreateInfo rbci{};
-	rbci.worldPosition = { 20, 20, 20 };
-	rb = std::make_shared<ph::RigidBody>(*game, rbci);
+		plane->EmplaceCollider<ph::BoxCollider>(bcci);
+	}
 
-	ph::BoxColliderCreateInfo bcci{};
-	bcci.extent = { 1,1,1 };
+	// box
+	{
+		ph::RigidBodyCreateInfo rbci{};
+		rbci.worldPosition = { 20, 20, 20 };
+		rb = std::make_shared<ph::RigidBody>(*game, rbci);
 
-	rb->EmplaceCollider<ph::BoxCollider>(bcci);
+		ph::BoxColliderCreateInfo bcci{};
+		bcci.extent = { 1,1,1 };
 
-	//rb->SetLinearVelocity({ 0, -1, -2 }, true);
+		rb->EmplaceCollider<ph::BoxCollider>(bcci);
+
+		rb->SetLinearVelocity({ 0, -1, -2 }, true);
+		rb->SetAngularDamping(0.5f);
+	}
 
 	return true;
 }

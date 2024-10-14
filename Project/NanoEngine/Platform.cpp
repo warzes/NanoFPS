@@ -488,6 +488,11 @@ void Input::Shutdown()
 {
 }
 
+void Input::ClearState()
+{
+	m_mouseState.delta = { 0, 0 };
+}
+
 void Input::Update()
 {
 	// TODO: ошибка при движении камеры мышью - ее почему-то дергает в первый кадр. а этот блок убирает дерганье но оставляет поворот не в ту сторону. разобраться
@@ -495,8 +500,8 @@ void Input::Update()
 	//glfwGetCursorPos(Window::GetWindow(), &mousePosition.x, &mousePosition.y);
 	//MouseState.position = mousePosition;
 
-	m_mouseState.delta = m_mouseState.position - m_mouseState.lastPosition;
-	m_mouseState.lastPosition = m_mouseState.position;
+	//m_mouseState.delta = m_mouseState.position - m_mouseState.lastPosition;
+	//m_mouseState.lastPosition = m_mouseState.position;
 }
 
 bool Input::IsPressed(int key)

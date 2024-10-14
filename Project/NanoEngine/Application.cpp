@@ -69,6 +69,7 @@ void EngineApplication::Run()
 			m_timeSinceLastTick += m_deltaTime;
 
 			// Update
+			m_input.ClearState();
 			m_window.Update();
 			m_input.Update();
 			m_render.Update();
@@ -232,6 +233,9 @@ void EngineApplication::mouseMoveCallback(int32_t x, int32_t y, MouseButton butt
 
 	int32_t dx = (m_previousMouseX != INT32_MAX) ? (x - m_previousMouseX) : 0;
 	int32_t dy = (m_previousMouseY != INT32_MAX) ? (y - m_previousMouseY) : 0;
+
+	m_input.m_mouseState.delta = { dx , dy };
+
 	MouseMove(x, y, dx, dy, buttons);
 	m_previousMouseX = x;
 	m_previousMouseY = y;

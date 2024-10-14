@@ -318,15 +318,15 @@ RigidBody::RigidBody(EngineApplication& engine, const RigidBodyCreateInfo& creat
 
 	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
 
-	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
+	auto actor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
+	PxRigidBodyExt::updateMassAndInertia(*actor, createInfo.density);
+	PhysicsSetQueryLayer(actor, createInfo.queryLayer);
+
+	m_rigidActor = actor;
 	scene->lockWrite();
-	scene->addActor(*(m_rigidActor));
+	scene->addActor(*m_rigidActor);
 	scene->unlockWrite();
 	SetDynamicsWorldPose(createInfo.worldPosition, createInfo.worldRotation);
-}
-
-RigidBody::~RigidBody()
-{
 }
 
 glm::vec3 RigidBody::GetLinearVelocity() const
@@ -355,6 +355,11 @@ void RigidBody::SetLinearVelocity(const glm::vec3& newvel, bool autowake)
 void RigidBody::SetAngularVelocity(const glm::vec3& newvel, bool autowake)
 {
 	lockWrite([&] { static_cast<PxRigidDynamic*>(m_rigidActor)->setAngularVelocity(PxVec3(newvel.x, newvel.y, newvel.z), autowake); });
+}
+
+void RigidBody::SetAngularDamping(float angDamp)
+{
+	lockWrite([&] { static_cast<PxRigidDynamic*>(m_rigidActor)->setAngularDamping(angDamp); });
 }
 
 void RigidBody::SetKinematicTarget(const glm::vec3& targetPos, const glm::quat& targetRot)
@@ -454,28 +459,61 @@ StaticBody::StaticBody(EngineApplication& engine, const StaticBodyCreateInfo& cr
 	PxTransform transform{ PxVec3(createInfo.worldPosition.x, createInfo.worldPosition.y, createInfo.worldPosition.z), PxQuat(createInfo.worldRotation.x, createInfo.worldRotation.y, createInfo.worldRotation.z, createInfo.worldRotation.w)};
 
 	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidStatic(transform);
+	PhysicsSetQueryLayer(m_rigidActor, createInfo.queryLayer);
 	scene->lockWrite();
 	scene->addActor(*(m_rigidActor));
 	scene->unlockWrite();
 }
 
-StaticBody::~StaticBody()
-{
-}
-
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Character Body ]
+#pragma region [ Character Controller ]
 
-CharacterControllers::CharacterControllers(EngineApplication& engine, const CharacterControllersCreateInfo& createInfo)
+CharacterController::CharacterController(EngineApplication& engine, const CharacterControllerCreateInfo& createInfo)
+	: m_engine(engine)
 {
-	тут
-		возможно не нужно на
+	m_material = createInfo.material;
+	if (!m_material)
+	{
+		m_material = m_engine.GetPhysicsScene().GetDefaultMaterial();
+	}
+
+	physx::PxCapsuleControllerDesc desc;
+	desc.position = { createInfo.position.x, createInfo.position.y, createInfo.position.z };
+	desc.stepOffset = 0.0f;
+	desc.material = m_material->GetPxMaterial();
+	// https://nvidia-omniverse.github.io/PhysX/physx/5.1.0/docs/CharacterControllers.html#character-volume
+	desc.radius = createInfo.radius;
+	desc.height = createInfo.height;
+
+	m_controller = m_engine.GetPhysicsScene().GetControllerManager()->createController(desc);
+
+	physx::PxRigidDynamic* rigidbody = m_controller->getActor();
+	PhysicsSetQueryLayer(rigidbody, createInfo.queryLayer);
+
+	rigidbody->userData = createInfo.userData;
 }
 
-CharacterControllers::~CharacterControllers()
+CharacterController::~CharacterController()
 {
+	PX_RELEASE(m_controller);
+}
+
+void CharacterController::Move(const glm::vec3& disp, float minDist, float elapsedTime)
+{
+	m_controller->move({ disp.x, disp.y, disp.z }, minDist, elapsedTime, physx::PxControllerFilters());
+}
+
+glm::vec3 CharacterController::GetPosition() const
+{
+	auto pos = m_controller->getPosition();
+	return { pos.x, pos.y, pos.z };
+}
+
+float CharacterController::GetSlopeLimit() const
+{
+	return m_controller->getSlopeLimit();
 }
 
 #pragma endregion
@@ -504,7 +542,7 @@ Collider::Collider(EngineApplication& engine, MaterialPtr material)
 
 Collider::~Collider()
 {
-	//PX_RELEASE(m_collider);
+//	PX_RELEASE(m_collider);
 }
 
 void Collider::SetType(CollisionType type)
@@ -542,10 +580,10 @@ void Collider::SetRelativeTransform(const glm::vec3& position, const glm::quat& 
 	m_collider->setLocalPose(PxTransform(PxVec3(position.x, position.y, position.z), PxQuat(rotation.x, rotation.y, rotation.z, rotation.w)));
 }
 
-Transformation Collider::GetRelativeTransform() const
+std::pair<glm::vec3, glm::quat> Collider::GetRelativeTransform() const
 {
 	auto pose = m_collider->getLocalPose();
-	return Transformation{ glm::vec3(pose.p.x,pose.p.y,pose.p.z),glm::quat(pose.q.w, pose.q.x,pose.q.y,pose.q.z) };
+	return { glm::vec3(pose.p.x,pose.p.y,pose.p.z),glm::quat(pose.q.w, pose.q.x,pose.q.y,pose.q.z) };
 }
 
 void Collider::UpdateFilterData(PhysicsBody* owner)
@@ -566,14 +604,11 @@ BoxCollider::BoxCollider(EngineApplication& engine, PhysicsBody* owner, const Bo
 {
 	m_extent = createInfo.extent;
 
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxBoxGeometry(m_extent.x, m_extent.y, m_extent.z), *m_material->GetPxMaterial());
+	const PxBoxGeometry geom = { m_extent.x, m_extent.y, m_extent.z };
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), geom, *m_material->GetPxMaterial());
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
-}
-
-BoxCollider::~BoxCollider()
-{
 }
 
 #pragma endregion
@@ -588,10 +623,6 @@ SphereCollider::SphereCollider(EngineApplication& engine, PhysicsBody* owner, co
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
-}
-
-SphereCollider::~SphereCollider()
-{
 }
 
 float SphereCollider::GetRadius() const
@@ -614,10 +645,6 @@ CapsuleCollider::CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, 
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
-}
-
-CapsuleCollider::~CapsuleCollider()
-{
 }
 
 #pragma endregion
@@ -725,70 +752,6 @@ void PhysicsScene::SetSimulationEventCallback(physx::PxSimulationEventCallback* 
 	m_scene->setSimulationEventCallback(callback);
 }
 
-physx::PxController* PhysicsScene::CreateController(const physx::PxVec3& position, float radius, float height, PhysicsLayer queryLayer)
-{
-	physx::PxCapsuleControllerDesc desc;
-	desc.position = { position.x, position.y, position.z };
-	desc.stepOffset = 0.0f;
-	desc.material = m_defaultMaterial->GetPxMaterial();
-	// https://nvidia-omniverse.github.io/PhysX/physx/5.1.0/docs/CharacterControllers.html#character-volume
-	desc.radius = radius;
-	desc.height = height;
-
-	physx::PxController* controller = m_controllerManager->createController(desc);
-
-	physx::PxRigidDynamic* rigidbody = controller->getActor();
-	PhysicsSetQueryLayer(rigidbody, queryLayer);
-
-	return controller;
-}
-
-physx::PxShape* PhysicsScene::CreateShape(const physx::PxGeometry& geometry, bool isExclusive, bool isTrigger)
-{
-	return m_physics->createShape(
-		geometry,
-		*m_defaultMaterial->GetPxMaterial(),
-		isExclusive,
-		isTrigger ? physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eTRIGGER_SHAPE :
-		physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE
-	);
-}
-
-physx::PxRigidStatic* PhysicsScene::CreateStatic(const physx::PxTransform& transform)
-{
-	physx::PxRigidStatic* actor = m_physics->createRigidStatic(transform);
-	m_scene->addActor(*actor);
-	return actor;
-}
-
-physx::PxRigidStatic* PhysicsScene::CreateStatic(const physx::PxTransform& transform, const physx::PxGeometry& geometry, PhysicsLayer queryLayer)
-{
-	physx::PxRigidStatic* actor = PxCreateStatic(*m_physics, transform, geometry, *m_defaultMaterial->GetPxMaterial());
-	PhysicsSetQueryLayer(actor, queryLayer);
-	m_scene->addActor(*actor);
-	return actor;
-}
-
-physx::PxRigidDynamic* PhysicsScene::CreateDynamic(const physx::PxTransform& transform)
-{
-	physx::PxRigidDynamic* actor = m_physics->createRigidDynamic(transform);
-	m_scene->addActor(*actor);
-	return actor;
-}
-
-physx::PxRigidDynamic* PhysicsScene::CreateDynamic(
-	const physx::PxTransform& transform,
-	const physx::PxGeometry& geometry,
-	PhysicsLayer              queryLayer,
-	float                     density
-)
-{
-	physx::PxRigidDynamic* actor = PxCreateDynamic(*m_physics, transform, geometry, *m_defaultMaterial->GetPxMaterial(), density);
-	PhysicsSetQueryLayer(actor, queryLayer);
-	m_scene->addActor(*actor);
-	return actor;
-}
-
 physx::PxRaycastBuffer PhysicsScene::Raycast(const physx::PxVec3& origin, const physx::PxVec3& unitDir, const float distance, PhysicsLayer layer) const
 {
 	physx::PxQueryFilterData queryFilterData;
@@ -799,13 +762,7 @@ physx::PxRaycastBuffer PhysicsScene::Raycast(const physx::PxVec3& origin, const 
 	return buffer;
 }
 
-physx::PxSweepBuffer PhysicsScene::Sweep(
-	const physx::PxGeometry& geometry,
-	const physx::PxTransform& pose,
-	const physx::PxVec3& unitDir,
-	float                     distance,
-	PhysicsLayer              layer
-) const
+physx::PxSweepBuffer PhysicsScene::Sweep(const physx::PxGeometry& geometry, const physx::PxTransform& pose, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const
 {
 	physx::PxQueryFilterData queryFilterData;
 	queryFilterData.data = PhysicsFilterDataFromLayer(layer);
@@ -899,55 +856,6 @@ MaterialPtr ph::PhysicsSystem::CreateMaterial(float staticFriction, float dynami
 	return std::make_shared<Material>(m_engine, staticFriction, dynamicFriction, restitution);
 }
 
-physx::PxConvexMesh* PhysicsSystem::CreateConvexMesh(physx::PxU32 count, const physx::PxVec3* vertices, physx::PxU16 vertexLimit)
-{
-	physx::PxConvexMeshDesc desc;
-	desc.points.count = count;
-	desc.points.stride = sizeof(physx::PxVec3);
-	desc.points.data = vertices;
-	desc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX | physx::PxConvexFlag::eDISABLE_MESH_VALIDATION | physx::PxConvexFlag::eFAST_INERTIA_COMPUTATION;
-	desc.vertexLimit = vertexLimit;
-
-	physx::PxDefaultMemoryOutputStream buffer;
-	const physx::PxCookingParams cookingParams(m_physics->getTolerancesScale()); // TODO: save init
-	if (!PxCookConvexMesh(cookingParams, desc, buffer))
-	{
-		Fatal("Failed to create convex PhysX mesh.");
-		return nullptr;
-	}
-
-	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
-	return m_physics->createConvexMesh(input);
-}
-
-physx::PxTriangleMesh* PhysicsSystem::CreateTriangleMesh(physx::PxU32 count, const physx::PxVec3* vertices)
-{
-	physx::PxTriangleMeshDesc desc;
-	desc.points.count = count;
-	desc.points.stride = sizeof(physx::PxVec3);
-	desc.points.data = vertices;
-	desc.triangles.count = count / 3;
-	desc.triangles.stride = 3 * sizeof(physx::PxU32);
-	std::vector<physx::PxU32> trianglesData(count);
-	for (physx::PxU32 i = 0; i < count; i++)
-	{
-		trianglesData[i] = i;
-	}
-	desc.triangles.data = trianglesData.data();
-
-	physx::PxDefaultMemoryOutputStream buffer;
-	const physx::PxCookingParams cookingParams(m_physics->getTolerancesScale()); // TODO: save init
-	if (!PxCookTriangleMesh(cookingParams, desc, buffer))
-	{
-		Fatal("Failed to create triangle PhysX mesh.");
-		return nullptr;
-	}
-
-	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
-	return m_physics->createTriangleMesh(input);
-}
-
 #pragma endregion
-
 
 } // namespace ph

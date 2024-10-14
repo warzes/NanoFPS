@@ -621,9 +621,12 @@ void Transform::SetTranslation(const glm::vec3& value)
 	m_dirty.concatenated = true;
 }
 
-void Transform::SetRotation(const glm::vec3& value)
+void Transform::SetRotation(const glm::vec3& eulerAngles)
 {
-	m_rotation = value;
+	m_rotation.x = wrapAngle(eulerAngles.x);
+	m_rotation.y = wrapAngle(eulerAngles.y);
+	m_rotation.z = wrapAngle(eulerAngles.z);
+
 	m_dirty.rotation = true;
 	m_dirty.concatenated = true;
 }
@@ -641,10 +644,49 @@ void Transform::SetRotationOrder(Transform::RotationOrder value)
 	m_dirty.concatenated = true;
 }
 
+Transform& Transform::Translate(const glm::vec3& translation)
+{
+	m_translation += translation;
+	m_dirty.translation = true;
+	m_dirty.concatenated = true;
+	return *this;
+}
+Transform& Transform::RotateX(const float radians)
+{
+	m_dirty.rotation = true;
+	m_dirty.concatenated = true;
+	m_rotation.x = wrapAngle(m_rotation.x + radians);
+	return *this;
+}
+Transform& Transform::RotateY(const float radians)
+{
+	m_dirty.rotation = true;
+	m_dirty.concatenated = true;
+	m_rotation.y = wrapAngle(m_rotation.y + radians);
+	return *this;
+}
+Transform& Transform::RotateZ(const float radians)
+{
+	m_dirty.rotation = true;
+	m_dirty.concatenated = true;
+	m_rotation.z = wrapAngle(m_rotation.z + radians);
+	return *this;
+}
+
+Transform& Transform::ClampPitch()
+{
+	m_dirty.rotation = true;
+	m_dirty.concatenated = true;
+	m_rotation.x = clampPitch(m_rotation.x);
+	return *this;
+}
+
 const glm::mat4x4& Transform::GetTranslationMatrix() const
 {
-	if (m_dirty.translation) {
-		m_translationMatrix = glm::translate(m_translation);
+	if (m_dirty.translation)
+	{
+		static constexpr glm::mat4 IDENTITY(1.0f);
+		m_translationMatrix = glm::translate(IDENTITY, m_translation);
 		m_dirty.translation = false;
 		m_dirty.concatenated = true;
 	}
@@ -653,11 +695,13 @@ const glm::mat4x4& Transform::GetTranslationMatrix() const
 
 const glm::mat4x4& Transform::GetRotationMatrix() const
 {
-	if (m_dirty.rotation) {
+	if (m_dirty.rotation)
+	{
 		glm::mat4x4 xm = glm::rotate(m_rotation.x, glm::vec3(1, 0, 0));
 		glm::mat4x4 ym = glm::rotate(m_rotation.y, glm::vec3(0, 1, 0));
 		glm::mat4x4 zm = glm::rotate(m_rotation.z, glm::vec3(0, 0, 1));
-		switch (m_rotationOrder) {
+		switch (m_rotationOrder)
+		{
 		case RotationOrder::XYZ: m_rotationMatrix = xm * ym * zm; break;
 		case RotationOrder::XZY: m_rotationMatrix = xm * zm * ym; break;
 		case RotationOrder::YZX: m_rotationMatrix = ym * zm * xm; break;
@@ -673,7 +717,8 @@ const glm::mat4x4& Transform::GetRotationMatrix() const
 
 const glm::mat4x4& Transform::GetScaleMatrix() const
 {
-	if (m_dirty.scale) {
+	if (m_dirty.scale)
+	{
 		m_scaleMatrix = glm::scale(m_scale);
 		m_dirty.scale = false;
 		m_dirty.concatenated = true;
@@ -683,16 +728,42 @@ const glm::mat4x4& Transform::GetScaleMatrix() const
 
 const glm::mat4x4& Transform::GetConcatenatedMatrix() const
 {
-	if (m_dirty.concatenated) {
+	if (m_dirty.concatenated)
+	{
 		const glm::mat4x4& T = GetTranslationMatrix();
 		const glm::mat4x4& R = GetRotationMatrix();
 		const glm::mat4x4& S = GetScaleMatrix();
-		// Matrices are column-major in GLM, so
-		// we do not need to reverse the order.
+		// Matrices are column-major in GLM, so we do not need to reverse the order.
 		m_concatenatedMatrix = T * R * S;
 		m_dirty.concatenated = false;
 	}
 	return m_concatenatedMatrix;
+}
+
+glm::vec3 Transform::GetRightVector() const
+{
+	static constexpr glm::vec4 RIGHT{ 1, 0, 0, 0 };
+	return GetRotationMatrix() * RIGHT;
+}
+glm::vec3 Transform::GetUpVector() const
+{
+	static constexpr glm::vec4 UP{ 0, 1, 0, 0 };
+	return GetRotationMatrix() * UP;
+}
+glm::vec3 Transform::GetForwardVector() const
+{
+	static constexpr glm::vec4 FORWARD{ 0, 0, 1, 0 };
+	return GetRotationMatrix() * FORWARD;
+}
+glm::vec3 Transform::GetHorizontalRightVector() const
+{
+	const float yaw = m_rotation.y;
+	return { glm::cos(yaw), 0, -glm::sin(yaw) };
+}
+glm::vec3 Transform::GetHorizontalForwardVector() const
+{
+	const float yaw = m_rotation.y;
+	return { glm::sin(yaw), 0, glm::cos(yaw) };
 }
 
 #pragma endregion

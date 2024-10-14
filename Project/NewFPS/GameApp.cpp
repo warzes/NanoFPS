@@ -50,6 +50,11 @@ void GameApplication::Update()
 	m_world.Update(GetDeltaTime());
 }
 
+void GameApplication::FixedUpdate(float fixedDeltaTime)
+{
+	m_world.FixedUpdate(fixedDeltaTime);
+}
+
 void GameApplication::Render()
 {
 	m_world.UpdateUniformBuffer();
@@ -94,20 +99,23 @@ void GameApplication::Render()
 				m_world.Draw(frame.cmd);
 
 				// Draw ImGui
-				render.DrawDebugInfo();
+				//render.DrawDebugInfo();
 				{
 					// drawCameraInfo
 					{
 						ImGui::Columns(2);
 						ImGui::Text("Camera position");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetCamera().GetEyePosition()[0], m_world.GetPlayer().GetCamera().GetEyePosition()[1], m_world.GetPlayer().GetCamera().GetEyePosition()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", 
+							m_world.GetPlayer().GetTransform().GetTranslation()[0], 
+							m_world.GetPlayer().GetTransform().GetTranslation()[1], 
+							m_world.GetPlayer().GetTransform().GetTranslation()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Columns(2);
 						ImGui::Text("Camera looking at");
 						ImGui::NextColumn();
-						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetCamera().GetTarget()[0], m_world.GetPlayer().GetCamera().GetTarget()[1], m_world.GetPlayer().GetCamera().GetTarget()[2]);
+						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetTransform().GetForwardVector()[0], m_world.GetPlayer().GetTransform().GetForwardVector()[1], m_world.GetPlayer().GetTransform().GetForwardVector()[2]);
 						ImGui::NextColumn();
 
 						ImGui::Separator();
@@ -118,7 +126,7 @@ void GameApplication::Render()
 						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetPosition()[0], m_world.GetPlayer().GetPosition()[1], m_world.GetPlayer().GetPosition()[2]);
 						ImGui::NextColumn();
 
-						ImGui::Columns(2);
+						/*ImGui::Columns(2);
 						ImGui::Text("Person looking at");
 						ImGui::NextColumn();
 						ImGui::Text("(%.4f, %.4f, %.4f)", m_world.GetPlayer().GetLookAt()[0], m_world.GetPlayer().GetLookAt()[1], m_world.GetPlayer().GetLookAt()[2]);
@@ -134,7 +142,7 @@ void GameApplication::Render()
 						ImGui::Text("Altitude");
 						ImGui::NextColumn();
 						ImGui::Text("%.4f", m_world.GetPlayer().GetAltitude());
-						ImGui::NextColumn();
+						ImGui::NextColumn();*/
 					}
 
 					ImGui::Separator();
@@ -155,12 +163,12 @@ void GameApplication::Render()
 
 void GameApplication::MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons)
 {
-	float2 prevPos = GetRender().GetNormalizedDeviceCoordinates(x - dx, y - dy);
-	float2 curPos = GetRender().GetNormalizedDeviceCoordinates(x, y);
-	float2 deltaPos = prevPos - curPos;
-	float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
-	float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
-	m_world.GetPlayer().Turn(-deltaAzimuth, deltaAltitude);
+	//float2 prevPos = GetRender().GetNormalizedDeviceCoordinates(x - dx, y - dy);
+	//float2 curPos = GetRender().GetNormalizedDeviceCoordinates(x, y);
+	//float2 deltaPos = prevPos - curPos;
+	//float  deltaAzimuth = deltaPos[0] * pi<float>() / 4.0f;
+	//float  deltaAltitude = deltaPos[1] * pi<float>() / 2.0f;
+	//m_world.GetPlayer().Turn(-deltaAzimuth, deltaAltitude);
 }
 
 void GameApplication::KeyDown(KeyCode key)
@@ -183,5 +191,5 @@ void GameApplication::processInput()
 		if (m_cursorVisible) GetInput().SetCursorMode(CursorMode::Disabled);
 		else GetInput().SetCursorMode(CursorMode::Normal);
 	}
-	m_world.GetPlayer().ProcessInput(m_pressedKeys);
+	//m_world.GetPlayer().ProcessInput(m_pressedKeys);
 }

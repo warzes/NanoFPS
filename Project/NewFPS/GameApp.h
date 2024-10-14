@@ -17,6 +17,7 @@ public:
 	void Shutdown() final;
 	void Update() final;
 	void Render() final;
+	void FixedUpdate(float fixedDeltaTime) final;
 
 	void MouseMove(int32_t x, int32_t y, int32_t dx, int32_t dy, MouseButton buttons) final;
 	void KeyDown(KeyCode key) final;

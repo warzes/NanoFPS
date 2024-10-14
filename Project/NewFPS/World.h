@@ -18,9 +18,12 @@ public:
 	void Shutdown();
 
 	void Update(float deltaTime);
+	void FixedUpdate(float fixedDeltaTime);
 	void Draw(vkr::CommandBufferPtr cmd);
 
 	void UpdateUniformBuffer();
+
+	glm::mat4 GetViewProjectionMatrix();
 
 	Player& GetPlayer() { return m_player; }
 	DirectionalLight& GetMainLight() { return m_mainLight; }
@@ -34,6 +37,12 @@ private:
 	GameApplication* m_game;
 	Player m_player;
 	DirectionalLight m_mainLight;
+	glm::mat4 m_projectionMatrix = glm::mat4(1.0f);
+	float m_horizFovDegrees = 60.0f;
+	float m_vertFovDegrees = 36.98f;
+	float m_aspect = 1.0f;
+	const float CAMERA_DEFAULT_NEAR_CLIP = 0.1f;
+	const float CAMERA_DEFAULT_FAR_CLIP = 10000.0f;
 
 	// Entities
 	vkr::DescriptorSetLayoutPtr m_drawObjectSetLayout;

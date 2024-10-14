@@ -26,8 +26,24 @@ void World::Shutdown()
 
 void World::Update(float deltaTime)
 {
+	// TODO: не нужно каждый вызов это делать
+	{
+		m_aspect = m_game->GetWindowAspect();
+
+		float horizFovRadians = glm::radians(m_horizFovDegrees);
+		float vertFovRadians = 2.0f * atan(tan(horizFovRadians / 2.0f) / m_aspect);
+		float vertFovDegrees = glm::degrees(vertFovRadians);
+
+		m_projectionMatrix = glm::perspective(vertFovRadians, m_aspect, CAMERA_DEFAULT_NEAR_CLIP, CAMERA_DEFAULT_FAR_CLIP);
+	}
+
 	m_player.Update(deltaTime);
 	m_mainLight.Update(deltaTime);
+}
+
+void World::FixedUpdate(float fixedDeltaTime)
+{
+	m_player.FixedUpdate(fixedDeltaTime);
 }
 
 void World::Draw(vkr::CommandBufferPtr cmd)
@@ -45,7 +61,7 @@ void World::Draw(vkr::CommandBufferPtr cmd)
 
 	// Draw light
 	m_mainLight.DrawDebug(cmd);
-	m_phBox.DrawDebug(cmd, GetPlayer().GetCamera().GetViewProjectionMatrix());
+	m_phBox.DrawDebug(cmd, GetViewProjectionMatrix());
 }
 
 void World::UpdateUniformBuffer()
@@ -53,16 +69,29 @@ void World::UpdateUniformBuffer()
 	for (size_t i = 0; i < m_entities.size(); ++i)
 	{
 		GameEntity& entity = m_entities[i];
-		entity.UniformBuffer(GetPlayer().GetCamera().GetViewProjectionMatrix(), m_mainLight, m_game->GetGameGraphics().GetShadowPass().UsePCF());
+		entity.UniformBuffer(GetViewProjectionMatrix(), m_mainLight, m_game->GetGameGraphics().GetShadowPass().UsePCF());
 	}
 
 	// Update light uniform buffer
 	{
 		float4x4        T = glm::translate(m_mainLight.GetPosition());
-		const float4x4& PV = GetPlayer().GetCamera().GetViewProjectionMatrix();
+		const float4x4& PV = GetViewProjectionMatrix();
 		float4x4        MVP = PV * T; // Yes - the other is reversed
 		m_mainLight.UpdateShaderUniform(sizeof(MVP), &MVP);
 	}
+}
+
+glm::mat4 World::GetViewProjectionMatrix()
+{
+	Transform& transform = m_player.GetTransform();
+	const glm::vec3 position = m_player.GetPosition();
+	transform.SetTranslation(position);
+
+	glm::mat4 view = glm::inverse(transform.GetTranslationMatrix() * transform.GetRotationMatrix());
+
+	//glm::mat4 view = glm::lookAt(position, position + transform.GetForwardVector(), transform.GetUpVector());
+
+	return m_projectionMatrix * view;
 }
 
 bool World::setupPipelineEntities()

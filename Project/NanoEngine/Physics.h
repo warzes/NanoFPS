@@ -11,11 +11,15 @@ class Material;
 class Collider;
 class PhysicsBody;
 class RigidBody;
+class StaticBody;
+class CharacterController;
 class PhysicsCallback;
 
 using MaterialPtr = std::shared_ptr<Material>;
 using ColliderPtr = std::shared_ptr<Collider>;
 using RigidBodyPtr = std::shared_ptr<RigidBody>;
+using StaticBodyPtr = std::shared_ptr<StaticBody>;
+using CharacterControllerPtr = std::shared_ptr<CharacterController>;
 using PhysicsCallbackPtr = std::shared_ptr<PhysicsCallback>;
 
 #pragma endregion
@@ -258,7 +262,6 @@ public:
 	void OnTriggerEnter(PhysicsBody* other);
 	void OnTriggerExit(PhysicsBody* other);
 
-
 	[[nodiscard]] auto GetPxRigidActor() const { return m_rigidActor; }
 	[[nodiscard]] auto GetPxScene() const { return m_rigidActor->getScene(); }
 
@@ -310,8 +313,12 @@ protected:
 
 struct RigidBodyCreateInfo final
 {
-	uint32_t filterGroup = 0;
-	uint32_t filterMask = 0;
+	uint32_t filterGroup = 0; // TODO: ?
+	uint32_t filterMask = 0; // TODO: ?
+
+	PhysicsLayer queryLayer = PHYSICS_LAYER_0;
+
+	float density = 1.0f;
 
 	glm::vec3 worldPosition{ glm::vec3(0.0f) };
 	glm::quat worldRotation{ glm::quat{1.0f, 0.0f, 0.0f, 0.0f} };
@@ -331,13 +338,14 @@ public:
 	};
 
 	RigidBody(EngineApplication& engine, const RigidBodyCreateInfo& createInfo);
-	~RigidBody();
 
 	glm::vec3 GetLinearVelocity() const;
 	glm::vec3 GetAngularVelocity() const;
 
 	void SetLinearVelocity(const glm::vec3& newvel, bool autowake);
 	void SetAngularVelocity(const glm::vec3& newvel, bool autowake);
+
+	void SetAngularDamping(float angDamp);
 
 	void SetKinematicTarget(const glm::vec3& targetPos, const glm::quat& targetRot);
 	std::pair<glm::vec3, glm::quat> GetKinematicTarget() const;
@@ -367,8 +375,10 @@ public:
 
 struct StaticBodyCreateInfo final
 {
-	uint32_t filterGroup = 0;
-	uint32_t filterMask = 0;
+	uint32_t filterGroup = 0; // TODO: ?
+	uint32_t filterMask = 0; // TODO: ?
+
+	PhysicsLayer queryLayer = PHYSICS_LAYER_0;
 
 	glm::vec3 worldPosition{ glm::vec3(0.0f) };
 	glm::quat worldRotation{ glm::quat{1.0f, 0.0f, 0.0f, 0.0f} };
@@ -378,24 +388,38 @@ class StaticBody final : public PhysicsBody
 {
 public:
 	StaticBody(EngineApplication& engine, const StaticBodyCreateInfo& createInfo);
-	~StaticBody();	
 };
 
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Character Body ]
+#pragma region [ Character Controller ]
 
-struct CharacterControllersCreateInfo final
+struct CharacterControllerCreateInfo final
 {
-
+	glm::vec3    position{ 0.0f };
+	float        radius = 0.4f;
+	float        height = 0.8f;
+	PhysicsLayer queryLayer = PHYSICS_LAYER_1;
+	MaterialPtr  material;
+	void*        userData{ nullptr };
 };
 
-class CharacterControllers final
+class CharacterController final
 {
 public:
-	CharacterControllers(EngineApplication& engine, const CharacterControllersCreateInfo& createInfo);
-	~CharacterControllers();
+	CharacterController(EngineApplication& engine, const CharacterControllerCreateInfo& createInfo);
+	~CharacterController();
+
+	void Move(const glm::vec3& disp, float minDist, float elapsedTime);
+
+	[[nodiscard]] glm::vec3 GetPosition() const;
+	[[nodiscard]] float GetSlopeLimit() const;
+
+private:
+	EngineApplication&   m_engine;
+	physx::PxController* m_controller = nullptr;
+	MaterialPtr          m_material;
 };
 
 #pragma endregion
@@ -443,8 +467,7 @@ public:
 	bool GetQueryable() const;
 
 	void SetRelativeTransform(const glm::vec3& position, const glm::quat& rotation);
-
-	Transformation GetRelativeTransform() const;
+	std::pair<glm::vec3, glm::quat> GetRelativeTransform() const;
 
 	bool IsValid() const { return m_collider != nullptr; }
 
@@ -473,7 +496,6 @@ class BoxCollider final : public Collider
 {
 public:
 	BoxCollider(EngineApplication& engine, PhysicsBody* owner, const BoxColliderCreateInfo& createInfo);
-	~BoxCollider();
 
 private:
 	glm::vec3 m_extent;
@@ -496,7 +518,6 @@ class SphereCollider final : public Collider
 {
 public:
 	SphereCollider(EngineApplication& engine, PhysicsBody* owner, const SphereColliderCreateInfo& createInfo);
-	~SphereCollider();
 
 	float GetRadius() const;
 };
@@ -519,7 +540,6 @@ class CapsuleCollider final : public Collider
 {
 public:
 	CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, const CapsuleColliderCreateInfo& createInfo);
-	~CapsuleCollider();
 
 private:
 	float m_radius;
@@ -597,48 +617,14 @@ public:
 
 	void SetSimulationEventCallback(physx::PxSimulationEventCallback* callback);
 
-	[[nodiscard]] auto GetDefaultMaterial() { return m_defaultMaterial; }
-
-	[[nodiscard]] auto GetPxScene() { return m_scene; }
-
-
-
-
-
-
-
-	physx::PxController* CreateController(const physx::PxVec3& position, float radius, float height, PhysicsLayer queryLayer = PHYSICS_LAYER_1);
-
-	physx::PxShape* CreateShape(const physx::PxGeometry& geometry, bool isExclusive, bool isTrigger);
-
-	physx::PxRigidStatic* CreateStatic(const physx::PxTransform& transform);
-
-	physx::PxRigidStatic* CreateStatic(
-		const physx::PxTransform& transform,
-		const physx::PxGeometry& geometry,
-		PhysicsLayer              queryLayer = PHYSICS_LAYER_0
-	);
-
-	physx::PxRigidDynamic* CreateDynamic(const physx::PxTransform& transform);
-
-	physx::PxRigidDynamic* CreateDynamic(
-		const physx::PxTransform& transform,
-		const physx::PxGeometry& geometry,
-		PhysicsLayer              queryLayer = PHYSICS_LAYER_0,
-		float                     density = 1.0f
-	);
-
 	[[nodiscard]] physx::PxRaycastBuffer Raycast(const physx::PxVec3& origin, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const;
 
-	[[nodiscard]] physx::PxSweepBuffer Sweep(
-		const physx::PxGeometry& geometry,
-		const physx::PxTransform& pose,
-		const physx::PxVec3& unitDir,
-		float                     distance,
-		PhysicsLayer              layer
-	) const;
+	[[nodiscard]] physx::PxSweepBuffer Sweep(const physx::PxGeometry& geometry, const physx::PxTransform& pose, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const;
 
+	[[nodiscard]] auto GetDefaultMaterial() { return m_defaultMaterial; }
+	[[nodiscard]] auto GetControllerManager() { return m_controllerManager; }
 
+	[[nodiscard]] auto GetPxScene() { return m_scene; }
 
 private:
 	EngineApplication&             m_engine;
@@ -678,20 +664,6 @@ public:
 	void FixedUpdate();
 
 	[[nodiscard]] MaterialPtr CreateMaterial(float staticFriction, float dynamicFriction, float restitution);
-
-
-
-
-
-
-	[[nodiscard]] physx::PxConvexMesh* CreateConvexMesh(
-		physx::PxU32         count,
-		const physx::PxVec3* vertices,
-		// The number of vertices and faces of a convex mesh in PhysX is limited to 255.
-		physx::PxU16         vertexLimit = 255
-	);
-
-	[[nodiscard]] physx::PxTriangleMesh* CreateTriangleMesh(physx::PxU32 count, const physx::PxVec3* vertices);
 
 	[[nodiscard]] auto GetPxPhysics() { return m_physics; }
 

@@ -21,6 +21,6 @@ private:
 	GameEntity                  m_model;
 
 	ph::MaterialPtr m_material = nullptr;
-	//physx::PxRigidDynamic* m_dynamic = nullptr;
 	ph::RigidBodyPtr rb;
+	ph::StaticBodyPtr plane;
 };
