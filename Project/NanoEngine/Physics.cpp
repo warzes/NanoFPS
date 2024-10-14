@@ -315,12 +315,12 @@ RigidBody::RigidBody(EngineApplication& engine, const RigidBodyCreateInfo& creat
 {
 	m_filterGroup = createInfo.filterGroup;
 	m_filterMask = createInfo.filterMask;
+	m_queryLayer = createInfo.queryLayer;
 
 	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
 
 	auto actor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
 	PxRigidBodyExt::updateMassAndInertia(*actor, createInfo.density);
-	PhysicsSetQueryLayer(actor, createInfo.queryLayer);
 
 	m_rigidActor = actor;
 	scene->lockWrite();
@@ -453,13 +453,13 @@ StaticBody::StaticBody(EngineApplication& engine, const StaticBodyCreateInfo& cr
 {
 	m_filterGroup = createInfo.filterGroup;
 	m_filterMask = createInfo.filterMask;
+	m_queryLayer = createInfo.queryLayer;
 
 	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
 
 	PxTransform transform{ PxVec3(createInfo.worldPosition.x, createInfo.worldPosition.y, createInfo.worldPosition.z), PxQuat(createInfo.worldRotation.x, createInfo.worldRotation.y, createInfo.worldRotation.z, createInfo.worldRotation.w)};
 
 	m_rigidActor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidStatic(transform);
-	PhysicsSetQueryLayer(m_rigidActor, createInfo.queryLayer);
 	scene->lockWrite();
 	scene->addActor(*(m_rigidActor));
 	scene->unlockWrite();

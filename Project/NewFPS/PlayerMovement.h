@@ -5,7 +5,7 @@ class GameApplication;
 class PlayerMovement final
 {
 public:
-	bool Setup(GameApplication* game, const glm::vec3& position);
+	bool Setup(GameApplication* game, Transform* playerTransform, const glm::vec3& position);
 	void Shutdown();
 
 	void Update(float deltaTime);
@@ -37,14 +37,12 @@ private:
 
 	static constexpr float GROUND_CHECK_DISTANCE = 0.3f;
 
-	static constexpr float GRAVITY = 20.0f;
-	static constexpr float GROUND_ACCELERATION = 50.0f;
+	static constexpr float GRAVITY = 9.8f;
+	static constexpr float GROUND_ACCELERATION = 150.0f;
 	static constexpr float GROUND_DRAG = 10.0f;
 	static constexpr float AIR_ACCELERATION = 10.0f;
 	static constexpr float AIR_DRAG = 2.0f;
 	static constexpr float JUMP_VELOCITY = 7.0f;
-
-	//Transform& m_transform;
 
 	ph::CharacterControllerPtr m_controller{ nullptr };
 
@@ -56,6 +54,7 @@ private:
 	glm::vec3 m_acceleration{};
 
 	glm::vec3 m_position{};
+	Transform* m_transform;
 
 	glm::vec3 m_predictedPosition{};
 	glm::vec3 m_predictedVariance{ 10000.0f, 10000.0f, 10000.0f };

@@ -84,14 +84,15 @@ void World::UpdateUniformBuffer()
 glm::mat4 World::GetViewProjectionMatrix()
 {
 	Transform& transform = m_player.GetTransform();
-	const glm::vec3 position = m_player.GetPosition();
-	transform.SetTranslation(position);
+	const glm::vec3 position = transform.GetTranslation();
 
-	glm::mat4 view = glm::inverse(transform.GetTranslationMatrix() * transform.GetRotationMatrix());
-
-	//glm::mat4 view = glm::lookAt(position, position + transform.GetForwardVector(), transform.GetUpVector());
+	glm::vec3 forward = transform.GetForwardVector();
+	glm::vec3 up = transform.GetUpVector();
+	//glm::mat4 view = glm::inverse(transform.GetTranslationMatrix() * transform.GetRotationMatrix());
+	glm::mat4 view = glm::lookAt(position, position + forward, up);
 
 	return m_projectionMatrix * view;
+
 }
 
 bool World::setupPipelineEntities()
@@ -126,8 +127,7 @@ bool World::setupPipelineEntities()
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.vs", &VS));
 		vkr::ShaderModulePtr PS;
 		CHECKED_CALL_AND_RETURN_FALSE(device.CreateShader("GameData/Shaders", "DiffuseShadow.ps", &PS));
-
-		
+				
 		vkr::VertexAttribute vertexAttribute0 = {
 			.semanticName = "POSITION",
 			.location = 0,

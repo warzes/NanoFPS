@@ -22,10 +22,13 @@ void kalmanPredict(glm::vec3& posPredicted, glm::vec3& varPredicted, const glm::
 	varPredicted = var;
 }
 
-bool PlayerMovement::Setup(GameApplication* game, const glm::vec3& position)
+bool PlayerMovement::Setup(GameApplication* game, Transform* playerTransform, const glm::vec3& position)
 {
 	m_app = game;
 	m_scene = &game->GetPhysicsScene();
+	m_transform = playerTransform;
+
+	m_transform->SetTranslation(position);
 
 	ph::CharacterControllerCreateInfo ccci{};
 	ccci.position = position;
@@ -48,14 +51,14 @@ void PlayerMovement::Shutdown()
 
 void PlayerMovement::Update(float deltaTime)
 {
-	const glm::vec3 lastEyePosition = m_position;
+	const glm::vec3 lastEyePosition = m_transform->GetTranslation();
 	const glm::vec3 predictedPosition = glm::mix(
 		m_position,
 		m_predictedPosition,
 		m_app->GetFixedUpdateTimeError() / m_app->GetFixedTimestep()
 	);
 	const glm::vec3 targetEyePosition = predictedPosition + glm::vec3{ 0.0f, CAPSULE_HALF_HEIGHT, 0.0f };
-	m_position = glm::mix(lastEyePosition, targetEyePosition, glm::min(1.0f, 30.0f * deltaTime));
+	m_transform->SetTranslation(glm::mix(lastEyePosition, targetEyePosition, glm::min(1.0f, 30.0f * deltaTime)));
 }
 
 void PlayerMovement::FixedUpdate(float fixedDeltaTime)

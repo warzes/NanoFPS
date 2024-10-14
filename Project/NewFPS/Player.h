@@ -29,13 +29,13 @@ public:
 	void Update(float deltaTime);
 	void FixedUpdate(float fixedDeltaTime);
 
-	const float3& GetPosition() const { return m_movement.GetPosition(); }
-
+	const float3& GetPosition() const { return m_transform.GetTranslation(); }
 	Transform& GetTransform() { return m_transform; }
 
 private:
 	GameApplication* m_game;
 	PlayerMovement m_movement;
-	Transform m_transform;
+	Transform m_transform; // TODO: удалить для простоты, а то из-за него слишком сложный расчет (из-за чего не удалось переместить получение видовой матрицы из World сюда - она просто не считается
 	float m_mouseSpeed = 0.001f;
+	bool m_prevSpace = false;
 };

@@ -240,6 +240,7 @@ public:
 	auto EmplaceCollider(A&& ... args)
 	{
 		auto it = m_colliders.emplace_back(std::make_shared<T>(m_engine, this, args...));
+		PhysicsSetQueryLayer(m_rigidActor, m_queryLayer); // TODO: возможно как-то переделать
 		return it;
 	}
 
@@ -302,8 +303,10 @@ protected:
 	physx::PxRigidActor*                   m_rigidActor{ nullptr };
 	physx::PxU32                           m_filterGroup = -1; // TODO: set max uint
 	physx::PxU32                           m_filterMask = -1; // TODO: set max uint
+	PhysicsLayer                           m_queryLayer = PHYSICS_LAYER_0;
 	std::unordered_set<PhysicsCallbackPtr> m_receivers;
 	std::vector<ColliderPtr>               m_colliders;
+
 };
 
 #pragma endregion
