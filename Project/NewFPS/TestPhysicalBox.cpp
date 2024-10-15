@@ -88,8 +88,7 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 
 		ph::BoxColliderCreateInfo bcci{};
 		bcci.extent = { 1000,1,1000 };
-
-		plane->EmplaceCollider<ph::BoxCollider>(bcci);
+		plane->AttachCollider(bcci);
 	}
 
 	// box
@@ -100,8 +99,7 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 
 		ph::BoxColliderCreateInfo bcci{};
 		bcci.extent = { 1,1,1 };
-
-		rb->EmplaceCollider<ph::BoxCollider>(bcci);
+		rb->AttachCollider(bcci);
 
 		rb->SetLinearVelocity({ 0, -1, -2 }, true);
 		rb->SetAngularDamping(0.5f);

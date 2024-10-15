@@ -122,7 +122,7 @@ bool GameEntity::Setup(GameApplication* game, vkr::RenderDevice& device, const v
 		ph::MeshColliderCreateInfo mcci{};
 		mcci.vertices = rawVertex;
 		mcci.indices = rawIndex;
-		phBody->EmplaceCollider<ph::MeshCollider>(mcci);
+		phBody->AttachCollider(mcci);
 	}
 
 	return true;

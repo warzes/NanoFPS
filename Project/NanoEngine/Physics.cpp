@@ -206,6 +206,36 @@ PhysicsBody::~PhysicsBody()
 	}
 }
 
+void PhysicsBody::AttachCollider(const BoxColliderCreateInfo& createInfo)
+{
+	m_colliders.emplace_back(std::make_shared<BoxCollider>(m_engine, this, createInfo));
+	PhysicsSetQueryLayer(m_rigidActor, m_queryLayer);
+}
+
+void PhysicsBody::AttachCollider(const SphereColliderCreateInfo& createInfo)
+{
+	m_colliders.emplace_back(std::make_shared<SphereCollider>(m_engine, this, createInfo));
+	PhysicsSetQueryLayer(m_rigidActor, m_queryLayer);
+}
+
+void PhysicsBody::AttachCollider(const CapsuleColliderCreateInfo& createInfo)
+{
+	m_colliders.emplace_back(std::make_shared<CapsuleCollider>(m_engine, this, createInfo));
+	PhysicsSetQueryLayer(m_rigidActor, m_queryLayer);
+}
+
+void PhysicsBody::AttachCollider(const MeshColliderCreateInfo& createInfo)
+{
+	m_colliders.emplace_back(std::make_shared<MeshCollider>(m_engine, this, createInfo));
+	PhysicsSetQueryLayer(m_rigidActor, m_queryLayer);
+}
+
+void PhysicsBody::AttachCollider(const ConvexMeshColliderCreateInfo& createInfo)
+{
+	m_colliders.emplace_back(std::make_shared<ConvexMeshCollider>(m_engine, this, createInfo));
+	PhysicsSetQueryLayer(m_rigidActor, m_queryLayer);
+}
+
 std::pair<glm::vec3, glm::quat> PhysicsBody::GetDynamicsWorldPose() const
 {
 	PxTransform t;
@@ -698,10 +728,31 @@ MeshCollider::MeshCollider(EngineApplication& engine, PhysicsBody* owner, const 
 ConvexMeshCollider::ConvexMeshCollider(EngineApplication& engine, PhysicsBody* owner, const ConvexMeshColliderCreateInfo& createInfo)
 	: Collider(engine, createInfo.material)
 {
-}
+	physx::PxBoundedData pointdata;
+	pointdata.data = &createInfo.vertices[0];
+	pointdata.stride = sizeof(createInfo.vertices[0]);
+	assert(createInfo.vertices.size() < std::numeric_limits<physx::PxU32>::max());
+	pointdata.count = static_cast<physx::PxU32>(createInfo.vertices.size());
 
-ConvexMeshCollider::~ConvexMeshCollider()
-{
+	PxConvexMeshDesc desc;
+	desc.setToDefault();
+	desc.points = pointdata;
+	desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+	physx::PxDefaultMemoryOutputStream buffer;
+	const physx::PxCookingParams cookingParams(engine.GetPhysicsSystem().GetPxPhysics()->getTolerancesScale()); // TODO: save init
+	if (!PxCookConvexMesh(cookingParams, desc, buffer))
+	{
+		Fatal("Failed to create triangle PhysX mesh.");
+		return;
+	}
+
+	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
+	physx::PxConvexMesh* convMesh = engine.GetPhysicsSystem().GetPxPhysics()->createConvexMesh(input);
+
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxConvexMeshGeometry(convMesh), *m_material->GetPxMaterial());
+	convMesh->release();
+	UpdateFilterData(owner);
 }
 
 #pragma endregion

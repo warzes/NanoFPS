@@ -15,6 +15,12 @@ class StaticBody;
 class CharacterController;
 class PhysicsCallback;
 
+struct BoxColliderCreateInfo;
+struct SphereColliderCreateInfo;
+struct CapsuleColliderCreateInfo;
+struct MeshColliderCreateInfo;
+struct ConvexMeshColliderCreateInfo;
+
 using MaterialPtr = std::shared_ptr<Material>;
 using ColliderPtr = std::shared_ptr<Collider>;
 using RigidBodyPtr = std::shared_ptr<RigidBody>;
@@ -236,13 +242,11 @@ public:
 	PhysicsBody(EngineApplication& engine);
 	virtual ~PhysicsBody();
 
-	template<typename T, typename ... A>
-	auto EmplaceCollider(A&& ... args)
-	{
-		auto it = m_colliders.emplace_back(std::make_shared<T>(m_engine, this, args...));
-		PhysicsSetQueryLayer(m_rigidActor, m_queryLayer); // TODO: возможно как-то переделать
-		return it;
-	}
+	void AttachCollider(const BoxColliderCreateInfo& createInfo);
+	void AttachCollider(const SphereColliderCreateInfo& createInfo);
+	void AttachCollider(const CapsuleColliderCreateInfo& createInfo);
+	void AttachCollider(const MeshColliderCreateInfo& createInfo);
+	void AttachCollider(const ConvexMeshColliderCreateInfo& createInfo);
 
 	std::pair<glm::vec3, glm::quat> GetDynamicsWorldPose() const;
 	void SetDynamicsWorldPose(const glm::vec3& worldpos, const glm::quat& worldrot) const;
@@ -575,15 +579,14 @@ public:
 struct ConvexMeshColliderCreateInfo final
 {
 	MaterialPtr material{ nullptr };
-	glm::vec3   position{ glm::vec3(0.0f) };
-	glm::quat   rotation{ glm::quat(1.0, 0.0, 0.0, 0.0) };
+	std::vector<glm::vec3> vertices;
+	std::vector<uint32_t> indices;
 };
 
 class ConvexMeshCollider final : public Collider
 {
 public:
 	ConvexMeshCollider(EngineApplication& engine, PhysicsBody* owner, const ConvexMeshColliderCreateInfo& createInfo);
-	~ConvexMeshCollider();
 };
 
 #pragma endregion
