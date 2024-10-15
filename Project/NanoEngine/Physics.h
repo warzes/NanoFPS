@@ -8,7 +8,7 @@ namespace ph {
 #pragma region [ Decl Class ]
 
 class Material;
-class Collider;
+class ColliderOLD;
 class PhysicsBody;
 class RigidBody;
 class StaticBody;
@@ -22,7 +22,7 @@ struct MeshColliderCreateInfo;
 struct ConvexMeshColliderCreateInfo;
 
 using MaterialPtr = std::shared_ptr<Material>;
-using ColliderPtr = std::shared_ptr<Collider>;
+using ColliderOLDPtr = std::shared_ptr<ColliderOLD>;
 using RigidBodyPtr = std::shared_ptr<RigidBody>;
 using StaticBodyPtr = std::shared_ptr<StaticBody>;
 using CharacterControllerPtr = std::shared_ptr<CharacterController>;
@@ -233,7 +233,7 @@ struct ContactPairPoint final
 
 class PhysicsBody
 {
-	friend class Collider;
+	friend class ColliderOLD;
 public:
 	PhysicsBody(EngineApplication& engine);
 	virtual ~PhysicsBody();
@@ -305,7 +305,7 @@ protected:
 	physx::PxU32                           m_filterMask = -1; // TODO: set max uint
 	PhysicsLayer                           m_queryLayer = PHYSICS_LAYER_0;
 	std::unordered_set<PhysicsCallbackPtr> m_receivers;
-	std::vector<ColliderPtr>               m_colliders;
+	std::vector<ColliderOLDPtr>               m_colliders;
 };
 
 #pragma endregion
@@ -452,12 +452,12 @@ enum class CollisionType
 	Collider
 };
 
-class Collider
+class ColliderOLD
 {
 	friend class PhysicsBody;
 public:
-	Collider(EngineApplication& engine, MaterialPtr material);
-	virtual ~Collider();
+	ColliderOLD(EngineApplication& engine, MaterialPtr material);
+	virtual ~ColliderOLD();
 
 	virtual void DebugDraw(Color debugColor, const Transformation&) const {} // TODO: в будущем сделать
 
@@ -497,7 +497,7 @@ struct BoxColliderCreateInfo final
 	glm::quat   rotation{ glm::quat(1.0, 0.0, 0.0, 0.0) };
 };
 
-class BoxCollider final : public Collider
+class BoxCollider final : public ColliderOLD
 {
 public:
 	BoxCollider(EngineApplication& engine, PhysicsBody* owner, const BoxColliderCreateInfo& createInfo);
@@ -519,7 +519,7 @@ struct SphereColliderCreateInfo final
 	glm::quat   rotation{ glm::quat(1.0, 0.0, 0.0, 0.0) };
 };
 
-class SphereCollider final : public Collider
+class SphereCollider final : public ColliderOLD
 {
 public:
 	SphereCollider(EngineApplication& engine, PhysicsBody* owner, const SphereColliderCreateInfo& createInfo);
@@ -541,7 +541,7 @@ struct CapsuleColliderCreateInfo final
 	glm::quat   rotation{ glm::quat(1.0, 0.0, 0.0, 0.0) };
 };
 
-class CapsuleCollider final : public Collider
+class CapsuleCollider final : public ColliderOLD
 {
 public:
 	CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, const CapsuleColliderCreateInfo& createInfo);
@@ -563,7 +563,7 @@ struct MeshColliderCreateInfo final
 	std::vector<uint32_t> indices;
 };
 
-class MeshCollider final : public Collider
+class MeshCollider final : public ColliderOLD
 {
 public:
 	MeshCollider(EngineApplication& engine, PhysicsBody* owner, const MeshColliderCreateInfo& createInfo);
@@ -581,7 +581,7 @@ struct ConvexMeshColliderCreateInfo final
 	std::vector<uint32_t> indices;
 };
 
-class ConvexMeshCollider final : public Collider
+class ConvexMeshCollider final : public ColliderOLD
 {
 public:
 	ConvexMeshCollider(EngineApplication& engine, PhysicsBody* owner, const ConvexMeshColliderCreateInfo& createInfo);

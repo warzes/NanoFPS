@@ -5,7 +5,7 @@
 bool TestPhysicalBox::Setup(GameApplication* game)
 {
 	auto& device = game->GetRenderDevice();
-	auto phsystem = game->GetPhysicsSystem();
+	auto& phsystem = game->GetPhysicsSystem();
 	auto phscene = game->GetPhysicsScene();
 
 	{

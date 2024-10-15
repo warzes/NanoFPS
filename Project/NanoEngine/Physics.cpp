@@ -507,18 +507,18 @@ float CharacterController::GetSlopeLimit() const
 //=============================================================================
 #pragma region [ Physics Collider ]
 
-Collider::Collider(EngineApplication& engine, MaterialPtr material)
+ColliderOLD::ColliderOLD(EngineApplication& engine, MaterialPtr material)
 	: m_engine(engine)
 	, m_material(material)
 {
 }
 
-Collider::~Collider()
+ColliderOLD::~ColliderOLD()
 {
 	PX_RELEASE(m_collider);
 }
 
-void Collider::SetType(CollisionType type)
+void ColliderOLD::SetType(CollisionType type)
 {
 	switch (type)
 	{
@@ -533,33 +533,33 @@ void Collider::SetType(CollisionType type)
 	}
 }
 
-CollisionType Collider::GetType() const
+CollisionType ColliderOLD::GetType() const
 {
 	return m_collider->getFlags() & PxShapeFlag::eTRIGGER_SHAPE ? CollisionType::Trigger : CollisionType::Collider;
 }
 
-void Collider::SetQueryable(bool state)
+void ColliderOLD::SetQueryable(bool state)
 {
 	m_collider->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, state);
 }
 
-bool Collider::GetQueryable() const
+bool ColliderOLD::GetQueryable() const
 {
 	return m_collider->getFlags() & PxShapeFlag::eSCENE_QUERY_SHAPE;
 }
 
-void Collider::SetRelativeTransform(const glm::vec3& position, const glm::quat& rotation)
+void ColliderOLD::SetRelativeTransform(const glm::vec3& position, const glm::quat& rotation)
 {
 	m_collider->setLocalPose(PxTransform(PxVec3(position.x, position.y, position.z), PxQuat(rotation.x, rotation.y, rotation.z, rotation.w)));
 }
 
-std::pair<glm::vec3, glm::quat> Collider::GetRelativeTransform() const
+std::pair<glm::vec3, glm::quat> ColliderOLD::GetRelativeTransform() const
 {
 	auto pose = m_collider->getLocalPose();
 	return { glm::vec3(pose.p.x,pose.p.y,pose.p.z),glm::quat(pose.q.w, pose.q.x,pose.q.y,pose.q.z) };
 }
 
-void Collider::UpdateFilterData(PhysicsBody* owner)
+void ColliderOLD::UpdateFilterData(PhysicsBody* owner)
 {
 	PxFilterData filterData;
 	filterData.word0 = owner->m_filterGroup; // word0 = own ID
@@ -567,7 +567,7 @@ void Collider::UpdateFilterData(PhysicsBody* owner)
 	m_collider->setSimulationFilterData(filterData);
 }
 
-MaterialPtr ph::Collider::getMaterial()
+MaterialPtr ph::ColliderOLD::getMaterial()
 {
 	if (m_material == nullptr || !m_material->IsValid())
 		return m_engine.GetPhysicsScene().GetDefaultMaterial();
@@ -581,7 +581,7 @@ MaterialPtr ph::Collider::getMaterial()
 #pragma region [ Box Collider ]
 
 BoxCollider::BoxCollider(EngineApplication& engine, PhysicsBody* owner, const BoxColliderCreateInfo& createInfo)
-	: Collider(engine, createInfo.material)
+	: ColliderOLD(engine, createInfo.material)
 {
 	m_extent = createInfo.extent;
 
@@ -598,7 +598,7 @@ BoxCollider::BoxCollider(EngineApplication& engine, PhysicsBody* owner, const Bo
 #pragma region [ Sphere Collider ]
 
 SphereCollider::SphereCollider(EngineApplication& engine, PhysicsBody* owner, const SphereColliderCreateInfo& createInfo)
-	: Collider(engine, createInfo.material)
+	: ColliderOLD(engine, createInfo.material)
 {
 	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxSphereGeometry(createInfo.radius), *getMaterial()->GetPxMaterial());
 
@@ -617,7 +617,7 @@ float SphereCollider::GetRadius() const
 #pragma region [ Capsule Collider ]
 
 CapsuleCollider::CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, const CapsuleColliderCreateInfo& createInfo)
-	: Collider(engine, createInfo.material)
+	: ColliderOLD(engine, createInfo.material)
 {
 	m_radius = createInfo.radius;
 	m_halfHeight = createInfo.halfHeight;
@@ -634,7 +634,7 @@ CapsuleCollider::CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, 
 #pragma region [ Mesh Collider ]
 
 MeshCollider::MeshCollider(EngineApplication& engine, PhysicsBody* owner, const MeshColliderCreateInfo& createInfo)
-	: Collider(engine, createInfo.material)
+	: ColliderOLD(engine, createInfo.material)
 {
 	physx::PxTriangleMeshDesc desc{};
 	desc.setToDefault();
@@ -677,7 +677,7 @@ MeshCollider::MeshCollider(EngineApplication& engine, PhysicsBody* owner, const 
 #pragma region [ Convex Mesh Collider ]
 
 ConvexMeshCollider::ConvexMeshCollider(EngineApplication& engine, PhysicsBody* owner, const ConvexMeshColliderCreateInfo& createInfo)
-	: Collider(engine, createInfo.material)
+	: ColliderOLD(engine, createInfo.material)
 {
 	physx::PxBoundedData pointdata;
 	pointdata.data = &createInfo.vertices[0];

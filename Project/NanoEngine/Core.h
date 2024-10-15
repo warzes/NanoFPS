@@ -1523,6 +1523,7 @@ inline LinearColor operator*(float scalar, const LinearColor& Color)
 
 class OBB;
 
+// Axis aligned box represented by minimum and maximum point.
 class AABB final
 {
 public:

@@ -9,7 +9,25 @@ namespace ph {
 using namespace physx;
 
 //=============================================================================
+#pragma region [ Simulation Event Callback ]
+
+class PhysXEventCallback final : public PxSimulationEventCallback
+{
+public:
+	void onConstraintBreak(physx::PxConstraintInfo* /*constraints*/, physx::PxU32 /*count*/) final {}
+	void onWake(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
+	void onSleep(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
+	void onContact(const physx::PxContactPairHeader& /*pairHeader*/, const physx::PxContactPair* /*pairs*/, physx::PxU32 /*nbPairs*/) final {}
+	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final {}
+	void onAdvance(const physx::PxRigidBody* const* /*bodyBuffer*/, const physx::PxTransform* /*poseBuffer*/, const physx::PxU32 /*count*/) final {}
+};
+
+#pragma endregion
+
+//=============================================================================
 #pragma region [ Physics Scene ]
+
+extern PxDefaultCpuDispatcher* gCpuDispatcher;
 
 PhysicsScene::PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine)
 	: m_engine(engine)
@@ -21,16 +39,9 @@ bool PhysicsScene::Setup(const PhysicsSceneCreateInfo& createInfo)
 {
 	m_physics = m_system.m_physics;
 
-	m_cpuDispatcher = PxDefaultCpuDispatcherCreate(createInfo.cpuDispatcherNum);
-	if (!m_cpuDispatcher)
-	{
-		Fatal("Failed to create default PhysX CPU dispatcher.");
-		return false;
-	}
-
 	PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
 	sceneDesc.gravity = { createInfo.gravity.x, createInfo.gravity.y, createInfo.gravity.z };
-	sceneDesc.cpuDispatcher = m_cpuDispatcher;
+	sceneDesc.cpuDispatcher = gCpuDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 	sceneDesc.simulationEventCallback = &m_physicsCallback;
 	m_scene = m_physics->createScene(sceneDesc);
@@ -69,7 +80,6 @@ void PhysicsScene::Shutdown()
 	PX_RELEASE(m_controllerManager);
 	m_defaultMaterial.reset();
 	PX_RELEASE(m_scene);
-	PX_RELEASE(m_cpuDispatcher);
 }
 
 void PhysicsScene::FixedUpdate()

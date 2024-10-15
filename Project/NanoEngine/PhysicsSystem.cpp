@@ -14,7 +14,7 @@
 //#	pragma comment( lib, "LowLevelDynamics_static_64.lib" )
 #	pragma comment( lib, "PhysXCharacterKinematic_static_64.lib" )
 #	pragma comment( lib, "PhysXExtensions_static_64.lib" )
-#	pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
+//#	pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
 #endif
 
 namespace ph {
@@ -66,26 +66,11 @@ public:
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Simulation Event Callback ]
-
-class PhysXEventCallback final : public PxSimulationEventCallback
-{
-public:
-	void onConstraintBreak(physx::PxConstraintInfo* /*constraints*/, physx::PxU32 /*count*/) final {}
-	void onWake(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
-	void onSleep(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
-	void onContact(const physx::PxContactPairHeader& /*pairHeader*/, const physx::PxContactPair* /*pairs*/, physx::PxU32 /*nbPairs*/) final {}
-	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final {}
-	void onAdvance(const physx::PxRigidBody* const* /*bodyBuffer*/, const physx::PxTransform* /*poseBuffer*/, const physx::PxU32 /*count*/) final {}
-};
-
-#pragma endregion
-
-//=============================================================================
 #pragma region [ Physics System ]
 
-PxDefaultAllocator   gDefaultAllocatorCallback;
-PhysicsErrorCallback gErrorCallback;
+PxDefaultAllocator      gDefaultAllocatorCallback;
+PhysicsErrorCallback    gErrorCallback;
+PxDefaultCpuDispatcher* gCpuDispatcher{ nullptr };
 
 PhysicsSystem::PhysicsSystem(EngineApplication& engine)
 	: m_engine(engine)
@@ -95,10 +80,11 @@ PhysicsSystem::PhysicsSystem(EngineApplication& engine)
 
 bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 {
-	m_enable = createInfo.enable;
-
+	m_enable       = createInfo.enable;
 	m_scale.length = createInfo.typicalLength;
-	m_scale.speed = createInfo.typicalSpeed;
+	m_scale.speed  = createInfo.typicalSpeed;
+
+	memset(m_collisionMap, 1, CollisionMapSize * CollisionMapSize * sizeof(bool));
 
 	m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gErrorCallback);
 	if (!m_foundation)
@@ -116,6 +102,13 @@ bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 	
 	Print("PhysX Init " + std::to_string(PX_PHYSICS_VERSION_MAJOR) + "." + std::to_string(PX_PHYSICS_VERSION_MINOR) + "." + std::to_string(PX_PHYSICS_VERSION_BUGFIX));
 
+	gCpuDispatcher = PxDefaultCpuDispatcherCreate(createInfo.cpuDispatcherNum);
+	if (!gCpuDispatcher)
+	{
+		Fatal("Failed to create default PhysX CPU dispatcher.");
+		return false;
+	}
+
 	if (!m_scene.Setup(createInfo.scene)) return false;
 
 	return true;
@@ -124,6 +117,7 @@ bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 void PhysicsSystem::Shutdown()
 {
 	m_scene.Shutdown();
+	PX_RELEASE(gCpuDispatcher);
 	PX_RELEASE(m_physics);
 	PX_RELEASE(m_foundation);
 }
@@ -134,9 +128,28 @@ void PhysicsSystem::FixedUpdate()
 		m_scene.FixedUpdate();
 }
 
-MaterialPtr ph::PhysicsSystem::CreateMaterial(const MaterialCreateInfo& createInfo)
+MaterialPtr PhysicsSystem::CreateMaterial(const MaterialCreateInfo& createInfo)
 {
 	return std::make_shared<Material>(m_engine, createInfo);
+}
+
+void PhysicsSystem::SetPaused(bool paused)
+{
+	m_enable = paused;
+}
+
+void PhysicsSystem::ToggleCollision(uint64_t groupA, uint64_t groupB, bool enabled)
+{
+	assert(groupA < CollisionMapSize && groupB < CollisionMapSize);
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_collisionMap[groupA][groupB] = enabled;
+}
+
+bool PhysicsSystem::IsCollisionEnabled(uint64_t groupA, uint64_t groupB) const
+{
+	assert(groupA < CollisionMapSize && groupB < CollisionMapSize);
+	std::unique_lock<std::mutex> lock(m_mutex);
+	return m_collisionMap[groupA][groupB];
 }
 
 #pragma endregion
