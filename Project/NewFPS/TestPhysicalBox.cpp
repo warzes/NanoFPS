@@ -79,8 +79,6 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 		device.DestroyShaderModule(PS);
 	}
 
-	m_material = phsystem.CreateMaterial(0.8f, 0.8f, 0.25f);
-
 	// plane
 	{
 		ph::StaticBodyCreateInfo sbci{};

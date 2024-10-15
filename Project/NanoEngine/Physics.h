@@ -53,17 +53,6 @@ inline void PhysicsSetActorMaterial(physx::PxRigidActor* actor, physx::PxMateria
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Error Callback ]
-
-class PhysicsErrorCallback final : public physx::PxErrorCallback
-{
-public:
-	void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) final;
-};
-
-#pragma endregion
-
-//=============================================================================
 #pragma region [ Simulation Event Callback ]
 
 class PhysicsSimulationEventCallback final : public physx::PxSimulationEventCallback
@@ -145,6 +134,13 @@ public:
 //=============================================================================
 #pragma region [ Physics Material ]
 
+struct MaterialCreateInfo final
+{
+	float staticFriction = 0.8f;
+	float dynamicFriction = 0.8f;
+	float restitution = 0.25f;
+};
+
 enum class PhysicsMaterialFlag 
 {
 	DisableFriction = 1 << 0,
@@ -165,7 +161,7 @@ enum class PhysicsCombineMode
 class Material final
 {
 public:
-	Material(EngineApplication& engine, float staticFriction = 1.0f, float dynamicFriction = 1.0f, float restitution = 1.0f);
+	Material(EngineApplication& engine, const MaterialCreateInfo& createInfo);
 	~Material();
 
 	// Controls friction when two in-contact objects are not moving lateral to each other (for example how difficult it is to get an object moving from a static state while it is in contact with other object(s)).
@@ -310,7 +306,6 @@ protected:
 	PhysicsLayer                           m_queryLayer = PHYSICS_LAYER_0;
 	std::unordered_set<PhysicsCallbackPtr> m_receivers;
 	std::vector<ColliderPtr>               m_colliders;
-
 };
 
 #pragma endregion
@@ -481,8 +476,11 @@ public:
 	void UpdateFilterData(PhysicsBody* owner);
 
 protected:
+	MaterialPtr getMaterial();
+
 	EngineApplication& m_engine;
 	physx::PxShape*    m_collider{ nullptr };
+private:
 	MaterialPtr        m_material{ nullptr };
 };
 
@@ -587,99 +585,6 @@ class ConvexMeshCollider final : public Collider
 {
 public:
 	ConvexMeshCollider(EngineApplication& engine, PhysicsBody* owner, const ConvexMeshColliderCreateInfo& createInfo);
-};
-
-#pragma endregion
-
-//=============================================================================
-#pragma region [ Physics Scene ]
-
-class PhysicsSystem;
-
-struct PhysicsSceneCreateInfo final
-{
-	uint8_t   cpuDispatcherNum = 2;
-	glm::vec3 gravity{ 0.0f, -9.81f, 0.0f };
-
-	struct DefaultMaterial
-	{
-		float staticFriction = 0.8f;
-		float dynamicFriction = 0.8f;
-		float restitution = 0.25f;
-	} defaultMaterial;
-};
-
-class PhysicsScene final
-{
-	friend EngineApplication;
-public:
-	PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine);
-
-	[[nodiscard]] bool Setup(const PhysicsSceneCreateInfo& createInfo);
-	void Shutdown();
-
-	void FixedUpdate();
-
-	void SetSimulationEventCallback(physx::PxSimulationEventCallback* callback);
-
-	[[nodiscard]] physx::PxRaycastBuffer Raycast(const physx::PxVec3& origin, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const;
-
-	[[nodiscard]] physx::PxSweepBuffer Sweep(const physx::PxGeometry& geometry, const physx::PxTransform& pose, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const;
-
-	[[nodiscard]] auto GetDefaultMaterial() { return m_defaultMaterial; }
-	[[nodiscard]] auto GetControllerManager() { return m_controllerManager; }
-
-	[[nodiscard]] auto GetPxScene() { return m_scene; }
-
-private:
-	EngineApplication&             m_engine;
-	PhysicsSystem&                 m_system;
-	PhysicsSimulationEventCallback m_physicsCallback;
-	physx::PxPhysics*              m_physics{ nullptr };
-	physx::PxDefaultCpuDispatcher* m_cpuDispatcher{ nullptr };
-	physx::PxScene*                m_scene{ nullptr };
-	MaterialPtr                    m_defaultMaterial{ nullptr };
-	physx::PxControllerManager*    m_controllerManager{ nullptr };
-};
-
-#pragma endregion
-
-//=============================================================================
-#pragma region [ Physics System ]
-
-struct PhysicsCreateInfo final
-{
-	PhysicsSceneCreateInfo scene;
-	bool enable = false;
-};
-
-class PhysicsSystem final
-{
-	friend EngineApplication;
-	friend class PhysicsScene;
-public:
-	PhysicsSystem(EngineApplication& engine);
-
-	[[nodiscard]] bool Setup(const PhysicsCreateInfo& createInfo);
-	void Shutdown();
-
-	[[nodiscard]] bool IsEnable() const { return m_enable; }
-	[[nodiscard]] PhysicsScene& GetScene() { return m_scene; }
-
-	void FixedUpdate();
-
-	[[nodiscard]] MaterialPtr CreateMaterial(float staticFriction, float dynamicFriction, float restitution);
-
-	[[nodiscard]] auto GetPxPhysics() { return m_physics; }
-
-private:
-	EngineApplication&     m_engine;
-	physx::PxFoundation*   m_foundation{ nullptr };
-	physx::PxPvdTransport* m_pvdTransport{ nullptr };
-	physx::PxPvd*          m_pvd{ nullptr };
-	physx::PxPhysics*      m_physics{ nullptr };
-	ph::PhysicsScene       m_scene; // TODO: в будущем создавать из physics system
-	bool                   m_enable{ false };
 };
 
 #pragma endregion

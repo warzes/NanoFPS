@@ -20,7 +20,6 @@ private:
 	vkr::GraphicsPipelinePtr    m_pipeline;
 	GameEntity                  m_model;
 
-	ph::MaterialPtr m_material = nullptr;
 	ph::RigidBodyPtr rb;
 	ph::StaticBodyPtr plane;
 };

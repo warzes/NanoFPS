@@ -3,6 +3,8 @@
 #include "Platform.h"
 #include "RenderSystem.h"
 #include "Physics.h"
+#include "Physics2.h"
+#include "PhysicsSystem.h"
 
 //=============================================================================
 #pragma region [ Create Application Info ]

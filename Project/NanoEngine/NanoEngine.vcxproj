@@ -100,6 +100,9 @@
     <ClCompile Include="CoreData.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Physics2.cpp" />
+    <ClCompile Include="PhysicsScene.cpp" />
+    <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="RenderCore.cpp" />
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="RenderDevice.cpp" />
@@ -119,6 +122,9 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="NanoEngine.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="Physics2.h" />
+    <ClInclude Include="PhysicsScene.h" />
+    <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="RenderCore.h" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="RenderDevice.h" />

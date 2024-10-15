@@ -1,63 +1,13 @@
 ﻿#include "stdafx.h"
 #include "Core.h"
 #include "Physics.h"
+#include "Physics2.h"
+#include "PhysicsSystem.h"
 #include "Application.h"
 
 namespace ph {
 
 using namespace physx;
-
-#pragma comment( lib, "PhysX_64.lib" )
-#pragma comment( lib, "PhysXFoundation_64.lib" )
-#pragma comment( lib, "PhysXCooking_64.lib" )
-#pragma comment( lib, "PhysXCommon_64.lib" )
-
-//#pragma comment( lib, "LowLevel_static_64.lib" )
-//#pragma comment( lib, "LowLevelAABB_static_64.lib" )
-//#pragma comment( lib, "LowLevelDynamics_static_64.lib" )
-#pragma comment( lib, "PhysXCharacterKinematic_static_64.lib" )
-#pragma comment( lib, "PhysXExtensions_static_64.lib" )
-#pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
-
-//=============================================================================
-#pragma region [ Error Callback ]
-
-void info(const std::string& error, const std::string& message) noexcept
-{
-	Print("PhysX " + error + ": " + message);
-}
-
-void warning(const std::string& error, const std::string& message) noexcept
-{
-	Warning("PhysX " + error + ": " + message);
-}
-
-void error(const std::string& error, const std::string& message) noexcept
-{
-	Error("PhysX " + error + ": " + message);
-}
-
-void PhysicsErrorCallback::reportError(PxErrorCode::Enum code, const char* message, [[maybe_unused]] const char* file, [[maybe_unused]] int line)
-{
-	const char* msgType = "Unknown Error";
-	void (*loggingCallback)(const std::string&, const std::string&) = error;
-	switch (code)
-	{
-	case physx::PxErrorCode::eNO_ERROR:          msgType = "No Error";            loggingCallback = info; break;
-	case physx::PxErrorCode::eDEBUG_INFO:        msgType = "Debug Info";          loggingCallback = info; break;
-	case physx::PxErrorCode::eDEBUG_WARNING:     msgType = "Debug Warning";       loggingCallback = warning; break;
-	case physx::PxErrorCode::eINVALID_PARAMETER: msgType = "Invalid Parameter";   loggingCallback = error; break;
-	case physx::PxErrorCode::eINVALID_OPERATION: msgType = "Invalid Operation";   loggingCallback = error; break;
-	case physx::PxErrorCode::eOUT_OF_MEMORY:     msgType = "Out of Memory";       loggingCallback = error; break;
-	case physx::PxErrorCode::eINTERNAL_ERROR:    msgType = "Internal Error";      loggingCallback = error; break;
-	case physx::PxErrorCode::eABORT:             msgType = "Abort";               loggingCallback = error; break;
-	case physx::PxErrorCode::ePERF_WARNING:      msgType = "Performance Warning"; loggingCallback = warning; break;
-	default: break;
-	}
-	loggingCallback(msgType, message);
-}
-
-#pragma endregion
 
 //=============================================================================
 #pragma region [ Simulation Event Callback ]
@@ -107,10 +57,10 @@ void PhysicsSetQueryLayer(PxRigidActor* actor, PhysicsLayer layer)
 //=============================================================================
 #pragma region Physics Material
 
-Material::Material(EngineApplication& engine, float staticFriction, float dynamicFriction, float restitution)
+Material::Material(EngineApplication& engine, const MaterialCreateInfo& createInfo)
 	: m_engine(engine)
 {
-	m_material = m_engine.GetPhysicsSystem().GetPxPhysics()->createMaterial(staticFriction, dynamicFriction, restitution);
+	m_material = m_engine.GetPhysicsSystem().GetPxPhysics()->createMaterial(createInfo.staticFriction, createInfo.dynamicFriction, createInfo.restitution);
 }
 
 Material::~Material()
@@ -190,16 +140,16 @@ PhysicsBody::PhysicsBody(EngineApplication& engine)
 
 PhysicsBody::~PhysicsBody()
 {
+	m_colliders.clear();
 	if (m_rigidActor != nullptr)
 	{
 		auto scene = m_rigidActor->getScene();
 		scene->lockWrite();
 		scene->removeActor(*(m_rigidActor));
 		scene->unlockWrite();
-		m_rigidActor->release();
-		m_rigidActor = nullptr;
+		PX_RELEASE(m_rigidActor);
 
-		for (auto& receiver : m_receivers)
+		for (auto& receiver : m_receivers) // TODO:
 		{
 			//receiver->OnUnregisterBody(otherwayHandle);
 		}
@@ -561,18 +511,11 @@ Collider::Collider(EngineApplication& engine, MaterialPtr material)
 	: m_engine(engine)
 	, m_material(material)
 {
-	if (m_material == nullptr)
-		m_material = engine.GetPhysicsScene().GetDefaultMaterial();
-	else if (!m_material->IsValid())
-	{
-		Warning("Physics Material not valid!!! Set default materials");
-		m_material = engine.GetPhysicsScene().GetDefaultMaterial();
-	}
 }
 
 Collider::~Collider()
 {
-//	PX_RELEASE(m_collider);
+	PX_RELEASE(m_collider);
 }
 
 void Collider::SetType(CollisionType type)
@@ -624,6 +567,14 @@ void Collider::UpdateFilterData(PhysicsBody* owner)
 	m_collider->setSimulationFilterData(filterData);
 }
 
+MaterialPtr ph::Collider::getMaterial()
+{
+	if (m_material == nullptr || !m_material->IsValid())
+		return m_engine.GetPhysicsScene().GetDefaultMaterial();
+
+	return m_material;
+}
+
 #pragma endregion
 
 //=============================================================================
@@ -635,7 +586,7 @@ BoxCollider::BoxCollider(EngineApplication& engine, PhysicsBody* owner, const Bo
 	m_extent = createInfo.extent;
 
 	const PxBoxGeometry geom = { m_extent.x, m_extent.y, m_extent.z };
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), geom, *m_material->GetPxMaterial());
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), geom, *getMaterial()->GetPxMaterial());
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
@@ -649,7 +600,7 @@ BoxCollider::BoxCollider(EngineApplication& engine, PhysicsBody* owner, const Bo
 SphereCollider::SphereCollider(EngineApplication& engine, PhysicsBody* owner, const SphereColliderCreateInfo& createInfo)
 	: Collider(engine, createInfo.material)
 {
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxSphereGeometry(createInfo.radius), *m_material->GetPxMaterial());
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxSphereGeometry(createInfo.radius), *getMaterial()->GetPxMaterial());
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
@@ -671,7 +622,7 @@ CapsuleCollider::CapsuleCollider(EngineApplication& engine, PhysicsBody* owner, 
 	m_radius = createInfo.radius;
 	m_halfHeight = createInfo.halfHeight;
 
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxCapsuleGeometry(m_radius, m_halfHeight), *m_material->GetPxMaterial());
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxCapsuleGeometry(m_radius, m_halfHeight), *getMaterial()->GetPxMaterial());
 
 	SetRelativeTransform(createInfo.position, createInfo.rotation);
 	UpdateFilterData(owner);
@@ -715,7 +666,7 @@ MeshCollider::MeshCollider(EngineApplication& engine, PhysicsBody* owner, const 
 	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
 	physx::PxTriangleMesh* triMesh = engine.GetPhysicsSystem().GetPxPhysics()->createTriangleMesh(input);
 
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxTriangleMeshGeometry(triMesh), *m_material->GetPxMaterial());
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxTriangleMeshGeometry(triMesh), *getMaterial()->GetPxMaterial());
 	triMesh->release();
 	UpdateFilterData(owner);
 }
@@ -750,190 +701,9 @@ ConvexMeshCollider::ConvexMeshCollider(EngineApplication& engine, PhysicsBody* o
 	physx::PxDefaultMemoryInputData input(buffer.getData(), buffer.getSize());
 	physx::PxConvexMesh* convMesh = engine.GetPhysicsSystem().GetPxPhysics()->createConvexMesh(input);
 
-	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxConvexMeshGeometry(convMesh), *m_material->GetPxMaterial());
+	m_collider = PxRigidActorExt::createExclusiveShape(*owner->GetPxRigidActor(), PxConvexMeshGeometry(convMesh), *getMaterial()->GetPxMaterial());
 	convMesh->release();
 	UpdateFilterData(owner);
-}
-
-#pragma endregion
-
-//=============================================================================
-#pragma region [ Physics Scene ]
-
-PhysicsScene::PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine)
-	: m_engine(engine)
-	, m_system(physicsEngine)
-{
-}
-
-bool PhysicsScene::Setup(const PhysicsSceneCreateInfo& createInfo)
-{
-	m_physics = m_system.m_physics;
-
-	m_cpuDispatcher = PxDefaultCpuDispatcherCreate(createInfo.cpuDispatcherNum);
-	if (!m_cpuDispatcher)
-	{
-		Fatal("Failed to create default PhysX CPU dispatcher.");
-		return false;
-	}
-
-	PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
-	sceneDesc.gravity                 = { createInfo.gravity.x, createInfo.gravity.y, createInfo.gravity.z };
-	sceneDesc.cpuDispatcher           = m_cpuDispatcher;
-	sceneDesc.filterShader            = PxDefaultSimulationFilterShader;
-	sceneDesc.simulationEventCallback = &m_physicsCallback;
-	m_scene = m_physics->createScene(sceneDesc);
-	if (!m_scene)
-	{
-		Fatal("Failed to create PhysX scene.");
-		return false;
-	}
-
-	if (PxPvdSceneClient* pvdClient = m_scene->getScenePvdClient())
-	{
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-	}
-
-	m_defaultMaterial = m_system.CreateMaterial(createInfo.defaultMaterial.staticFriction, createInfo.defaultMaterial.dynamicFriction, createInfo.defaultMaterial.restitution);
-	if (!m_defaultMaterial->IsValid())
-	{
-		Fatal("Failed to create default PhysX material.");
-		return false;
-	}
-
-	m_controllerManager = PxCreateControllerManager(*m_scene);
-	if (!m_controllerManager)
-	{
-		Fatal("Failed to create PhysX controller manager.");
-		return false;
-	}
-	
-	return true;
-}
-
-void PhysicsScene::Shutdown()
-{
-	PX_RELEASE(m_controllerManager);
-	m_defaultMaterial.reset();
-	PX_RELEASE(m_scene);
-	PX_RELEASE(m_cpuDispatcher);
-}
-
-void PhysicsScene::FixedUpdate()
-{
-	m_scene->simulate(m_engine.GetFixedTimestep());
-	m_scene->fetchResults(true);
-}
-
-void PhysicsScene::SetSimulationEventCallback(physx::PxSimulationEventCallback* callback)
-{
-	m_scene->setSimulationEventCallback(callback);
-}
-
-physx::PxRaycastBuffer PhysicsScene::Raycast(const physx::PxVec3& origin, const physx::PxVec3& unitDir, const float distance, PhysicsLayer layer) const
-{
-	physx::PxQueryFilterData queryFilterData;
-	queryFilterData.data = PhysicsFilterDataFromLayer(layer);
-
-	physx::PxRaycastBuffer buffer;
-	m_scene->raycast(origin, unitDir, distance, buffer, physx::PxHitFlag::eDEFAULT, queryFilterData);
-	return buffer;
-}
-
-physx::PxSweepBuffer PhysicsScene::Sweep(const physx::PxGeometry& geometry, const physx::PxTransform& pose, const physx::PxVec3& unitDir, float distance, PhysicsLayer layer) const
-{
-	physx::PxQueryFilterData queryFilterData;
-	queryFilterData.data = PhysicsFilterDataFromLayer(layer);
-
-	physx::PxSweepBuffer buffer;
-	m_scene->sweep(geometry, pose, unitDir, distance, buffer, physx::PxHitFlag::eDEFAULT, queryFilterData);
-	return buffer;
-}
-
-#pragma endregion
-
-//=============================================================================
-#pragma region [ Physics System ]
-
-PxDefaultAllocator   gDefaultAllocatorCallback;
-PhysicsErrorCallback gErrorCallback;
-
-PhysicsSystem::PhysicsSystem(EngineApplication& engine)
-	: m_engine(engine)
-	, m_scene(engine, *this)
-{
-}
-
-bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
-{
-	m_enable = createInfo.enable;
-
-	m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gErrorCallback);
-	if (!m_foundation)
-	{
-		Fatal("PhysX foundation failed to create.");
-		return false;
-	}
-
-	m_pvd = PxCreatePvd(*m_foundation);
-	if (!m_pvd)
-	{
-		Fatal("Failed to create PhysX PVD.");
-		return false;
-	}
-	
-	m_pvdTransport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-	if (!m_pvdTransport)
-	{
-		Fatal("Failed to create PhysX PVD transport.");
-		return false;
-	}
-	
-	if (!m_pvd->connect(*m_pvdTransport, PxPvdInstrumentationFlag::eALL))
-		Warning("Failed to connect to PVD.");
-
-	bool recordMemoryAllocations = true;
-	m_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, PxTolerancesScale(), recordMemoryAllocations, m_pvd);
-	if (!m_physics)
-	{
-		Fatal("Failed to create PhysX physics.");
-		return false;
-	}
-
-	Print("PhysX Init " + std::to_string(PX_PHYSICS_VERSION_MAJOR) + "." + std::to_string(PX_PHYSICS_VERSION_MINOR) + "." + std::to_string(PX_PHYSICS_VERSION_BUGFIX));
-
-	// initialize extensions (can be omitted, these are optional components)
-	if (!PxInitExtensions(*m_physics, m_pvd))
-	{
-		Fatal("Unable to initialize PhysX");
-		return false;
-	}
-
-	if (!m_scene.Setup(createInfo.scene)) return false;
-
-	return true;
-}
-
-void PhysicsSystem::Shutdown()
-{
-	m_scene.Shutdown();
-	PX_RELEASE(m_physics);
-	PX_RELEASE(m_pvd);
-	PX_RELEASE(m_pvdTransport);
-	PX_RELEASE(m_foundation);
-}
-
-void PhysicsSystem::FixedUpdate()
-{
-	if (IsEnable())
-		m_scene.FixedUpdate();
-}
-
-MaterialPtr ph::PhysicsSystem::CreateMaterial(float staticFriction, float dynamicFriction, float restitution)
-{
-	return std::make_shared<Material>(m_engine, staticFriction, dynamicFriction, restitution);
 }
 
 #pragma endregion

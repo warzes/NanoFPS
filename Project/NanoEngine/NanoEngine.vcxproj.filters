@@ -35,6 +35,15 @@
     <ClCompile Include="Physics.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="Physics2.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsSystem.cpp">
+      <Filter>engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsScene.cpp">
+      <Filter>engine\Physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="engine">
@@ -42,6 +51,9 @@
     </Filter>
     <Filter Include="engine\Render">
       <UniqueIdentifier>{26ff6c62-b739-4d1e-ad7a-44ef159a0629}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="engine\Physics">
+      <UniqueIdentifier>{4232780c-c854-4fb3-9fd1-cba2d278849e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +94,15 @@
     </ClInclude>
     <ClInclude Include="Physics.h">
       <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Physics2.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsSystem.h">
+      <Filter>engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsScene.h">
+      <Filter>engine\Physics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

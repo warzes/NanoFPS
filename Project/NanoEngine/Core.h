@@ -388,6 +388,205 @@ inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
 #pragma endregion
 
 //=============================================================================
+#pragma region [ Flags ]
+
+// Wrapper around an enum that allows simple use of bitwise logic operations.
+template<typename Enum, typename Storage = uint32_t>
+class Flags
+{
+public:
+	using InternalType = Storage;
+
+	Flags() = default;
+	Flags(Enum value) { m_bits = static_cast<Storage>(value); }
+	Flags(const Flags<Enum, Storage>& value) { m_bits = value.m_bits; }
+	explicit Flags(Storage bits) { m_bits = bits; }
+
+	// Checks whether all of the provided bits are set
+	bool IsSet(Enum value) const
+	{
+		return (m_bits & static_cast<Storage>(value)) == static_cast<Storage>(value);
+	}
+
+	// Checks whether any of the provided bits are set
+	bool IsSetAny(Enum value) const
+	{
+		return (m_bits & static_cast<Storage>(value)) != 0;
+	}
+
+	// Checks whether any of the provided bits are set
+	bool IsSetAny(const Flags<Enum, Storage>& value) const
+	{
+		return (m_bits & value.m_bits) != 0;
+	}
+
+	// Activates all of the provided bits.
+	Flags<Enum, Storage>& Set(Enum value)
+	{
+		m_bits |= static_cast<Storage>(value);
+		return *this;
+	}
+
+	// Deactivates all of the provided bits.
+	void Unset(Enum value)
+	{
+		m_bits &= ~static_cast<Storage>(value);
+	}
+
+	bool operator==(Enum rhs) const
+	{
+		return m_bits == static_cast<Storage>(rhs);
+	}
+
+	bool operator==(const Flags<Enum, Storage>& rhs) const
+	{
+		return m_bits == rhs.m_bits;
+	}
+
+	bool operator==(bool rhs) const
+	{
+		return ((bool)*this) == rhs;
+	}
+
+	bool operator!=(Enum rhs) const
+	{
+		return m_bits != static_cast<Storage>(rhs);
+	}
+
+	bool operator!=(const Flags<Enum, Storage>& rhs) const
+	{
+		return m_bits != rhs.m_bits;
+	}
+
+	Flags<Enum, Storage>& operator=(Enum rhs)
+	{
+		m_bits = static_cast<Storage>(rhs);
+		return *this;
+	}
+
+	Flags<Enum, Storage>& operator=(const Flags<Enum, Storage>& rhs)
+	{
+		m_bits = rhs.m_bits;
+		return *this;
+	}
+
+	Flags<Enum, Storage>& operator|=(Enum rhs)
+	{
+		m_bits |= static_cast<Storage>(rhs);
+		return *this;
+	}
+
+	Flags<Enum, Storage>& operator|=(const Flags<Enum, Storage>& rhs)
+	{
+		m_bits |= rhs.m_bits;
+		return *this;
+	}
+
+	Flags<Enum, Storage> operator|(Enum rhs) const
+	{
+		Flags<Enum, Storage> out(*this);
+		out |= rhs;
+		return out;
+	}
+
+	Flags<Enum, Storage> operator|(const Flags<Enum, Storage>& rhs) const
+	{
+		Flags<Enum, Storage> out(*this);
+		out |= rhs;
+		return out;
+	}
+
+	Flags<Enum, Storage>& operator&=(Enum rhs)
+	{
+		m_bits &= static_cast<Storage>(rhs);
+		return *this;
+	}
+
+	Flags<Enum, Storage>& operator&=(const Flags<Enum, Storage>& rhs)
+	{
+		m_bits &= rhs.m_bits;
+		return *this;
+	}
+
+	Flags<Enum, Storage> operator&(Enum rhs) const
+	{
+		Flags<Enum, Storage> out = *this;
+		out.m_bits &= static_cast<Storage>(rhs);
+		return out;
+	}
+
+	Flags<Enum, Storage> operator&(const Flags<Enum, Storage>& rhs) const
+	{
+		Flags<Enum, Storage> out = *this;
+		out.m_bits &= rhs.m_bits;
+		return out;
+	}
+
+	Flags<Enum, Storage>& operator^=(Enum rhs)
+	{
+		m_bits ^= static_cast<Storage>(rhs);
+		return *this;
+	}
+
+	Flags<Enum, Storage>& operator^=(const Flags<Enum, Storage>& rhs)
+	{
+		m_bits ^= rhs.m_bits;
+		return *this;
+	}
+
+	Flags<Enum, Storage> operator^(Enum rhs) const
+	{
+		Flags<Enum, Storage> out = *this;
+		out.m_bits ^= static_cast<Storage>(rhs);
+		return out;
+	}
+
+	Flags<Enum, Storage> operator^(const Flags<Enum, Storage>& rhs) const
+	{
+		Flags<Enum, Storage> out = *this;
+		out.m_bits ^= rhs.m_bits;
+		return out;
+	}
+
+	Flags<Enum, Storage> operator~() const
+	{
+		Flags<Enum, Storage> out;
+		out.m_bits = (Storage)~m_bits;
+
+		return out;
+	}
+
+	operator bool() const
+	{
+		return m_bits ? true : false;
+	}
+
+	operator uint8_t() const { return static_cast<uint8_t>(m_bits); }
+	operator uint16_t() const { return static_cast<uint16_t>(m_bits); }
+	operator uint32_t() const { return static_cast<uint32_t>(m_bits); }
+
+	friend Flags<Enum, Storage> operator&(Enum a, Flags<Enum, Storage>& b)
+	{
+		Flags<Enum, Storage> out;
+		out.m_bits = a & b.m_bits;
+		return out;
+	}
+
+private:
+	InternalType m_bits{ 0 };
+};
+
+// Defines global operators for a Flags<Enum, Storage> implementation.
+#define FLAGS_OPERATORS(Enum) FLAGS_OPERATORS_EXT(Enum, uint32_t)
+
+#define FLAGS_OPERATORS_EXT(Enum, Storage)                                                                     \
+		inline Flags<Enum, Storage> operator|(Enum a, Enum b) { Flags<Enum, Storage> r(a); r |= b; return r; } \
+		inline Flags<Enum, Storage> operator&(Enum a, Enum b) { Flags<Enum, Storage> r(a); r &= b; return r; } \
+		inline Flags<Enum, Storage> operator~(Enum a) { return ~Flags<Enum, Storage>(a); }
+
+#pragma endregion
+
+//=============================================================================
 #pragma region [ Ptr ]
 
 template <typename ObjectT>
