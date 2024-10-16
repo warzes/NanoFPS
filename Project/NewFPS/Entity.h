@@ -25,5 +25,5 @@ struct GameEntity
 
 	std::vector<glm::vec3> rawVertex;
 	std::vector<uint32_t>  rawIndex;
-	ph::StaticBodyPtr      phBody;
+	ph::StaticActorPtr     phBody;
 };

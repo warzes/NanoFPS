@@ -32,16 +32,16 @@
     <ClCompile Include="CoreData.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="Physics.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Physics2.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="PhysicsSystem.cpp">
       <Filter>engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="PhysicsScene.cpp">
+      <Filter>engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsCore.cpp">
+      <Filter>engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsResources.cpp">
       <Filter>engine\Physics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,6 +54,9 @@
     </Filter>
     <Filter Include="engine\Physics">
       <UniqueIdentifier>{4232780c-c854-4fb3-9fd1-cba2d278849e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="engine\Scene">
+      <UniqueIdentifier>{3e2a18d8-ecda-4707-aded-105bf96d08de}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -92,16 +95,16 @@
     <ClInclude Include="CoreData.h">
       <Filter>engine</Filter>
     </ClInclude>
-    <ClInclude Include="Physics.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Physics2.h">
-      <Filter>engine</Filter>
-    </ClInclude>
     <ClInclude Include="PhysicsSystem.h">
       <Filter>engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="PhysicsScene.h">
+      <Filter>engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsCore.h">
+      <Filter>engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsResources.h">
       <Filter>engine\Physics</Filter>
     </ClInclude>
   </ItemGroup>

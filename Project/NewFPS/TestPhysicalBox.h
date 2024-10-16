@@ -21,5 +21,5 @@ private:
 	GameEntity                  m_model;
 
 	ph::RigidBodyPtr rb;
-	ph::StaticBodyPtr plane;
+	ph::StaticActorPtr plane;
 };

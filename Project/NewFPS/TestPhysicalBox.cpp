@@ -81,8 +81,8 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 
 	// plane
 	{
-		ph::StaticBodyCreateInfo sbci{};
-		plane = std::make_shared<ph::StaticBody>(*game, sbci);
+		ph::StaticActorCreateInfo sbci{};
+		plane = std::make_shared<ph::StaticActor>(*game, sbci);
 
 		ph::BoxColliderCreateInfo bcci{};
 		bcci.extent = { 1000,1,1000 };
@@ -92,13 +92,13 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 	// box
 	{
 		ph::RigidBodyCreateInfo rbci{};
-		rbci.worldPosition = { 20, 20, 20 };
 		rb = std::make_shared<ph::RigidBody>(*game, rbci);
 
 		ph::BoxColliderCreateInfo bcci{};
 		bcci.extent = { 1,1,1 };
 		rb->AttachCollider(bcci);
 
+		rb->SetPosition({ 20, 20, 20 });
 		rb->SetLinearVelocity({ 0, -1, -2 }, true);
 		rb->SetAngularDamping(0.5f);
 	}
@@ -114,7 +114,7 @@ void TestPhysicalBox::Shutdown()
 void TestPhysicalBox::DrawDebug(vkr::CommandBufferPtr cmd, const float4x4& matPV)
 {
 	{
-		auto transform = rb->GetDynamicsWorldPose();
+		auto transform = rb->GetWorldPose();
 		const glm::vec3 position = transform.first;
 		//m_velocity = (m_position - lastPosition) / fixedDeltaTime; // от текущей отнять пред
 		//auto rotationMatrix = glm::mat4_cast(glm::quat{ transform.q.w, transform.q.x, transform.q.y, transform.q.z });

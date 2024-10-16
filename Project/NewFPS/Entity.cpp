@@ -115,9 +115,9 @@ bool GameEntity::Setup(GameApplication* game, vkr::RenderDevice& device, const v
 
 	// create physics body
 	{
-		ph::StaticBodyCreateInfo sbci{};
+		ph::StaticActorCreateInfo sbci{};
 		sbci.worldPosition = translate;
-		phBody = std::make_shared<ph::StaticBody>(*game, sbci);
+		phBody = std::make_shared<ph::StaticActor>(*game, sbci);
 
 		ph::MeshColliderCreateInfo mcci{};
 		mcci.vertices = rawVertex;

@@ -14,12 +14,14 @@ using namespace physx;
 class PhysXEventCallback final : public PxSimulationEventCallback
 {
 public:
-	void onConstraintBreak(physx::PxConstraintInfo* /*constraints*/, physx::PxU32 /*count*/) final {}
-	void onWake(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
-	void onSleep(physx::PxActor** /*actors*/, physx::PxU32 /*count*/) final {}
-	void onContact(const physx::PxContactPairHeader& /*pairHeader*/, const physx::PxContactPair* /*pairs*/, physx::PxU32 /*nbPairs*/) final {}
-	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) final {}
-	void onAdvance(const physx::PxRigidBody* const* /*bodyBuffer*/, const physx::PxTransform* /*poseBuffer*/, const physx::PxU32 /*count*/) final {}
+	void onWake(PxActor** /*actors*/, PxU32 /*count*/) final {}
+	void onSleep(PxActor** /*actors*/, PxU32 /*count*/) final {}
+
+	void onTrigger(PxTriggerPair* pairs, PxU32 count) final {}
+	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) final {}
+	void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) final {}
+
+	void onAdvance(const PxRigidBody* const* /*bodyBuffer*/, const PxTransform* /*poseBuffer*/, const PxU32 /*count*/) final {}
 };
 
 #pragma endregion
@@ -28,6 +30,7 @@ public:
 #pragma region [ Physics Scene ]
 
 extern PxDefaultCpuDispatcher* gCpuDispatcher;
+PhysXEventCallback             gPhysXEventCallback;
 
 PhysicsScene::PhysicsScene(EngineApplication& engine, PhysicsSystem& physicsEngine)
 	: m_engine(engine)
@@ -40,28 +43,15 @@ bool PhysicsScene::Setup(const PhysicsSceneCreateInfo& createInfo)
 	m_physics = m_system.m_physics;
 
 	PxSceneDesc sceneDesc(m_physics->getTolerancesScale());
-	sceneDesc.gravity = { createInfo.gravity.x, createInfo.gravity.y, createInfo.gravity.z };
-	sceneDesc.cpuDispatcher = gCpuDispatcher;
-	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
-	sceneDesc.simulationEventCallback = &m_physicsCallback;
+	sceneDesc.gravity                 = { createInfo.gravity.x, createInfo.gravity.y, createInfo.gravity.z };
+	sceneDesc.cpuDispatcher           = gCpuDispatcher;
+	sceneDesc.filterShader            = PxDefaultSimulationFilterShader;
+	sceneDesc.simulationEventCallback = &gPhysXEventCallback;
+
 	m_scene = m_physics->createScene(sceneDesc);
 	if (!m_scene)
 	{
 		Fatal("Failed to create PhysX scene.");
-		return false;
-	}
-
-	if (PxPvdSceneClient* pvdClient = m_scene->getScenePvdClient())
-	{
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-	}
-
-	m_defaultMaterial = m_system.CreateMaterial(createInfo.defaultMaterial);
-	if (!m_defaultMaterial->IsValid())
-	{
-		Fatal("Failed to create default PhysX material.");
 		return false;
 	}
 
@@ -78,19 +68,16 @@ bool PhysicsScene::Setup(const PhysicsSceneCreateInfo& createInfo)
 void PhysicsScene::Shutdown()
 {
 	PX_RELEASE(m_controllerManager);
-	m_defaultMaterial.reset();
 	PX_RELEASE(m_scene);
 }
 
 void PhysicsScene::FixedUpdate()
 {
 	m_scene->simulate(m_engine.GetFixedTimestep());
-	m_scene->fetchResults(true);
-}
-
-void PhysicsScene::SetSimulationEventCallback(physx::PxSimulationEventCallback* callback)
-{
-	m_scene->setSimulationEventCallback(callback);
+	
+	uint32_t errorState;
+	if (!m_scene->fetchResults(true, &errorState))
+		Warning("Physics simulation failed. Error code: " + std::to_string(errorState));
 }
 
 physx::PxRaycastBuffer PhysicsScene::Raycast(const physx::PxVec3& origin, const physx::PxVec3& unitDir, const float distance, PhysicsLayer layer) const

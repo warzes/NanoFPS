@@ -84,8 +84,6 @@ bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 	m_scale.length = createInfo.typicalLength;
 	m_scale.speed  = createInfo.typicalSpeed;
 
-	memset(m_collisionMap, 1, CollisionMapSize * CollisionMapSize * sizeof(bool));
-
 	m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, gDefaultAllocatorCallback, gErrorCallback);
 	if (!m_foundation)
 	{
@@ -109,6 +107,14 @@ bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 		return false;
 	}
 
+
+	m_defaultMaterial = CreateMaterial(createInfo.defaultMaterial);
+	if (!m_defaultMaterial->IsValid())
+	{
+		Fatal("Failed to create default PhysX material.");
+		return false;
+	}
+
 	if (!m_scene.Setup(createInfo.scene)) return false;
 
 	return true;
@@ -117,6 +123,7 @@ bool PhysicsSystem::Setup(const PhysicsCreateInfo& createInfo)
 void PhysicsSystem::Shutdown()
 {
 	m_scene.Shutdown();
+	m_defaultMaterial.reset();
 	PX_RELEASE(gCpuDispatcher);
 	PX_RELEASE(m_physics);
 	PX_RELEASE(m_foundation);
@@ -124,8 +131,8 @@ void PhysicsSystem::Shutdown()
 
 void PhysicsSystem::FixedUpdate()
 {
-	if (IsEnable())
-		m_scene.FixedUpdate();
+	if (!m_enable) return;
+	m_scene.FixedUpdate();
 }
 
 MaterialPtr PhysicsSystem::CreateMaterial(const MaterialCreateInfo& createInfo)
@@ -135,24 +142,9 @@ MaterialPtr PhysicsSystem::CreateMaterial(const MaterialCreateInfo& createInfo)
 
 void PhysicsSystem::SetPaused(bool paused)
 {
-	m_enable = paused;
-}
-
-void PhysicsSystem::ToggleCollision(uint64_t groupA, uint64_t groupB, bool enabled)
-{
-	assert(groupA < CollisionMapSize && groupB < CollisionMapSize);
-	std::unique_lock<std::mutex> lock(m_mutex);
-	m_collisionMap[groupA][groupB] = enabled;
-}
-
-bool PhysicsSystem::IsCollisionEnabled(uint64_t groupA, uint64_t groupB) const
-{
-	assert(groupA < CollisionMapSize && groupB < CollisionMapSize);
-	std::unique_lock<std::mutex> lock(m_mutex);
-	return m_collisionMap[groupA][groupB];
+	m_enable = !paused;
 }
 
 #pragma endregion
-
 
 } // namespace ph
