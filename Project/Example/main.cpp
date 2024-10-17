@@ -26,6 +26,8 @@
 #include "025_BasicMaterial.h"
 #include "026_Text.h"
 #include "027_Mipmap.h"
+#include "028_Primitives.h"
+#include "029_InstanceTriangles.h"
 
 #if defined(_MSC_VER)
 #	pragma comment( lib, "NanoEngine.lib" )
@@ -62,7 +64,9 @@ int main(
 	//Example_024 app;
 	//Example_025 app;
 	//Example_026 app;
-	Example_027 app;
+	//Example_027 app;
+	//Example_028 app;
+	Example_029 app;
 
 	app.Run();
 }

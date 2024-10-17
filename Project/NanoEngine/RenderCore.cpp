@@ -5738,19 +5738,12 @@ namespace vkrUtil
 		return SUCCESS;
 	}
 
-	// -------------------------------------------------------------------------------------------------
-
-	Result CreateImageFromFile(
-		Queue* pQueue,
-		const std::filesystem::path& path,
-		Image** ppImage,
-		const ImageOptions& options,
-		bool                         useGpu)
+	Result CreateImageFromFile(Queue* pQueue, const std::filesystem::path& path, Image** ppImage, const ImageOptions& options, bool useGpu)
 	{
 		ASSERT_NULL_ARG(pQueue);
 		ASSERT_NULL_ARG(ppImage);
 
-		//ScopedTimer timer("Image creation from file '" + path.string() + "'"); // TODO: сделать таймер
+		//ScopedTimer timer("Image creation from file '" + path.string() + "'");
 
 		Result ppxres;
 		if (Bitmap::IsBitmapFile(path))
@@ -5994,25 +5987,18 @@ namespace vkrUtil
 		return SUCCESS;
 	}
 
-	// -------------------------------------------------------------------------------------------------
-
-	Result CreateTextureFromFile(
-		Queue* pQueue,
-		const std::filesystem::path& path,
-		Texture** ppTexture,
-		const TextureOptions& options)
+	Result CreateTextureFromFile(Queue* pQueue, const std::filesystem::path& path, Texture** ppTexture, const TextureOptions& options)
 	{
 		ASSERT_NULL_ARG(pQueue);
 		ASSERT_NULL_ARG(ppTexture);
 
-		//ScopedTimer timer("Texture creation from image file '" + path.string() + "'"); // TODO: сделать таймер
+		//ScopedTimer timer("Texture creation from image file '" + path.string() + "'");
 
 		// Load bitmap
 		Bitmap bitmap;
 		Result ppxres = Bitmap::LoadFile(path, &bitmap);
-		if (Failed(ppxres)) {
-			return ppxres;
-		}
+		if (Failed(ppxres)) return ppxres;
+
 		return CreateTextureFromBitmap(pQueue, &bitmap, ppTexture, options);
 	}
 
@@ -6082,11 +6068,7 @@ namespace vkrUtil
 		return subImage;
 	}
 
-	Result CreateIBLTexturesFromFile(
-		Queue* pQueue,
-		const std::filesystem::path& path,
-		Texture** ppIrradianceTexture,
-		Texture** ppEnvironmentTexture)
+	Result CreateIBLTexturesFromFile(Queue* pQueue, const std::filesystem::path& path, Texture** ppIrradianceTexture, Texture** ppEnvironmentTexture)
 	{
 		ASSERT_NULL_ARG(pQueue);
 		ASSERT_NULL_ARG(ppIrradianceTexture);
@@ -6127,7 +6109,7 @@ namespace vkrUtil
 		std::filesystem::path irrFilePath = path.parent_path() / irrFile;
 		Result                ppxres;
 		{
-			//ScopedTimer timer("Texture creation from file '" + irrFilePath.string() + "'"); // TODO: сделать таймер
+			//ScopedTimer timer("Texture creation from file '" + irrFilePath.string() + "'");
 			ppxres = CreateTextureFromFile(pQueue, irrFilePath, ppIrradianceTexture);
 		}
 		if (Failed(ppxres)) {
@@ -6136,7 +6118,7 @@ namespace vkrUtil
 
 		// Load IBL environment map - this is stored as a bitmap on disk
 		std::filesystem::path envFilePath = path.parent_path() / envFile;
-		//ScopedTimer           timer("Texture creation from mipmap file '" + envFilePath.string() + "'");// TODO: сделать таймер
+		//ScopedTimer           timer("Texture creation from mipmap file '" + envFilePath.string() + "'");
 		Mipmap                mipmap = {};
 		ppxres = Mipmap::LoadFile(envFilePath, baseWidth, baseHeight, &mipmap, levelCount);
 		if (Failed(ppxres)) {
@@ -6147,16 +6129,11 @@ namespace vkrUtil
 		return CreateTextureFromMipmap(pQueue, &mipmap, ppEnvironmentTexture);
 	}
 
-	Result CreateCubeMapFromFile(
-		Queue* pQueue,
-		const std::filesystem::path& path,
-		const CubeMapCreateInfo* pCreateInfo,
-		Image** ppImage,
-		const ImageUsageFlags& additionalImageUsage)
+	Result CreateCubeMapFromFile(Queue* pQueue, const std::filesystem::path& path, const CubeMapCreateInfo* pCreateInfo, Image** ppImage, const ImageUsageFlags& additionalImageUsage)
 	{
 		ASSERT_NULL_ARG(pQueue);
 		ASSERT_NULL_ARG(ppImage);
-		//ScopedTimer timer("Cubemap creation from file '" + path.string() + "'");// TODO: сделать таймер
+		//ScopedTimer timer("Cubemap creation from file '" + path.string() + "'");
 
 		// Load bitmap
 		Bitmap bitmap;

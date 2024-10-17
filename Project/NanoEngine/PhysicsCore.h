@@ -9,9 +9,14 @@ namespace ph {
 
 class Material;
 class Collider;
+class BoxCollider;
+class SphereCollider;
+class CapsuleCollider;
+class MeshCollider;
+class ConvexMeshCollider;
 class PhysicsCallback;
 class BaseActor;
-class StaticActor;
+class StaticBody;
 class RigidBody;
 class CharacterController;
 
@@ -21,7 +26,7 @@ class PhysicsSystem;
 using MaterialPtr = std::shared_ptr<Material>;
 using ColliderPtr = std::shared_ptr<Collider>;
 using PhysicsCallbackPtr = std::shared_ptr<PhysicsCallback>;
-using StaticActorPtr = std::shared_ptr<StaticActor>;
+using StaticActorPtr = std::shared_ptr<StaticBody>;
 using RigidBodyPtr = std::shared_ptr<RigidBody>;
 using CharacterControllerPtr = std::shared_ptr<CharacterController>;
 

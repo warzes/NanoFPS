@@ -20,7 +20,6 @@
 //#pragma comment( lib, "LowLevelDynamics_static_64.lib" )
 #pragma comment( lib, "PhysXCharacterKinematic_static_64.lib" )
 #pragma comment( lib, "PhysXExtensions_static_64.lib" )
-#pragma comment( lib, "PhysXPvdSDK_static_64.lib" )
 
 
 #	if defined(_DEBUG)

@@ -124,6 +124,8 @@
     <ClCompile Include="025_BasicMaterial.cpp" />
     <ClCompile Include="026_Text.cpp" />
     <ClCompile Include="027_Mipmap.cpp" />
+    <ClCompile Include="028_Primitives.cpp" />
+    <ClCompile Include="029_InstanceTriangles.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -158,6 +160,8 @@
     <ClInclude Include="025_BasicMaterial.h" />
     <ClInclude Include="026_Text.h" />
     <ClInclude Include="027_Mipmap.h" />
+    <ClInclude Include="028_Primitives.h" />
+    <ClInclude Include="029_InstanceTriangles.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -94,6 +94,8 @@ public:
 	[[nodiscard]] float GetFixedTimestep() const { return m_fixedTimestep; }
 	[[nodiscard]] float GetFixedUpdateTimeError() const { return m_timeSinceLastTick; }
 
+
+
 private:
 	bool setup();
 

@@ -34,7 +34,6 @@ bool PlayerMovement::Setup(GameApplication* game, Transform* playerTransform, co
 	ccci.position = position;
 	ccci.radius = CAPSULE_RADIUS;
 	ccci.height = CAPSULE_HEIGHT;
-	ccci.userData = this;
 
 	m_controller = std::make_shared<ph::CharacterController>(*game, ccci);
 

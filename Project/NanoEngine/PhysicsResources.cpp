@@ -99,7 +99,7 @@ void Collider::SetRelativeTransform(const glm::vec3& position, const glm::quat& 
 std::pair<glm::vec3, glm::quat> Collider::GetRelativeTransform() const
 {
 	auto pose = m_collider->getLocalPose();
-	return { glm::vec3(pose.p.x,pose.p.y,pose.p.z),glm::quat(pose.q.w, pose.q.x,pose.q.y,pose.q.z) };
+	return { glm::vec3(pose.p.x,pose.p.y,pose.p.z), glm::quat(pose.q.w, pose.q.x,pose.q.y,pose.q.z) };
 }
 
 void Collider::SetType(CollisionType type)
@@ -296,38 +296,40 @@ BaseActor::~BaseActor()
 	if (m_actor != nullptr)
 	{
 		auto scene = m_actor->getScene();
-		scene->removeActor(*(m_actor));
+		delete m_actor->userData;
+		scene->removeActor(*m_actor);
 		PX_RELEASE(m_actor);
 	}
 }
 
 void BaseActor::AttachCollider(const BoxColliderCreateInfo& createInfo)
 {
-	m_colliders.emplace_back(std::make_shared<BoxCollider>(m_engine, this, createInfo));
-	physicsSetQueryLayer();
+	AttachCollider(std::make_shared<BoxCollider>(m_engine, this, createInfo));
 }
 
 void BaseActor::AttachCollider(const SphereColliderCreateInfo& createInfo)
 {
-	m_colliders.emplace_back(std::make_shared<SphereCollider>(m_engine, this, createInfo));
-	physicsSetQueryLayer();
+	AttachCollider(std::make_shared<SphereCollider>(m_engine, this, createInfo));
 }
 
 void BaseActor::AttachCollider(const CapsuleColliderCreateInfo& createInfo)
 {
-	m_colliders.emplace_back(std::make_shared<CapsuleCollider>(m_engine, this, createInfo));
-	physicsSetQueryLayer();
+	AttachCollider(std::make_shared<CapsuleCollider>(m_engine, this, createInfo));
 }
 
 void BaseActor::AttachCollider(const MeshColliderCreateInfo& createInfo)
 {
-	m_colliders.emplace_back(std::make_shared<MeshCollider>(m_engine, this, createInfo));
-	physicsSetQueryLayer();
+	AttachCollider(std::make_shared<MeshCollider>(m_engine, this, createInfo));
 }
 
 void BaseActor::AttachCollider(const ConvexMeshColliderCreateInfo& createInfo)
 {
-	m_colliders.emplace_back(std::make_shared<ConvexMeshCollider>(m_engine, this, createInfo));
+	AttachCollider(std::make_shared<ConvexMeshCollider>(m_engine, this, createInfo));
+}
+
+void BaseActor::AttachCollider(ColliderPtr collider)
+{
+	m_colliders.emplace_back(collider);
 	physicsSetQueryLayer();
 }
 
@@ -341,6 +343,10 @@ bool BaseActor::GetSimulationEnabled() const
 	return m_actor->getActorFlags() & PxActorFlag::eDISABLE_SIMULATION;
 }
 
+void BaseActor::AddReceiver(PhysicsCallbackPtr obj)
+{
+	m_receivers.insert(obj);
+}
 
 void BaseActor::OnColliderEnter(BaseActor* other, const ContactPairPoint* contactPoints, size_t numContactPoints)
 {
@@ -399,8 +405,13 @@ void BaseActor::OnTriggerExit(BaseActor* other)
 
 void BaseActor::physicsSetQueryLayer()
 {
-	const PxFilterData filterData = PhysicsFilterDataFromLayer(m_queryLayer);
+	PxFilterData filterData = PhysicsFilterDataFromLayer(m_queryLayer);
 	PhysicsForEachActorShape(m_actor, [&filterData](PxShape* shape) { shape->setQueryFilterData(filterData); });
+
+	filterData.word0 = m_filterGroup; // word0 = own ID
+	filterData.word1 = m_filterMask;
+
+	collider->setSimulationFilterData(filterData);
 }
 
 
@@ -409,7 +420,7 @@ void BaseActor::physicsSetQueryLayer()
 //=============================================================================
 #pragma region [ StaticBody ]
 
-StaticActor::StaticActor(EngineApplication& engine, const StaticActorCreateInfo& createInfo)
+StaticBody::StaticBody(EngineApplication& engine, const StaticActorCreateInfo& createInfo)
 	: BaseActor(engine)
 {
 	m_filterGroup = createInfo.filterGroup;
@@ -421,6 +432,7 @@ StaticActor::StaticActor(EngineApplication& engine, const StaticActorCreateInfo&
 		PxQuat(createInfo.worldRotation.x, createInfo.worldRotation.y, createInfo.worldRotation.z, createInfo.worldRotation.w) };
 
 	m_actor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidStatic(transform);
+	m_actor->userData = new UserData{ .type = UserDataType::StaticBody, .ptr = this };
 	auto scene = m_engine.GetPhysicsSystem().GetScene().GetPxScene();
 	scene->addActor(*m_actor);
 }
@@ -466,6 +478,7 @@ RigidBody::RigidBody(EngineApplication& engine, const RigidBodyCreateInfo& creat
 	auto actor = m_engine.GetPhysicsSystem().GetPxPhysics()->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
 	PxRigidBodyExt::updateMassAndInertia(*actor, createInfo.density);
 	m_actor = actor;
+	m_actor->userData = new UserData{ .type = UserDataType::RigidBody, .ptr = this };
 	scene->addActor(*m_actor);
 }
 
@@ -830,14 +843,15 @@ CharacterController::CharacterController(EngineApplication& engine, const Charac
 	m_controller = m_engine.GetPhysicsScene().GetPxControllerManager()->createController(desc);
 
 	const PxFilterData filterData = PhysicsFilterDataFromLayer(createInfo.queryLayer);
-	physx::PxRigidDynamic* rigidbody = m_controller->getActor();
-	PhysicsForEachActorShape(rigidbody, [&filterData](PxShape* shape) { shape->setQueryFilterData(filterData); });
+	m_rigidbody = m_controller->getActor();
+	PhysicsForEachActorShape(m_rigidbody, [&filterData](PxShape* shape) { shape->setQueryFilterData(filterData); });
 
-	rigidbody->userData = createInfo.userData;
+	m_rigidbody->userData = new UserData{ .type = UserDataType::CharacterController, .ptr = this };
 }
 
 CharacterController::~CharacterController()
 {
+	delete m_rigidbody->userData;
 	PX_RELEASE(m_controller);
 }
 

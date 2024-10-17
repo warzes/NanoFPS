@@ -208,11 +208,12 @@ public:
 
 struct ContactPairPoint final
 {
-	ContactPairPoint(const physx::PxContactPairPoint& pxcpp) :
-		position(pxcpp.position.x, pxcpp.position.y, pxcpp.position.z),
-		normal(pxcpp.normal.x, pxcpp.normal.y, pxcpp.normal.z),
-		impulse(pxcpp.impulse.x, pxcpp.impulse.y, pxcpp.impulse.z),
-		separation(pxcpp.separation) {
+	ContactPairPoint(const physx::PxContactPairPoint& pxcpp)
+		: position(pxcpp.position.x, pxcpp.position.y, pxcpp.position.z)
+		, normal(pxcpp.normal.x, pxcpp.normal.y, pxcpp.normal.z)
+		, impulse(pxcpp.impulse.x, pxcpp.impulse.y, pxcpp.impulse.z)
+		, separation(pxcpp.separation)
+	{
 	}
 
 	glm::vec3 position, normal, impulse;
@@ -249,13 +250,20 @@ public:
 	void AttachCollider(const MeshColliderCreateInfo& createInfo);
 	void AttachCollider(const ConvexMeshColliderCreateInfo& createInfo);
 
+	void AttachCollider(ColliderPtr collider);
+
 	void SetSimulationEnabled(bool state);
 	bool GetSimulationEnabled() const;
+
+	// wantsContactData controls if the simulation calculates and extracts contact point information on collisions. Set to true to get contact point data. If set to false, OnCollider functions will have a dangling contactPoints pointer and numContactPoints will be 0.
+	void SetWantsContactData(bool state) { m_wantsContactData = state; }
+	bool GetWantsContactData() const { return m_wantsContactData; }
+
+	void AddReceiver(PhysicsCallbackPtr obj);
 
 	void OnColliderEnter(BaseActor* other, const ContactPairPoint* contactPoints, size_t numContactPoints);
 	void OnColliderPersist(BaseActor* other, const ContactPairPoint* contactPoints, size_t numContactPoints);
 	void OnColliderExit(BaseActor* other, const ContactPairPoint* contactPoints, size_t numContactPoints);
-
 	void OnTriggerEnter(BaseActor* other);
 	void OnTriggerExit(BaseActor* other);
 
@@ -271,12 +279,13 @@ protected:
 	PhysicsLayer                           m_queryLayer = PHYSICS_LAYER_0;
 	std::vector<ColliderPtr>               m_colliders;
 	std::unordered_set<PhysicsCallbackPtr> m_receivers;
+	bool                                   m_wantsContactData = true;
 };
 
 #pragma endregion
 
 //=============================================================================
-#pragma region [ StaticActor ]
+#pragma region [ StaticBody ]
 
 // примечание: статические объекты не рекомендуется двигать, поэтому Transform у него задается при создании и нет методов движения
 
@@ -290,10 +299,10 @@ struct StaticActorCreateInfo final
 	glm::quat worldRotation{ glm::quat{1.0f, 0.0f, 0.0f, 0.0f} };
 };
 
-class StaticActor final : public BaseActor
+class StaticBody final : public BaseActor
 {
 public:
-	StaticActor(EngineApplication& engine, const StaticActorCreateInfo& createInfo);
+	StaticBody(EngineApplication& engine, const StaticActorCreateInfo& createInfo);
 };
 
 #pragma endregion
@@ -443,7 +452,6 @@ struct CharacterControllerCreateInfo final
 	float        height = 0.8f;
 	PhysicsLayer queryLayer = PHYSICS_LAYER_1;
 	MaterialPtr  material;
-	void* userData{ nullptr };
 };
 
 class CharacterController final
@@ -458,9 +466,28 @@ public:
 	[[nodiscard]] float GetSlopeLimit() const;
 
 private:
-	EngineApplication&   m_engine;
-	physx::PxController* m_controller = nullptr;
-	MaterialPtr          m_material;
+	EngineApplication&                     m_engine;
+	physx::PxController*                   m_controller{ nullptr };
+	physx::PxRigidDynamic*                 m_rigidbody{ nullptr };
+	MaterialPtr                            m_material;
+};
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Body User Data Link ]
+
+enum class UserDataType : uint8_t
+{
+	RigidBody,
+	StaticBody,
+	CharacterController
+};
+
+struct UserData final
+{
+	UserDataType type;
+	void* ptr;
 };
 
 #pragma endregion

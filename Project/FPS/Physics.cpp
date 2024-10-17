@@ -103,13 +103,6 @@ PhysicsScene::PhysicsScene(PhysicsSystem* physicsSystem)
 	if (!m_scene)
 		Fatal("Failed to create PhysX scene.");
 
-	if (physx::PxPvdSceneClient* pvdClient = m_scene->getScenePvdClient())
-	{
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-		pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
-	}
-
 	m_controllerManager = PxCreateControllerManager(*m_scene);
 	if(!m_controllerManager)
 		Fatal("Failed to create PhysX controller manager.");
@@ -247,18 +240,7 @@ PhysicsSystem::PhysicsSystem()
 	if(!m_foundation)
 		Fatal("Failed to create PhysX foundation.");
 
-	m_pvdTransport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-	if(!m_pvdTransport)
-		Fatal("Failed to create PhysX PVD transport.");
-
-	m_pvd = PxCreatePvd(*m_foundation);
-	if(!m_pvd)
-		Fatal("Failed to create PhysX PVD.");
-
-	if (!m_pvd->connect(*m_pvdTransport, physx::PxPvdInstrumentationFlag::eALL))
-		Warning("Failed to connect to PVD.");
-
-	m_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, physx::PxTolerancesScale(), true, m_pvd);
+	m_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_foundation, physx::PxTolerancesScale());
 	if(!m_physics)
 		Fatal("Failed to create PhysX physics.");
 
@@ -268,8 +250,6 @@ PhysicsSystem::PhysicsSystem()
 PhysicsSystem::~PhysicsSystem()
 {
 	PX_RELEASE(m_physics)
-	PX_RELEASE(m_pvd)
-	PX_RELEASE(m_pvdTransport)
 	PX_RELEASE(m_foundation)
 }
 

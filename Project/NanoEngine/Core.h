@@ -6,8 +6,6 @@
 #define STRINGIFY_(x)   #x
 #define STRINGIFY(x)    STRINGIFY_(x)
 #define LINE            STRINGIFY(__LINE__)
-#define SOURCE_LOCATION __FUNCTION__ << " @ " __FILE__ ":" LINE
-#define VAR_VALUE(var)  #var + std::string(":") + var
 
 #pragma endregion
 

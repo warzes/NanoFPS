@@ -3,6 +3,8 @@
 
 В настройках проекта - Advance - есть опция Unity (JUMBO) - попробовать перевести на нее - это создает автоматом unit cpp (то есть все cpp в одном файле)
 
+https://github.com/skiriushichev/eely - система анимации (но только fbx)
+
 https://github.com/gabime/spdlog - для лога
 simdjson - для json
 gainput - возможно для инпута

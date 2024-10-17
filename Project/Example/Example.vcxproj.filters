@@ -84,6 +84,12 @@
     <ClCompile Include="027_Mipmap.cpp">
       <Filter>examples</Filter>
     </ClCompile>
+    <ClCompile Include="028_Primitives.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
+    <ClCompile Include="029_InstanceTriangles.cpp">
+      <Filter>examples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="001Triangle.h">
@@ -166,6 +172,12 @@
       <Filter>examples</Filter>
     </ClInclude>
     <ClInclude Include="027_Mipmap.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="028_Primitives.h">
+      <Filter>examples</Filter>
+    </ClInclude>
+    <ClInclude Include="029_InstanceTriangles.h">
       <Filter>examples</Filter>
     </ClInclude>
   </ItemGroup>

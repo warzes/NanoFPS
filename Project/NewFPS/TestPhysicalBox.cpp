@@ -82,7 +82,7 @@ bool TestPhysicalBox::Setup(GameApplication* game)
 	// plane
 	{
 		ph::StaticActorCreateInfo sbci{};
-		plane = std::make_shared<ph::StaticActor>(*game, sbci);
+		plane = std::make_shared<ph::StaticBody>(*game, sbci);
 
 		ph::BoxColliderCreateInfo bcci{};
 		bcci.extent = { 1000,1,1000 };

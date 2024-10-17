@@ -174,8 +174,6 @@ private:
 	friend class PhysicsScene;
 
 	physx::PxFoundation*   m_foundation = nullptr;
-	physx::PxPvdTransport* m_pvdTransport = nullptr;
-	physx::PxPvd*          m_pvd = nullptr;
 	physx::PxPhysics*      m_physics = nullptr;
 };
 
