@@ -1,18 +1,18 @@
 #pragma once
 
-void Print(const std::string& text);
-void Warning(const std::string& text);
-void Error(const std::string& text);
-void Fatal(const std::string& text);
+#include "Timer.h"
+
+struct WindowCreateInfo final
+{
+	uint32_t width{ 1600 };
+	uint32_t height{ 900 };
+	std::string_view title{ "Vulkan Lesson" };
+	bool resize = true;
+};
 
 struct ApplicationCreateInfo final
 {
-	struct Window
-	{
-		int width = 1600;
-		int height = 900;
-		std::string_view title = "Vulkan Lesson";
-	} window;
+	WindowCreateInfo window{};
 };
 
 class Application
@@ -24,37 +24,47 @@ public:
 	void Run();
 
 	virtual ApplicationCreateInfo GetConfig() = 0;
-	virtual bool Init() = 0;
-	virtual void Close() = 0;
-	virtual void Update() = 0;
-	virtual void Draw() = 0;
+	virtual bool Start() = 0;
+	virtual void Shutdown() = 0;
+	virtual void FixedUpdate(float deltaTime) = 0;
+	virtual void Update(float deltaTime) = 0;
+	virtual void Frame(float deltaTime) = 0;
 
 	void Print(const std::string& text);
 	void Warning(const std::string& text);
 	void Error(const std::string& text);
 	void Fatal(const std::string& text);
 
-	[[nodiscard]] int GetWindowWidth() const;
-	[[nodiscard]] int GetWindowHeight() const;
+	void Exit();
 
-	[[nodiscard]] double GetDeltaTime() const;
+	[[nodiscard]] float GetFramerate() const;
+
+	[[nodiscard]] uint32_t GetWindowWidth() const;
+	[[nodiscard]] uint32_t GetWindowHeight() const;
 
 	[[nodiscard]] std::optional<std::vector<char>> ReadFile(const std::filesystem::path& filename);
 
-	void Exit();
-
-	GLFWwindow* GetWindow() { return m_window; }
 private:
-	bool init();
-	void close();
-	void update();
-	void draw();
-	bool shouldClose() const;
+	friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM) noexcept;
 
-	GLFWwindow* m_window{ nullptr };
-	int         m_windowWidth{ 0 };
-	int         m_windowHeight{ 0 };
-	double      m_startTime{ 0.0 };
-	double      m_deltaTime{ 0.0f };
-	bool        m_isExit{ false };
+	bool start();
+	bool createWindow(const ApplicationCreateInfo& createInfo);
+	void shutdown();
+	void fixedUpdate(float deltaTime);
+	void beginFrame();
+	void present();
+	void pollEvent();
+	void update(float deltaTime);
+
+	std::array<double, 64> m_framerateArray = { 0 };
+	uint64_t               m_framerateTick{ 0 };
+
+	HINSTANCE              m_handleInstance{ nullptr };
+	HWND                   m_hwnd{ nullptr };
+	MSG                    m_msg{};
+	int                    m_windowWidth{ 0 };
+	int                    m_windowHeight{ 0 };
+
+	bool                   m_minimized{ false };
+	bool                   m_requestedExit{ false };
 };

@@ -26,5 +26,8 @@
     <ClInclude Include="Application.h">
       <Filter>Framework</Filter>
     </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

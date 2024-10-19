@@ -1,34 +1,30 @@
 ﻿#include "stdafx.h"
 #include "Application.h"
 
-// TODO:
-// - вариант с WinAPI
-
 #if defined(_MSC_VER)
 #	pragma comment( lib, "glfw3.lib" )
 #endif
 
 Application* thisApplication{ nullptr };
 
-void Print(const std::string& text)
+auto windowClassName = L"window class";
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
-	assert(thisApplication);
-	thisApplication->Print(text);
-}
-void Warning(const std::string& text)
-{
-	assert(thisApplication);
-	thisApplication->Warning(text);
-}
-void Error(const std::string& text)
-{
-	assert(thisApplication);
-	thisApplication->Error(text);
-}
-void Fatal(const std::string& text)
-{
-	assert(thisApplication);
-	thisApplication->Fatal(text);
+	switch (msg)
+	{
+	case WM_DESTROY:
+		thisApplication->Exit();
+		DestroyWindow(hWnd);
+		PostQuitMessage(0);
+		break;
+	case WM_PAINT:
+		ValidateRect(hWnd, nullptr);
+		break;
+	default:
+		break;
+	}
+	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
 Application::Application()
@@ -38,15 +34,40 @@ Application::Application()
 
 void Application::Run()
 {
-	if (init())
+	Timer timer{};
+	double accumulator{};
+
+	uint64_t frameTimeCurrent = timer.Microseconds();
+	uint64_t frameTimeLast = frameTimeCurrent;
+
+	constexpr const double microsecondsToSeconds = 1.0 / 1000000.0;
+	constexpr const double fixedFramerate = 60.0;
+	constexpr const double fixedDeltaTimeMicroseconds = (1.0 / fixedFramerate) / microsecondsToSeconds;
+	constexpr const double fixedDeltaTimeSeconds = fixedDeltaTimeMicroseconds * microsecondsToSeconds;
+
+	if (start())
 	{
-		while (!shouldClose())
+		while (!m_requestedExit)
 		{
-			update();
-			draw();
+			frameTimeCurrent = timer.Microseconds();
+			const uint64_t frameTimeDelta = frameTimeCurrent - frameTimeLast;
+			const double variableDeltaTimeSeconds = frameTimeDelta * microsecondsToSeconds;
+			frameTimeLast = frameTimeCurrent;
+
+			if (frameTimeDelta)
+				m_framerateArray[m_framerateTick] = 1000000.0 / frameTimeDelta;
+			m_framerateTick = (m_framerateTick + 1) % m_framerateArray.size();
+
+			accumulator += frameTimeDelta;
+			while (accumulator >= fixedDeltaTimeMicroseconds)
+			{
+				fixedUpdate((float)fixedDeltaTimeSeconds);
+				accumulator -= fixedDeltaTimeMicroseconds;
+			}
+			update((float)variableDeltaTimeSeconds);
 		}
 	}
-	close();
+	shutdown();
 }
 
 void Application::Print(const std::string& text)
@@ -67,22 +88,25 @@ void Application::Error(const std::string& text)
 void Application::Fatal(const std::string& text)
 {
 	Print(("FATAL: " + text).c_str());
-	m_isExit = true;
+	m_requestedExit = true;
 }
 
-int Application::GetWindowWidth() const
+float Application::GetFramerate() const
+{
+	float framerate{ 0.0f };
+	for (auto value : m_framerateArray)
+		framerate += value;
+	return framerate / m_framerateArray.size();
+}
+
+uint32_t Application::GetWindowWidth() const
 {
 	return m_windowWidth;
 }
 
-int Application::GetWindowHeight() const
+uint32_t Application::GetWindowHeight() const
 {
 	return m_windowHeight;
-}
-
-double Application::GetDeltaTime() const
-{
-	return m_deltaTime;
 }
 
 std::optional<std::vector<char>> Application::ReadFile(const std::filesystem::path& filename)
@@ -107,48 +131,92 @@ std::optional<std::vector<char>> Application::ReadFile(const std::filesystem::pa
 
 void Application::Exit()
 {
-	m_isExit = true;
+	m_requestedExit = true;
 }
 
-bool Application::init()
+bool Application::start()
 {
-	auto config = GetConfig();
+	m_requestedExit = false;
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	m_window = glfwCreateWindow(config.window.width, config.window.height, config.window.title.data(), nullptr, nullptr);
+	auto appCreateInfo = GetConfig();
 
-	glfwGetFramebufferSize(m_window, &m_windowWidth, &m_windowHeight);
-	m_startTime = glfwGetTime();
-	m_isExit = false;
+	if (!createWindow(appCreateInfo))
+		return false;
 
-	return Init();
+	return Start();
 }
 
-void Application::close()
+bool Application::createWindow(const ApplicationCreateInfo& createInfo)
 {
-	Close();
-	glfwDestroyWindow(m_window);
-	glfwTerminate();
+	m_handleInstance = GetModuleHandle(nullptr);
+
+	WNDCLASSEX windowClassInfo{ .cbSize = sizeof(WNDCLASSEX) };
+	windowClassInfo.style = CS_HREDRAW | CS_VREDRAW;
+	windowClassInfo.lpfnWndProc = WndProc;
+	windowClassInfo.hInstance = m_handleInstance;
+	windowClassInfo.hIcon = LoadIcon(m_handleInstance, MAKEINTRESOURCE(IDI_APPLICATION));
+	windowClassInfo.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	windowClassInfo.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	windowClassInfo.lpszClassName = windowClassName;
+	windowClassInfo.hIconSm = LoadIcon(m_handleInstance, MAKEINTRESOURCE(IDI_APPLICATION));
+	RegisterClassEx(&windowClassInfo);
+
+	const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	const int windowLeft = screenWidth / 2 - createInfo.window.width / 2;
+	const int windowTop = screenHeight / 2 - createInfo.window.height / 2;
+
+	m_hwnd = CreateWindow(windowClassName, L"Game", WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, windowLeft, windowTop, createInfo.window.width, createInfo.window.height, nullptr, nullptr, m_handleInstance, nullptr);
+	ShowWindow(m_hwnd, SW_SHOW);
+	SetForegroundWindow(m_hwnd);
+	SetFocus(m_hwnd);
+
+	RECT rect;
+	GetClientRect(m_hwnd, &rect);
+	m_windowWidth = rect.right - rect.left;
+	m_windowHeight = rect.bottom - rect.top;
+
+	return true;
 }
 
-void Application::update()
+void Application::shutdown()
 {
-	glfwPollEvents();
-
-	double currentTime = glfwGetTime();
-	m_deltaTime = currentTime - m_startTime;
-	m_startTime = currentTime;
-
-	Update();
+	Shutdown();
+	DestroyWindow(m_hwnd);
 }
 
-void Application::draw()
+void Application::fixedUpdate(float deltaTime)
 {
-	Draw();
+	FixedUpdate(deltaTime);
 }
 
-bool Application::shouldClose() const
+void Application::beginFrame()
 {
-	return glfwWindowShouldClose(m_window) || m_isExit;
+}
+
+void Application::present()
+{
+}
+
+void Application::pollEvent()
+{
+	while (PeekMessage(&m_msg, m_hwnd, 0, 0, PM_REMOVE))
+	{
+		TranslateMessage(&m_msg);
+		DispatchMessage(&m_msg);
+	}
+}
+
+void Application::update(float deltaTime)
+{
+	Update(deltaTime);
+
+	if (!m_minimized)
+	{
+		beginFrame();
+		Frame(deltaTime);
+		present();
+	}
+
+	pollEvent();
 }
