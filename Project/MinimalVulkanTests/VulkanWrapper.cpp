@@ -243,11 +243,9 @@ bool Context::CheckExtensionSupported(const std::vector<const char*>& extensionN
 	return allFound;
 }
 
-InstancePtr Context::CreateInstance(const InstanceCreateInfo& createInfo)
+Instance Context::CreateInstance(const InstanceCreateInfo& createInfo)
 {
-	InstancePtr instance = std::make_shared<Instance>(createInfo);
-	if (!instance || !instance->IsValid()) return nullptr;
-	return instance;
+	return Instance(createInfo);
 }
 
 #pragma endregion
@@ -428,6 +426,27 @@ Instance::~Instance()
 bool Instance::IsValid() const
 {
 	return m_isValid && m_instance != nullptr;
+}
+
+std::vector<PhysicalDevice> vkw::Instance::GetPhysicalDevices()
+{
+	std::vector<VkPhysicalDevice> physicalDevices;
+
+	auto physicalDevicesRet = GetVector<VkPhysicalDevice>(physicalDevices, vkEnumeratePhysicalDevices, m_instance);
+	if (physicalDevicesRet != VK_SUCCESS)
+	{
+		error("failed enumerate physical devices");
+		return {};
+	}
+	if (physicalDevices.size() == 0)
+	{
+		error("no physical devices found");
+		return {};
+	}
+
+
+
+	return physicalDevices;
 }
 
 #pragma endregion

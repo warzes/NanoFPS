@@ -24,7 +24,6 @@
 
 #include <cstdint>
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -49,9 +48,6 @@ class Instance;
 class PhysicalDevice;
 
 struct InstanceCreateInfo;
-
-using InstancePtr = std::shared_ptr<Instance>;
-using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
 
 #pragma endregion
 
@@ -89,6 +85,24 @@ void SetupPNextChain(T& structure, const std::vector<VkBaseOutStructure*>& struc
 		structs.at(i)->pNext = structs.at(i + 1);
 	structure.pNext = structs.at(0);
 }
+
+template <typename T, typename F, typename... Ts> 
+VkResult GetVector(std::vector<T>& out, F&& f, Ts&&... ts)
+{
+	uint32_t count = 0;
+	VkResult err;
+	do {
+		err = f(ts..., &count, nullptr);
+		if (err != VK_SUCCESS) {
+			return err;
+		};
+		out.resize(count);
+		err = f(ts..., &count, out.data());
+		out.resize(count);
+	} while (err == VK_INCOMPLETE);
+	return err;
+}
+
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
@@ -131,7 +145,7 @@ public:
 	[[nodiscard]] bool                               CheckExtensionSupported(const std::vector<VkExtensionProperties>& availableExtensions, const char* extensionName);
 	[[nodiscard]] bool                               CheckExtensionSupported(const std::vector<const char*>& extensionNames);
 
-	[[nodiscard]] InstancePtr                        CreateInstance(const InstanceCreateInfo& createInfo);
+	[[nodiscard]] Instance                           CreateInstance(const InstanceCreateInfo& createInfo);
 
 private:
 	static uint64_t s_refCount;
@@ -189,6 +203,8 @@ public:
 
 	bool IsValid() const;
 
+	std::vector<PhysicalDevice> GetPhysicalDevices();
+
 private:
 	Context                  m_context;
 	VkInstance               m_instance{ VK_NULL_HANDLE };
@@ -204,10 +220,10 @@ private:
 class PhysicalDevice final
 {
 public:
-	PhysicalDevice(InstancePtr instance);
+	PhysicalDevice();
 
 private:
-
+	VkPhysicalDevice m_device{ VK_NULL_HANDLE };
 };
 
 

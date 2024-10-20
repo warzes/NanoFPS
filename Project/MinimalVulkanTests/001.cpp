@@ -18,8 +18,10 @@ bool Test001::Start()
 
 	vkw::InstanceCreateInfo ici{};
 	ici.enableValidationLayers = enableValidationLayers;
-	vkw::InstancePtr instance = context.CreateInstance(ici);
-	if (!instance) return false;
+	vkw::Instance instance = context.CreateInstance(ici);
+	if (!instance.IsValid()) return false;
+
+	auto devices = instance.GetPhysicalDevices();
 
 	return true;
 }
