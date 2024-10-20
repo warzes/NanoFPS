@@ -16,7 +16,7 @@ private:
 	template<typename T>
 	uint64_t time() const
 	{
-		return std::chrono::duration_cast<T>(m_clock.now() - m_startTime).count();
+		return static_cast<uint64_t>(std::chrono::duration_cast<T>(m_clock.now() - m_startTime).count());
 	}
 
 	std::chrono::high_resolution_clock                          m_clock;

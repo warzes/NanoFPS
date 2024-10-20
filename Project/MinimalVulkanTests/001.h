@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Application.h"
+#include <VulkanWrapper.h>
 
 class Test001 final : public Application
 {

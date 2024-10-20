@@ -6,7 +6,6 @@ struct WindowCreateInfo final
 {
 	uint32_t width{ 1600 };
 	uint32_t height{ 900 };
-	std::string_view title{ "Vulkan Lesson" };
 	bool resize = true;
 };
 
@@ -56,14 +55,14 @@ private:
 	void pollEvent();
 	void update(float deltaTime);
 
-	std::array<double, 64> m_framerateArray = { 0 };
+	std::array<double, 64> m_framerateArray = { {0.0} };
 	uint64_t               m_framerateTick{ 0 };
 
 	HINSTANCE              m_handleInstance{ nullptr };
 	HWND                   m_hwnd{ nullptr };
 	MSG                    m_msg{};
-	int                    m_windowWidth{ 0 };
-	int                    m_windowHeight{ 0 };
+	uint32_t               m_windowWidth{ 0 };
+	uint32_t               m_windowHeight{ 0 };
 
 	bool                   m_minimized{ false };
 	bool                   m_requestedExit{ false };

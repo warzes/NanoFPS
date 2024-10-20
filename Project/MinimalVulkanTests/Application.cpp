@@ -1,10 +1,6 @@
 ﻿#include "stdafx.h"
 #include "Application.h"
 
-#if defined(_MSC_VER)
-#	pragma comment( lib, "glfw3.lib" )
-#endif
-
 Application* thisApplication{ nullptr };
 
 auto windowClassName = L"window class";
@@ -51,14 +47,14 @@ void Application::Run()
 		{
 			frameTimeCurrent = timer.Microseconds();
 			const uint64_t frameTimeDelta = frameTimeCurrent - frameTimeLast;
-			const double variableDeltaTimeSeconds = frameTimeDelta * microsecondsToSeconds;
+			const double variableDeltaTimeSeconds = static_cast<double>(frameTimeDelta) * microsecondsToSeconds;
 			frameTimeLast = frameTimeCurrent;
 
 			if (frameTimeDelta)
-				m_framerateArray[m_framerateTick] = 1000000.0 / frameTimeDelta;
+				m_framerateArray[m_framerateTick] = 1000000.0 / static_cast<double>(frameTimeDelta);
 			m_framerateTick = (m_framerateTick + 1) % m_framerateArray.size();
 
-			accumulator += frameTimeDelta;
+			accumulator += static_cast<double>(frameTimeDelta);
 			while (accumulator >= fixedDeltaTimeMicroseconds)
 			{
 				fixedUpdate((float)fixedDeltaTimeSeconds);
@@ -93,10 +89,10 @@ void Application::Fatal(const std::string& text)
 
 float Application::GetFramerate() const
 {
-	float framerate{ 0.0f };
+	double framerate{ 0.0 };
 	for (auto value : m_framerateArray)
 		framerate += value;
-	return framerate / m_framerateArray.size();
+	return static_cast<float>(framerate / static_cast<double>(m_framerateArray.size()));
 }
 
 uint32_t Application::GetWindowWidth() const
@@ -154,27 +150,29 @@ bool Application::createWindow(const ApplicationCreateInfo& createInfo)
 	windowClassInfo.style = CS_HREDRAW | CS_VREDRAW;
 	windowClassInfo.lpfnWndProc = WndProc;
 	windowClassInfo.hInstance = m_handleInstance;
-	windowClassInfo.hIcon = LoadIcon(m_handleInstance, MAKEINTRESOURCE(IDI_APPLICATION));
 	windowClassInfo.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	windowClassInfo.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	windowClassInfo.lpszClassName = windowClassName;
-	windowClassInfo.hIconSm = LoadIcon(m_handleInstance, MAKEINTRESOURCE(IDI_APPLICATION));
 	RegisterClassEx(&windowClassInfo);
 
 	const int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	const int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-	const int windowLeft = screenWidth / 2 - createInfo.window.width / 2;
-	const int windowTop = screenHeight / 2 - createInfo.window.height / 2;
+	const int windowLeft = screenWidth / 2 - (int)createInfo.window.width / 2;
+	const int windowTop = screenHeight / 2 - (int)createInfo.window.height / 2;
 
-	m_hwnd = CreateWindow(windowClassName, L"Game", WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, windowLeft, windowTop, createInfo.window.width, createInfo.window.height, nullptr, nullptr, m_handleInstance, nullptr);
+	m_hwnd = CreateWindow(windowClassName, L"Game", 
+		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 
+		windowLeft, windowTop, 
+		(int)createInfo.window.width, (int)createInfo.window.height,
+		nullptr, nullptr, m_handleInstance, nullptr);
 	ShowWindow(m_hwnd, SW_SHOW);
 	SetForegroundWindow(m_hwnd);
 	SetFocus(m_hwnd);
 
 	RECT rect;
 	GetClientRect(m_hwnd, &rect);
-	m_windowWidth = rect.right - rect.left;
-	m_windowHeight = rect.bottom - rect.top;
+	m_windowWidth = static_cast<uint32_t>(rect.right - rect.left);
+	m_windowHeight = static_cast<uint32_t>(rect.bottom - rect.top);
 
 	return true;
 }

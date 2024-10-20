@@ -120,7 +120,7 @@ bool VulkanInstance::Setup(const InstanceCreateInfo& createInfo, GLFWwindow* win
 	}
 
 	auto instanceRet = createInstance(createInfo);
-	if (!instanceRet) return false;		
+	if (!instanceRet) return false;
 	vkb::Instance vkbInstance = instanceRet.value();
 	instance = vkbInstance.instance;
 	debugMessenger = vkbInstance.debug_messenger;
