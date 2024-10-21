@@ -56,6 +56,17 @@ using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
 #pragma endregion
 
 //=============================================================================
+#pragma region Core Func
+
+template <typename T>
+inline std::vector<uint8_t> ToBytes(const T& value)
+{
+	return std::vector<uint8_t>{reinterpret_cast<const uint8_t*>(&value), reinterpret_cast<const uint8_t*>(&value) + sizeof(T)};
+}
+
+#pragma endregion
+
+//=============================================================================
 #pragma region [ Core Enum ]
 
 enum class VulkanAPIVersion : uint8_t
@@ -75,7 +86,7 @@ enum class VulkanAPIVersion : uint8_t
 #pragma endregion
 
 //=============================================================================
-#pragma region [ Core Func ]
+#pragma region [ Vulkan Core Func ]
 
 [[nodiscard]] VulkanAPIVersion ConvertVersion(uint32_t vkVersion);
 [[nodiscard]] uint32_t         ConvertVersion(VulkanAPIVersion version);
@@ -173,6 +184,7 @@ struct InstanceCreateInfo final
 
 	bool                                       enableValidationLayers{ false };
 
+	bool                                       useDebugMessenger{ false };
 	PFN_vkDebugUtilsMessengerCallbackEXT       debugCallback{ DefaultDebugCallback };
 	VkDebugUtilsMessageSeverityFlagsEXT        debugMessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	VkDebugUtilsMessageTypeFlagsEXT            debugMessageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
@@ -180,10 +192,14 @@ struct InstanceCreateInfo final
 																VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 	void*                                      debugUserDataPointer = nullptr;
 
+	std::vector<VkBaseOutStructure*>           nextChain;
+
 	// validation features
 	std::vector<VkValidationCheckEXT>          disabledValidationChecks;
 	std::vector<VkValidationFeatureEnableEXT>  enabledValidationFeatures;
 	std::vector<VkValidationFeatureDisableEXT> disabledValidationFeatures;
+
+	std::vector<VkLayerSettingEXT>             requiredLayerSettings;
 
 	// Custom allocator
 	VkAllocationCallbacks*                     allocator = nullptr;
@@ -200,9 +216,9 @@ public:
 
 	Instance& operator=(const Instance&) = default;
 
-	bool IsValid() const;
+	[[nodiscard]] bool IsValid() const;
 
-	std::vector<PhysicalDevicePtr> GetPhysicalDevices();
+	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -220,11 +236,18 @@ private:
 class PhysicalDevice final
 {
 public:
-	PhysicalDevice();
+	PhysicalDevice() = delete;
+	PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysicalDevice);
+	~PhysicalDevice() = default;
+
+	[[nodiscard]] std::vector<VkExtensionProperties> GetDeviceExtensions() const;
 
 private:
-	InstancePtr      m_instance{ nullptr };
-	VkPhysicalDevice m_device{ VK_NULL_HANDLE };
+	InstancePtr                      m_instance{ nullptr };
+	VkPhysicalDevice                 m_device{ VK_NULL_HANDLE };
+	VkPhysicalDeviceFeatures         m_features{};
+	VkPhysicalDeviceProperties       m_properties{};
+	VkPhysicalDeviceMemoryProperties m_memoryProperties{};
 };
 
 

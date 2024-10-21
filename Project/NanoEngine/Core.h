@@ -383,6 +383,12 @@ inline bool HasOverlapHalfOpen(const RangeU32& r0, const RangeU32& r1)
 	return HasOverlapHalfOpen(r0.start, r0.end, r1.start, r1.end);
 }
 
+template <typename T>
+inline std::vector<uint8_t> ToBytes(const T& value)
+{
+	return std::vector<uint8_t>{reinterpret_cast<const uint8_t*>(&value), reinterpret_cast<const uint8_t*>(&value) + sizeof(T)};
+}
+
 #pragma endregion
 
 //=============================================================================

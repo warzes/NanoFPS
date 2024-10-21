@@ -12,7 +12,7 @@
     <ClCompile Include="VulkanWrapper.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="..\3rdparty\VkBootstrap\VkBootstrap.cpp" />
+    <ClCompile Include="VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tests">
@@ -36,6 +36,6 @@
     <ClInclude Include="VulkanWrapper.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rdparty\VkBootstrap\VkBootstrap.h" />
+    <ClInclude Include="VkBootstrap.h" />
   </ItemGroup>
 </Project>

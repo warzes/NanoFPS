@@ -41,7 +41,11 @@ public:
 	[[nodiscard]] uint32_t GetWindowWidth() const;
 	[[nodiscard]] uint32_t GetWindowHeight() const;
 
-	[[nodiscard]] std::optional<std::vector<char>> ReadFile(const std::filesystem::path& filename);
+	[[nodiscard]] std::string GetExtension(const std::string& uri);
+
+	[[nodiscard]] std::string ReadFileString(const std::filesystem::path& path);
+	[[nodiscard]] std::vector<uint8_t> ReadChunk(const std::filesystem::path& path, size_t offset, size_t count);
+	[[nodiscard]] std::vector<uint8_t> ReadFileBinary(const std::filesystem::path& path);
 
 private:
 	friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM) noexcept;

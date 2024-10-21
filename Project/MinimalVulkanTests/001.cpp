@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "001.h"
 
 ApplicationCreateInfo Test001::GetConfig()
@@ -51,22 +51,32 @@ bool Test001::Start()
 
 	vkw::InstanceCreateInfo ici{};
 	ici.enableValidationLayers = enableValidationLayers;
+	ici.useDebugMessenger = enableValidationLayers;
+
+	if (enableValidationLayers)
+	{
+		//ici.enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT); // проверка шейдеров. но это очень медленно
+		ici.enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT); // лучшие практики использования вулкан
+		ici.enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT);   // printf в шейдере?
+		ici.enabledValidationFeatures.push_back(VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT); // проверка проблем синхронизации
+	}
+
 	vkw::InstancePtr instance = context.CreateInstance(ici);
 	if (!instance) return false;
 
 	auto devices = instance->GetPhysicalDevices();
 
 
-	Creat cr;
+	//Creat cr;
 
-	std::shared_ptr<System> sys = cr.Create();
+	//std::shared_ptr<System> sys = cr.Create();
 
-	std::shared_ptr<Resource> res = sys->CreateRes();
-	std::shared_ptr<Resource> res2 = sys->CreateRes();
+	//std::shared_ptr<Resource> res = sys->CreateRes();
+	//std::shared_ptr<Resource> res2 = sys->CreateRes();
 
-	sys.reset();
-	res.reset();
-	res2.reset();
+	//sys.reset();
+	//res.reset();
+	//res2.reset();
 
 
 

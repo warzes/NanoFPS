@@ -105,24 +105,51 @@ uint32_t Application::GetWindowHeight() const
 	return m_windowHeight;
 }
 
-std::optional<std::vector<char>> Application::ReadFile(const std::filesystem::path& filename)
+std::string Application::GetExtension(const std::string& uri)
 {
-	std::ifstream file{ filename, std::ios::ate | std::ios::binary };
-	if (!file.is_open()) 
+	auto dotPos = uri.find_last_of('.');
+	if (dotPos == std::string::npos)
 	{
-		Error("Failed to open file: " + filename.string());
-		return std::nullopt;
+		Error("Uri has no extension");
+		return "";
 	}
+	return uri.substr(dotPos + 1);
+}
 
-	const size_t fileSize = static_cast<size_t>(file.tellg());
+std::string Application::ReadFileString(const std::filesystem::path& path)
+{
+	auto bin = ReadFileBinary(path);
+	return { bin.begin(), bin.end() };
+}
 
-	std::vector<char> buffer(fileSize);
+std::vector<uint8_t> Application::ReadChunk(const std::filesystem::path& path, size_t offset, size_t count)
+{
+	std::ifstream file{ path, std::ios::binary | std::ios::ate };
+	if (!file.is_open())
+	{
+		Error("Failed to open file: " + path.string());
+		return {};
+	}
+	const size_t size = static_cast<size_t>(file.tellg());
 
-	file.seekg(0);
-	file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
+	if (offset + count > size) return {};
+
+	std::vector<uint8_t> data(count);
+
+	// read file contents
+	file.seekg(offset, std::ios::beg);
+	file.read(reinterpret_cast<char*>(data.data()), count);
 	file.close();
 
-	return buffer;
+	return data;
+}
+
+std::vector<uint8_t> Application::ReadFileBinary(const std::filesystem::path& path)
+{
+	std::error_code ec;
+	auto sizeFile = std::filesystem::file_size(path, ec);
+	if (ec) { return {}; }
+	return ReadChunk(path, 0, sizeFile);
 }
 
 void Application::Exit()
