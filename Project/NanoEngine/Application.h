@@ -95,7 +95,6 @@ public:
 	[[nodiscard]] float GetFixedUpdateTimeError() const { return m_timeSinceLastTick; }
 
 
-
 private:
 	bool setup();
 

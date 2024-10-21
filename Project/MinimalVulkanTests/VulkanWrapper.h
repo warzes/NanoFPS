@@ -24,6 +24,7 @@
 
 #include <cstdint>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -49,6 +50,9 @@ class PhysicalDevice;
 
 struct InstanceCreateInfo;
 
+using InstancePtr = std::shared_ptr<Instance>;
+using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
+
 #pragma endregion
 
 //=============================================================================
@@ -73,8 +77,8 @@ enum class VulkanAPIVersion : uint8_t
 //=============================================================================
 #pragma region [ Core Func ]
 
-[[nodiscard]] VulkanAPIVersion Version(uint32_t vkVersion);
-[[nodiscard]] uint32_t         Version(VulkanAPIVersion version);
+[[nodiscard]] VulkanAPIVersion ConvertVersion(uint32_t vkVersion);
+[[nodiscard]] uint32_t         ConvertVersion(VulkanAPIVersion version);
 
 template <typename T>
 void SetupPNextChain(T& structure, const std::vector<VkBaseOutStructure*>& structs)
@@ -93,16 +97,13 @@ VkResult GetVector(std::vector<T>& out, F&& f, Ts&&... ts)
 	VkResult err;
 	do {
 		err = f(ts..., &count, nullptr);
-		if (err != VK_SUCCESS) {
-			return err;
-		};
+		if (err != VK_SUCCESS) return err;
 		out.resize(count);
 		err = f(ts..., &count, out.data());
 		out.resize(count);
 	} while (err == VK_INCOMPLETE);
 	return err;
 }
-
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
@@ -115,7 +116,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityF
 [[nodiscard]] const char* GetLastErrorText();
 
 #pragma endregion
-
 
 //=============================================================================
 #pragma region [ Context ]
@@ -145,7 +145,7 @@ public:
 	[[nodiscard]] bool                               CheckExtensionSupported(const std::vector<VkExtensionProperties>& availableExtensions, const char* extensionName);
 	[[nodiscard]] bool                               CheckExtensionSupported(const std::vector<const char*>& extensionNames);
 
-	[[nodiscard]] Instance                           CreateInstance(const InstanceCreateInfo& createInfo);
+	[[nodiscard]] InstancePtr                        CreateInstance(const InstanceCreateInfo& createInfo);
 
 private:
 	static uint64_t s_refCount;
@@ -160,11 +160,10 @@ struct InstanceCreateInfo final
 {
 	InstanceCreateInfo() = default;
 	InstanceCreateInfo(const InstanceCreateInfo&) = default;
-	InstanceCreateInfo(const VkInstanceCreateInfo& createInfo);
 
 	std::string                                applicationName;
-	uint32_t                                   applicationVersion{ 0 };
 	std::string                                engineName;
+	uint32_t                                   applicationVersion{ 0 };
 	uint32_t                                   engineVersion{ 0 };
 	VulkanAPIVersion                           apiVersion{ VulkanAPIVersion::Version13 };
 	std::vector<const char*>                   layers{};
@@ -190,7 +189,7 @@ struct InstanceCreateInfo final
 	VkAllocationCallbacks*                     allocator = nullptr;
 };
 
-class Instance final
+class Instance final : public std::enable_shared_from_this<Instance>
 {
 	friend Context;
 public:
@@ -203,13 +202,14 @@ public:
 
 	bool IsValid() const;
 
-	std::vector<PhysicalDevice> GetPhysicalDevices();
+	std::vector<PhysicalDevicePtr> GetPhysicalDevices();
 
 private:
-	Context                  m_context;
+	bool checkValid(const InstanceCreateInfo& createInfo);
 	VkInstance               m_instance{ VK_NULL_HANDLE };
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	VkAllocationCallbacks*   m_allocator{ VK_NULL_HANDLE };
+	Context                  m_context;
 	bool                     m_isValid{ false };
 };
 
@@ -223,6 +223,7 @@ public:
 	PhysicalDevice();
 
 private:
+	InstancePtr      m_instance{ nullptr };
 	VkPhysicalDevice m_device{ VK_NULL_HANDLE };
 };
 

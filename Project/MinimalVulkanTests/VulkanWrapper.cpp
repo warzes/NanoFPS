@@ -23,7 +23,6 @@ namespace
 	std::string ErrorText = "";
 }
 
-
 bool IsValidState()
 {
 	return IsValid;
@@ -53,7 +52,6 @@ inline bool resultCheck(VkResult result, const std::string& message)
 	return true;
 }
 
-
 #pragma endregion
 
 //=============================================================================
@@ -64,7 +62,7 @@ inline bool resultCheck(VkResult result, const std::string& message)
 //=============================================================================
 #pragma region [ Core Func ]
 
-VulkanAPIVersion Version(uint32_t vkVersion)
+VulkanAPIVersion ConvertVersion(uint32_t vkVersion)
 {
 	if (VK_API_VERSION_MAJOR(vkVersion) == 1)
 	{
@@ -76,7 +74,7 @@ VulkanAPIVersion Version(uint32_t vkVersion)
 	return VulkanAPIVersion::Unknown;
 }
 
-uint32_t Version(VulkanAPIVersion version)
+uint32_t ConvertVersion(VulkanAPIVersion version)
 {
 	if (version == VulkanAPIVersion::Version10) return VK_MAKE_VERSION(1, 0, 0);
 	if (version == VulkanAPIVersion::Version11) return VK_MAKE_VERSION(1, 1, 0);
@@ -107,6 +105,7 @@ Context::Context()
 {
 	if (s_refCount == 0)
 	{
+		// TODO: вообще можно сделать версию без volk (через дефайны) передав эту задачу пользователю и предоставив ему обертку над vkGetInstanceProcAddr
 		if (volkInitialize() != VK_SUCCESS)
 		{
 			error("Failed to initialize volk.");
@@ -130,7 +129,7 @@ VulkanAPIVersion Context::EnumerateInstanceVersion() const
 	uint32_t apiVersion;
 	VkResult result = vkEnumerateInstanceVersion(&apiVersion);
 	resultCheck(result, "Context::EnumerateInstanceVersion()");
-	return Version(apiVersion);
+	return ConvertVersion(apiVersion);
 }
 
 std::vector<VkLayerProperties> Context::EnumerateInstanceLayerProperties() const
@@ -226,7 +225,7 @@ bool Context::CheckExtensionSupported(const std::vector<VkExtensionProperties>& 
 	if (!extensionName) return false;
 	for (const auto& extensionProperties : availableExtensions)
 		if (strcmp(extensionName, extensionProperties.extensionName)) return true;
-	error("Extension: " + std::string(extensionName) + " not support");
+	error("Instance Extension: " + std::string(extensionName) + " not support");
 	return false;
 }
 
@@ -243,9 +242,12 @@ bool Context::CheckExtensionSupported(const std::vector<const char*>& extensionN
 	return allFound;
 }
 
-Instance Context::CreateInstance(const InstanceCreateInfo& createInfo)
+InstancePtr Context::CreateInstance(const InstanceCreateInfo& createInfo)
 {
-	return Instance(createInfo);
+	InstancePtr ptr = std::make_shared<Instance>(createInfo);
+	if (ptr && ptr->IsValid()) return ptr;
+
+	return {};
 }
 
 #pragma endregion
@@ -253,76 +255,53 @@ Instance Context::CreateInstance(const InstanceCreateInfo& createInfo)
 //=============================================================================
 #pragma region [ Instance ]
 
-InstanceCreateInfo::InstanceCreateInfo(const VkInstanceCreateInfo& createInfo)
-{
-	applicationName    = createInfo.pApplicationInfo->pApplicationName;
-	applicationVersion = createInfo.pApplicationInfo->applicationVersion;
-	engineName         = createInfo.pApplicationInfo->pEngineName;
-	engineVersion      = createInfo.pApplicationInfo->engineVersion;
-	apiVersion         = Version(createInfo.pApplicationInfo->apiVersion);
-
-	layers.resize(createInfo.enabledLayerCount);
-	for (uint32_t i = 0; i < createInfo.enabledLayerCount; i++)
-		layers[i] = createInfo.ppEnabledLayerNames[i];
-
-	extensions.resize(createInfo.enabledExtensionCount);
-	for (uint32_t i = 0; i < createInfo.enabledExtensionCount; i++)
-		extensions[i] = createInfo.ppEnabledExtensionNames[i];
-
-	flags = createInfo.flags;
-}
-
 Instance::Instance(const InstanceCreateInfo& createInfo)
 {
-	VULKAN_WRAPPER_ASSERT(!m_instance);
-
-	if (!IsValidState()) return;
-	if (createInfo.apiVersion == VulkanAPIVersion::Version10)
-	{
-		error("Vulkan 1.0 not support!");
-		return;
-	}
-
-	if (!m_context.CheckAPIVersionSupported(createInfo.apiVersion)) return;	
-	if (!m_context.CheckLayerSupported(createInfo.layers)) return;
-	if (!m_context.CheckExtensionSupported(createInfo.extensions)) return;
+	if (!checkValid(createInfo)) return;
 
 	m_allocator = createInfo.allocator;
+	bool enableValidationLayers = createInfo.enableValidationLayers;
+	bool hasDebugUtils = createInfo.debugCallback != nullptr;
+	bool portabilityEnumerationSupport = false;
 
-	const auto availableLayers     = m_context.EnumerateInstanceLayerProperties();
-	const auto availableExtensions = m_context.EnumerateInstanceExtensionProperties();
+	VkDebugUtilsMessengerCreateInfoEXT debugUtilMessengerCI = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+	debugUtilMessengerCI.messageSeverity                    = createInfo.debugMessageSeverity;
+	debugUtilMessengerCI.messageType                        = createInfo.debugMessageType;
+	debugUtilMessengerCI.pfnUserCallback                    = createInfo.debugCallback;
+	debugUtilMessengerCI.pUserData                          = createInfo.debugUserDataPointer;
 
 	std::vector<const char*> layers = createInfo.layers;
 	std::vector<const char*> extensions = createInfo.extensions;
-	bool portabilityEnumerationSupport = false;
-
-	bool useDebugMessenger = createInfo.debugCallback != nullptr;
-
 	// вставка дополнительных расширений если они нужны, но не были заданы
 	{
-		// TODO: сделать проверку на уникальность при вставке?
-		auto checkAndInsertExtension = [&](const char* name) -> bool {
-			if (!m_context.CheckExtensionSupported(availableExtensions, name)) return false;
-			extensions.push_back(name);
-			return true;
-			};
+		const auto availableLayers = m_context.EnumerateInstanceLayerProperties();
+		const auto availableExtensions = m_context.EnumerateInstanceExtensionProperties();
 
-		if (createInfo.enableValidationLayers)
+		if (enableValidationLayers)
 		{
 			if (m_context.CheckLayerSupported(availableLayers, "VK_LAYER_KHRONOS_validation"))
 			{
 				if (std::none_of(layers.begin(), layers.end(), [](const std::string& layer) { return layer == "VK_LAYER_KHRONOS_validation"; }))
 					layers.push_back("VK_LAYER_KHRONOS_validation");
 			}
+			else enableValidationLayers = false;
 		}
 
-		if (useDebugMessenger)
-			useDebugMessenger = checkAndInsertExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		auto checkAndInsertExtension = [&](const char* name) -> bool {
+			auto it = std::find_if(extensions.begin(), extensions.end(), [name](const char* extName) { return strcmp(extName, name) == 0; });
+			if (it != extensions.end()) return true;
+
+			if (!m_context.CheckExtensionSupported(availableExtensions, name)) return false;
+			extensions.push_back(name);
+			return true;
+			};
+
+		if (hasDebugUtils)
+			hasDebugUtils = checkAndInsertExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 #if defined(VK_KHR_portability_enumeration)
 		portabilityEnumerationSupport = checkAndInsertExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
-
 		bool khrSurfaceAdded = checkAndInsertExtension("VK_KHR_surface");
 #if defined(_WIN32)
 		bool addedWindowExts = checkAndInsertExtension("VK_KHR_win32_surface");
@@ -350,23 +329,16 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 	appInfo.applicationVersion = createInfo.applicationVersion;
 	appInfo.pEngineName        = createInfo.engineName.c_str();
 	appInfo.engineVersion      = createInfo.engineVersion;
-	appInfo.apiVersion         = Version(createInfo.apiVersion);
+	appInfo.apiVersion         = ConvertVersion(createInfo.apiVersion);
 
 	std::vector<VkBaseOutStructure*> nextChain;
 
-	if (useDebugMessenger)
-	{
-		VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		messengerCreateInfo.messageSeverity = createInfo.debugMessageSeverity;
-		messengerCreateInfo.messageType     = createInfo.debugMessageType;
-		messengerCreateInfo.pfnUserCallback = createInfo.debugCallback;
-		messengerCreateInfo.pUserData       = createInfo.debugUserDataPointer;
-		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&messengerCreateInfo));
-	}
+	if (hasDebugUtils)
+		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&debugUtilMessengerCI));
 
 	if (createInfo.enabledValidationFeatures.size() != 0 || createInfo.disabledValidationFeatures.size())
 	{
-		VkValidationFeaturesEXT features{ .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT };
+		VkValidationFeaturesEXT features        = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT };
 		features.enabledValidationFeatureCount  = static_cast<uint32_t>(createInfo.enabledValidationFeatures.size());
 		features.pEnabledValidationFeatures     = createInfo.enabledValidationFeatures.data();
 		features.disabledValidationFeatureCount = static_cast<uint32_t>(createInfo.disabledValidationFeatures.size());
@@ -376,11 +348,13 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 
 	if (createInfo.disabledValidationChecks.size() != 0)
 	{
-		VkValidationFlagsEXT checks{ .sType = VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
+		VkValidationFlagsEXT checks         = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
 		checks.disabledValidationCheckCount = static_cast<uint32_t>(createInfo.disabledValidationChecks.size());
-		checks.pDisabledValidationChecks = createInfo.disabledValidationChecks.data();
+		checks.pDisabledValidationChecks    = createInfo.disabledValidationChecks.data();
 		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&checks));
 	}
+
+	 TODO: VK_EXT_LAYER_SETTINGS_EXTENSION_NAME
 
 	VkInstanceCreateInfo instanceCreateInfo    = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 	SetupPNextChain(instanceCreateInfo, nextChain);
@@ -398,19 +372,13 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 #endif
 
 	VkResult result = vkCreateInstance(&instanceCreateInfo, createInfo.allocator, &m_instance);
-	if (!resultCheck(result, "Instance create")) return;
+	if (!resultCheck(result, "Could not create Vulkan instance")) return;
 
 	volkLoadInstance(m_instance);
 
-	if (useDebugMessenger) 
+	if (hasDebugUtils)
 	{
-		VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		messengerCreateInfo.messageSeverity = createInfo.debugMessageSeverity;
-		messengerCreateInfo.messageType     = createInfo.debugMessageType;
-		messengerCreateInfo.pfnUserCallback = createInfo.debugCallback;
-		messengerCreateInfo.pUserData       = createInfo.debugUserDataPointer;
-
-		result = vkCreateDebugUtilsMessengerEXT(m_instance, &messengerCreateInfo, m_allocator, &m_debugMessenger);
+		result = vkCreateDebugUtilsMessengerEXT(m_instance, &debugUtilMessengerCI, m_allocator, &m_debugMessenger);
 		if (!resultCheck(result, "failed create debug messenger")) return;
 	}
 
@@ -428,7 +396,7 @@ bool Instance::IsValid() const
 	return m_isValid && m_instance != nullptr;
 }
 
-std::vector<PhysicalDevice> vkw::Instance::GetPhysicalDevices()
+std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 {
 	std::vector<VkPhysicalDevice> physicalDevices;
 
@@ -446,7 +414,23 @@ std::vector<PhysicalDevice> vkw::Instance::GetPhysicalDevices()
 
 
 
-	return physicalDevices;
+	return {};
+}
+
+bool Instance::checkValid(const InstanceCreateInfo& createInfo)
+{
+	if (!IsValidState()) return false;
+	if (createInfo.apiVersion == VulkanAPIVersion::Version10)
+	{
+		error("Vulkan 1.0 not support!");
+		return false;
+	}
+
+	if (!m_context.CheckAPIVersionSupported(createInfo.apiVersion)) return false;
+	if (!m_context.CheckLayerSupported(createInfo.layers)) return false;
+	if (!m_context.CheckExtensionSupported(createInfo.extensions)) return false;
+
+	return true;
 }
 
 #pragma endregion
