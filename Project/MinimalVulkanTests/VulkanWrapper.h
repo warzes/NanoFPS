@@ -49,6 +49,7 @@ class Instance;
 class PhysicalDevice;
 
 struct InstanceCreateInfo;
+struct PhysicalDeviceSelectCriteria;
 
 using InstancePtr = std::shared_ptr<Instance>;
 using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
@@ -76,6 +77,15 @@ enum class VulkanAPIVersion : uint8_t
 	Version12 = 3,
 	Version13 = 4,
 	Unknown = UINT8_MAX
+};
+
+enum class PhysicalDeviceType : uint8_t
+{
+	Other,
+	IntegratedGPU,
+	DiscreteGPU,
+	VirtualGPU,
+	CPU
 };
 
 #pragma endregion
@@ -114,6 +124,17 @@ VkResult GetVector(std::vector<T>& out, F&& f, Ts&&... ts)
 		out.resize(count);
 	} while (err == VK_INCOMPLETE);
 	return err;
+}
+
+template <typename T, typename F, typename... Ts>
+std::vector<T> GetVectorNoError(F&& f, Ts&&... ts)
+{
+	uint32_t count = 0;
+	std::vector<T> results;
+	f(ts..., &count, nullptr);
+	results.resize(count);
+	f(ts..., &count, results.data());
+	return results;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -219,6 +240,7 @@ public:
 	[[nodiscard]] bool IsValid() const;
 
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
+	[[nodiscard]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelectCriteria& criteria);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -231,7 +253,13 @@ private:
 
 #pragma endregion
 
+//=============================================================================
 #pragma region [ PhysicalDevice ]
+
+struct PhysicalDeviceSelectCriteria final
+{
+
+};
 
 class PhysicalDevice final
 {
@@ -240,7 +268,16 @@ public:
 	PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysicalDevice);
 	~PhysicalDevice() = default;
 
+	[[nodiscard]] const VkPhysicalDeviceFeatures& GetFeatures() const { return m_features; }
+	[[nodiscard]] const VkPhysicalDeviceProperties& GetProperties() const { m_properties; }
+	[[nodiscard]] const VkPhysicalDeviceLimits& GetLimits() const { m_properties.limits; }
+	[[nodiscard]] const VkPhysicalDeviceMemoryProperties& GetMemoryProperties() const { return m_memoryProperties; }
+
+	[[nodiscard]] std::string GetDeviceName() const { return m_properties.deviceName; }
+	[[nodiscard]] PhysicalDeviceType GetDeviceType() const;
+
 	[[nodiscard]] std::vector<VkExtensionProperties> GetDeviceExtensions() const;
+	[[nodiscard]] std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
 
 private:
 	InstancePtr                      m_instance{ nullptr };
@@ -250,8 +287,6 @@ private:
 	VkPhysicalDeviceMemoryProperties m_memoryProperties{};
 };
 
-
 #pragma endregion
-
 
 } // namespace vkw

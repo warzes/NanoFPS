@@ -433,6 +433,22 @@ std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 	return physicalDevices;
 }
 
+PhysicalDevicePtr vkw::Instance::GetDeviceSuitable(const PhysicalDeviceSelectCriteria& criteria)
+{
+	std::vector<PhysicalDevicePtr> devices = GetPhysicalDevices();
+	if (devices.empty())
+	{
+		error("failed to find a suitable GPU!");
+		return nullptr;
+	}
+
+	size_t selectDevice = 0;
+
+	// TODO: подбираем видяху по criteria
+
+	return devices[selectDevice];
+}
+
 bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 {
 	if (!IsValidState()) return false;
@@ -460,29 +476,39 @@ PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysical
 	vkGetPhysicalDeviceFeatures(m_device, &m_features);
 	vkGetPhysicalDeviceProperties(m_device, &m_properties);
 	vkGetPhysicalDeviceMemoryProperties(m_device, &m_memoryProperties);
+}
 
-	//puts(("Found GPU: " + std::string(m_properties.deviceName)).c_str());
+PhysicalDeviceType vkw::PhysicalDevice::GetDeviceType() const
+{
+	switch (m_properties.deviceType)
+	{
+	case VK_PHYSICAL_DEVICE_TYPE_OTHER:          return PhysicalDeviceType::Other;
+	case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return PhysicalDeviceType::IntegratedGPU;
+	case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:   return PhysicalDeviceType::DiscreteGPU;
+	case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:    return PhysicalDeviceType::VirtualGPU;
+	case VK_PHYSICAL_DEVICE_TYPE_CPU:            return PhysicalDeviceType::CPU;
+	default: break;
+	}
+	return PhysicalDeviceType::Other;
 }
 
 std::vector<VkExtensionProperties> vkw::PhysicalDevice::GetDeviceExtensions() const
 {
+	std::vector<VkExtensionProperties> deviceExtensions;
 
-	uint32_t device_extension_count;
-	VK_CHECK(vkEnumerateDeviceExtensionProperties(get_handle(), nullptr, &device_extension_count, nullptr));
-	device_extensions = std::vector<VkExtensionProperties>(device_extension_count);
-	VK_CHECK(vkEnumerateDeviceExtensionProperties(get_handle(), nullptr, &device_extension_count, device_extensions.data()));
-
-	// Display supported extensions
-	if (device_extensions.size() > 0)
+	auto result = GetVector<VkExtensionProperties>(deviceExtensions, vkEnumerateDeviceExtensionProperties, m_device, nullptr);
+	if (result != VK_SUCCESS)
 	{
-		LOGD("Device supports the following extensions:");
-		for (auto& extension : device_extensions)
-		{
-			LOGD("  \t{}", extension.extensionName);
-		}
+		error("vkEnumerateDeviceExtensionProperties");
+		return {};
 	}
 
+	return deviceExtensions;
+}
 
+std::vector<VkQueueFamilyProperties> vkw::PhysicalDevice::GetQueueFamilyProperties() const
+{
+	return GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
 }
 
 #pragma endregion

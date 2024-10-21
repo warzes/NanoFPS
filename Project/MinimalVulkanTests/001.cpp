@@ -64,7 +64,8 @@ bool Test001::Start()
 	vkw::InstancePtr instance = context.CreateInstance(ici);
 	if (!instance) return false;
 
-	auto devices = instance->GetPhysicalDevices();
+	//auto devices = instance->GetPhysicalDevices();
+	auto selPhDevice = instance->GetDeviceSuitable({});
 
 
 	//Creat cr;
