@@ -1,5 +1,7 @@
 ﻿#include "stdafx.h"
 #include "001.h"
+#include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_raii.hpp"
 
 ApplicationCreateInfo Test001::GetConfig()
 {
@@ -64,9 +66,17 @@ bool Test001::Start()
 	vkw::InstancePtr instance = context.CreateInstance(ici);
 	if (!instance) return false;
 
-	//auto devices = instance->GetPhysicalDevices();
-	auto selPhDevice = instance->GetDeviceSuitable({});
+	vkw::SurfaceCreateInfo surfaceCreateInfo;
+	surfaceCreateInfo.hinstance = GetWindowInstance();
+	surfaceCreateInfo.hwnd = GetWindowHWND();
+	vkw::SurfacePtr surface = instance->CreateSurface(surfaceCreateInfo);
+	if (!surface) return false;
+	
+	vkw::PhysicalDeviceSelector deviceSelect;
+	deviceSelect.SetSurface(surface);
 
+	auto selPhDevice = instance->GetDeviceSuitable(deviceSelect);
+	if (!selPhDevice) return false;
 
 	//Creat cr;
 

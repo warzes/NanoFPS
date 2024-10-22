@@ -3,22 +3,27 @@
 #if defined(_MSC_VER)
 #	pragma warning(disable : 5045)
 #	pragma warning(push, 3)
+#	pragma warning(disable : 4668)
+#	pragma warning(disable : 5039)
 #endif
 
 #include <algorithm>
 #include <vulkan/vk_enum_string_helper.h>
 
+#define VOLK_IMPLEMENTATION
+#include <volk/volk.h>
+
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif
 
-#ifdef _WIN32
-extern "C"
-{
-	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif
+//#ifdef _WIN32
+//extern "C"
+//{
+//	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+//	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+//}
+//#endif
 
 namespace vkw {
 
@@ -65,6 +70,93 @@ inline bool resultCheck(VkResult result, const std::string& message)
 //=============================================================================
 #pragma region [ Core Struct ]
 
+GenericFeaturesPNextNode::GenericFeaturesPNextNode() { memset(fields, UINT8_MAX, sizeof(VkBool32) * fieldCapacity); }
+
+bool GenericFeaturesPNextNode::Match(const GenericFeaturesPNextNode& requested, const GenericFeaturesPNextNode& supported) noexcept
+{
+	assert(requested.sType == supported.sType && "Non-matching sTypes in features nodes!");
+	for (uint32_t i = 0; i < fieldCapacity; i++)
+	{
+		if (requested.fields[i] && !supported.fields[i]) return false;
+	}
+	return true;
+}
+
+void GenericFeaturesPNextNode::Combine(const GenericFeaturesPNextNode& right) noexcept
+{
+	assert(sType == right.sType && "Non-matching sTypes in features nodes!");
+	for (uint32_t i = 0; i < GenericFeaturesPNextNode::fieldCapacity; i++)
+	{
+		fields[i] = fields[i] || right.fields[i];
+	}
+}
+
+bool GenericFeatureChain::MatchAll(const GenericFeatureChain& extensionRequested) const noexcept
+{
+	// Should only be false if extension_supported was unable to be filled out, due to the physical device not supporting vkGetPhysicalDeviceFeatures2 in any capacity.
+	if (extensionRequested.nodes.size() != nodes.size()) return false;
+
+	for (size_t i = 0; i < nodes.size() && i < nodes.size(); ++i)
+	{
+		if (!GenericFeaturesPNextNode::Match(extensionRequested.nodes[i], nodes[i])) return false;
+	}
+	return true;
+}
+
+bool GenericFeatureChain::FindAndMatch(const GenericFeatureChain& extensionsRequested) const noexcept
+{
+	for (const auto& requested_extension_node : extensionsRequested.nodes)
+	{
+		bool found = false;
+		for (const auto& supported_node : nodes)
+		{
+			if (supported_node.sType == requested_extension_node.sType)
+			{
+				found = true;
+				if (!GenericFeaturesPNextNode::Match(requested_extension_node, supported_node)) return false;
+				break;
+			}
+		}
+		if (!found) return false;
+	}
+	return true;
+}
+
+void GenericFeatureChain::ChainUp(VkPhysicalDeviceFeatures2& feats2) noexcept
+{
+	GenericFeaturesPNextNode* prev = nullptr;
+	for (auto& extension : nodes)
+	{
+		if (prev != nullptr)
+		{
+			prev->pNext = &extension;
+		}
+		prev = &extension;
+	}
+	feats2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	feats2.pNext = !nodes.empty() ? &nodes.at(0) : nullptr;
+}
+
+void GenericFeatureChain::Combine(const GenericFeatureChain& right) noexcept
+{
+	for (const auto& right_node : right.nodes)
+	{
+		bool already_contained = false;
+		for (auto& left_node : nodes)
+		{
+			if (left_node.sType == right_node.sType)
+			{
+				left_node.Combine(right_node);
+				already_contained = true;
+			}
+		}
+		if (!already_contained)
+		{
+			nodes.push_back(right_node);
+		}
+	}
+}
+
 #pragma endregion
 
 //=============================================================================
@@ -99,6 +191,192 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vkw::DefaultDebugCallback(VkDebugUtilsMessageSeve
 	printf("[%s: %s]\n%s\n", ms, mt, pCallbackData->pMessage);
 
 	return VK_FALSE; // Applications must return false here
+}
+
+void combineFeatures(VkPhysicalDeviceFeatures& dest, VkPhysicalDeviceFeatures src)
+{
+	dest.robustBufferAccess = dest.robustBufferAccess || src.robustBufferAccess;
+	dest.fullDrawIndexUint32 = dest.fullDrawIndexUint32 || src.fullDrawIndexUint32;
+	dest.imageCubeArray = dest.imageCubeArray || src.imageCubeArray;
+	dest.independentBlend = dest.independentBlend || src.independentBlend;
+	dest.geometryShader = dest.geometryShader || src.geometryShader;
+	dest.tessellationShader = dest.tessellationShader || src.tessellationShader;
+	dest.sampleRateShading = dest.sampleRateShading || src.sampleRateShading;
+	dest.dualSrcBlend = dest.dualSrcBlend || src.dualSrcBlend;
+	dest.logicOp = dest.logicOp || src.logicOp;
+	dest.multiDrawIndirect = dest.multiDrawIndirect || src.multiDrawIndirect;
+	dest.drawIndirectFirstInstance = dest.drawIndirectFirstInstance || src.drawIndirectFirstInstance;
+	dest.depthClamp = dest.depthClamp || src.depthClamp;
+	dest.depthBiasClamp = dest.depthBiasClamp || src.depthBiasClamp;
+	dest.fillModeNonSolid = dest.fillModeNonSolid || src.fillModeNonSolid;
+	dest.depthBounds = dest.depthBounds || src.depthBounds;
+	dest.wideLines = dest.wideLines || src.wideLines;
+	dest.largePoints = dest.largePoints || src.largePoints;
+	dest.alphaToOne = dest.alphaToOne || src.alphaToOne;
+	dest.multiViewport = dest.multiViewport || src.multiViewport;
+	dest.samplerAnisotropy = dest.samplerAnisotropy || src.samplerAnisotropy;
+	dest.textureCompressionETC2 = dest.textureCompressionETC2 || src.textureCompressionETC2;
+	dest.textureCompressionASTC_LDR = dest.textureCompressionASTC_LDR || src.textureCompressionASTC_LDR;
+	dest.textureCompressionBC = dest.textureCompressionBC || src.textureCompressionBC;
+	dest.occlusionQueryPrecise = dest.occlusionQueryPrecise || src.occlusionQueryPrecise;
+	dest.pipelineStatisticsQuery = dest.pipelineStatisticsQuery || src.pipelineStatisticsQuery;
+	dest.vertexPipelineStoresAndAtomics = dest.vertexPipelineStoresAndAtomics || src.vertexPipelineStoresAndAtomics;
+	dest.fragmentStoresAndAtomics = dest.fragmentStoresAndAtomics || src.fragmentStoresAndAtomics;
+	dest.shaderTessellationAndGeometryPointSize = dest.shaderTessellationAndGeometryPointSize || src.shaderTessellationAndGeometryPointSize;
+	dest.shaderImageGatherExtended = dest.shaderImageGatherExtended || src.shaderImageGatherExtended;
+	dest.shaderStorageImageExtendedFormats = dest.shaderStorageImageExtendedFormats || src.shaderStorageImageExtendedFormats;
+	dest.shaderStorageImageMultisample = dest.shaderStorageImageMultisample || src.shaderStorageImageMultisample;
+	dest.shaderStorageImageReadWithoutFormat = dest.shaderStorageImageReadWithoutFormat || src.shaderStorageImageReadWithoutFormat;
+	dest.shaderStorageImageWriteWithoutFormat = dest.shaderStorageImageWriteWithoutFormat || src.shaderStorageImageWriteWithoutFormat;
+	dest.shaderUniformBufferArrayDynamicIndexing = dest.shaderUniformBufferArrayDynamicIndexing || src.shaderUniformBufferArrayDynamicIndexing;
+	dest.shaderSampledImageArrayDynamicIndexing = dest.shaderSampledImageArrayDynamicIndexing || src.shaderSampledImageArrayDynamicIndexing;
+	dest.shaderStorageBufferArrayDynamicIndexing = dest.shaderStorageBufferArrayDynamicIndexing || src.shaderStorageBufferArrayDynamicIndexing;
+	dest.shaderStorageImageArrayDynamicIndexing = dest.shaderStorageImageArrayDynamicIndexing || src.shaderStorageImageArrayDynamicIndexing;
+	dest.shaderClipDistance = dest.shaderClipDistance || src.shaderClipDistance;
+	dest.shaderCullDistance = dest.shaderCullDistance || src.shaderCullDistance;
+	dest.shaderFloat64 = dest.shaderFloat64 || src.shaderFloat64;
+	dest.shaderInt64 = dest.shaderInt64 || src.shaderInt64;
+	dest.shaderInt16 = dest.shaderInt16 || src.shaderInt16;
+	dest.shaderResourceResidency = dest.shaderResourceResidency || src.shaderResourceResidency;
+	dest.shaderResourceMinLod = dest.shaderResourceMinLod || src.shaderResourceMinLod;
+	dest.sparseBinding = dest.sparseBinding || src.sparseBinding;
+	dest.sparseResidencyBuffer = dest.sparseResidencyBuffer || src.sparseResidencyBuffer;
+	dest.sparseResidencyImage2D = dest.sparseResidencyImage2D || src.sparseResidencyImage2D;
+	dest.sparseResidencyImage3D = dest.sparseResidencyImage3D || src.sparseResidencyImage3D;
+	dest.sparseResidency2Samples = dest.sparseResidency2Samples || src.sparseResidency2Samples;
+	dest.sparseResidency4Samples = dest.sparseResidency4Samples || src.sparseResidency4Samples;
+	dest.sparseResidency8Samples = dest.sparseResidency8Samples || src.sparseResidency8Samples;
+	dest.sparseResidency16Samples = dest.sparseResidency16Samples || src.sparseResidency16Samples;
+	dest.sparseResidencyAliased = dest.sparseResidencyAliased || src.sparseResidencyAliased;
+	dest.variableMultisampleRate = dest.variableMultisampleRate || src.variableMultisampleRate;
+	dest.inheritedQueries = dest.inheritedQueries || src.inheritedQueries;
+}
+
+// finds the first queue which supports only the desired flag (not graphics or transfer). Returns QUEUE_INDEX_MAX_VALUE if none is found.
+uint32_t getDedicatedQueueIndex(const std::vector<VkQueueFamilyProperties>& families, VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags)
+{
+	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++)
+	{
+		if ((families[i].queueFlags & desiredFlags) == desiredFlags && (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 && (families[i].queueFlags & undesiredFlags) == 0)
+			return i;
+	}
+	return QUEUE_INDEX_MAX_VALUE;
+}
+
+// Finds the queue which is separate from the graphics queue and has the desired flag and not the
+// undesired flag, but will select it if no better options are available compute support. Returns
+// QUEUE_INDEX_MAX_VALUE if none is found.
+uint32_t getSeparateQueueIndex(const std::vector<VkQueueFamilyProperties>& families, VkQueueFlags desiredFlags, VkQueueFlags undesiredDlags)
+{
+	uint32_t index = QUEUE_INDEX_MAX_VALUE;
+	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++)
+	{
+		if ((families[i].queueFlags & desiredFlags) == desiredFlags && ((families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+		{
+			if ((families[i].queueFlags & undesiredDlags) == 0)
+			{
+				return i;
+			}
+			else {
+				index = i;
+			}
+		}
+	}
+	return index;
+}
+
+// finds the first queue which supports presenting. returns QUEUE_INDEX_MAX_VALUE if none is found
+uint32_t getPresentQueueIndex(const VkPhysicalDevice phys_device, const VkSurfaceKHR surface, const std::vector<VkQueueFamilyProperties>& families)
+{
+	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++) 
+	{
+		VkBool32 presentSupport = false;
+		if (surface != VK_NULL_HANDLE)
+		{
+			VkResult res = vkGetPhysicalDeviceSurfaceSupportKHR(phys_device, i, surface, &presentSupport);
+			if (res != VK_SUCCESS) return QUEUE_INDEX_MAX_VALUE; // TODO: determine if this should fail another way
+		}
+		if (presentSupport == VK_TRUE) return i;
+	}
+	return QUEUE_INDEX_MAX_VALUE;
+}
+
+std::vector<std::string> checkDeviceExtensionSupport(const std::vector<std::string> &availableExtensions, const std::vector<std::string>& desiredExtensions)
+{
+	std::vector<std::string> extensions_to_enable;
+	for (const auto& avail_ext : availableExtensions)
+	{
+		for (auto& req_ext : desiredExtensions)
+		{
+			if (avail_ext == req_ext)
+			{
+				extensions_to_enable.push_back(req_ext);
+				break;
+			}
+		}
+	}
+	return extensions_to_enable;
+}
+
+bool supportsFeatures(const VkPhysicalDeviceFeatures& supported, const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extension_supported, const GenericFeatureChain& extension_requested)
+{
+	if (requested.robustBufferAccess && !supported.robustBufferAccess) return false;
+	if (requested.fullDrawIndexUint32 && !supported.fullDrawIndexUint32) return false;
+	if (requested.imageCubeArray && !supported.imageCubeArray) return false;
+	if (requested.independentBlend && !supported.independentBlend) return false;
+	if (requested.geometryShader && !supported.geometryShader) return false;
+	if (requested.tessellationShader && !supported.tessellationShader) return false;
+	if (requested.sampleRateShading && !supported.sampleRateShading) return false;
+	if (requested.dualSrcBlend && !supported.dualSrcBlend) return false;
+	if (requested.logicOp && !supported.logicOp) return false;
+	if (requested.multiDrawIndirect && !supported.multiDrawIndirect) return false;
+	if (requested.drawIndirectFirstInstance && !supported.drawIndirectFirstInstance) return false;
+	if (requested.depthClamp && !supported.depthClamp) return false;
+	if (requested.depthBiasClamp && !supported.depthBiasClamp) return false;
+	if (requested.fillModeNonSolid && !supported.fillModeNonSolid) return false;
+	if (requested.depthBounds && !supported.depthBounds) return false;
+	if (requested.wideLines && !supported.wideLines) return false;
+	if (requested.largePoints && !supported.largePoints) return false;
+	if (requested.alphaToOne && !supported.alphaToOne) return false;
+	if (requested.multiViewport && !supported.multiViewport) return false;
+	if (requested.samplerAnisotropy && !supported.samplerAnisotropy) return false;
+	if (requested.textureCompressionETC2 && !supported.textureCompressionETC2) return false;
+	if (requested.textureCompressionASTC_LDR && !supported.textureCompressionASTC_LDR) return false;
+	if (requested.textureCompressionBC && !supported.textureCompressionBC) return false;
+	if (requested.occlusionQueryPrecise && !supported.occlusionQueryPrecise) return false;
+	if (requested.pipelineStatisticsQuery && !supported.pipelineStatisticsQuery) return false;
+	if (requested.vertexPipelineStoresAndAtomics && !supported.vertexPipelineStoresAndAtomics) return false;
+	if (requested.fragmentStoresAndAtomics && !supported.fragmentStoresAndAtomics) return false;
+	if (requested.shaderTessellationAndGeometryPointSize && !supported.shaderTessellationAndGeometryPointSize) return false;
+	if (requested.shaderImageGatherExtended && !supported.shaderImageGatherExtended) return false;
+	if (requested.shaderStorageImageExtendedFormats && !supported.shaderStorageImageExtendedFormats) return false;
+	if (requested.shaderStorageImageMultisample && !supported.shaderStorageImageMultisample) return false;
+	if (requested.shaderStorageImageReadWithoutFormat && !supported.shaderStorageImageReadWithoutFormat) return false;
+	if (requested.shaderStorageImageWriteWithoutFormat && !supported.shaderStorageImageWriteWithoutFormat) return false;
+	if (requested.shaderUniformBufferArrayDynamicIndexing && !supported.shaderUniformBufferArrayDynamicIndexing) return false;
+	if (requested.shaderSampledImageArrayDynamicIndexing && !supported.shaderSampledImageArrayDynamicIndexing) return false;
+	if (requested.shaderStorageBufferArrayDynamicIndexing && !supported.shaderStorageBufferArrayDynamicIndexing) return false;
+	if (requested.shaderStorageImageArrayDynamicIndexing && !supported.shaderStorageImageArrayDynamicIndexing) return false;
+	if (requested.shaderClipDistance && !supported.shaderClipDistance) return false;
+	if (requested.shaderCullDistance && !supported.shaderCullDistance) return false;
+	if (requested.shaderFloat64 && !supported.shaderFloat64) return false;
+	if (requested.shaderInt64 && !supported.shaderInt64) return false;
+	if (requested.shaderInt16 && !supported.shaderInt16) return false;
+	if (requested.shaderResourceResidency && !supported.shaderResourceResidency) return false;
+	if (requested.shaderResourceMinLod && !supported.shaderResourceMinLod) return false;
+	if (requested.sparseBinding && !supported.sparseBinding) return false;
+	if (requested.sparseResidencyBuffer && !supported.sparseResidencyBuffer) return false;
+	if (requested.sparseResidencyImage2D && !supported.sparseResidencyImage2D) return false;
+	if (requested.sparseResidencyImage3D && !supported.sparseResidencyImage3D) return false;
+	if (requested.sparseResidency2Samples && !supported.sparseResidency2Samples) return false;
+	if (requested.sparseResidency4Samples && !supported.sparseResidency4Samples) return false;
+	if (requested.sparseResidency8Samples && !supported.sparseResidency8Samples) return false;
+	if (requested.sparseResidency16Samples && !supported.sparseResidency16Samples) return false;
+	if (requested.sparseResidencyAliased && !supported.sparseResidencyAliased) return false;
+	if (requested.variableMultisampleRate && !supported.variableMultisampleRate) return false;
+	if (requested.inheritedQueries && !supported.inheritedQueries) return false;
+
+	return extension_supported.MatchAll(extension_requested);
 }
 
 #pragma endregion
@@ -416,6 +694,23 @@ bool Instance::IsValid() const
 	return m_isValid && m_instance != nullptr;
 }
 
+SurfacePtr Instance::CreateSurface(const SurfaceCreateInfo& createInfo)
+{
+	VkSurfaceKHR vkSurface{ nullptr };
+#if defined(_WIN32)
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{ .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+	surfaceCreateInfo.hinstance = createInfo.hinstance;
+	surfaceCreateInfo.hwnd = createInfo.hwnd;
+	VkResult result = vkCreateWin32SurfaceKHR(m_instance, &surfaceCreateInfo, m_allocator, &vkSurface);
+#endif
+	if (!resultCheck(result, "Create Surface")) return nullptr;
+
+	SurfacePtr surface = std::make_shared<Surface>(shared_from_this(), vkSurface);
+	if (!surface || !surface->IsValid()) return nullptr;
+
+	return surface;
+}
+
 std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 {
 	std::vector<VkPhysicalDevice> vkPhysicalDevices;
@@ -433,20 +728,83 @@ std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 	return physicalDevices;
 }
 
-PhysicalDevicePtr vkw::Instance::GetDeviceSuitable(const PhysicalDeviceSelectCriteria& criteria)
+PhysicalDevicePtr vkw::Instance::GetDeviceSuitable(const PhysicalDeviceSelector& criteria)
 {
+#if !defined(NDEBUG)
+	// Validation
+	for (const auto& node : criteria.extendedFeaturesChain.nodes)
+	{
+		assert(node.sType != static_cast<VkStructureType>(0) && "Features struct sType must be filled with the struct's "
+			"corresponding VkStructureType enum");
+		assert(node.sType != VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 && "Do not pass VkPhysicalDeviceFeatures2 as a required extension feature structure. An instance of this is managed internally for selection criteria and device creation.");
+	}
+#endif
+
+	if (criteria.requirePresent && !criteria.deferSurfaceInitialization)
+	{
+		if (criteria.surface == VK_NULL_HANDLE)
+		{
+			error("PhysicalDeviceError: no surface provided");
+			return nullptr;
+		}
+	}
+
 	std::vector<PhysicalDevicePtr> devices = GetPhysicalDevices();
 	if (devices.empty())
 	{
 		error("failed to find a suitable GPU!");
 		return nullptr;
 	}
+	
+	// Populate their details and check their suitability
+	std::vector<PhysicalDevicePtr> suitablePhysicalDevices;
+	for (auto& vk_physical_device : devices)
+	{
+		PhysicalDevicePtr phys_dev = populateDeviceDetails(vk_physical_device, criteria, criteria.extendedFeaturesChain);
+		phys_dev->m_suitable = isDeviceSuitable(phys_dev, criteria);
+		if (phys_dev->m_suitable != Suitable::no)
+		{
+			suitablePhysicalDevices.push_back(phys_dev);
+		}
+	}
 
-	size_t selectDevice = 0;
+	// sort the list into fully and partially suitable devices. use stable_partition to maintain relative order
+	const auto partition_index = std::stable_partition(suitablePhysicalDevices.begin(), suitablePhysicalDevices.end(), [](const auto& pd) { return pd->m_suitable == Suitable::yes; });
 
-	// TODO: подбираем видяху по criteria
+	// Remove the partially suitable elements if they aren't desired
+	if (criteria.selection == DeviceSelectionMode::onlyFullySuitable)
+	{
+		suitablePhysicalDevices.erase(partition_index, suitablePhysicalDevices.end());
+	}
 
-	return devices[selectDevice];
+	auto fillOutPhysDevWithCriteria = [&](PhysicalDevicePtr physDev)
+		{
+			physDev->m_features = criteria.requiredFeatures;
+			physDev->m_extendedFeaturesChain = criteria.extendedFeaturesChain;
+			bool portabilityExtAvailable = false;
+			for (const auto& ext : physDev->m_availableExtensions)
+				if (criteria.enablePortabilitySubset && ext == "VK_KHR_portability_subset")
+					portabilityExtAvailable = true;
+
+			physDev->m_extensionsToEnable.clear();
+			physDev->m_extensionsToEnable.insert(physDev->m_extensionsToEnable.end(), criteria.requiredExtensions.begin(), criteria.requiredExtensions.end());
+			if (portabilityExtAvailable)
+				physDev->m_extensionsToEnable.push_back("VK_KHR_portability_subset");
+		};
+
+	// Make the physical device ready to be used to create a Device from it
+	for (auto& physicalDevice : suitablePhysicalDevices)
+	{
+		fillOutPhysDevWithCriteria(physicalDevice);
+	}
+
+	if (suitablePhysicalDevices.size() == 0)
+	{
+		error("PhysicalDeviceError no suitable device");
+		return nullptr;
+	}
+
+	return suitablePhysicalDevices.at(0);
 }
 
 bool Instance::checkValid(const InstanceCreateInfo& createInfo)
@@ -465,9 +823,233 @@ bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 	return true;
 }
 
+PhysicalDevicePtr Instance::populateDeviceDetails(PhysicalDevicePtr physical_device, const PhysicalDeviceSelector& criteria, const GenericFeatureChain& srcExtendedFeaturesChain) const
+{
+	physical_device->m_deferSurfaceInitialization = criteria.deferSurfaceInitialization;
+	auto queue_families = physical_device->GetQueueFamilyProperties();
+	physical_device->m_queueFamilies = queue_families;
+	physical_device->m_name = physical_device->GetDeviceName();
+
+	std::vector<VkExtensionProperties> available_extensions = physical_device->GetDeviceExtensions();
+	for (const auto& ext : available_extensions)
+	{
+		physical_device->m_availableExtensions.push_back(&ext.extensionName[0]);
+	}
+
+	bool properties2_ext_enabled = true/*instance_info.properties2_ext_enabled*/;
+
+	physical_device->m_properties2ExtEnabled = properties2_ext_enabled;
+
+	auto fill_chain = srcExtendedFeaturesChain;
+
+	if (!fill_chain.nodes.empty() && (properties2_ext_enabled))
+	{
+		VkPhysicalDeviceFeatures2 local_features{};
+		fill_chain.ChainUp(local_features);
+		vkGetPhysicalDeviceFeatures2(physical_device->m_device, &local_features);
+		physical_device->m_extendedFeaturesChain = fill_chain;
+	}
+
+	return physical_device;
+}
+
+Suitable Instance::isDeviceSuitable(PhysicalDevicePtr pd, const PhysicalDeviceSelector& criteria) const
+{
+	Suitable suitable = Suitable::yes;
+
+	if (criteria.deviceName.size() > 0 && criteria.deviceName != pd->m_properties.deviceName) return Suitable::no;
+	if (criteria.requiredVersion > pd->m_properties.apiVersion) return Suitable::no;
+
+	bool dedicated_compute = getDedicatedQueueIndex(pd->m_queueFamilies, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT) !=
+		QUEUE_INDEX_MAX_VALUE;
+	bool dedicated_transfer = getDedicatedQueueIndex(pd->m_queueFamilies, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT) !=
+		QUEUE_INDEX_MAX_VALUE;
+	bool separate_compute = getSeparateQueueIndex(pd->m_queueFamilies, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT) !=
+		QUEUE_INDEX_MAX_VALUE;
+	bool separate_transfer = getSeparateQueueIndex(pd->m_queueFamilies, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT) !=
+		QUEUE_INDEX_MAX_VALUE;
+
+	bool present_queue = getPresentQueueIndex(pd->m_device, *criteria.surface, pd->m_queueFamilies) !=
+		QUEUE_INDEX_MAX_VALUE;
+
+	if (criteria.requireDedicatedComputeQueue && !dedicated_compute) return Suitable::no;
+	if (criteria.requireDedicatedTransferQueue && !dedicated_transfer) return Suitable::no;
+	if (criteria.requireSeparateComputeQueue && !separate_compute) return Suitable::no;
+	if (criteria.requireSeparateTransferQueue && !separate_transfer) return Suitable::no;
+	if (criteria.requirePresent && !present_queue && !criteria.deferSurfaceInitialization) return Suitable::no;
+
+	auto required_extensions_supported = checkDeviceExtensionSupport(pd->m_availableExtensions, criteria.requiredExtensions);
+	if (required_extensions_supported.size() != criteria.requiredExtensions.size()) return Suitable::no;
+
+	if (!criteria.deferSurfaceInitialization && criteria.requirePresent)
+	{
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> present_modes;
+
+		auto formats_ret = GetVector<VkSurfaceFormatKHR>(formats, vkGetPhysicalDeviceSurfaceFormatsKHR, pd->m_device, *criteria.surface);
+		auto present_modes_ret = GetVector<VkPresentModeKHR>(present_modes,	vkGetPhysicalDeviceSurfacePresentModesKHR, pd->m_device, *criteria.surface);
+
+		if (formats_ret != VK_SUCCESS || present_modes_ret != VK_SUCCESS || formats.empty() || present_modes.empty()) return Suitable::no;
+	}
+
+	if (!criteria.allowAnyType && pd->m_properties.deviceType != static_cast<VkPhysicalDeviceType>(criteria.preferredGPUDeviceType))
+	{
+		suitable = Suitable::partial;
+	}
+
+	bool required_features_supported = supportsFeatures(pd->m_features, criteria.requiredFeatures, pd->m_extendedFeaturesChain, criteria.extendedFeaturesChain);
+	if (!required_features_supported) return Suitable::no;
+
+	for (uint32_t i = 0; i < pd->m_memoryProperties.memoryHeapCount; i++)
+	{
+		if (pd->m_memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) 
+		{
+			if (pd->m_memoryProperties.memoryHeaps[i].size < criteria.requiredMemSize) return Suitable::no;
+		}
+	}
+
+	return suitable;
+}
+
 #pragma endregion
 
+//=============================================================================
+#pragma region [ Surface ]
+
+Surface::Surface(InstancePtr instance, VkSurfaceKHR surface)
+	: m_instance(instance)
+	, m_surface(surface)
+{
+}
+
+Surface::~Surface()
+{
+	vkDestroySurfaceKHR(*m_instance, m_surface, *m_instance);
+}
+
+#pragma endregion
+
+//=============================================================================
 #pragma region [ PhysicalDevice ]
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetSurface(SurfacePtr surface)
+{
+	this->surface = surface;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetName(const std::string& name)
+{
+	deviceName = name;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::PreferGPUDeviceType(PhysicalDeviceType type)
+{
+	preferredGPUDeviceType = type;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::AllowAnyGPUDeviceType(bool allowAnyType)
+{
+	this->allowAnyType = allowAnyType;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequirePresent(bool require)
+{
+	requirePresent = require;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequireDedicatedTransferQueue()
+{
+	requireDedicatedTransferQueue = true;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequireDedicatedComputeQueue()
+{
+	requireDedicatedComputeQueue = true;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequireSeparateTransferQueue()
+{
+	requireSeparateTransferQueue = true;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequireSeparateComputeQueue()
+{
+	requireSeparateComputeQueue = true;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::RequiredDeviceMemorySize(VkDeviceSize size)
+{
+	requiredMemSize = size;
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::AddRequiredExtension(const char* extension)
+{
+	requiredExtensions.push_back(extension);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::AddRequiredExtensions(const std::vector<const char*>& extensions)
+{
+	for (const auto& ext : extensions)
+		requiredExtensions.push_back(ext);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetMinimumVersion(uint32_t major, uint32_t minor)
+{
+	requiredVersion = VK_MAKE_API_VERSION(0, major, minor, 0);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures(const VkPhysicalDeviceFeatures& features)
+{
+	combineFeatures(requiredFeatures, features);
+	return *this;
+}
+
+// The implementation of the set_required_features_1X functions sets the sType manually. This was a poor choice since
+// users of Vulkan should expect to fill out their structs properly. To make the functions take the struct parameter by
+// const reference, a local copy must be made in order to set the sType.
+// TODO: переделать из-за описания комментария
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures11(const VkPhysicalDeviceVulkan11Features& features11)
+{
+	VkPhysicalDeviceVulkan11Features features_11_copy = features11;
+	features_11_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	AddRequiredExtensionFeatures(features_11_copy);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures12(const VkPhysicalDeviceVulkan12Features& features12)
+{
+	VkPhysicalDeviceVulkan12Features features_12_copy = features12;
+	features_12_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	AddRequiredExtensionFeatures(features_12_copy);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures13(const VkPhysicalDeviceVulkan13Features& features13)
+{
+	VkPhysicalDeviceVulkan13Features features_13_copy = features13;
+	features_13_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	AddRequiredExtensionFeatures(features_13_copy);
+	return *this;
+}
+
+PhysicalDeviceSelector& PhysicalDeviceSelector::DeferSurfaceInitialization()
+{
+	deferSurfaceInitialization = true;
+	return *this;
+}
 
 PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysicalDevice)
 	: m_instance(instance)
@@ -478,7 +1060,7 @@ PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysical
 	vkGetPhysicalDeviceMemoryProperties(m_device, &m_memoryProperties);
 }
 
-PhysicalDeviceType vkw::PhysicalDevice::GetDeviceType() const
+PhysicalDeviceType PhysicalDevice::GetDeviceType() const
 {
 	switch (m_properties.deviceType)
 	{
@@ -492,7 +1074,7 @@ PhysicalDeviceType vkw::PhysicalDevice::GetDeviceType() const
 	return PhysicalDeviceType::Other;
 }
 
-std::vector<VkExtensionProperties> vkw::PhysicalDevice::GetDeviceExtensions() const
+std::vector<VkExtensionProperties> PhysicalDevice::GetDeviceExtensions() const
 {
 	std::vector<VkExtensionProperties> deviceExtensions;
 
@@ -506,7 +1088,7 @@ std::vector<VkExtensionProperties> vkw::PhysicalDevice::GetDeviceExtensions() co
 	return deviceExtensions;
 }
 
-std::vector<VkQueueFamilyProperties> vkw::PhysicalDevice::GetQueueFamilyProperties() const
+std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProperties() const
 {
 	return GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
 }

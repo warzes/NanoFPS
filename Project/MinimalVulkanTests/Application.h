@@ -47,6 +47,9 @@ public:
 	[[nodiscard]] std::vector<uint8_t> ReadChunk(const std::filesystem::path& path, size_t offset, size_t count);
 	[[nodiscard]] std::vector<uint8_t> ReadFileBinary(const std::filesystem::path& path);
 
+	[[nodiscard]] HWND GetWindowHWND() { return m_hwnd; }
+	[[nodiscard]] HINSTANCE GetWindowInstance() { return m_handleInstance; }
+
 private:
 	friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM) noexcept;
 

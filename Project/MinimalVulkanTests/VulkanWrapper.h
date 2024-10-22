@@ -46,12 +46,15 @@ namespace vkw {
 
 class Context;
 class Instance;
+class Surface;
 class PhysicalDevice;
 
 struct InstanceCreateInfo;
-struct PhysicalDeviceSelectCriteria;
+struct SurfaceCreateInfo;
+struct PhysicalDeviceSelector;
 
 using InstancePtr = std::shared_ptr<Instance>;
+using SurfacePtr = std::shared_ptr<Surface>;
 using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
 
 #pragma endregion
@@ -88,10 +91,75 @@ enum class PhysicalDeviceType : uint8_t
 	CPU
 };
 
+enum class DeviceSelectionMode : uint8_t
+{
+	// return all suitable and partially suitable devices
+	partiallyAndFullySuitable,
+	// return only physical devices which are fully suitable
+	onlyFullySuitable
+};
+
+enum class Suitable : uint8_t
+{ 
+	yes, 
+	partial, 
+	no 
+};
+
 #pragma endregion
 
 //=============================================================================
 #pragma region [ Core Struct ]
+
+// Sentinel value, used in implementation only
+const uint32_t QUEUE_INDEX_MAX_VALUE = 65536;
+
+struct GenericFeaturesPNextNode
+{
+	static const uint32_t fieldCapacity = 256;
+
+	GenericFeaturesPNextNode();
+	template <typename T> 
+	GenericFeaturesPNextNode(const T& features) noexcept
+	{
+		memset(fields, UINT8_MAX, sizeof(VkBool32) * fieldCapacity);
+		memcpy(this, &features, sizeof(T));
+	}
+
+	static bool Match(const GenericFeaturesPNextNode& requested, const GenericFeaturesPNextNode& supported) noexcept;
+
+	void Combine(const GenericFeaturesPNextNode& right) noexcept;
+
+	VkStructureType sType = static_cast<VkStructureType>(0);
+	void*           pNext = nullptr;
+	VkBool32        fields[fieldCapacity];
+};
+
+struct GenericFeatureChain
+{
+	std::vector<GenericFeaturesPNextNode> nodes;
+
+	template <typename T> 
+	void Add(const T& features) noexcept
+	{
+		// If this struct is already in the list, combine it
+		for (auto& node : nodes)
+		{
+			if (static_cast<VkStructureType>(features.sType) == node.sType)
+			{
+				node.Combine(features);
+				return;
+			}
+		}
+		// Otherwise append to the end
+		nodes.push_back(features);
+	}
+
+	bool MatchAll(const GenericFeatureChain& extensionRequested) const noexcept;
+	bool FindAndMatch(const GenericFeatureChain& extensionRequested) const noexcept;
+	void ChainUp(VkPhysicalDeviceFeatures2& feats2) noexcept;
+	void Combine(const GenericFeatureChain& right) noexcept;
+};
 
 #pragma endregion
 
@@ -239,11 +307,23 @@ public:
 
 	[[nodiscard]] bool IsValid() const;
 
+	operator VkInstance() const { return m_instance; }
+	operator VkAllocationCallbacks*() const { return m_allocator; }
+
+	SurfacePtr CreateSurface(const SurfaceCreateInfo& createInfo);
+
+
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
-	[[nodiscard]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelectCriteria& criteria);
+	[[nodiscard]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelector& criteria);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
+
+	// TODO: в селектор
+	PhysicalDevicePtr populateDeviceDetails(PhysicalDevicePtr physDevice, const PhysicalDeviceSelector& criteria, const GenericFeatureChain& srcExtendedFeaturesChain) const;
+	// TODO: в селектор
+	Suitable isDeviceSuitable(PhysicalDevicePtr physDevice, const PhysicalDeviceSelector& criteria) const;
+
 	VkInstance               m_instance{ VK_NULL_HANDLE };
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
 	VkAllocationCallbacks*   m_allocator{ VK_NULL_HANDLE };
@@ -254,19 +334,141 @@ private:
 #pragma endregion
 
 //=============================================================================
+#pragma region [ Surface ]
+
+struct SurfaceCreateInfo final
+{
+#if defined(_WIN32)
+	HINSTANCE hinstance{ nullptr };
+	HWND      hwnd{ nullptr };
+#endif
+};
+
+class Surface final
+{
+	friend class Instance;
+public:
+	Surface() = delete;
+	Surface(InstancePtr instance, VkSurfaceKHR surface);
+	~Surface();
+
+	operator VkSurfaceKHR() const { return m_surface; }
+
+	[[nodiscard]] bool IsValid() const { return m_surface != nullptr; }
+
+private:
+	InstancePtr  m_instance{ nullptr };
+	VkSurfaceKHR m_surface{ nullptr };
+};
+
+#pragma endregion
+
+//=============================================================================
 #pragma region [ PhysicalDevice ]
 
-struct PhysicalDeviceSelectCriteria final
+// TODO: удалить функции
+struct PhysicalDeviceSelector final
 {
+	DeviceSelectionMode selection = DeviceSelectionMode::onlyFullySuitable;
 
+	// Set the surface in which the physical device should render to.
+	// Be sure to set it if swapchain functionality is to be used.
+	PhysicalDeviceSelector& SetSurface(SurfacePtr surface);
+	
+	// Set the name of the device to select.
+	PhysicalDeviceSelector& SetName(const std::string& name);
+	// Set the desired physical device type to select. Defaults to PreferredDeviceType::discrete.
+	PhysicalDeviceSelector& PreferGPUDeviceType(PhysicalDeviceType type = PhysicalDeviceType::DiscreteGPU);
+	// Allow selection of a gpu device type that isn't the preferred physical device type. Defaults to true.
+	PhysicalDeviceSelector& AllowAnyGPUDeviceType(bool allowAnyType = true);
+
+	// Require that a physical device supports presentation. Defaults to true.
+	PhysicalDeviceSelector& RequirePresent(bool require = true);
+
+	// Require a queue family that supports transfer operations but not graphics nor compute.
+	PhysicalDeviceSelector& RequireDedicatedTransferQueue();
+	// Require a queue family that supports compute operations but not graphics nor transfer.
+	PhysicalDeviceSelector& RequireDedicatedComputeQueue();
+
+	// Require a queue family that supports transfer operations but not graphics.
+	PhysicalDeviceSelector& RequireSeparateTransferQueue();
+	// Require a queue family that supports compute operations but not graphics.
+	PhysicalDeviceSelector& RequireSeparateComputeQueue();
+
+	// Require a memory heap from VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT with `size` memory available.
+	PhysicalDeviceSelector& RequiredDeviceMemorySize(VkDeviceSize size);
+
+	// Require a physical device which supports a specific extension.
+	PhysicalDeviceSelector& AddRequiredExtension(const char* extension);
+	// Require a physical device which supports a set of extensions.
+	PhysicalDeviceSelector& AddRequiredExtensions(const std::vector<const char*>& extensions);
+
+	// Require a physical device that supports a (major, minor) version of vulkan.
+	PhysicalDeviceSelector& SetMinimumVersion(uint32_t major, uint32_t minor);
+
+	// Require a physical device which supports a specific set of general/extension features.
+	// If this function is used, the user should not put their own VkPhysicalDeviceFeatures2 in
+	// the pNext chain of VkDeviceCreateInfo.
+	template <typename T> 
+	PhysicalDeviceSelector& AddRequiredExtensionFeatures(const T& features)
+	{
+		extendedFeaturesChain.Add(features);
+		return *this;
+	}
+
+	// TODO: возможно удалить эти методы и использовать AddRequiredExtensionFeatures
+	// Require a physical device which supports the features in VkPhysicalDeviceFeatures.
+	PhysicalDeviceSelector& SetRequiredFeatures(const VkPhysicalDeviceFeatures& features);
+	// Require a physical device which supports the features in VkPhysicalDeviceVulkan11Features.
+	PhysicalDeviceSelector& SetRequiredFeatures11(const VkPhysicalDeviceVulkan11Features& features11);
+	// Require a physical device which supports the features in VkPhysicalDeviceVulkan12Features.
+	PhysicalDeviceSelector& SetRequiredFeatures12(const VkPhysicalDeviceVulkan12Features& features12);
+	// Require a physical device which supports the features in VkPhysicalDeviceVulkan13Features.
+	PhysicalDeviceSelector& SetRequiredFeatures13(const VkPhysicalDeviceVulkan13Features& features13);
+
+	// Used when surface creation happens after physical device selection.
+	// Warning: This disables checking if the physical device supports a given surface.
+	PhysicalDeviceSelector& DeferSurfaceInitialization(); // TODO: удалить?
+
+private:
+
+	friend class Instance;
+	friend class PhysicalDevice;
+
+	SurfacePtr surface{ nullptr };
+
+	// Set the name of the device to select.
+	std::string deviceName;
+	PhysicalDeviceType preferredGPUDeviceType = PhysicalDeviceType::DiscreteGPU;
+	bool allowAnyType = false;
+	bool requirePresent = true;
+	bool requireDedicatedTransferQueue = false;
+	bool requireDedicatedComputeQueue = false;
+	bool requireSeparateTransferQueue = false;
+	bool requireSeparateComputeQueue = false;
+	VkDeviceSize requiredMemSize = 0;
+
+	std::vector<std::string> requiredExtensions;
+
+	uint32_t requiredVersion = VK_API_VERSION_1_3;
+
+	VkPhysicalDeviceFeatures requiredFeatures{};
+	VkPhysicalDeviceFeatures2 requiredFeatures2{};
+
+	GenericFeatureChain extendedFeaturesChain;
+	bool deferSurfaceInitialization = false;
+	bool enablePortabilitySubset = true; // TODO: разобраться с этим
 };
 
 class PhysicalDevice final
 {
+	friend class Instance;
 public:
 	PhysicalDevice() = delete;
 	PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysicalDevice);
 	~PhysicalDevice() = default;
+
+	operator VkPhysicalDevice() const { return m_device; }
 
 	[[nodiscard]] const VkPhysicalDeviceFeatures& GetFeatures() const { return m_features; }
 	[[nodiscard]] const VkPhysicalDeviceProperties& GetProperties() const { m_properties; }
@@ -280,11 +482,20 @@ public:
 	[[nodiscard]] std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
 
 private:
-	InstancePtr                      m_instance{ nullptr };
-	VkPhysicalDevice                 m_device{ VK_NULL_HANDLE };
-	VkPhysicalDeviceFeatures         m_features{};
-	VkPhysicalDeviceProperties       m_properties{};
-	VkPhysicalDeviceMemoryProperties m_memoryProperties{};
+	InstancePtr                          m_instance{ nullptr };
+	VkPhysicalDevice                     m_device{ VK_NULL_HANDLE };
+	VkPhysicalDeviceFeatures             m_features{};
+	VkPhysicalDeviceProperties           m_properties{};
+	VkPhysicalDeviceMemoryProperties     m_memoryProperties{};
+
+	Suitable                             m_suitable = Suitable::yes;
+	std::vector<std::string>             m_availableExtensions;
+	std::vector<std::string>             m_extensionsToEnable;
+	GenericFeatureChain                  m_extendedFeaturesChain;
+	bool                                 m_deferSurfaceInitialization = false;
+	std::vector<VkQueueFamilyProperties> m_queueFamilies;
+	std::string                          m_name;
+	bool                                 m_properties2ExtEnabled = false;
 };
 
 #pragma endregion
