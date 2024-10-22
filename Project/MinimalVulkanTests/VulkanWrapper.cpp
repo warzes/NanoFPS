@@ -826,15 +826,7 @@ bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 PhysicalDevicePtr Instance::populateDeviceDetails(PhysicalDevicePtr physical_device, const PhysicalDeviceSelector& criteria, const GenericFeatureChain& srcExtendedFeaturesChain) const
 {
 	physical_device->m_deferSurfaceInitialization = criteria.deferSurfaceInitialization;
-	auto queue_families = physical_device->GetQueueFamilyProperties();
-	physical_device->m_queueFamilies = queue_families;
 	physical_device->m_name = physical_device->GetDeviceName();
-
-	std::vector<VkExtensionProperties> available_extensions = physical_device->GetDeviceExtensions();
-	for (const auto& ext : available_extensions)
-	{
-		physical_device->m_availableExtensions.push_back(&ext.extensionName[0]);
-	}
 
 	bool properties2_ext_enabled = true/*instance_info.properties2_ext_enabled*/;
 
@@ -1058,6 +1050,21 @@ PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysical
 	vkGetPhysicalDeviceFeatures(m_device, &m_features);
 	vkGetPhysicalDeviceProperties(m_device, &m_properties);
 	vkGetPhysicalDeviceMemoryProperties(m_device, &m_memoryProperties);
+
+	m_queueFamilies = GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
+
+	std::vector<VkExtensionProperties> deviceExtensions;
+	auto result = GetVector<VkExtensionProperties>(deviceExtensions, vkEnumerateDeviceExtensionProperties, m_device, nullptr);
+	if (result != VK_SUCCESS)
+	{
+		error("vkEnumerateDeviceExtensionProperties");
+		return;
+	}
+	m_availableExtensions.resize(deviceExtensions.size());
+	for (size_t i = 0; i < deviceExtensions.size(); i++)
+	{
+		m_availableExtensions[i] = deviceExtensions[i].extensionName;
+	}
 }
 
 PhysicalDeviceType PhysicalDevice::GetDeviceType() const
@@ -1074,23 +1081,64 @@ PhysicalDeviceType PhysicalDevice::GetDeviceType() const
 	return PhysicalDeviceType::Other;
 }
 
-std::vector<VkExtensionProperties> PhysicalDevice::GetDeviceExtensions() const
+const std::vector<std::string>& PhysicalDevice::GetDeviceExtensions() const
 {
-	std::vector<VkExtensionProperties> deviceExtensions;
-
-	auto result = GetVector<VkExtensionProperties>(deviceExtensions, vkEnumerateDeviceExtensionProperties, m_device, nullptr);
-	if (result != VK_SUCCESS)
-	{
-		error("vkEnumerateDeviceExtensionProperties");
-		return {};
-	}
-
-	return deviceExtensions;
+	return m_availableExtensions;
 }
 
-std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProperties() const
+const std::vector<VkQueueFamilyProperties>& PhysicalDevice::GetQueueFamilyProperties() const
 {
-	return GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
+	return m_queueFamilies;
+}
+
+bool PhysicalDevice::IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex)
+{
+	VkBool32 presentSupported{ VK_FALSE };
+	if (surface != VK_NULL_HANDLE)
+	{
+		VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_device, queueFamilyIndex, *surface, &presentSupported);
+		if (!resultCheck(result, "IsPresentSupported")) return false;
+	}
+
+	return presentSupported == VK_TRUE;
+}
+
+bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension)
+{
+	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
+		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
+		}) != m_availableExtensions.end();
+}
+
+bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions)
+{
+	bool allFound = true;
+	for (const auto& extensionName : requestedExtensions)
+	{
+		bool found = CheckExtensionSupported(extensionName);
+		if (!found) allFound = false;
+	}
+	return allFound;
+}
+
+const VkFormatProperties PhysicalDevice::GetFormatProperties(VkFormat format) const
+{
+	VkFormatProperties format_properties;
+	vkGetPhysicalDeviceFormatProperties(m_device, format, &format_properties);
+	return format_properties;
+}
+
+uint32_t PhysicalDevice::GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const
+{
+	uint32_t passes_needed;
+	vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(m_device, perfQueryCreateInfo, &passes_needed);
+	return passes_needed;
+}
+
+void PhysicalDevice::EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queueFamilyIndex, uint32_t* count, VkPerformanceCounterKHR* counters, VkPerformanceCounterDescriptionKHR* descriptions) const
+{
+	VkResult result = vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device, queueFamilyIndex, count, counters, descriptions);
+	resultCheck(result, "EnumerateQueueFamilyPerformanceQueryCounters");
 }
 
 #pragma endregion

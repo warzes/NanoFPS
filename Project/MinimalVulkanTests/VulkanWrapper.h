@@ -310,11 +310,11 @@ public:
 	operator VkInstance() const { return m_instance; }
 	operator VkAllocationCallbacks*() const { return m_allocator; }
 
-	SurfacePtr CreateSurface(const SurfaceCreateInfo& createInfo);
+	[[nodiscard]] SurfacePtr CreateSurface(const SurfaceCreateInfo& createInfo);
 
 
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
-	[[nodiscard]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelector& criteria);
+	[[deprecated]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelector& criteria);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -367,6 +367,7 @@ private:
 #pragma region [ PhysicalDevice ]
 
 // TODO: удалить функции
+// TODO: вообще удалить
 struct PhysicalDeviceSelector final
 {
 	DeviceSelectionMode selection = DeviceSelectionMode::onlyFullySuitable;
@@ -478,8 +479,18 @@ public:
 	[[nodiscard]] std::string GetDeviceName() const { return m_properties.deviceName; }
 	[[nodiscard]] PhysicalDeviceType GetDeviceType() const;
 
-	[[nodiscard]] std::vector<VkExtensionProperties> GetDeviceExtensions() const;
-	[[nodiscard]] std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
+	[[nodiscard]] const std::vector<std::string>& GetDeviceExtensions() const;
+	[[nodiscard]] const std::vector<VkQueueFamilyProperties>& GetQueueFamilyProperties() const;
+
+	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex);
+
+	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension);
+	[[nodiscard]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions);
+
+	[[nodiscard]] const VkFormatProperties GetFormatProperties(VkFormat format) const;
+
+	[[nodiscatd]] uint32_t GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const;
+	void EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queueFamilyIndex, uint32_t* count, VkPerformanceCounterKHR* counters, VkPerformanceCounterDescriptionKHR* descriptions) const;
 
 private:
 	InstancePtr                          m_instance{ nullptr };
@@ -487,13 +498,15 @@ private:
 	VkPhysicalDeviceFeatures             m_features{};
 	VkPhysicalDeviceProperties           m_properties{};
 	VkPhysicalDeviceMemoryProperties     m_memoryProperties{};
-
-	Suitable                             m_suitable = Suitable::yes;
+	std::vector<VkQueueFamilyProperties> m_queueFamilies;
 	std::vector<std::string>             m_availableExtensions;
+
+	// OLD
+	Suitable                             m_suitable = Suitable::yes;
 	std::vector<std::string>             m_extensionsToEnable;
 	GenericFeatureChain                  m_extendedFeaturesChain;
 	bool                                 m_deferSurfaceInitialization = false;
-	std::vector<VkQueueFamilyProperties> m_queueFamilies;
+
 	std::string                          m_name;
 	bool                                 m_properties2ExtEnabled = false;
 };

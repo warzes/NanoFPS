@@ -8,39 +8,6 @@ ApplicationCreateInfo Test001::GetConfig()
 	return ApplicationCreateInfo();
 }
 
-class System;
-
-class Resource
-{
-public:
-	Resource() { puts("resource create"); }
-	~Resource() { puts("resource destroy"); }
-
-	std::shared_ptr<System> system;
-};
-
-class System : public std::enable_shared_from_this<System>
-{
-public:
-	System() { puts("system create"); }
-	~System() { puts("system destroy"); }
-
-	std::shared_ptr<Resource> CreateRes()
-	{ 
-		auto res = std::make_shared<Resource>();
-		res->system = shared_from_this();
-		return res;
-	}
-};
-
-class Creat
-{
-public:
-	std::shared_ptr<System> Create() { return std::make_shared<System>(); }
-};
-
-
-
 bool Test001::Start()
 {
 	vkw::Context context;
@@ -72,22 +39,37 @@ bool Test001::Start()
 	vkw::SurfacePtr surface = instance->CreateSurface(surfaceCreateInfo);
 	if (!surface) return false;
 	
+#if 0
 	vkw::PhysicalDeviceSelector deviceSelect;
 	deviceSelect.SetSurface(surface);
-
 	auto selPhDevice = instance->GetDeviceSuitable(deviceSelect);
 	if (!selPhDevice) return false;
+#else
+	auto physicDevices = instance->GetPhysicalDevices();
+	vkw::PhysicalDevicePtr selectDevice{ nullptr };
+	for (auto gpu : physicDevices)
+	{
+		if (selectDevice) break;
 
-	//Creat cr;
+		if (gpu->GetDeviceType() == vkw::PhysicalDeviceType::DiscreteGPU)
+		{
+			size_t queueCount = gpu->GetQueueFamilyProperties().size();
+			for (uint32_t queue_idx = 0; static_cast<size_t>(queue_idx) < queueCount; queue_idx++)
+			{
+				if (gpu->IsPresentSupported(surface, queue_idx))
+				{
+					selectDevice = gpu;
+					break;
+				}
+			}
+		}
+	}
+	if (!selectDevice) return false;
 
-	//std::shared_ptr<System> sys = cr.Create();
+#endif
 
-	//std::shared_ptr<Resource> res = sys->CreateRes();
-	//std::shared_ptr<Resource> res2 = sys->CreateRes();
 
-	//sys.reset();
-	//res.reset();
-	//res2.reset();
+
 
 
 
