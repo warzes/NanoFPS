@@ -47,29 +47,35 @@ bool Test001::Start()
 #else
 	auto physicDevices = instance->GetPhysicalDevices();
 	vkw::PhysicalDevicePtr selectDevice{ nullptr };
+	uint32_t graphicsQueueFamily = 0;
 	for (auto gpu : physicDevices)
 	{
 		if (selectDevice) break;
 
 		if (gpu->GetDeviceType() == vkw::PhysicalDeviceType::DiscreteGPU)
 		{
-			size_t queueCount = gpu->GetQueueFamilyProperties().size();
-			for (uint32_t queue_idx = 0; static_cast<size_t>(queue_idx) < queueCount; queue_idx++)
+			auto deviceFeatures = gpu->GetFeatures();
+			if (deviceFeatures.geometryShader)
 			{
-				if (gpu->IsPresentSupported(surface, queue_idx))
+				if (gpu->IsPresentSupported(surface))
 				{
-					selectDevice = gpu;
-					break;
+					auto hq = gpu->GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+					if (hq.has_value())
+					{
+						graphicsQueueFamily = hq.value();
+
+						selectDevice = gpu;
+						break;
+					}
 				}
 			}
 		}
 	}
 	if (!selectDevice) return false;
-
 #endif
 
-
-
+	vkw::DevicePtr device = instance->CreateDevice(selectDevice);
+	if (!device) return false;
 
 
 

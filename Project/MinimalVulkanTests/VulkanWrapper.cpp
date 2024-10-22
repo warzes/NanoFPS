@@ -257,7 +257,10 @@ uint32_t getDedicatedQueueIndex(const std::vector<VkQueueFamilyProperties>& fami
 {
 	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++)
 	{
-		if ((families[i].queueFlags & desiredFlags) == desiredFlags && (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 && (families[i].queueFlags & undesiredFlags) == 0)
+		if (
+			(families[i].queueFlags & desiredFlags) == desiredFlags 
+			&& (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 
+			&& (families[i].queueFlags & undesiredFlags) == 0)
 			return i;
 	}
 	return QUEUE_INDEX_MAX_VALUE;
@@ -807,6 +810,13 @@ PhysicalDevicePtr vkw::Instance::GetDeviceSuitable(const PhysicalDeviceSelector&
 	return suitablePhysicalDevices.at(0);
 }
 
+DevicePtr Instance::CreateDevice(PhysicalDevicePtr physicalDevice)
+{
+	auto resource = std::make_shared<Device>(shared_from_this(), physicalDevice);
+	if (!resource || !resource->IsValid()) return nullptr;
+	return resource;
+}
+
 bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 {
 	if (!IsValidState()) return false;
@@ -1053,6 +1063,7 @@ PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysical
 
 	m_queueFamilies = GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
 
+	// TODO: а может не нужно их хранить?
 	std::vector<VkExtensionProperties> deviceExtensions;
 	auto result = GetVector<VkExtensionProperties>(deviceExtensions, vkEnumerateDeviceExtensionProperties, m_device, nullptr);
 	if (result != VK_SUCCESS)
@@ -1091,7 +1102,20 @@ const std::vector<VkQueueFamilyProperties>& PhysicalDevice::GetQueueFamilyProper
 	return m_queueFamilies;
 }
 
-bool PhysicalDevice::IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex)
+bool PhysicalDevice::IsPresentSupported(SurfacePtr surface) const
+{
+	size_t queueCount = m_queueFamilies.size();
+	for (uint32_t queue_idx = 0; queue_idx < static_cast<uint32_t>(queueCount); queue_idx++)
+	{
+		if (IsPresentSupported(surface, queue_idx))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool PhysicalDevice::IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex) const
 {
 	VkBool32 presentSupported{ VK_FALSE };
 	if (surface != VK_NULL_HANDLE)
@@ -1103,14 +1127,14 @@ bool PhysicalDevice::IsPresentSupported(SurfacePtr surface, uint32_t queueFamily
 	return presentSupported == VK_TRUE;
 }
 
-bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension)
+bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension) const
 {
 	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
 		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
 		}) != m_availableExtensions.end();
 }
 
-bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions)
+bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const
 {
 	bool allFound = true;
 	for (const auto& extensionName : requestedExtensions)
@@ -1128,6 +1152,45 @@ const VkFormatProperties PhysicalDevice::GetFormatProperties(VkFormat format) co
 	return format_properties;
 }
 
+std::optional<uint32_t> PhysicalDevice::GetQueueFamilyIndex(VkQueueFlagBits queueFlag) const
+{
+	// Dedicated queue for compute
+	// Try to find a queue family index that supports compute but not graphics
+	if (queueFlag & VK_QUEUE_COMPUTE_BIT)
+	{
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+		{
+			if ((m_queueFamilies[i].queueFlags & queueFlag) && !(m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT))
+			{
+				return i;
+			}
+		}
+	}
+
+	// Dedicated queue for transfer
+	// Try to find a queue family index that supports transfer but not graphics and compute
+	if (queueFlag & VK_QUEUE_TRANSFER_BIT)
+	{
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+		{
+			if ((m_queueFamilies[i].queueFlags & queueFlag) && !(m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && !(m_queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT))
+			{
+				return i;
+			}
+		}
+	}
+
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+	{
+		if (m_queueFamilies[i].queueFlags & queueFlag)
+		{
+			return i;
+		}
+	}
+
+	return std::nullopt;
+}
+
 uint32_t PhysicalDevice::GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const
 {
 	uint32_t passes_needed;
@@ -1139,6 +1202,39 @@ void PhysicalDevice::EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queue
 {
 	VkResult result = vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device, queueFamilyIndex, count, counters, descriptions);
 	resultCheck(result, "EnumerateQueueFamilyPerformanceQueryCounters");
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Device ]
+
+Device::Device(InstancePtr instance, PhysicalDevicePtr physicalDevice)
+	: m_instance(instance)
+	, m_physicalDevice(physicalDevice)
+{
+	float queuePriority = 1.0f;
+
+	VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo   = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	createInfo.pQueueCreateInfos    = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+	createInfo.pEnabledFeatures     = &deviceFeatures;
+
+
+	VkResult result = vkCreateDevice(*m_physicalDevice, &createInfo, *m_instance, &m_device);
+	if (!resultCheck(result, "failed to create logical device!")) return;
+}
+
+Device::~Device()
+{
+	if (m_device) vkDestroyDevice(m_device, nullptr);
 }
 
 #pragma endregion

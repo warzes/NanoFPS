@@ -25,6 +25,7 @@
 #include <cstdint>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,7 @@ class Context;
 class Instance;
 class Surface;
 class PhysicalDevice;
+class Device;
 
 struct InstanceCreateInfo;
 struct SurfaceCreateInfo;
@@ -56,6 +58,7 @@ struct PhysicalDeviceSelector;
 using InstancePtr = std::shared_ptr<Instance>;
 using SurfacePtr = std::shared_ptr<Surface>;
 using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
+using DevicePtr = std::shared_ptr<Device>;
 
 #pragma endregion
 
@@ -312,9 +315,10 @@ public:
 
 	[[nodiscard]] SurfacePtr CreateSurface(const SurfaceCreateInfo& createInfo);
 
-
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
 	[[deprecated]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelector& criteria);
+
+	[[nodiscard]] DevicePtr CreateDevice(PhysicalDevicePtr physicalDevice);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -482,12 +486,15 @@ public:
 	[[nodiscard]] const std::vector<std::string>& GetDeviceExtensions() const;
 	[[nodiscard]] const std::vector<VkQueueFamilyProperties>& GetQueueFamilyProperties() const;
 
-	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex);
+	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface) const;
+	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex) const;
 
-	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension);
-	[[nodiscard]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions);
+	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
+	[[nodiscard]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const;
 
 	[[nodiscard]] const VkFormatProperties GetFormatProperties(VkFormat format) const;
+
+	[[nodiscatd]] std::optional<uint32_t> GetQueueFamilyIndex(VkQueueFlagBits queueFlag) const;
 
 	[[nodiscatd]] uint32_t GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const;
 	void EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queueFamilyIndex, uint32_t* count, VkPerformanceCounterKHR* counters, VkPerformanceCounterDescriptionKHR* descriptions) const;
@@ -506,11 +513,35 @@ private:
 	std::vector<std::string>             m_extensionsToEnable;
 	GenericFeatureChain                  m_extendedFeaturesChain;
 	bool                                 m_deferSurfaceInitialization = false;
-
 	std::string                          m_name;
 	bool                                 m_properties2ExtEnabled = false;
 };
 
 #pragma endregion
+
+//=============================================================================
+#pragma region [ Device ]
+
+class Device final
+{
+public:
+	Device() = delete;
+	Device(InstancePtr instance, PhysicalDevicePtr physicalDevice);
+	~Device();
+
+	operator VkDevice() const { return m_device; }
+
+	[[nodiscard]] bool IsValid() const { return m_device != nullptr; }
+
+private:
+	InstancePtr       m_instance;
+	PhysicalDevicePtr m_physicalDevice;
+
+	VkDevice          m_device{ nullptr };
+};
+
+#pragma endregion
+
+
 
 } // namespace vkw
