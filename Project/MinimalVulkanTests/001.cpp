@@ -39,40 +39,28 @@ bool Test001::Start()
 	vkw::SurfacePtr surface = instance->CreateSurface(surfaceCreateInfo);
 	if (!surface) return false;
 	
-#if 0
-	vkw::PhysicalDeviceSelector deviceSelect;
-	deviceSelect.SetSurface(surface);
-	auto selPhDevice = instance->GetDeviceSuitable(deviceSelect);
-	if (!selPhDevice) return false;
-#else
 	auto physicDevices = instance->GetPhysicalDevices();
 	vkw::PhysicalDevicePtr selectDevice{ nullptr };
 	uint32_t graphicsQueueFamily = 0;
+	uint32_t presentQueueFamily = 0;
 	for (auto gpu : physicDevices)
 	{
 		if (selectDevice) break;
 
-		if (gpu->GetDeviceType() == vkw::PhysicalDeviceType::DiscreteGPU)
-		{
-			auto deviceFeatures = gpu->GetFeatures();
-			if (deviceFeatures.geometryShader)
-			{
-				if (gpu->IsPresentSupported(surface))
-				{
-					auto hq = gpu->GetQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
-					if (hq.has_value())
-					{
-						graphicsQueueFamily = hq.value();
+		if (gpu->GetDeviceType() != vkw::PhysicalDeviceType::DiscreteGPU) continue;
 
-						selectDevice = gpu;
-						break;
-					}
-				}
-			}
-		}
+		auto deviceFeatures = gpu->GetFeatures();
+		if (!deviceFeatures.geometryShader) continue;
+
+		auto retQueue = gpu->FindGraphicsAndPresentQueueFamilyIndex(surface);
+		if (!retQueue) continue;
+		graphicsQueueFamily = retQueue.value().first;
+		presentQueueFamily = retQueue.value().second;
+		
+		selectDevice = gpu;
+		break;
 	}
 	if (!selectDevice) return false;
-#endif
 
 	vkw::DevicePtr device = instance->CreateDevice(selectDevice);
 	if (!device) return false;

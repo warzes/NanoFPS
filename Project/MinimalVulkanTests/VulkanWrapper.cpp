@@ -184,7 +184,7 @@ uint32_t ConvertVersion(VulkanAPIVersion version)
 	return 0;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL vkw::DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
 	auto ms = string_VkDebugUtilsMessageSeverityFlagBitsEXT(messageSeverity);
 	auto mt = string_VkDebugUtilsMessageTypeFlagsEXT(messageType);
@@ -250,136 +250,6 @@ void combineFeatures(VkPhysicalDeviceFeatures& dest, VkPhysicalDeviceFeatures sr
 	dest.sparseResidencyAliased = dest.sparseResidencyAliased || src.sparseResidencyAliased;
 	dest.variableMultisampleRate = dest.variableMultisampleRate || src.variableMultisampleRate;
 	dest.inheritedQueries = dest.inheritedQueries || src.inheritedQueries;
-}
-
-// finds the first queue which supports only the desired flag (not graphics or transfer). Returns QUEUE_INDEX_MAX_VALUE if none is found.
-uint32_t getDedicatedQueueIndex(const std::vector<VkQueueFamilyProperties>& families, VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags)
-{
-	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++)
-	{
-		if (
-			(families[i].queueFlags & desiredFlags) == desiredFlags 
-			&& (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0 
-			&& (families[i].queueFlags & undesiredFlags) == 0)
-			return i;
-	}
-	return QUEUE_INDEX_MAX_VALUE;
-}
-
-// Finds the queue which is separate from the graphics queue and has the desired flag and not the
-// undesired flag, but will select it if no better options are available compute support. Returns
-// QUEUE_INDEX_MAX_VALUE if none is found.
-uint32_t getSeparateQueueIndex(const std::vector<VkQueueFamilyProperties>& families, VkQueueFlags desiredFlags, VkQueueFlags undesiredDlags)
-{
-	uint32_t index = QUEUE_INDEX_MAX_VALUE;
-	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++)
-	{
-		if ((families[i].queueFlags & desiredFlags) == desiredFlags && ((families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-		{
-			if ((families[i].queueFlags & undesiredDlags) == 0)
-			{
-				return i;
-			}
-			else {
-				index = i;
-			}
-		}
-	}
-	return index;
-}
-
-// finds the first queue which supports presenting. returns QUEUE_INDEX_MAX_VALUE if none is found
-uint32_t getPresentQueueIndex(const VkPhysicalDevice phys_device, const VkSurfaceKHR surface, const std::vector<VkQueueFamilyProperties>& families)
-{
-	for (uint32_t i = 0; i < static_cast<uint32_t>(families.size()); i++) 
-	{
-		VkBool32 presentSupport = false;
-		if (surface != VK_NULL_HANDLE)
-		{
-			VkResult res = vkGetPhysicalDeviceSurfaceSupportKHR(phys_device, i, surface, &presentSupport);
-			if (res != VK_SUCCESS) return QUEUE_INDEX_MAX_VALUE; // TODO: determine if this should fail another way
-		}
-		if (presentSupport == VK_TRUE) return i;
-	}
-	return QUEUE_INDEX_MAX_VALUE;
-}
-
-std::vector<std::string> checkDeviceExtensionSupport(const std::vector<std::string> &availableExtensions, const std::vector<std::string>& desiredExtensions)
-{
-	std::vector<std::string> extensions_to_enable;
-	for (const auto& avail_ext : availableExtensions)
-	{
-		for (auto& req_ext : desiredExtensions)
-		{
-			if (avail_ext == req_ext)
-			{
-				extensions_to_enable.push_back(req_ext);
-				break;
-			}
-		}
-	}
-	return extensions_to_enable;
-}
-
-bool supportsFeatures(const VkPhysicalDeviceFeatures& supported, const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extension_supported, const GenericFeatureChain& extension_requested)
-{
-	if (requested.robustBufferAccess && !supported.robustBufferAccess) return false;
-	if (requested.fullDrawIndexUint32 && !supported.fullDrawIndexUint32) return false;
-	if (requested.imageCubeArray && !supported.imageCubeArray) return false;
-	if (requested.independentBlend && !supported.independentBlend) return false;
-	if (requested.geometryShader && !supported.geometryShader) return false;
-	if (requested.tessellationShader && !supported.tessellationShader) return false;
-	if (requested.sampleRateShading && !supported.sampleRateShading) return false;
-	if (requested.dualSrcBlend && !supported.dualSrcBlend) return false;
-	if (requested.logicOp && !supported.logicOp) return false;
-	if (requested.multiDrawIndirect && !supported.multiDrawIndirect) return false;
-	if (requested.drawIndirectFirstInstance && !supported.drawIndirectFirstInstance) return false;
-	if (requested.depthClamp && !supported.depthClamp) return false;
-	if (requested.depthBiasClamp && !supported.depthBiasClamp) return false;
-	if (requested.fillModeNonSolid && !supported.fillModeNonSolid) return false;
-	if (requested.depthBounds && !supported.depthBounds) return false;
-	if (requested.wideLines && !supported.wideLines) return false;
-	if (requested.largePoints && !supported.largePoints) return false;
-	if (requested.alphaToOne && !supported.alphaToOne) return false;
-	if (requested.multiViewport && !supported.multiViewport) return false;
-	if (requested.samplerAnisotropy && !supported.samplerAnisotropy) return false;
-	if (requested.textureCompressionETC2 && !supported.textureCompressionETC2) return false;
-	if (requested.textureCompressionASTC_LDR && !supported.textureCompressionASTC_LDR) return false;
-	if (requested.textureCompressionBC && !supported.textureCompressionBC) return false;
-	if (requested.occlusionQueryPrecise && !supported.occlusionQueryPrecise) return false;
-	if (requested.pipelineStatisticsQuery && !supported.pipelineStatisticsQuery) return false;
-	if (requested.vertexPipelineStoresAndAtomics && !supported.vertexPipelineStoresAndAtomics) return false;
-	if (requested.fragmentStoresAndAtomics && !supported.fragmentStoresAndAtomics) return false;
-	if (requested.shaderTessellationAndGeometryPointSize && !supported.shaderTessellationAndGeometryPointSize) return false;
-	if (requested.shaderImageGatherExtended && !supported.shaderImageGatherExtended) return false;
-	if (requested.shaderStorageImageExtendedFormats && !supported.shaderStorageImageExtendedFormats) return false;
-	if (requested.shaderStorageImageMultisample && !supported.shaderStorageImageMultisample) return false;
-	if (requested.shaderStorageImageReadWithoutFormat && !supported.shaderStorageImageReadWithoutFormat) return false;
-	if (requested.shaderStorageImageWriteWithoutFormat && !supported.shaderStorageImageWriteWithoutFormat) return false;
-	if (requested.shaderUniformBufferArrayDynamicIndexing && !supported.shaderUniformBufferArrayDynamicIndexing) return false;
-	if (requested.shaderSampledImageArrayDynamicIndexing && !supported.shaderSampledImageArrayDynamicIndexing) return false;
-	if (requested.shaderStorageBufferArrayDynamicIndexing && !supported.shaderStorageBufferArrayDynamicIndexing) return false;
-	if (requested.shaderStorageImageArrayDynamicIndexing && !supported.shaderStorageImageArrayDynamicIndexing) return false;
-	if (requested.shaderClipDistance && !supported.shaderClipDistance) return false;
-	if (requested.shaderCullDistance && !supported.shaderCullDistance) return false;
-	if (requested.shaderFloat64 && !supported.shaderFloat64) return false;
-	if (requested.shaderInt64 && !supported.shaderInt64) return false;
-	if (requested.shaderInt16 && !supported.shaderInt16) return false;
-	if (requested.shaderResourceResidency && !supported.shaderResourceResidency) return false;
-	if (requested.shaderResourceMinLod && !supported.shaderResourceMinLod) return false;
-	if (requested.sparseBinding && !supported.sparseBinding) return false;
-	if (requested.sparseResidencyBuffer && !supported.sparseResidencyBuffer) return false;
-	if (requested.sparseResidencyImage2D && !supported.sparseResidencyImage2D) return false;
-	if (requested.sparseResidencyImage3D && !supported.sparseResidencyImage3D) return false;
-	if (requested.sparseResidency2Samples && !supported.sparseResidency2Samples) return false;
-	if (requested.sparseResidency4Samples && !supported.sparseResidency4Samples) return false;
-	if (requested.sparseResidency8Samples && !supported.sparseResidency8Samples) return false;
-	if (requested.sparseResidency16Samples && !supported.sparseResidency16Samples) return false;
-	if (requested.sparseResidencyAliased && !supported.sparseResidencyAliased) return false;
-	if (requested.variableMultisampleRate && !supported.variableMultisampleRate) return false;
-	if (requested.inheritedQueries && !supported.inheritedQueries) return false;
-
-	return extension_supported.MatchAll(extension_requested);
 }
 
 #pragma endregion
@@ -731,85 +601,6 @@ std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 	return physicalDevices;
 }
 
-PhysicalDevicePtr vkw::Instance::GetDeviceSuitable(const PhysicalDeviceSelector& criteria)
-{
-#if !defined(NDEBUG)
-	// Validation
-	for (const auto& node : criteria.extendedFeaturesChain.nodes)
-	{
-		assert(node.sType != static_cast<VkStructureType>(0) && "Features struct sType must be filled with the struct's "
-			"corresponding VkStructureType enum");
-		assert(node.sType != VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 && "Do not pass VkPhysicalDeviceFeatures2 as a required extension feature structure. An instance of this is managed internally for selection criteria and device creation.");
-	}
-#endif
-
-	if (criteria.requirePresent && !criteria.deferSurfaceInitialization)
-	{
-		if (criteria.surface == VK_NULL_HANDLE)
-		{
-			error("PhysicalDeviceError: no surface provided");
-			return nullptr;
-		}
-	}
-
-	std::vector<PhysicalDevicePtr> devices = GetPhysicalDevices();
-	if (devices.empty())
-	{
-		error("failed to find a suitable GPU!");
-		return nullptr;
-	}
-	
-	// Populate their details and check their suitability
-	std::vector<PhysicalDevicePtr> suitablePhysicalDevices;
-	for (auto& vk_physical_device : devices)
-	{
-		PhysicalDevicePtr phys_dev = populateDeviceDetails(vk_physical_device, criteria, criteria.extendedFeaturesChain);
-		phys_dev->m_suitable = isDeviceSuitable(phys_dev, criteria);
-		if (phys_dev->m_suitable != Suitable::no)
-		{
-			suitablePhysicalDevices.push_back(phys_dev);
-		}
-	}
-
-	// sort the list into fully and partially suitable devices. use stable_partition to maintain relative order
-	const auto partition_index = std::stable_partition(suitablePhysicalDevices.begin(), suitablePhysicalDevices.end(), [](const auto& pd) { return pd->m_suitable == Suitable::yes; });
-
-	// Remove the partially suitable elements if they aren't desired
-	if (criteria.selection == DeviceSelectionMode::onlyFullySuitable)
-	{
-		suitablePhysicalDevices.erase(partition_index, suitablePhysicalDevices.end());
-	}
-
-	auto fillOutPhysDevWithCriteria = [&](PhysicalDevicePtr physDev)
-		{
-			physDev->m_features = criteria.requiredFeatures;
-			physDev->m_extendedFeaturesChain = criteria.extendedFeaturesChain;
-			bool portabilityExtAvailable = false;
-			for (const auto& ext : physDev->m_availableExtensions)
-				if (criteria.enablePortabilitySubset && ext == "VK_KHR_portability_subset")
-					portabilityExtAvailable = true;
-
-			physDev->m_extensionsToEnable.clear();
-			physDev->m_extensionsToEnable.insert(physDev->m_extensionsToEnable.end(), criteria.requiredExtensions.begin(), criteria.requiredExtensions.end());
-			if (portabilityExtAvailable)
-				physDev->m_extensionsToEnable.push_back("VK_KHR_portability_subset");
-		};
-
-	// Make the physical device ready to be used to create a Device from it
-	for (auto& physicalDevice : suitablePhysicalDevices)
-	{
-		fillOutPhysDevWithCriteria(physicalDevice);
-	}
-
-	if (suitablePhysicalDevices.size() == 0)
-	{
-		error("PhysicalDeviceError no suitable device");
-		return nullptr;
-	}
-
-	return suitablePhysicalDevices.at(0);
-}
-
 DevicePtr Instance::CreateDevice(PhysicalDevicePtr physicalDevice)
 {
 	auto resource = std::make_shared<Device>(shared_from_this(), physicalDevice);
@@ -833,86 +624,6 @@ bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 	return true;
 }
 
-PhysicalDevicePtr Instance::populateDeviceDetails(PhysicalDevicePtr physical_device, const PhysicalDeviceSelector& criteria, const GenericFeatureChain& srcExtendedFeaturesChain) const
-{
-	physical_device->m_deferSurfaceInitialization = criteria.deferSurfaceInitialization;
-	physical_device->m_name = physical_device->GetDeviceName();
-
-	bool properties2_ext_enabled = true/*instance_info.properties2_ext_enabled*/;
-
-	physical_device->m_properties2ExtEnabled = properties2_ext_enabled;
-
-	auto fill_chain = srcExtendedFeaturesChain;
-
-	if (!fill_chain.nodes.empty() && (properties2_ext_enabled))
-	{
-		VkPhysicalDeviceFeatures2 local_features{};
-		fill_chain.ChainUp(local_features);
-		vkGetPhysicalDeviceFeatures2(physical_device->m_device, &local_features);
-		physical_device->m_extendedFeaturesChain = fill_chain;
-	}
-
-	return physical_device;
-}
-
-Suitable Instance::isDeviceSuitable(PhysicalDevicePtr pd, const PhysicalDeviceSelector& criteria) const
-{
-	Suitable suitable = Suitable::yes;
-
-	if (criteria.deviceName.size() > 0 && criteria.deviceName != pd->m_properties.deviceName) return Suitable::no;
-	if (criteria.requiredVersion > pd->m_properties.apiVersion) return Suitable::no;
-
-	bool dedicated_compute = getDedicatedQueueIndex(pd->m_queueFamilies, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT) !=
-		QUEUE_INDEX_MAX_VALUE;
-	bool dedicated_transfer = getDedicatedQueueIndex(pd->m_queueFamilies, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT) !=
-		QUEUE_INDEX_MAX_VALUE;
-	bool separate_compute = getSeparateQueueIndex(pd->m_queueFamilies, VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT) !=
-		QUEUE_INDEX_MAX_VALUE;
-	bool separate_transfer = getSeparateQueueIndex(pd->m_queueFamilies, VK_QUEUE_TRANSFER_BIT, VK_QUEUE_COMPUTE_BIT) !=
-		QUEUE_INDEX_MAX_VALUE;
-
-	bool present_queue = getPresentQueueIndex(pd->m_device, *criteria.surface, pd->m_queueFamilies) !=
-		QUEUE_INDEX_MAX_VALUE;
-
-	if (criteria.requireDedicatedComputeQueue && !dedicated_compute) return Suitable::no;
-	if (criteria.requireDedicatedTransferQueue && !dedicated_transfer) return Suitable::no;
-	if (criteria.requireSeparateComputeQueue && !separate_compute) return Suitable::no;
-	if (criteria.requireSeparateTransferQueue && !separate_transfer) return Suitable::no;
-	if (criteria.requirePresent && !present_queue && !criteria.deferSurfaceInitialization) return Suitable::no;
-
-	auto required_extensions_supported = checkDeviceExtensionSupport(pd->m_availableExtensions, criteria.requiredExtensions);
-	if (required_extensions_supported.size() != criteria.requiredExtensions.size()) return Suitable::no;
-
-	if (!criteria.deferSurfaceInitialization && criteria.requirePresent)
-	{
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> present_modes;
-
-		auto formats_ret = GetVector<VkSurfaceFormatKHR>(formats, vkGetPhysicalDeviceSurfaceFormatsKHR, pd->m_device, *criteria.surface);
-		auto present_modes_ret = GetVector<VkPresentModeKHR>(present_modes,	vkGetPhysicalDeviceSurfacePresentModesKHR, pd->m_device, *criteria.surface);
-
-		if (formats_ret != VK_SUCCESS || present_modes_ret != VK_SUCCESS || formats.empty() || present_modes.empty()) return Suitable::no;
-	}
-
-	if (!criteria.allowAnyType && pd->m_properties.deviceType != static_cast<VkPhysicalDeviceType>(criteria.preferredGPUDeviceType))
-	{
-		suitable = Suitable::partial;
-	}
-
-	bool required_features_supported = supportsFeatures(pd->m_features, criteria.requiredFeatures, pd->m_extendedFeaturesChain, criteria.extendedFeaturesChain);
-	if (!required_features_supported) return Suitable::no;
-
-	for (uint32_t i = 0; i < pd->m_memoryProperties.memoryHeapCount; i++)
-	{
-		if (pd->m_memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) 
-		{
-			if (pd->m_memoryProperties.memoryHeaps[i].size < criteria.requiredMemSize) return Suitable::no;
-		}
-	}
-
-	return suitable;
-}
-
 #pragma endregion
 
 //=============================================================================
@@ -933,125 +644,6 @@ Surface::~Surface()
 
 //=============================================================================
 #pragma region [ PhysicalDevice ]
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetSurface(SurfacePtr surface)
-{
-	this->surface = surface;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetName(const std::string& name)
-{
-	deviceName = name;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::PreferGPUDeviceType(PhysicalDeviceType type)
-{
-	preferredGPUDeviceType = type;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::AllowAnyGPUDeviceType(bool allowAnyType)
-{
-	this->allowAnyType = allowAnyType;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequirePresent(bool require)
-{
-	requirePresent = require;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequireDedicatedTransferQueue()
-{
-	requireDedicatedTransferQueue = true;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequireDedicatedComputeQueue()
-{
-	requireDedicatedComputeQueue = true;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequireSeparateTransferQueue()
-{
-	requireSeparateTransferQueue = true;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequireSeparateComputeQueue()
-{
-	requireSeparateComputeQueue = true;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::RequiredDeviceMemorySize(VkDeviceSize size)
-{
-	requiredMemSize = size;
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::AddRequiredExtension(const char* extension)
-{
-	requiredExtensions.push_back(extension);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::AddRequiredExtensions(const std::vector<const char*>& extensions)
-{
-	for (const auto& ext : extensions)
-		requiredExtensions.push_back(ext);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetMinimumVersion(uint32_t major, uint32_t minor)
-{
-	requiredVersion = VK_MAKE_API_VERSION(0, major, minor, 0);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures(const VkPhysicalDeviceFeatures& features)
-{
-	combineFeatures(requiredFeatures, features);
-	return *this;
-}
-
-// The implementation of the set_required_features_1X functions sets the sType manually. This was a poor choice since
-// users of Vulkan should expect to fill out their structs properly. To make the functions take the struct parameter by
-// const reference, a local copy must be made in order to set the sType.
-// TODO: переделать из-за описания комментария
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures11(const VkPhysicalDeviceVulkan11Features& features11)
-{
-	VkPhysicalDeviceVulkan11Features features_11_copy = features11;
-	features_11_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-	AddRequiredExtensionFeatures(features_11_copy);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures12(const VkPhysicalDeviceVulkan12Features& features12)
-{
-	VkPhysicalDeviceVulkan12Features features_12_copy = features12;
-	features_12_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	AddRequiredExtensionFeatures(features_12_copy);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::SetRequiredFeatures13(const VkPhysicalDeviceVulkan13Features& features13)
-{
-	VkPhysicalDeviceVulkan13Features features_13_copy = features13;
-	features_13_copy.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-	AddRequiredExtensionFeatures(features_13_copy);
-	return *this;
-}
-
-PhysicalDeviceSelector& PhysicalDeviceSelector::DeferSurfaceInitialization()
-{
-	deferSurfaceInitialization = true;
-	return *this;
-}
 
 PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysicalDevice)
 	: m_instance(instance)
@@ -1092,6 +684,22 @@ PhysicalDeviceType PhysicalDevice::GetDeviceType() const
 	return PhysicalDeviceType::Other;
 }
 
+std::vector<VkSurfaceFormatKHR> PhysicalDevice::GetSupportSurfaceFormat(SurfacePtr surface) const
+{
+	std::vector<VkSurfaceFormatKHR> formats;
+	VkResult result = GetVector<VkSurfaceFormatKHR>(formats, vkGetPhysicalDeviceSurfaceFormatsKHR, m_device, *surface);
+	resultCheck(result, "PhysicalDevice::GetSupportSurfaceFormat");
+	return formats;
+}
+
+std::vector<VkPresentModeKHR> PhysicalDevice::GetSupportPresentMode(SurfacePtr surface) const
+{
+	std::vector<VkPresentModeKHR> presentModes;
+	VkResult result = GetVector<VkPresentModeKHR>(presentModes, vkGetPhysicalDeviceSurfacePresentModesKHR, m_device, *surface);
+	resultCheck(result, "PhysicalDevice::GetSupportPresentMode");
+	return presentModes;
+}
+
 const std::vector<std::string>& PhysicalDevice::GetDeviceExtensions() const
 {
 	return m_availableExtensions;
@@ -1102,47 +710,39 @@ const std::vector<VkQueueFamilyProperties>& PhysicalDevice::GetQueueFamilyProper
 	return m_queueFamilies;
 }
 
-bool PhysicalDevice::IsPresentSupported(SurfacePtr surface) const
+//bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension) const
+//{
+//	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
+//		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
+//		}) != m_availableExtensions.end();
+//}
+//
+//bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const
+//{
+//	bool allFound = true;
+//	for (const auto& extensionName : requestedExtensions)
+//	{
+//		bool found = CheckExtensionSupported(extensionName);
+//		if (!found) allFound = false;
+//	}
+//	return allFound;
+//}
+
+std::vector<std::string> vkw::PhysicalDevice::CheckDeviceExtensionSupport(const std::vector<std::string>& availableExtensions, const std::vector<std::string>& desiredExtensions)
 {
-	size_t queueCount = m_queueFamilies.size();
-	for (uint32_t queue_idx = 0; queue_idx < static_cast<uint32_t>(queueCount); queue_idx++)
+	std::vector<std::string> extensions_to_enable;
+	for (const auto& avail_ext : availableExtensions)
 	{
-		if (IsPresentSupported(surface, queue_idx))
+		for (auto& req_ext : desiredExtensions)
 		{
-			return true;
+			if (avail_ext == req_ext)
+			{
+				extensions_to_enable.push_back(req_ext);
+				break;
+			}
 		}
 	}
-	return false;
-}
-
-bool PhysicalDevice::IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex) const
-{
-	VkBool32 presentSupported{ VK_FALSE };
-	if (surface != VK_NULL_HANDLE)
-	{
-		VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_device, queueFamilyIndex, *surface, &presentSupported);
-		if (!resultCheck(result, "IsPresentSupported")) return false;
-	}
-
-	return presentSupported == VK_TRUE;
-}
-
-bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension) const
-{
-	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
-		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
-		}) != m_availableExtensions.end();
-}
-
-bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const
-{
-	bool allFound = true;
-	for (const auto& extensionName : requestedExtensions)
-	{
-		bool found = CheckExtensionSupported(extensionName);
-		if (!found) allFound = false;
-	}
-	return allFound;
+	return extensions_to_enable;
 }
 
 const VkFormatProperties PhysicalDevice::GetFormatProperties(VkFormat format) const
@@ -1191,6 +791,94 @@ std::optional<uint32_t> PhysicalDevice::GetQueueFamilyIndex(VkQueueFlagBits queu
 	return std::nullopt;
 }
 
+std::optional<uint32_t> PhysicalDevice::GetDedicatedQueueIndex(VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags) const
+{
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+	{
+		if (   (m_queueFamilies[i].queueFlags & desiredFlags) == desiredFlags
+			&& (m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0
+			&& (m_queueFamilies[i].queueFlags & undesiredFlags) == 0)
+			return i;
+	}
+	return std::nullopt;
+}
+
+std::optional<uint32_t> PhysicalDevice::GetSeparateQueueIndex(VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags) const
+{
+	constexpr uint32_t MaxIndex = 65536;
+	uint32_t index = MaxIndex;
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+	{
+		if (    (m_queueFamilies[i].queueFlags & desiredFlags) == desiredFlags 
+			&& ((m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+		{
+			if ((m_queueFamilies[i].queueFlags & undesiredFlags) == 0) return i;
+			else index = i;
+		}
+	}
+	if (index >= MaxIndex) return std::nullopt;
+
+	return index;
+}
+
+std::optional<uint32_t> PhysicalDevice::FindGraphicsQueueFamilyIndex() const
+{
+	// get the first index into queueFamiliyProperties which supports graphics
+	for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilies.size()); i++)
+	{
+		if (m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			return i;
+		}
+	}
+	error("Graphics Queue Family not find");
+	return std::nullopt;
+}
+
+std::optional<std::pair<uint32_t, uint32_t>> vkw::PhysicalDevice::FindGraphicsAndPresentQueueFamilyIndex(SurfacePtr surface) const
+{
+	std::optional<uint32_t> graphicsQueueFamilyIndex = FindGraphicsQueueFamilyIndex();
+	if (!graphicsQueueFamilyIndex.has_value()) return std::nullopt;
+
+	if (GetSurfaceSupportKHR(graphicsQueueFamilyIndex.value(), surface))
+	{
+		// the first graphicsQueueFamilyIndex does also support presents
+		return std::make_pair(graphicsQueueFamilyIndex.value(), graphicsQueueFamilyIndex.value());
+	}
+
+	// the graphicsQueueFamilyIndex doesn't support present -> look for an other family index that supports both graphics and present
+	for (size_t i = 0; i < m_queueFamilies.size(); i++)
+	{
+		if ((m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && GetSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
+		{
+			return std::make_pair(static_cast<uint32_t>(i), static_cast<uint32_t>(i));
+		}
+	}
+
+	// there's nothing like a single family index that supports both graphics and present -> look for an other family index that supports present
+	for (size_t i = 0; i < m_queueFamilies.size(); i++)
+	{
+		if (GetSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
+		{
+			return std::make_pair(graphicsQueueFamilyIndex.value(), static_cast<uint32_t>(i));
+		}
+	}
+
+	error("Could not find queues for both graphics or present -> terminating");
+	return std::nullopt;
+}
+
+bool vkw::PhysicalDevice::GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const
+{
+	VkBool32 supported{ VK_FALSE };
+	if (surface != nullptr)
+	{
+		VkResult result = vkGetPhysicalDeviceSurfaceSupportKHR(m_device, queueFamilyIndex, *surface, &supported);
+		if (!resultCheck(result, "PhysicalDevice::GetSurfaceSupportKHR")) return false;
+	}
+	return supported == VK_TRUE;
+}
+
 uint32_t PhysicalDevice::GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const
 {
 	uint32_t passes_needed;
@@ -1202,6 +890,67 @@ void PhysicalDevice::EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queue
 {
 	VkResult result = vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(m_device, queueFamilyIndex, count, counters, descriptions);
 	resultCheck(result, "EnumerateQueueFamilyPerformanceQueryCounters");
+}
+
+bool vkw::PhysicalDevice::SupportsFeatures(const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extensionSupported, const GenericFeatureChain& extensionRequested)
+{
+	if (requested.robustBufferAccess && !m_features.robustBufferAccess) return false;
+	if (requested.fullDrawIndexUint32 && !m_features.fullDrawIndexUint32) return false;
+	if (requested.imageCubeArray && !m_features.imageCubeArray) return false;
+	if (requested.independentBlend && !m_features.independentBlend) return false;
+	if (requested.geometryShader && !m_features.geometryShader) return false;
+	if (requested.tessellationShader && !m_features.tessellationShader) return false;
+	if (requested.sampleRateShading && !m_features.sampleRateShading) return false;
+	if (requested.dualSrcBlend && !m_features.dualSrcBlend) return false;
+	if (requested.logicOp && !m_features.logicOp) return false;
+	if (requested.multiDrawIndirect && !m_features.multiDrawIndirect) return false;
+	if (requested.drawIndirectFirstInstance && !m_features.drawIndirectFirstInstance) return false;
+	if (requested.depthClamp && !m_features.depthClamp) return false;
+	if (requested.depthBiasClamp && !m_features.depthBiasClamp) return false;
+	if (requested.fillModeNonSolid && !m_features.fillModeNonSolid) return false;
+	if (requested.depthBounds && !m_features.depthBounds) return false;
+	if (requested.wideLines && !m_features.wideLines) return false;
+	if (requested.largePoints && !m_features.largePoints) return false;
+	if (requested.alphaToOne && !m_features.alphaToOne) return false;
+	if (requested.multiViewport && !m_features.multiViewport) return false;
+	if (requested.samplerAnisotropy && !m_features.samplerAnisotropy) return false;
+	if (requested.textureCompressionETC2 && !m_features.textureCompressionETC2) return false;
+	if (requested.textureCompressionASTC_LDR && !m_features.textureCompressionASTC_LDR) return false;
+	if (requested.textureCompressionBC && !m_features.textureCompressionBC) return false;
+	if (requested.occlusionQueryPrecise && !m_features.occlusionQueryPrecise) return false;
+	if (requested.pipelineStatisticsQuery && !m_features.pipelineStatisticsQuery) return false;
+	if (requested.vertexPipelineStoresAndAtomics && !m_features.vertexPipelineStoresAndAtomics) return false;
+	if (requested.fragmentStoresAndAtomics && !m_features.fragmentStoresAndAtomics) return false;
+	if (requested.shaderTessellationAndGeometryPointSize && !m_features.shaderTessellationAndGeometryPointSize) return false;
+	if (requested.shaderImageGatherExtended && !m_features.shaderImageGatherExtended) return false;
+	if (requested.shaderStorageImageExtendedFormats && !m_features.shaderStorageImageExtendedFormats) return false;
+	if (requested.shaderStorageImageMultisample && !m_features.shaderStorageImageMultisample) return false;
+	if (requested.shaderStorageImageReadWithoutFormat && !m_features.shaderStorageImageReadWithoutFormat) return false;
+	if (requested.shaderStorageImageWriteWithoutFormat && !m_features.shaderStorageImageWriteWithoutFormat) return false;
+	if (requested.shaderUniformBufferArrayDynamicIndexing && !m_features.shaderUniformBufferArrayDynamicIndexing) return false;
+	if (requested.shaderSampledImageArrayDynamicIndexing && !m_features.shaderSampledImageArrayDynamicIndexing) return false;
+	if (requested.shaderStorageBufferArrayDynamicIndexing && !m_features.shaderStorageBufferArrayDynamicIndexing) return false;
+	if (requested.shaderStorageImageArrayDynamicIndexing && !m_features.shaderStorageImageArrayDynamicIndexing) return false;
+	if (requested.shaderClipDistance && !m_features.shaderClipDistance) return false;
+	if (requested.shaderCullDistance && !m_features.shaderCullDistance) return false;
+	if (requested.shaderFloat64 && !m_features.shaderFloat64) return false;
+	if (requested.shaderInt64 && !m_features.shaderInt64) return false;
+	if (requested.shaderInt16 && !m_features.shaderInt16) return false;
+	if (requested.shaderResourceResidency && !m_features.shaderResourceResidency) return false;
+	if (requested.shaderResourceMinLod && !m_features.shaderResourceMinLod) return false;
+	if (requested.sparseBinding && !m_features.sparseBinding) return false;
+	if (requested.sparseResidencyBuffer && !m_features.sparseResidencyBuffer) return false;
+	if (requested.sparseResidencyImage2D && !m_features.sparseResidencyImage2D) return false;
+	if (requested.sparseResidencyImage3D && !m_features.sparseResidencyImage3D) return false;
+	if (requested.sparseResidency2Samples && !m_features.sparseResidency2Samples) return false;
+	if (requested.sparseResidency4Samples && !m_features.sparseResidency4Samples) return false;
+	if (requested.sparseResidency8Samples && !m_features.sparseResidency8Samples) return false;
+	if (requested.sparseResidency16Samples && !m_features.sparseResidency16Samples) return false;
+	if (requested.sparseResidencyAliased && !m_features.sparseResidencyAliased) return false;
+	if (requested.variableMultisampleRate && !m_features.variableMultisampleRate) return false;
+	if (requested.inheritedQueries && !m_features.inheritedQueries) return false;
+
+	return extensionSupported.MatchAll(extensionRequested);
 }
 
 #pragma endregion
@@ -1216,7 +965,7 @@ Device::Device(InstancePtr instance, PhysicalDevicePtr physicalDevice)
 	float queuePriority = 1.0f;
 
 	VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	//queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
 	queueCreateInfo.queueCount = 1;
 	queueCreateInfo.pQueuePriorities = &queuePriority;
 

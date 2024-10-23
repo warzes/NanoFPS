@@ -53,7 +53,6 @@ class Device;
 
 struct InstanceCreateInfo;
 struct SurfaceCreateInfo;
-struct PhysicalDeviceSelector;
 
 using InstancePtr = std::shared_ptr<Instance>;
 using SurfacePtr = std::shared_ptr<Surface>;
@@ -313,20 +312,13 @@ public:
 	operator VkInstance() const { return m_instance; }
 	operator VkAllocationCallbacks*() const { return m_allocator; }
 
-	[[nodiscard]] SurfacePtr CreateSurface(const SurfaceCreateInfo& createInfo);
-
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
-	[[deprecated]] PhysicalDevicePtr GetDeviceSuitable(const PhysicalDeviceSelector& criteria);
 
-	[[nodiscard]] DevicePtr CreateDevice(PhysicalDevicePtr physicalDevice);
+	[[nodiscard]] SurfacePtr                     CreateSurface(const SurfaceCreateInfo& createInfo);
+	[[nodiscard]] DevicePtr                      CreateDevice(PhysicalDevicePtr physicalDevice);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
-
-	// TODO: в селектор
-	PhysicalDevicePtr populateDeviceDetails(PhysicalDevicePtr physDevice, const PhysicalDeviceSelector& criteria, const GenericFeatureChain& srcExtendedFeaturesChain) const;
-	// TODO: в селектор
-	Suitable isDeviceSuitable(PhysicalDevicePtr physDevice, const PhysicalDeviceSelector& criteria) const;
 
 	VkInstance               m_instance{ VK_NULL_HANDLE };
 	VkDebugUtilsMessengerEXT m_debugMessenger{ VK_NULL_HANDLE };
@@ -370,101 +362,6 @@ private:
 //=============================================================================
 #pragma region [ PhysicalDevice ]
 
-// TODO: удалить функции
-// TODO: вообще удалить
-struct PhysicalDeviceSelector final
-{
-	DeviceSelectionMode selection = DeviceSelectionMode::onlyFullySuitable;
-
-	// Set the surface in which the physical device should render to.
-	// Be sure to set it if swapchain functionality is to be used.
-	PhysicalDeviceSelector& SetSurface(SurfacePtr surface);
-	
-	// Set the name of the device to select.
-	PhysicalDeviceSelector& SetName(const std::string& name);
-	// Set the desired physical device type to select. Defaults to PreferredDeviceType::discrete.
-	PhysicalDeviceSelector& PreferGPUDeviceType(PhysicalDeviceType type = PhysicalDeviceType::DiscreteGPU);
-	// Allow selection of a gpu device type that isn't the preferred physical device type. Defaults to true.
-	PhysicalDeviceSelector& AllowAnyGPUDeviceType(bool allowAnyType = true);
-
-	// Require that a physical device supports presentation. Defaults to true.
-	PhysicalDeviceSelector& RequirePresent(bool require = true);
-
-	// Require a queue family that supports transfer operations but not graphics nor compute.
-	PhysicalDeviceSelector& RequireDedicatedTransferQueue();
-	// Require a queue family that supports compute operations but not graphics nor transfer.
-	PhysicalDeviceSelector& RequireDedicatedComputeQueue();
-
-	// Require a queue family that supports transfer operations but not graphics.
-	PhysicalDeviceSelector& RequireSeparateTransferQueue();
-	// Require a queue family that supports compute operations but not graphics.
-	PhysicalDeviceSelector& RequireSeparateComputeQueue();
-
-	// Require a memory heap from VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT with `size` memory available.
-	PhysicalDeviceSelector& RequiredDeviceMemorySize(VkDeviceSize size);
-
-	// Require a physical device which supports a specific extension.
-	PhysicalDeviceSelector& AddRequiredExtension(const char* extension);
-	// Require a physical device which supports a set of extensions.
-	PhysicalDeviceSelector& AddRequiredExtensions(const std::vector<const char*>& extensions);
-
-	// Require a physical device that supports a (major, minor) version of vulkan.
-	PhysicalDeviceSelector& SetMinimumVersion(uint32_t major, uint32_t minor);
-
-	// Require a physical device which supports a specific set of general/extension features.
-	// If this function is used, the user should not put their own VkPhysicalDeviceFeatures2 in
-	// the pNext chain of VkDeviceCreateInfo.
-	template <typename T> 
-	PhysicalDeviceSelector& AddRequiredExtensionFeatures(const T& features)
-	{
-		extendedFeaturesChain.Add(features);
-		return *this;
-	}
-
-	// TODO: возможно удалить эти методы и использовать AddRequiredExtensionFeatures
-	// Require a physical device which supports the features in VkPhysicalDeviceFeatures.
-	PhysicalDeviceSelector& SetRequiredFeatures(const VkPhysicalDeviceFeatures& features);
-	// Require a physical device which supports the features in VkPhysicalDeviceVulkan11Features.
-	PhysicalDeviceSelector& SetRequiredFeatures11(const VkPhysicalDeviceVulkan11Features& features11);
-	// Require a physical device which supports the features in VkPhysicalDeviceVulkan12Features.
-	PhysicalDeviceSelector& SetRequiredFeatures12(const VkPhysicalDeviceVulkan12Features& features12);
-	// Require a physical device which supports the features in VkPhysicalDeviceVulkan13Features.
-	PhysicalDeviceSelector& SetRequiredFeatures13(const VkPhysicalDeviceVulkan13Features& features13);
-
-	// Used when surface creation happens after physical device selection.
-	// Warning: This disables checking if the physical device supports a given surface.
-	PhysicalDeviceSelector& DeferSurfaceInitialization(); // TODO: удалить?
-
-private:
-
-	friend class Instance;
-	friend class PhysicalDevice;
-
-	SurfacePtr surface{ nullptr };
-
-	// Set the name of the device to select.
-	std::string deviceName;
-	PhysicalDeviceType preferredGPUDeviceType = PhysicalDeviceType::DiscreteGPU;
-	bool allowAnyType = false;
-	bool requirePresent = true;
-	bool requireDedicatedTransferQueue = false;
-	bool requireDedicatedComputeQueue = false;
-	bool requireSeparateTransferQueue = false;
-	bool requireSeparateComputeQueue = false;
-	VkDeviceSize requiredMemSize = 0;
-
-	std::vector<std::string> requiredExtensions;
-
-	uint32_t requiredVersion = VK_API_VERSION_1_3;
-
-	VkPhysicalDeviceFeatures requiredFeatures{};
-	VkPhysicalDeviceFeatures2 requiredFeatures2{};
-
-	GenericFeatureChain extendedFeaturesChain;
-	bool deferSurfaceInitialization = false;
-	bool enablePortabilitySubset = true; // TODO: разобраться с этим
-};
-
 class PhysicalDevice final
 {
 	friend class Instance;
@@ -475,31 +372,44 @@ public:
 
 	operator VkPhysicalDevice() const { return m_device; }
 
-	[[nodiscard]] const VkPhysicalDeviceFeatures& GetFeatures() const { return m_features; }
-	[[nodiscard]] const VkPhysicalDeviceProperties& GetProperties() const { m_properties; }
-	[[nodiscard]] const VkPhysicalDeviceLimits& GetLimits() const { m_properties.limits; }
+	[[nodiscard]] const VkPhysicalDeviceFeatures&         GetFeatures() const { return m_features; }
+	[[nodiscard]] const VkPhysicalDeviceProperties&       GetProperties() const { m_properties; }
+	[[nodiscard]] const VkPhysicalDeviceLimits&           GetLimits() const { m_properties.limits; }
 	[[nodiscard]] const VkPhysicalDeviceMemoryProperties& GetMemoryProperties() const { return m_memoryProperties; }
+	[[nodiscard]] std::string                             GetDeviceName() const { return m_properties.deviceName; }
+	[[nodiscard]] PhysicalDeviceType                      GetDeviceType() const;
+	[[nodiscard]] std::vector<VkSurfaceFormatKHR>         GetSupportSurfaceFormat(SurfacePtr surface) const;
+	[[nodiscard]] std::vector<VkPresentModeKHR>           GetSupportPresentMode(SurfacePtr surface) const;
 
-	[[nodiscard]] std::string GetDeviceName() const { return m_properties.deviceName; }
-	[[nodiscard]] PhysicalDeviceType GetDeviceType() const;
-
-	[[nodiscard]] const std::vector<std::string>& GetDeviceExtensions() const;
+	[[nodiscard]] const std::vector<std::string>&             GetDeviceExtensions() const;
 	[[nodiscard]] const std::vector<VkQueueFamilyProperties>& GetQueueFamilyProperties() const;
 
-	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface) const;
-	[[nodiscard]] bool IsPresentSupported(SurfacePtr surface, uint32_t queueFamilyIndex) const;
+	[[deprecated]] std::optional<uint32_t> GetQueueFamilyIndex(VkQueueFlagBits queueFlag) const;
+	// finds the first queue which supports only the desired flag (not graphics or transfer). 
+	// EXAMPLE: GetDedicatedQueueIndex(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_TRANSFER_BIT) - find only VK_QUEUE_COMPUTE_BIT;
+	[[nodiscatd]] std::optional<uint32_t> GetDedicatedQueueIndex(VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags) const;
+	// Finds the queue which is separate from the graphics queue and has the desired flag and not the undesired flag, but will select it if no better options are available compute support.
+	[[nodiscatd]] std::optional<uint32_t> GetSeparateQueueIndex(VkQueueFlags desiredFlags, VkQueueFlags undesiredFlags) const;
 
-	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
-	[[nodiscard]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const;
+	[[nodiscatd]] std::optional<uint32_t> FindGraphicsQueueFamilyIndex() const;
+	[[nodiscard]] std::optional<std::pair<uint32_t, uint32_t>> FindGraphicsAndPresentQueueFamilyIndex(SurfacePtr surface) const;
+
+	[[nodiscard]] bool GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const;
+
+	//[[deprecated]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
+	//[[deprecated]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const;
+
+	static std::vector<std::string> CheckDeviceExtensionSupport(const std::vector<std::string>& availableExtensions, const std::vector<std::string>& desiredExtensions);
 
 	[[nodiscard]] const VkFormatProperties GetFormatProperties(VkFormat format) const;
-
-	[[nodiscatd]] std::optional<uint32_t> GetQueueFamilyIndex(VkQueueFlagBits queueFlag) const;
 
 	[[nodiscatd]] uint32_t GetQueueFamilyPerformanceQueryPasses(const VkQueryPoolPerformanceCreateInfoKHR* perfQueryCreateInfo) const;
 	void EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queueFamilyIndex, uint32_t* count, VkPerformanceCounterKHR* counters, VkPerformanceCounterDescriptionKHR* descriptions) const;
 
+	[[nodiscatd]] bool SupportsFeatures(const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extension_supported, const GenericFeatureChain& extension_requested);
+
 private:
+
 	InstancePtr                          m_instance{ nullptr };
 	VkPhysicalDevice                     m_device{ VK_NULL_HANDLE };
 	VkPhysicalDeviceFeatures             m_features{};

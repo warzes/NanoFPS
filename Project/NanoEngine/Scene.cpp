@@ -1806,60 +1806,6 @@ namespace scene {
 		return vkr::SamplerAddressMode::Repeat;
 	}
 
-	template <typename GltfObjectT>
-	static bool HasExtension(
-		const std::string& extensionName,
-		const GltfObjectT* pGltfObject)
-	{
-		if (extensionName.empty() || IsNull(pGltfObject) || IsNull(pGltfObject->extensions)) {
-			return false;
-		}
-
-		for (cgltf_size i = 0; i < pGltfObject->extensions_count; ++i) {
-			const std::string name = ToStringSafe(pGltfObject->extensions[i].name);
-			if (extensionName == name) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	// Returns the widest index type used by a mesh
-	vkr::IndexType GetIndexType(
-		const cgltf_mesh* pGltfMesh)
-	{
-		if (IsNull(pGltfMesh)) {
-			return vkr::IndexType::Undefined;
-		}
-
-		uint32_t finalBitCount = 0;
-		for (cgltf_size primIdx = 0; primIdx < pGltfMesh->primitives_count; ++primIdx) {
-			const cgltf_primitive* pGltfPrimitive = &pGltfMesh->primitives[primIdx];
-			// Convert to vkr::Format
-			auto format = GetFormat(pGltfPrimitive->indices);
-
-			uint32_t bitCount = 0;
-			switch (format) {
-				// Bail if we don't recognize the format
-			default: return vkr::IndexType::Undefined;
-			case vkr::Format::R16_UINT: bitCount = 16; break;
-			case vkr::Format::R32_UINT: bitCount = 32; break;
-			}
-
-			finalBitCount = std::max(bitCount, finalBitCount);
-		}
-
-		if (finalBitCount == 32) {
-			return vkr::IndexType::Uint32;
-		}
-		else if (finalBitCount == 16) {
-			return vkr::IndexType::Uint16;
-		}
-
-		return vkr::IndexType::Undefined;
-	}
-
 	// Calculate a unique hash based a meshes primitive accessors
 	static uint64_t GetMeshAccessorsHash(const cgltf_data* pGltfData, const cgltf_mesh* pGltfMesh)
 	{
