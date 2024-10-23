@@ -21,6 +21,9 @@
     <Filter Include="Framework">
       <UniqueIdentifier>{07eff223-0cc5-4090-ab03-249638ec68af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\VulkanWrapper">
+      <UniqueIdentifier>{26877a0b-d143-4277-ae91-4be79430a188}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="001.h">

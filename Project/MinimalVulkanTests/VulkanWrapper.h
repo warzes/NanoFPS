@@ -53,6 +53,7 @@ class Device;
 
 struct InstanceCreateInfo;
 struct SurfaceCreateInfo;
+struct DeviceCreateInfo;
 
 using InstancePtr = std::shared_ptr<Instance>;
 using SurfacePtr = std::shared_ptr<Surface>;
@@ -93,27 +94,11 @@ enum class PhysicalDeviceType : uint8_t
 	CPU
 };
 
-enum class DeviceSelectionMode : uint8_t
-{
-	// return all suitable and partially suitable devices
-	partiallyAndFullySuitable,
-	// return only physical devices which are fully suitable
-	onlyFullySuitable
-};
-
-enum class Suitable : uint8_t
-{ 
-	yes, 
-	partial, 
-	no 
-};
-
 #pragma endregion
 
 //=============================================================================
 #pragma region [ Core Struct ]
 
-// Sentinel value, used in implementation only
 const uint32_t QUEUE_INDEX_MAX_VALUE = 65536;
 
 struct GenericFeaturesPNextNode
@@ -315,7 +300,7 @@ public:
 	[[nodiscard]] std::vector<PhysicalDevicePtr> GetPhysicalDevices();
 
 	[[nodiscard]] SurfacePtr                     CreateSurface(const SurfaceCreateInfo& createInfo);
-	[[nodiscard]] DevicePtr                      CreateDevice(PhysicalDevicePtr physicalDevice);
+	[[nodiscard]] DevicePtr                      CreateDevice(const DeviceCreateInfo& createInfo);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -345,7 +330,7 @@ class Surface final
 	friend class Instance;
 public:
 	Surface() = delete;
-	Surface(InstancePtr instance, VkSurfaceKHR surface);
+	Surface(InstancePtr instance, const SurfaceCreateInfo& createInfo);
 	~Surface();
 
 	operator VkSurfaceKHR() const { return m_surface; }
@@ -396,10 +381,8 @@ public:
 
 	[[nodiscard]] bool GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const;
 
-	//[[deprecated]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
-	//[[deprecated]] bool CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const;
-
-	static std::vector<std::string> CheckDeviceExtensionSupport(const std::vector<std::string>& availableExtensions, const std::vector<std::string>& desiredExtensions);
+	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
+	[[nodiscard]] bool CheckExtensionSupported(const std::vector<const char*>& requestedExtensions) const;
 
 	[[nodiscard]] const VkFormatProperties GetFormatProperties(VkFormat format) const;
 
@@ -417,14 +400,6 @@ private:
 	VkPhysicalDeviceMemoryProperties     m_memoryProperties{};
 	std::vector<VkQueueFamilyProperties> m_queueFamilies;
 	std::vector<std::string>             m_availableExtensions;
-
-	// OLD
-	Suitable                             m_suitable = Suitable::yes;
-	std::vector<std::string>             m_extensionsToEnable;
-	GenericFeatureChain                  m_extendedFeaturesChain;
-	bool                                 m_deferSurfaceInitialization = false;
-	std::string                          m_name;
-	bool                                 m_properties2ExtEnabled = false;
 };
 
 #pragma endregion
@@ -432,11 +407,23 @@ private:
 //=============================================================================
 #pragma region [ Device ]
 
+struct DeviceCreateInfo final
+{
+	PhysicalDevicePtr physicalDevice{ nullptr };
+
+	uint32_t graphicsQueueFamily{ QUEUE_INDEX_MAX_VALUE };
+	uint32_t presentQueueFamily{ QUEUE_INDEX_MAX_VALUE };
+	float queuePriority = 1.0f;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+	std::vector<const char*> requestDeviceExtensions{};
+};
+
 class Device final
 {
 public:
 	Device() = delete;
-	Device(InstancePtr instance, PhysicalDevicePtr physicalDevice);
+	Device(InstancePtr instance, const DeviceCreateInfo& createInfo);
 	~Device();
 
 	operator VkDevice() const { return m_device; }
@@ -448,6 +435,10 @@ private:
 	PhysicalDevicePtr m_physicalDevice;
 
 	VkDevice          m_device{ nullptr };
+	uint32_t          m_graphicsQueueFamily{ QUEUE_INDEX_MAX_VALUE };
+	VkQueue           m_graphicsQueue{ nullptr };
+	uint32_t          m_presentQueueFamily{ QUEUE_INDEX_MAX_VALUE };
+	VkQueue           m_presentQueue{ nullptr };
 };
 
 #pragma endregion

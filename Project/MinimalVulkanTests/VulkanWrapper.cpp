@@ -8,6 +8,7 @@
 #endif
 
 #include <algorithm>
+#include <set>
 #include <vulkan/vk_enum_string_helper.h>
 
 #define VOLK_IMPLEMENTATION
@@ -341,7 +342,7 @@ bool Context::CheckAPIVersionSupported(VulkanAPIVersion version)
 {
 	const VulkanAPIVersion supportVersion = EnumerateInstanceVersion();
 	if (static_cast<uint8_t>(supportVersion) >= static_cast<uint8_t>(version)) return true;
-	
+
 	error("API Version not support!");
 	return false;
 }
@@ -479,40 +480,40 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 		}
 	}
 
-	VkApplicationInfo appInfo  = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
-	appInfo.pApplicationName   = createInfo.applicationName.c_str();
+	VkApplicationInfo appInfo = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
+	appInfo.pApplicationName = createInfo.applicationName.c_str();
 	appInfo.applicationVersion = createInfo.applicationVersion;
-	appInfo.pEngineName        = createInfo.engineName.c_str();
-	appInfo.engineVersion      = createInfo.engineVersion;
-	appInfo.apiVersion         = ConvertVersion(createInfo.apiVersion);
+	appInfo.pEngineName = createInfo.engineName.c_str();
+	appInfo.engineVersion = createInfo.engineVersion;
+	appInfo.apiVersion = ConvertVersion(createInfo.apiVersion);
 
 	std::vector<VkBaseOutStructure*> nextChain = createInfo.nextChain;
 
 	if (hasDebugUtils)
 	{
 		VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		debugUtilsMessengerCI.messageSeverity                    = createInfo.debugMessageSeverity;
-		debugUtilsMessengerCI.messageType                        = createInfo.debugMessageType;
-		debugUtilsMessengerCI.pfnUserCallback                    = createInfo.debugCallback;
-		debugUtilsMessengerCI.pUserData                          = createInfo.debugUserDataPointer;
+		debugUtilsMessengerCI.messageSeverity = createInfo.debugMessageSeverity;
+		debugUtilsMessengerCI.messageType = createInfo.debugMessageType;
+		debugUtilsMessengerCI.pfnUserCallback = createInfo.debugCallback;
+		debugUtilsMessengerCI.pUserData = createInfo.debugUserDataPointer;
 		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&debugUtilsMessengerCI));
 	}
 
 	if (createInfo.enabledValidationFeatures.size() != 0 || createInfo.disabledValidationFeatures.size())
 	{
-		VkValidationFeaturesEXT features        = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT };
-		features.enabledValidationFeatureCount  = static_cast<uint32_t>(createInfo.enabledValidationFeatures.size());
-		features.pEnabledValidationFeatures     = createInfo.enabledValidationFeatures.data();
+		VkValidationFeaturesEXT features = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT };
+		features.enabledValidationFeatureCount = static_cast<uint32_t>(createInfo.enabledValidationFeatures.size());
+		features.pEnabledValidationFeatures = createInfo.enabledValidationFeatures.data();
 		features.disabledValidationFeatureCount = static_cast<uint32_t>(createInfo.disabledValidationFeatures.size());
-		features.pDisabledValidationFeatures    = createInfo.disabledValidationFeatures.data();
+		features.pDisabledValidationFeatures = createInfo.disabledValidationFeatures.data();
 		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&features));
 	}
 
 	if (createInfo.disabledValidationChecks.size() != 0)
 	{
-		VkValidationFlagsEXT checks         = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
+		VkValidationFlagsEXT checks = { .sType = VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
 		checks.disabledValidationCheckCount = static_cast<uint32_t>(createInfo.disabledValidationChecks.size());
-		checks.pDisabledValidationChecks    = createInfo.disabledValidationChecks.data();
+		checks.pDisabledValidationChecks = createInfo.disabledValidationChecks.data();
 		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&checks));
 	}
 
@@ -520,19 +521,19 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 	if (std::find(extensions.begin(), extensions.end(), VK_EXT_LAYER_SETTINGS_EXTENSION_NAME) != extensions.end())
 	{
 		VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo = { .sType = VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT };
-		layerSettingsCreateInfo.settingCount                 = static_cast<uint32_t>(createInfo.requiredLayerSettings.size());
-		layerSettingsCreateInfo.pSettings                    = createInfo.requiredLayerSettings.data();
+		layerSettingsCreateInfo.settingCount = static_cast<uint32_t>(createInfo.requiredLayerSettings.size());
+		layerSettingsCreateInfo.pSettings = createInfo.requiredLayerSettings.data();
 		nextChain.push_back(reinterpret_cast<VkBaseOutStructure*>(&layerSettingsCreateInfo));
 	}
 
-	VkInstanceCreateInfo instanceCreateInfo    = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+	VkInstanceCreateInfo instanceCreateInfo = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 	SetupPNextChain(instanceCreateInfo, nextChain);
-	instanceCreateInfo.pApplicationInfo        = &appInfo;
-	instanceCreateInfo.flags                   = createInfo.flags;
-	instanceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
+	instanceCreateInfo.pApplicationInfo = &appInfo;
+	instanceCreateInfo.flags = createInfo.flags;
+	instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
-	instanceCreateInfo.enabledLayerCount       = static_cast<uint32_t>(layers.size());
-	instanceCreateInfo.ppEnabledLayerNames     = layers.data();
+	instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+	instanceCreateInfo.ppEnabledLayerNames = layers.data();
 #if defined(VK_KHR_portability_enumeration)
 	if (portabilityEnumerationSupport) instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
@@ -545,10 +546,10 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 	if (hasDebugUtils)
 	{
 		VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-		debugUtilsMessengerCI.messageSeverity                    = createInfo.debugMessageSeverity;
-		debugUtilsMessengerCI.messageType                        = createInfo.debugMessageType;
-		debugUtilsMessengerCI.pfnUserCallback                    = createInfo.debugCallback;
-		debugUtilsMessengerCI.pUserData                          = createInfo.debugUserDataPointer;
+		debugUtilsMessengerCI.messageSeverity = createInfo.debugMessageSeverity;
+		debugUtilsMessengerCI.messageType = createInfo.debugMessageType;
+		debugUtilsMessengerCI.pfnUserCallback = createInfo.debugCallback;
+		debugUtilsMessengerCI.pUserData = createInfo.debugUserDataPointer;
 		result = vkCreateDebugUtilsMessengerEXT(m_instance, &debugUtilsMessengerCI, m_allocator, &m_debugMessenger);
 		if (!resultCheck(result, "Could not create debug utils messenger")) return;
 	}
@@ -559,29 +560,12 @@ Instance::Instance(const InstanceCreateInfo& createInfo)
 Instance::~Instance()
 {
 	if (m_debugMessenger) vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, m_allocator);
-	if (m_instance)       vkDestroyInstance(m_instance, nullptr);
+	if (m_instance)       vkDestroyInstance(m_instance, m_allocator);
 }
 
 bool Instance::IsValid() const
 {
 	return m_isValid && m_instance != nullptr;
-}
-
-SurfacePtr Instance::CreateSurface(const SurfaceCreateInfo& createInfo)
-{
-	VkSurfaceKHR vkSurface{ nullptr };
-#if defined(_WIN32)
-	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{ .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-	surfaceCreateInfo.hinstance = createInfo.hinstance;
-	surfaceCreateInfo.hwnd = createInfo.hwnd;
-	VkResult result = vkCreateWin32SurfaceKHR(m_instance, &surfaceCreateInfo, m_allocator, &vkSurface);
-#endif
-	if (!resultCheck(result, "Create Surface")) return nullptr;
-
-	SurfacePtr surface = std::make_shared<Surface>(shared_from_this(), vkSurface);
-	if (!surface || !surface->IsValid()) return nullptr;
-
-	return surface;
 }
 
 std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
@@ -601,9 +585,26 @@ std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 	return physicalDevices;
 }
 
-DevicePtr Instance::CreateDevice(PhysicalDevicePtr physicalDevice)
+SurfacePtr Instance::CreateSurface(const SurfaceCreateInfo& createInfo)
 {
-	auto resource = std::make_shared<Device>(shared_from_this(), physicalDevice);
+	// TODO: check createInfo parameters
+	SurfacePtr surface = std::make_shared<Surface>(shared_from_this(), createInfo);
+	if (!surface || !surface->IsValid()) return nullptr;
+	return surface;
+}
+
+DevicePtr Instance::CreateDevice(const DeviceCreateInfo& createInfo)
+{
+	if (!createInfo.physicalDevice 
+		|| createInfo.graphicsQueueFamily == QUEUE_INDEX_MAX_VALUE
+		|| createInfo.presentQueueFamily == QUEUE_INDEX_MAX_VALUE
+		)
+	{
+		error("DeviceCreateInfo not valid");
+		return nullptr;
+	}
+
+	auto resource = std::make_shared<Device>(shared_from_this(), createInfo);
 	if (!resource || !resource->IsValid()) return nullptr;
 	return resource;
 }
@@ -629,15 +630,21 @@ bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 //=============================================================================
 #pragma region [ Surface ]
 
-Surface::Surface(InstancePtr instance, VkSurfaceKHR surface)
+Surface::Surface(InstancePtr instance, const SurfaceCreateInfo& createInfo)
 	: m_instance(instance)
-	, m_surface(surface)
 {
+#if defined(_WIN32)
+	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = { .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+	surfaceCreateInfo.hinstance                   = createInfo.hinstance;
+	surfaceCreateInfo.hwnd                        = createInfo.hwnd;
+	VkResult result = vkCreateWin32SurfaceKHR(*m_instance, &surfaceCreateInfo, *m_instance, &m_surface);
+#endif
+	if (!resultCheck(result, "failed to create window surface!")) return;
 }
 
 Surface::~Surface()
 {
-	vkDestroySurfaceKHR(*m_instance, m_surface, *m_instance);
+	if (m_surface) vkDestroySurfaceKHR(*m_instance, m_surface, *m_instance);
 }
 
 #pragma endregion
@@ -710,39 +717,22 @@ const std::vector<VkQueueFamilyProperties>& PhysicalDevice::GetQueueFamilyProper
 	return m_queueFamilies;
 }
 
-//bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension) const
-//{
-//	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
-//		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
-//		}) != m_availableExtensions.end();
-//}
-//
-//bool PhysicalDevice::CheckExtensionSupported(const std::vector<std::string>& requestedExtensions) const
-//{
-//	bool allFound = true;
-//	for (const auto& extensionName : requestedExtensions)
-//	{
-//		bool found = CheckExtensionSupported(extensionName);
-//		if (!found) allFound = false;
-//	}
-//	return allFound;
-//}
-
-std::vector<std::string> vkw::PhysicalDevice::CheckDeviceExtensionSupport(const std::vector<std::string>& availableExtensions, const std::vector<std::string>& desiredExtensions)
+bool PhysicalDevice::CheckExtensionSupported(const std::string& requestedExtension) const
 {
-	std::vector<std::string> extensions_to_enable;
-	for (const auto& avail_ext : availableExtensions)
+	return std::find_if(m_availableExtensions.begin(), m_availableExtensions.end(), [requestedExtension](auto& device_extension) {
+		return std::strcmp(device_extension.c_str(), requestedExtension.c_str()) == 0;
+		}) != m_availableExtensions.end();
+}
+
+bool PhysicalDevice::CheckExtensionSupported(const std::vector<const char*>& requestedExtensions) const
+{
+	bool allFound = true;
+	for (const auto& extensionName : requestedExtensions)
 	{
-		for (auto& req_ext : desiredExtensions)
-		{
-			if (avail_ext == req_ext)
-			{
-				extensions_to_enable.push_back(req_ext);
-				break;
-			}
-		}
+		bool found = CheckExtensionSupported(extensionName);
+		if (!found) allFound = false;
 	}
-	return extensions_to_enable;
+	return allFound;
 }
 
 const VkFormatProperties PhysicalDevice::GetFormatProperties(VkFormat format) const
@@ -835,7 +825,7 @@ std::optional<uint32_t> PhysicalDevice::FindGraphicsQueueFamilyIndex() const
 	return std::nullopt;
 }
 
-std::optional<std::pair<uint32_t, uint32_t>> vkw::PhysicalDevice::FindGraphicsAndPresentQueueFamilyIndex(SurfacePtr surface) const
+std::optional<std::pair<uint32_t, uint32_t>> PhysicalDevice::FindGraphicsAndPresentQueueFamilyIndex(SurfacePtr surface) const
 {
 	std::optional<uint32_t> graphicsQueueFamilyIndex = FindGraphicsQueueFamilyIndex();
 	if (!graphicsQueueFamilyIndex.has_value()) return std::nullopt;
@@ -958,32 +948,41 @@ bool vkw::PhysicalDevice::SupportsFeatures(const VkPhysicalDeviceFeatures& reque
 //=============================================================================
 #pragma region [ Device ]
 
-Device::Device(InstancePtr instance, PhysicalDevicePtr physicalDevice)
+Device::Device(InstancePtr instance, const DeviceCreateInfo& createInfo)
 	: m_instance(instance)
-	, m_physicalDevice(physicalDevice)
+	, m_physicalDevice(createInfo.physicalDevice)
+	, m_graphicsQueueFamily(createInfo.graphicsQueueFamily)
+	, m_presentQueueFamily(createInfo.presentQueueFamily)
 {
-	float queuePriority = 1.0f;
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::set<uint32_t> uniqueQueueFamilies = { m_graphicsQueueFamily, m_presentQueueFamily };
 
-	VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-	//queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-	queueCreateInfo.queueCount = 1;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
+	for (uint32_t queueFamily : uniqueQueueFamilies)
+	{
+		VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+		queueCreateInfo.queueFamilyIndex        = queueFamily;
+		queueCreateInfo.queueCount              = 1;
+		queueCreateInfo.pQueuePriorities        = &createInfo.queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
+	VkDeviceCreateInfo deviceCreateInfo      = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	deviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
+	deviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(createInfo.requestDeviceExtensions.size());
+	deviceCreateInfo.ppEnabledExtensionNames = createInfo.requestDeviceExtensions.data();
+	deviceCreateInfo.pEnabledFeatures        = &createInfo.deviceFeatures;
 
-	VkDeviceCreateInfo createInfo   = { .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-	createInfo.pQueueCreateInfos    = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
-	createInfo.pEnabledFeatures     = &deviceFeatures;
-
-
-	VkResult result = vkCreateDevice(*m_physicalDevice, &createInfo, *m_instance, &m_device);
+	VkResult result = vkCreateDevice(*m_physicalDevice, &deviceCreateInfo, *m_instance, &m_device);
 	if (!resultCheck(result, "failed to create logical device!")) return;
+
+	vkGetDeviceQueue(m_device, m_graphicsQueueFamily, 0, &m_graphicsQueue);
+	vkGetDeviceQueue(m_device, m_presentQueueFamily, 0, &m_presentQueue);
 }
 
 Device::~Device()
 {
-	if (m_device) vkDestroyDevice(m_device, nullptr);
+	if (m_device) vkDestroyDevice(m_device, *m_instance);
 }
 
 #pragma endregion

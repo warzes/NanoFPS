@@ -1,7 +1,5 @@
 ﻿#include "stdafx.h"
 #include "001.h"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_raii.hpp"
 
 ApplicationCreateInfo Test001::GetConfig()
 {
@@ -39,15 +37,23 @@ bool Test001::Start()
 	vkw::SurfacePtr surface = instance->CreateSurface(surfaceCreateInfo);
 	if (!surface) return false;
 	
-	auto physicDevices = instance->GetPhysicalDevices();
+
 	vkw::PhysicalDevicePtr selectDevice{ nullptr };
 	uint32_t graphicsQueueFamily = 0;
 	uint32_t presentQueueFamily = 0;
+
+	const std::vector<const char*> requestDeviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
+
+	auto physicDevices = instance->GetPhysicalDevices();
 	for (auto gpu : physicDevices)
 	{
 		if (selectDevice) break;
 
 		if (gpu->GetDeviceType() != vkw::PhysicalDeviceType::DiscreteGPU) continue;
+
+		if (!gpu->CheckExtensionSupported(requestDeviceExtensions)) continue;
 
 		auto deviceFeatures = gpu->GetFeatures();
 		if (!deviceFeatures.geometryShader) continue;
@@ -62,17 +68,22 @@ bool Test001::Start()
 	}
 	if (!selectDevice) return false;
 
-	vkw::DevicePtr device = instance->CreateDevice(selectDevice);
+	vkw::DeviceCreateInfo dci{};
+	dci.physicalDevice          = selectDevice;
+	dci.graphicsQueueFamily     = graphicsQueueFamily;
+	dci.presentQueueFamily      = presentQueueFamily;
+	dci.requestDeviceExtensions = requestDeviceExtensions;
+	vkw::DevicePtr device = instance->CreateDevice(dci);
 	if (!device) return false;
-
-
 
 	return true;
 }
 
 void Test001::Shutdown()
 {
-
+	//surface.reset();
+	//device.reset();
+	//instance.reset();
 }
 
 void Test001::FixedUpdate(float deltaTime)
