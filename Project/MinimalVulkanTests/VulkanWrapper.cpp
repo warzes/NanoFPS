@@ -10,7 +10,7 @@
 #define NOMINMAX
 
 #include <algorithm>
-//#include <set>
+#include <set>
 #include <vulkan/vk_enum_string_helper.h>
 
 #define VOLK_IMPLEMENTATION
@@ -20,13 +20,13 @@
 #	pragma warning(pop)
 #endif
 
-//#ifdef _WIN32
-//extern "C"
-//{
-//	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
-//	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-//}
-//#endif
+#ifdef _WIN32
+extern "C"
+{
+	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
 
 namespace vkw {
 
@@ -979,13 +979,15 @@ Device::Device(InstancePtr instance, const DeviceCreateInfo& createInfo)
 	, m_presentQueueFamily(createInfo.presentQueueFamily)
 {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	uint32_t uniqueQueueFamilies[] = { m_graphicsQueueFamily, m_presentQueueFamily };
+	std::set<uint32_t> uniqueQueueFamilies = { m_graphicsQueueFamily, m_presentQueueFamily };
+
+	float queuePriority = 1.0f;
 	for (uint32_t queueFamily : uniqueQueueFamilies)
 	{
 		VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
 		queueCreateInfo.queueFamilyIndex        = queueFamily;
 		queueCreateInfo.queueCount              = 1;
-		queueCreateInfo.pQueuePriorities        = &createInfo.queuePriority;
+		queueCreateInfo.pQueuePriorities        = &queuePriority;
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
@@ -1064,14 +1066,54 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	swapChainCreateInfo.presentMode    = m_presentMode;
 	swapChainCreateInfo.clipped        = VK_TRUE;
+	swapChainCreateInfo.oldSwapchain   = VK_NULL_HANDLE;
 
+	if (vkCreateSwapchainKHR(*m_device, &swapChainCreateInfo, nullptr, &m_swapChain) != VK_SUCCESS)
+	{
+		error("failed to create swap chain!");
+		return;
+	}
 
+	vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, nullptr);
+	m_swapChainImages.resize(m_imageCount);
+	vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, m_swapChainImages.data());
+
+	m_swapChainImageFormat = m_surfaceFormat.format;
+	m_swapChainExtent = m_extent;
+
+	m_swapChainImageViews.resize(m_swapChainImages.size());
+	for (size_t i = 0; i < m_swapChainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = m_swapChainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = m_swapChainImageFormat;
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+		if (vkCreateImageView(*m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
+		{
+			error("failed to create image views!");
+			return;
+		}
+	}
 
 	m_valid = true;
 }
 
 SwapChain::~SwapChain()
 {
+	for (auto imageView : m_swapChainImageViews)
+		vkDestroyImageView(*m_device, imageView, nullptr);
+
+	if (m_swapChain) vkDestroySwapchainKHR(*m_device, m_swapChain, *m_device->GetInstance());
 }
 
 VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -1117,6 +1159,7 @@ VkExtent2D SwapChain::chooseSwapExtent(const SwapChainCreateInfo& createInfo, co
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
 		return actualExtent;
+	}
 }
 
 #pragma endregion

@@ -436,6 +436,9 @@ public:
 	operator PhysicalDevicePtr() const { return m_physicalDevice; }
 
 	PhysicalDevicePtr GetPhysicalDevice() { return m_physicalDevice; }
+	InstancePtr GetInstance() { return m_instance; }
+
+
 	uint32_t GetGraphicsQueueFamily() const { return m_graphicsQueueFamily; }
 	uint32_t GetPresentQueueFamily() const { return m_presentQueueFamily; }
 
@@ -482,10 +485,18 @@ private:
 	DevicePtr                       m_device{ nullptr };
 	SurfacePtr                      m_surface{ nullptr };
 
+	VkSwapchainKHR                  m_swapChain{ nullptr };
+
 	VkSurfaceFormatKHR              m_surfaceFormat;
 	VkPresentModeKHR                m_presentMode;
 	VkExtent2D                      m_extent;
 	uint32_t                        m_imageCount;
+
+	std::vector<VkImage>            m_swapChainImages;
+	VkFormat                        m_swapChainImageFormat;
+	VkExtent2D                      m_swapChainExtent;
+	std::vector<VkImageView>        m_swapChainImageViews;
+
 	bool                            m_valid{ false };
 };
 
