@@ -37,7 +37,6 @@ bool Test001::Start()
 	vkw::SurfacePtr surface = instance->CreateSurface(surfaceCreateInfo);
 	if (!surface) return false;
 	
-
 	vkw::PhysicalDevicePtr selectDevice{ nullptr };
 	uint32_t graphicsQueueFamily = 0;
 	uint32_t presentQueueFamily = 0;
@@ -46,14 +45,14 @@ bool Test001::Start()
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-	auto physicDevices = instance->GetPhysicalDevices();
-	for (auto gpu : physicDevices)
+	auto physicDevicesList = instance->GetPhysicalDevices();
+	for (auto gpu : physicDevicesList)
 	{
 		if (selectDevice) break;
 
 		if (gpu->GetDeviceType() != vkw::PhysicalDeviceType::DiscreteGPU) continue;
-
 		if (!gpu->CheckExtensionSupported(requestDeviceExtensions)) continue;
+		if (!gpu->IsSupportSwapChain(surface)) continue;
 
 		auto deviceFeatures = gpu->GetFeatures();
 		if (!deviceFeatures.geometryShader) continue;
@@ -75,6 +74,14 @@ bool Test001::Start()
 	dci.requestDeviceExtensions = requestDeviceExtensions;
 	vkw::DevicePtr device = instance->CreateDevice(dci);
 	if (!device) return false;
+
+	vkw::SwapChainCreateInfo scci{};
+	scci.device = device;
+	scci.surface = surface;
+	scci.width = GetWindowWidth();
+	scci.height = GetWindowHeight();
+	vkw::SwapChainPtr swapChain = instance->CreateSwapChain(scci);
+	if (!swapChain) return false;
 
 	return true;
 }

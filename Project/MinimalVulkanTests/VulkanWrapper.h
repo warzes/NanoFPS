@@ -50,15 +50,18 @@ class Instance;
 class Surface;
 class PhysicalDevice;
 class Device;
+class SwapChain;
 
 struct InstanceCreateInfo;
 struct SurfaceCreateInfo;
 struct DeviceCreateInfo;
+struct SwapChainCreateInfo;
 
 using InstancePtr = std::shared_ptr<Instance>;
 using SurfacePtr = std::shared_ptr<Surface>;
 using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
 using DevicePtr = std::shared_ptr<Device>;
+using SwapChainPtr = std::shared_ptr<SwapChain>;
 
 #pragma endregion
 
@@ -301,6 +304,7 @@ public:
 
 	[[nodiscard]] SurfacePtr                     CreateSurface(const SurfaceCreateInfo& createInfo);
 	[[nodiscard]] DevicePtr                      CreateDevice(const DeviceCreateInfo& createInfo);
+	[[nodiscard]] SwapChainPtr                   CreateSwapChain(const SwapChainCreateInfo& createInfo);
 
 private:
 	bool checkValid(const InstanceCreateInfo& createInfo);
@@ -379,6 +383,8 @@ public:
 	[[nodiscatd]] std::optional<uint32_t> FindGraphicsQueueFamilyIndex() const;
 	[[nodiscard]] std::optional<std::pair<uint32_t, uint32_t>> FindGraphicsAndPresentQueueFamilyIndex(SurfacePtr surface) const;
 
+	[[nodiscard]] bool IsSupportSwapChain(SurfacePtr surface) const;
+
 	[[nodiscard]] bool GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const;
 
 	[[nodiscard]] bool CheckExtensionSupported(const std::string& requestedExtension) const;
@@ -392,7 +398,6 @@ public:
 	[[nodiscatd]] bool SupportsFeatures(const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extension_supported, const GenericFeatureChain& extension_requested);
 
 private:
-
 	InstancePtr                          m_instance{ nullptr };
 	VkPhysicalDevice                     m_device{ VK_NULL_HANDLE };
 	VkPhysicalDeviceFeatures             m_features{};
@@ -427,6 +432,12 @@ public:
 	~Device();
 
 	operator VkDevice() const { return m_device; }
+	operator VkPhysicalDevice() const { return *m_physicalDevice; }
+	operator PhysicalDevicePtr() const { return m_physicalDevice; }
+
+	PhysicalDevicePtr GetPhysicalDevice() { return m_physicalDevice; }
+	uint32_t GetGraphicsQueueFamily() const { return m_graphicsQueueFamily; }
+	uint32_t GetPresentQueueFamily() const { return m_presentQueueFamily; }
 
 	[[nodiscard]] bool IsValid() const { return m_device != nullptr; }
 
@@ -443,6 +454,42 @@ private:
 
 #pragma endregion
 
+//=============================================================================
+#pragma region [ SwapChain ]
+
+struct SwapChainCreateInfo final
+{
+	DevicePtr device{ nullptr };
+	SurfacePtr surface{ nullptr };
+	uint32_t width{};
+	uint32_t height{};
+};
+
+class SwapChain final
+{
+public:
+	SwapChain() = delete;
+	SwapChain(const SwapChainCreateInfo& createInfo);
+	~SwapChain();
+
+	[[nodiscard]] bool IsValid() const { return m_valid; }
+
+private:
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D chooseSwapExtent(const SwapChainCreateInfo& createInfo, const VkSurfaceCapabilitiesKHR& capabilities);
+
+	DevicePtr                       m_device{ nullptr };
+	SurfacePtr                      m_surface{ nullptr };
+
+	VkSurfaceFormatKHR              m_surfaceFormat;
+	VkPresentModeKHR                m_presentMode;
+	VkExtent2D                      m_extent;
+	uint32_t                        m_imageCount;
+	bool                            m_valid{ false };
+};
+
+#pragma endregion
 
 
 } // namespace vkw

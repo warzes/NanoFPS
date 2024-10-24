@@ -7,8 +7,10 @@
 #	pragma warning(disable : 5039)
 #endif
 
+#define NOMINMAX
+
 #include <algorithm>
-#include <set>
+//#include <set>
 #include <vulkan/vk_enum_string_helper.h>
 
 #define VOLK_IMPLEMENTATION
@@ -609,6 +611,20 @@ DevicePtr Instance::CreateDevice(const DeviceCreateInfo& createInfo)
 	return resource;
 }
 
+SwapChainPtr Instance::CreateSwapChain(const SwapChainCreateInfo& createInfo)
+{
+	if (!createInfo.device ||
+		!createInfo.surface)
+	{
+		error("SwapChainCreateInfo not valid");
+		return nullptr;
+	}
+
+	auto resource = std::make_shared<SwapChain>(createInfo);
+	if (!resource || !resource->IsValid()) return nullptr;
+	return resource;
+}
+
 bool Instance::checkValid(const InstanceCreateInfo& createInfo)
 {
 	if (!IsValidState()) return false;
@@ -858,6 +874,14 @@ std::optional<std::pair<uint32_t, uint32_t>> PhysicalDevice::FindGraphicsAndPres
 	return std::nullopt;
 }
 
+bool PhysicalDevice::IsSupportSwapChain(SurfacePtr surface) const
+{
+	const auto formats = GetSupportSurfaceFormat(surface);
+	const auto presentModes = GetSupportPresentMode(surface);
+
+	return !formats.empty() && !presentModes.empty();
+}
+
 bool vkw::PhysicalDevice::GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const
 {
 	VkBool32 supported{ VK_FALSE };
@@ -955,8 +979,7 @@ Device::Device(InstancePtr instance, const DeviceCreateInfo& createInfo)
 	, m_presentQueueFamily(createInfo.presentQueueFamily)
 {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = { m_graphicsQueueFamily, m_presentQueueFamily };
-
+	uint32_t uniqueQueueFamilies[] = { m_graphicsQueueFamily, m_presentQueueFamily };
 	for (uint32_t queueFamily : uniqueQueueFamilies)
 	{
 		VkDeviceQueueCreateInfo queueCreateInfo = { .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
@@ -983,6 +1006,117 @@ Device::Device(InstancePtr instance, const DeviceCreateInfo& createInfo)
 Device::~Device()
 {
 	if (m_device) vkDestroyDevice(m_device, *m_instance);
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ SwapChain ]
+
+SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
+	: m_device(createInfo.device)
+	, m_surface(createInfo.surface)
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(*m_device, *m_surface, &capabilities);
+
+	auto formats = m_device->GetPhysicalDevice()->GetSupportSurfaceFormat(m_surface);
+	auto presentModes = m_device->GetPhysicalDevice()->GetSupportPresentMode(m_surface);
+	if (formats.empty() || presentModes.empty())
+	{
+		error("device not support swapchain");
+		return;
+	}
+
+	m_surfaceFormat = chooseSwapSurfaceFormat(formats);
+	m_presentMode = chooseSwapPresentMode(presentModes);
+	m_extent = chooseSwapExtent(createInfo, capabilities);
+
+	m_imageCount = capabilities.minImageCount + 1;
+	if (capabilities.maxImageCount > 0 && m_imageCount > capabilities.maxImageCount)
+		m_imageCount = capabilities.maxImageCount;
+
+	uint32_t queueFamilyIndices[] = { m_device->GetGraphicsQueueFamily(), m_device->GetPresentQueueFamily() };
+
+	VkSwapchainCreateInfoKHR swapChainCreateInfo = { .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+	swapChainCreateInfo.surface                  = *m_surface;
+	swapChainCreateInfo.minImageCount            = m_imageCount;
+	swapChainCreateInfo.imageFormat              = m_surfaceFormat.format;
+	swapChainCreateInfo.imageColorSpace          = m_surfaceFormat.colorSpace;
+	swapChainCreateInfo.imageExtent              = m_extent;
+	swapChainCreateInfo.imageArrayLayers         = 1;
+	swapChainCreateInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	if (queueFamilyIndices[0] != queueFamilyIndices[1])
+	{
+		swapChainCreateInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+		swapChainCreateInfo.queueFamilyIndexCount = 2;
+		swapChainCreateInfo.pQueueFamilyIndices   = queueFamilyIndices;
+	}
+	else
+	{
+		swapChainCreateInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+		swapChainCreateInfo.queueFamilyIndexCount = 0;       // Optional
+		swapChainCreateInfo.pQueueFamilyIndices   = nullptr; // Optional
+	}
+
+	swapChainCreateInfo.preTransform   = capabilities.currentTransform;
+	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapChainCreateInfo.presentMode    = m_presentMode;
+	swapChainCreateInfo.clipped        = VK_TRUE;
+
+
+
+	m_valid = true;
+}
+
+SwapChain::~SwapChain()
+{
+}
+
+VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	for (const auto& availableFormat : availableFormats)
+	{
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return availableFormat;
+		}
+	}
+	return availableFormats[0];
+}
+
+VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+{
+	for (const auto& availablePresentMode : availablePresentModes)
+	{
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			return availablePresentMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D SwapChain::chooseSwapExtent(const SwapChainCreateInfo& createInfo, const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+	{
+		return capabilities.currentExtent;
+	}
+	else
+	{
+		VkExtent2D actualExtent =
+		{
+			createInfo.width,
+			createInfo.height
+		};
+
+		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+		return actualExtent;
 }
 
 #pragma endregion
