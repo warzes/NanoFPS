@@ -28,3 +28,7 @@ Project/3rdparty/lib/SPIRV-Tools-optd.lib
 Project/3rdparty/lib/SPIRV-Toolsd.lib
 Project/3rdparty/lib/glslangd.lib
 /bin/GameData/Shaders/spv
+/bin/lessons/shaders/simple_shader.frag.spv
+/bin/lessons/shaders/simple_shader.vert.spv
+/bin/lessons/shaders/simple_shader2.ps.spv
+/bin/lessons/shaders/simple_shader2.vs.spv

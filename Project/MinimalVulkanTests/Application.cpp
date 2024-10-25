@@ -148,7 +148,11 @@ std::vector<uint8_t> Application::ReadFileBinary(const std::filesystem::path& pa
 {
 	std::error_code ec;
 	auto sizeFile = std::filesystem::file_size(path, ec);
-	if (ec) { return {}; }
+	if (ec) 
+	{
+		Error(ec.message());
+		return {}; 
+	}
 	return ReadChunk(path, 0, sizeFile);
 }
 

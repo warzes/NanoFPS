@@ -20,13 +20,13 @@
 #	pragma warning(pop)
 #endif
 
-#ifdef _WIN32
-extern "C"
-{
-	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif
+//#ifdef _WIN32
+//extern "C"
+//{
+//	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+//	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+//}
+//#endif
 
 namespace vkw {
 
@@ -882,7 +882,7 @@ bool PhysicalDevice::IsSupportSwapChain(SurfacePtr surface) const
 	return !formats.empty() && !presentModes.empty();
 }
 
-bool vkw::PhysicalDevice::GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const
+bool PhysicalDevice::GetSurfaceSupportKHR(uint32_t queueFamilyIndex, SurfacePtr surface) const
 {
 	VkBool32 supported{ VK_FALSE };
 	if (surface != nullptr)
@@ -906,7 +906,7 @@ void PhysicalDevice::EnumerateQueueFamilyPerformanceQueryCounters(uint32_t queue
 	resultCheck(result, "EnumerateQueueFamilyPerformanceQueryCounters");
 }
 
-bool vkw::PhysicalDevice::SupportsFeatures(const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extensionSupported, const GenericFeatureChain& extensionRequested)
+bool PhysicalDevice::SupportsFeatures(const VkPhysicalDeviceFeatures& requested, const GenericFeatureChain& extensionSupported, const GenericFeatureChain& extensionRequested)
 {
 	if (requested.robustBufferAccess && !m_features.robustBufferAccess) return false;
 	if (requested.fullDrawIndexUint32 && !m_features.fullDrawIndexUint32) return false;
@@ -1010,6 +1010,13 @@ Device::~Device()
 	if (m_device) vkDestroyDevice(m_device, *m_instance);
 }
 
+ShaderModulePtr Device::CreateShaderModule(const ShaderModuleCreateInfo& createInfo)
+{
+	auto resource = std::make_shared<ShaderModule>(shared_from_this(), createInfo);
+	if (!resource || !resource->IsValid()) return nullptr;
+	return resource;
+}
+
 #pragma endregion
 
 //=============================================================================
@@ -1020,7 +1027,8 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 	, m_surface(createInfo.surface)
 {
 	VkSurfaceCapabilitiesKHR capabilities;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(*m_device, *m_surface, &capabilities);
+	VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(*m_device, *m_surface, &capabilities);
+	if (!resultCheck(result, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR")) return;
 
 	auto formats = m_device->GetPhysicalDevice()->GetSupportSurfaceFormat(m_surface);
 	auto presentModes = m_device->GetPhysicalDevice()->GetSupportPresentMode(m_surface);
@@ -1032,7 +1040,7 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 
 	m_surfaceFormat = chooseSwapSurfaceFormat(formats);
 	m_presentMode = chooseSwapPresentMode(presentModes);
-	m_extent = chooseSwapExtent(createInfo, capabilities);
+	VkExtent2D extent = chooseSwapExtent(createInfo, capabilities);
 
 	m_imageCount = capabilities.minImageCount + 1;
 	if (capabilities.maxImageCount > 0 && m_imageCount > capabilities.maxImageCount)
@@ -1040,12 +1048,23 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 
 	uint32_t queueFamilyIndices[] = { m_device->GetGraphicsQueueFamily(), m_device->GetPresentQueueFamily() };
 
+	VkSurfaceTransformFlagBitsKHR preTransform = 
+		(capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+		? VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR
+		: capabilities.currentTransform;
+
+	VkCompositeAlphaFlagBitsKHR compositeAlpha =
+		(capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) ? VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR
+		: (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) ? VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR
+		: (capabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR) ? VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
+		: VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	
 	VkSwapchainCreateInfoKHR swapChainCreateInfo = { .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
 	swapChainCreateInfo.surface                  = *m_surface;
 	swapChainCreateInfo.minImageCount            = m_imageCount;
 	swapChainCreateInfo.imageFormat              = m_surfaceFormat.format;
 	swapChainCreateInfo.imageColorSpace          = m_surfaceFormat.colorSpace;
-	swapChainCreateInfo.imageExtent              = m_extent;
+	swapChainCreateInfo.imageExtent              = extent;
 	swapChainCreateInfo.imageArrayLayers         = 1;
 	swapChainCreateInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -1062,43 +1081,45 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 		swapChainCreateInfo.pQueueFamilyIndices   = nullptr; // Optional
 	}
 
-	swapChainCreateInfo.preTransform   = capabilities.currentTransform;
-	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapChainCreateInfo.preTransform   = preTransform;
+	swapChainCreateInfo.compositeAlpha = compositeAlpha;
 	swapChainCreateInfo.presentMode    = m_presentMode;
 	swapChainCreateInfo.clipped        = VK_TRUE;
 	swapChainCreateInfo.oldSwapchain   = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(*m_device, &swapChainCreateInfo, nullptr, &m_swapChain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(*m_device, &swapChainCreateInfo, *m_device->GetInstance(), &m_swapChain) != VK_SUCCESS)
 	{
 		error("failed to create swap chain!");
 		return;
 	}
 
-	vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, nullptr);
+	result = vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, nullptr);
+	if (!resultCheck(result, "vkGetSwapchainImagesKHR")) return;
+
 	m_swapChainImages.resize(m_imageCount);
-	vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, m_swapChainImages.data());
+	result = vkGetSwapchainImagesKHR(*m_device, m_swapChain, &m_imageCount, m_swapChainImages.data());
+	if (!resultCheck(result, "vkGetSwapchainImagesKHR")) return;
 
 	m_swapChainImageFormat = m_surfaceFormat.format;
-	m_swapChainExtent = m_extent;
+	m_swapChainExtent = extent;
 
 	m_swapChainImageViews.resize(m_swapChainImages.size());
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
-		VkImageViewCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_swapChainImages[i];
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = m_swapChainImageFormat;
-		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0;
-		createInfo.subresourceRange.levelCount = 1;
+		VkImageViewCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+		createInfo.image                           = m_swapChainImages[i];
+		createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format                          = m_swapChainImageFormat;
+		createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel   = 0;
+		createInfo.subresourceRange.levelCount     = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
-		if (vkCreateImageView(*m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
+		createInfo.subresourceRange.layerCount     = 1;
+		if (vkCreateImageView(*m_device, &createInfo, *m_device->GetInstance(), &m_swapChainImageViews[i]) != VK_SUCCESS)
 		{
 			error("failed to create image views!");
 			return;
@@ -1111,7 +1132,7 @@ SwapChain::SwapChain(const SwapChainCreateInfo& createInfo)
 SwapChain::~SwapChain()
 {
 	for (auto imageView : m_swapChainImageViews)
-		vkDestroyImageView(*m_device, imageView, nullptr);
+		vkDestroyImageView(*m_device, imageView, *m_device->GetInstance());
 
 	if (m_swapChain) vkDestroySwapchainKHR(*m_device, m_swapChain, *m_device->GetInstance());
 }
@@ -1125,6 +1146,7 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 			return availableFormat;
 		}
 	}
+
 	return availableFormats[0];
 }
 
@@ -1160,6 +1182,32 @@ VkExtent2D SwapChain::chooseSwapExtent(const SwapChainCreateInfo& createInfo, co
 
 		return actualExtent;
 	}
+}
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Shader Module ]
+
+ShaderModule::ShaderModule(DevicePtr device, const ShaderModuleCreateInfo& createInfo)
+	: m_device(device)
+{
+	VkShaderModuleCreateInfo shaderModuleCreateInfo = { .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+	shaderModuleCreateInfo.codeSize = createInfo.code.size();
+	shaderModuleCreateInfo.pCode    = reinterpret_cast<const uint32_t*>(createInfo.code.data());
+
+	if (vkCreateShaderModule(*m_device, &shaderModuleCreateInfo, *m_device->GetInstance(), &m_shaderModule) != VK_SUCCESS)
+	{
+		error("failed to create shader module!");
+		return;
+	}
+
+	m_valid = true;
+}
+
+ShaderModule::~ShaderModule()
+{
+	if (m_shaderModule) vkDestroyShaderModule(*m_device, m_shaderModule, *m_device->GetInstance());
 }
 
 #pragma endregion

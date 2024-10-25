@@ -52,16 +52,22 @@ class PhysicalDevice;
 class Device;
 class SwapChain;
 
+class ShaderModule;
+
 struct InstanceCreateInfo;
 struct SurfaceCreateInfo;
 struct DeviceCreateInfo;
 struct SwapChainCreateInfo;
+
+struct ShaderModuleCreateInfo;
 
 using InstancePtr = std::shared_ptr<Instance>;
 using SurfacePtr = std::shared_ptr<Surface>;
 using PhysicalDevicePtr = std::shared_ptr<PhysicalDevice>;
 using DevicePtr = std::shared_ptr<Device>;
 using SwapChainPtr = std::shared_ptr<SwapChain>;
+
+using ShaderModulePtr = std::shared_ptr<ShaderModule>;
 
 #pragma endregion
 
@@ -424,7 +430,7 @@ struct DeviceCreateInfo final
 	std::vector<const char*> requestDeviceExtensions{};
 };
 
-class Device final
+class Device final : public std::enable_shared_from_this<Device>
 {
 public:
 	Device() = delete;
@@ -438,11 +444,12 @@ public:
 	PhysicalDevicePtr GetPhysicalDevice() { return m_physicalDevice; }
 	InstancePtr GetInstance() { return m_instance; }
 
-
 	uint32_t GetGraphicsQueueFamily() const { return m_graphicsQueueFamily; }
 	uint32_t GetPresentQueueFamily() const { return m_presentQueueFamily; }
 
 	[[nodiscard]] bool IsValid() const { return m_device != nullptr; }
+
+	ShaderModulePtr CreateShaderModule(const ShaderModuleCreateInfo& createInfo);
 
 private:
 	InstancePtr       m_instance;
@@ -477,27 +484,57 @@ public:
 
 	[[nodiscard]] bool IsValid() const { return m_valid; }
 
+	[[nodiscard]] const VkExtent2D& GetExtent() const { return m_swapChainExtent; }
+	[[nodiscard]] const VkFormat& GetFormat() const { return m_swapChainImageFormat; }
+	[[nodiscard]] const std::vector<VkImageView>& GetImageView() const { return m_swapChainImageViews; }
+
 private:
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D chooseSwapExtent(const SwapChainCreateInfo& createInfo, const VkSurfaceCapabilitiesKHR& capabilities);
 
-	DevicePtr                       m_device{ nullptr };
-	SurfacePtr                      m_surface{ nullptr };
+	DevicePtr                m_device{ nullptr };
+	SurfacePtr               m_surface{ nullptr };
 
-	VkSwapchainKHR                  m_swapChain{ nullptr };
+	VkSwapchainKHR           m_swapChain{ nullptr };
 
-	VkSurfaceFormatKHR              m_surfaceFormat;
-	VkPresentModeKHR                m_presentMode;
-	VkExtent2D                      m_extent;
-	uint32_t                        m_imageCount;
+	VkSurfaceFormatKHR       m_surfaceFormat{};
+	VkPresentModeKHR         m_presentMode{};
+	uint32_t                 m_imageCount{0};
 
-	std::vector<VkImage>            m_swapChainImages;
-	VkFormat                        m_swapChainImageFormat;
-	VkExtent2D                      m_swapChainExtent;
-	std::vector<VkImageView>        m_swapChainImageViews;
+	std::vector<VkImage>     m_swapChainImages;
+	VkFormat                 m_swapChainImageFormat{};
+	VkExtent2D               m_swapChainExtent{};
+	std::vector<VkImageView> m_swapChainImageViews;
 
-	bool                            m_valid{ false };
+	bool                     m_valid{ false };
+};
+
+#pragma endregion
+
+//=============================================================================
+#pragma region [ Shader Module ]
+
+struct ShaderModuleCreateInfo final
+{
+	std::vector<uint8_t> code;
+};
+
+class ShaderModule final
+{
+public:
+	ShaderModule() = delete;
+	ShaderModule(DevicePtr device, const ShaderModuleCreateInfo& createInfo);
+	~ShaderModule();
+
+	operator VkShaderModule() const { return m_shaderModule; }
+
+	[[nodiscard]] bool IsValid() const { return m_valid; }
+
+private:
+	DevicePtr      m_device{ nullptr };
+	VkShaderModule m_shaderModule{ VK_NULL_HANDLE };
+	bool           m_valid{ false };
 };
 
 #pragma endregion
