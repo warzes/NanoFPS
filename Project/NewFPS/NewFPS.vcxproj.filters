@@ -88,6 +88,9 @@
     <Filter Include="Framework">
       <UniqueIdentifier>{28957a5f-66ef-4fbf-b408-ad5699023383}</UniqueIdentifier>
     </Filter>
+    <Filter Include="game\EntityObject">
+      <UniqueIdentifier>{b87c4d26-c775-4ae2-81fe-6c7ffe439d39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\BuildGameShader.bat">

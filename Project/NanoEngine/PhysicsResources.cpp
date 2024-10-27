@@ -330,7 +330,7 @@ void BaseActor::AttachCollider(const ConvexMeshColliderCreateInfo& createInfo)
 void BaseActor::AttachCollider(ColliderPtr collider)
 {
 	m_colliders.emplace_back(collider);
-	physicsSetQueryLayer();
+	physicsSetQueryLayer(collider);
 }
 
 void BaseActor::SetSimulationEnabled(bool state)
@@ -403,7 +403,7 @@ void BaseActor::OnTriggerExit(BaseActor* other)
 	}
 }
 
-void BaseActor::physicsSetQueryLayer()
+void BaseActor::physicsSetQueryLayer(ColliderPtr collider)
 {
 	PxFilterData filterData = PhysicsFilterDataFromLayer(m_queryLayer);
 	PhysicsForEachActorShape(m_actor, [&filterData](PxShape* shape) { shape->setQueryFilterData(filterData); });
@@ -411,7 +411,7 @@ void BaseActor::physicsSetQueryLayer()
 	filterData.word0 = m_filterGroup; // word0 = own ID
 	filterData.word1 = m_filterMask;
 
-	collider->setSimulationFilterData(filterData);
+	collider->GetPxShape()->setSimulationFilterData(filterData);
 }
 
 

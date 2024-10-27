@@ -87,6 +87,8 @@ public:
 	bool GetQueryable() const;
 	
 	bool IsValid() const { return m_collider != nullptr; }
+
+	physx::PxShape* GetPxShape() { return m_collider; }
 	
 protected:
 	void updateFilterData(BaseActor* owner);
@@ -271,7 +273,7 @@ public:
 	[[nodiscard]] auto GetPxScene() const { return m_actor->getScene(); }
 
 protected:
-	void physicsSetQueryLayer();
+	void physicsSetQueryLayer(ColliderPtr collider);
 	EngineApplication&                     m_engine;
 	physx::PxRigidActor*                   m_actor{ nullptr };
 	physx::PxU32                           m_filterGroup = -1; // TODO: set max uint
