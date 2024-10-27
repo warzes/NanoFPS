@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Lessons">
+      <UniqueIdentifier>{bb97e70f-b3b7-4e00-9176-e69501e4961c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{0142f913-8383-4b52-86ef-bcedf7cb218d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lessons\0001">
+      <UniqueIdentifier>{f6ae63a4-ab4c-4876-82c9-b7ccd9082e7c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="0001.cpp">
+      <Filter>Lessons\0001</Filter>
+    </ClCompile>
+    <ClCompile Include="volk.cpp">
+      <Filter>3rdparty</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

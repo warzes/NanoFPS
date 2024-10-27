@@ -12,7 +12,6 @@
     <ClCompile Include="VulkanWrapper.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tests">
@@ -39,6 +38,5 @@
     <ClInclude Include="VulkanWrapper.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="VkBootstrap.h" />
   </ItemGroup>
 </Project>

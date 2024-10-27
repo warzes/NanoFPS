@@ -10,10 +10,15 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="0001.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="volk.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f43a1fa0-40a5-4f3f-9915-a203e9f7de43}</ProjectGuid>
+    <ProjectGuid>{B2A49F0F-0C2E-4405-8729-66A4A312C85B}</ProjectGuid>
     <RootNamespace>MinimalVulkanTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -64,7 +69,6 @@
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;$(SolutionDir)3rdparty\qformats\;$(SolutionDir)NanoEngine\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,7 +88,6 @@
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include\;$(SolutionDir)3rdparty\;$(ProjectDir);$(SolutionDir);$(SolutionDir)3rdparty\physx\;$(SolutionDir)3rdparty\qformats\;$(SolutionDir)NanoEngine\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,26 +97,6 @@
       <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\lib\;$(SolutionDir)3rdparty\lib\$(Configuration)\;$(VULKAN_SDK)\Lib\;$(SolutionDir)..\_lib\$(Configuration)\$(PlatformTarget)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="001.cpp" />
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="VulkanWrapper.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="001.h" />
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="Timer.h" />
-    <ClInclude Include="VulkanWrapper.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
