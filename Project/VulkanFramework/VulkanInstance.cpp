@@ -196,8 +196,7 @@ std::vector<PhysicalDevice> Instance::GetPhysicalDevices()
 		return {};
 	}
 	std::vector<PhysicalDevice> devices;
-	devices.reserve(retDevices.second.size());
-	for (size_t idx = 0; idx < devices.size(); idx++)
+	for (size_t idx = 0; idx < retDevices.second.size(); idx++)
 	{
 		const VkPhysicalDevice phyDevice = retDevices.second[idx];
 		devices.push_back({ phyDevice });

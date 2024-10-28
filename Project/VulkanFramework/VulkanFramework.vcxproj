@@ -18,13 +18,16 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="volk.cpp" />
     <ClCompile Include="VulkanSurface.cpp" />
+    <ClCompile Include="WindowContext.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="VulkanCore.h" />
     <ClInclude Include="VulkanInstance.h" />
     <ClInclude Include="VulkanLogicalDevice.h" />
     <ClInclude Include="VulkanPhysicalDevice.h" />
     <ClInclude Include="VulkanSurface.h" />
+    <ClInclude Include="WindowContext.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

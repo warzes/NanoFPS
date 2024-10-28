@@ -20,6 +20,9 @@
     <ClCompile Include="VulkanLogicalDevice.cpp">
       <Filter>Framework\Context</Filter>
     </ClCompile>
+    <ClCompile Include="WindowContext.cpp">
+      <Filter>Supports</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanCore.h">
@@ -37,6 +40,12 @@
     <ClInclude Include="VulkanLogicalDevice.h">
       <Filter>Framework\Context</Filter>
     </ClInclude>
+    <ClInclude Include="WindowContext.h">
+      <Filter>Supports</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Supports</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Framework">
@@ -50,6 +59,9 @@
     </Filter>
     <Filter Include="Framework\3rdparty">
       <UniqueIdentifier>{279f31dd-653d-44b4-b50a-e8fcc7cad0a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Supports">
+      <UniqueIdentifier>{17807b18-07d0-4838-8a11-040057edee0e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
