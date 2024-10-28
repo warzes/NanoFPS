@@ -1,22 +1,15 @@
-/*
+п»ї/*
 0001 
 - Init Volk
 - Create Vulkan Instance
 - Check Available Layers and Available Instance Extensions
+- List Physical Devices
 */
-
-
-https://github.com/elecro/vkdemos
-https://jhenriques.net/development.html
-https://www.youtube.com/watch?v=0-DTfARZ5ow&list=PLFAIgTeqcARkeHm-RimFyKET6IZPxlBSt&index=3
-https://vkguide.dev/docs/new_chapter_1/vulkan_init_code/
 
 #if defined(_MSC_VER)
 #	pragma warning(push, 3)
 #endif
 
-#include <algorithm>
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -27,32 +20,113 @@ https://vkguide.dev/docs/new_chapter_1/vulkan_init_code/
 #	pragma warning(pop)
 #endif
 
+#ifdef _WIN32
+extern "C"
+{
+	__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 namespace
 {
-	template<typename PROPS, typename FUNC, typename... ARGS>
-	std::vector<PROPS> QueryWithMethod(const FUNC& queryWith, ARGS... args)
+	VKAPI_ATTR VkBool32 VKAPI_CALL DefaultDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* /*pUserData*/)
 	{
-		uint32_t count = 0;
-		if (VK_SUCCESS != queryWith(args..., &count, nullptr))  return {};
-		std::vector<PROPS> result(count);
-		if (VK_SUCCESS != queryWith(args..., &count, result.data())) return {};
-		return result;
+		auto ms = string_VkDebugUtilsMessageSeverityFlagBitsEXT(messageSeverity);
+		auto mt = string_VkDebugUtilsMessageTypeFlagsEXT(messageType);
+		printf("[%s: %s]\n%s\n", ms, mt, pCallbackData->pMessage);
+
+		return VK_FALSE;
+	}
+
+	inline void CheckResult(VkResult result, const std::string& message)
+	{
+		if (result != VK_SUCCESS)
+			throw std::exception((message + " - " + string_VkResult(result)).c_str());
+	}
+
+	template<typename PROPS, typename FUNC, typename... ARGS>
+	std::pair<VkResult, std::vector<PROPS>> QueryWithMethod(FUNC&& queryWith, ARGS&&... args)
+	{
+		uint32_t count{ 0 };
+		VkResult result{ VK_SUCCESS };
+		if (VK_SUCCESS != (result = queryWith(args..., &count, nullptr))) return { result, {} };
+		std::vector<PROPS> resultVec(count);
+		if (VK_SUCCESS != (result = queryWith(args..., &count, resultVec.data()))) return { result, {} };
+		return { VK_SUCCESS, resultVec };
+	}
+
+	template<typename PROPS, typename FUNC, typename... ARGS>
+	std::vector<PROPS> QueryWithMethodNoError(FUNC&& queryWith, ARGS&&... args)
+	{
+		uint32_t count{ 0 };
+		std::vector<PROPS> resultVec;
+		queryWith(args..., &count, nullptr);
+		resultVec.resize(count);
+		queryWith(args..., &count, resultVec.data());
+		return resultVec;
+	}
+
+	template <typename T>
+	void SetupPNextChain(T& structure, const std::vector<VkBaseOutStructure*>& structs)
+	{
+		structure.pNext = nullptr;
+		if (structs.empty()) return;
+		for (size_t i = 0; i < structs.size() - 1; i++)
+			structs.at(i)->pNext = structs.at(i + 1);
+		structure.pNext = structs.at(0);
 	}
 
 	std::vector<VkLayerProperties> QueryInstanceLayers()
 	{
-		return QueryWithMethod<VkLayerProperties>(vkEnumerateInstanceLayerProperties);
+		auto result = QueryWithMethod<VkLayerProperties>(vkEnumerateInstanceLayerProperties);
+		CheckResult(result.first, "vkEnumerateInstanceLayerProperties");
+		return result.second;
 	}
 
 	std::vector<VkExtensionProperties> QueryInstanceExtensions()
 	{
-		return QueryWithMethod<VkExtensionProperties>(vkEnumerateInstanceExtensionProperties, nullptr);
+		auto result = QueryWithMethod<VkExtensionProperties>(vkEnumerateInstanceExtensionProperties, nullptr);
+		CheckResult(result.first, "vkEnumerateInstanceExtensionProperties");
+		return result.second;
 	}
 
-	VkInstance CreateInstance()
+	struct Instance
 	{
-		std::vector<const char*> layers = {};
-		std::vector<const char*> extensions = {};
+		VkInstance instance{ VK_NULL_HANDLE };
+		VkDebugUtilsMessengerEXT debugMessenger{ VK_NULL_HANDLE };
+	};
+
+	Instance CreateInstance()
+	{
+		Instance instance;
+
+		std::vector<const char*> layers = 
+		{
+#if defined(_DEBUG)
+			"VK_LAYER_KHRONOS_validation"
+#endif		
+		};
+		std::vector<const char*> extensions = 
+		{
+#if defined(_DEBUG)
+			VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
+			VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(_WIN32)
+			"VK_KHR_win32_surface",
+#endif
+		};
+
+#if defined(_DEBUG)
+		VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI = { .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+		debugUtilsMessengerCI.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+												VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		debugUtilsMessengerCI.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+												VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+												VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		debugUtilsMessengerCI.pfnUserCallback = DefaultDebugCallback;
+#endif
 
 		VkApplicationInfo appInfo  = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
 		appInfo.pApplicationName   = "Game";
@@ -67,15 +141,19 @@ namespace
 		instanceCreateInfo.ppEnabledLayerNames     = layers.data();
 		instanceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
 		instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
+#if defined(_DEBUG)
+		instanceCreateInfo.pNext = reinterpret_cast<VkBaseOutStructure*>(&debugUtilsMessengerCI);
+#endif
 
-		VkInstance instance{ VK_NULL_HANDLE };
-		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
-		if (VK_SUCCESS != result)
-		{
-			printf("Failed to create instance: %d\n", result);
-		}
+		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance.instance);
+		CheckResult(result, "Failed to create instance:");
 
-		volkLoadInstance(instance);
+		volkLoadInstance(instance.instance);
+
+#if defined(_DEBUG)
+			result = vkCreateDebugUtilsMessengerEXT(instance.instance, &debugUtilsMessengerCI, nullptr, &instance.debugMessenger);
+			CheckResult(result, "Could not create debug utils messenger: ");
+#endif
 		return instance;
 	}
 
@@ -89,7 +167,7 @@ namespace
 
 	std::vector<PhysicalDeviceInfo> QueryPhysicalDevices(VkInstance instance)
 	{
-		std::vector<VkPhysicalDevice> devices = QueryWithMethod<VkPhysicalDevice>(vkEnumeratePhysicalDevices, instance);
+		std::vector<VkPhysicalDevice> devices = QueryWithMethod<VkPhysicalDevice>(vkEnumeratePhysicalDevices, instance).second;
 
 		std::vector<PhysicalDeviceInfo> infos(devices.size());
 		for (size_t idx = 0; idx < infos.size(); idx++)
@@ -97,7 +175,7 @@ namespace
 			const VkPhysicalDevice phyDevice = devices[idx];
 
 			infos[idx].phyDevice = phyDevice;
-			infos[idx].extensions = QueryWithMethod<VkExtensionProperties>(vkEnumerateDeviceExtensionProperties, phyDevice, nullptr);
+			infos[idx].extensions = QueryWithMethod<VkExtensionProperties>(vkEnumerateDeviceExtensionProperties, phyDevice, nullptr).second;
 
 			vkGetPhysicalDeviceProperties(phyDevice, &infos[idx].properties);
 			vkGetPhysicalDeviceMemoryProperties(phyDevice, &infos[idx].memory);
@@ -105,102 +183,51 @@ namespace
 
 		return infos;
 	}
-
-	[[deprecated]] void DumpExtensions(const std::string& header, const std::vector<VkExtensionProperties>& exts)
-	{
-		uint32_t maxWidth = std::accumulate(exts.begin(), exts.end(), 10u,
-			[](uint32_t value, const VkExtensionProperties& extA) {
-				return std::max(value, (uint32_t)strnlen(extA.extensionName, 256));
-			});
-
-		printf("%s (count = %ld)\n", header.c_str(), exts.size());
-		for (const VkExtensionProperties& ext : exts) {
-			printf("    %*s : version %u\n", maxWidth - 2, ext.extensionName, ext.specVersion);
-		}
-	}
-
-	[[deprecated]] void DumpPhysicalDeviceInfos(const std::string& header, const std::vector<PhysicalDeviceInfo>& phyDevices)
-	{
-		printf("%s (count = %ld)\n", header.c_str(), phyDevices.size());
-		for (size_t idx = 0; idx < phyDevices.size(); idx++) {
-			const PhysicalDeviceInfo& info = phyDevices[idx];
-			const VkPhysicalDeviceProperties& props = info.properties;
-
-			printf("  %ld: deviceName = %s vendorID = 0x%x deviceID = 0x%x\n",
-				idx, props.deviceName, props.vendorID, props.deviceID);
-			printf("     deviceType = %s\n",
-				string_VkPhysicalDeviceType(props.deviceType));
-			printf("\n");
-
-			//DumpExtensions("    Device Extensions", info.extensions);
-			printf("\n");
-
-			printf("    Memory Types (count = %u)\n", info.memory.memoryTypeCount);
-			for (uint32_t ndx = 0; ndx < info.memory.memoryTypeCount; ndx++)
-			{
-				const VkMemoryType& memType = info.memory.memoryTypes[ndx];
-				printf("     %u: heapIndex = %u propertyFlags = 0x%x\n", ndx, memType.heapIndex, memType.propertyFlags);
-
-				for (uint32_t shift = 0; shift < 32; shift++)
-				{
-					VkMemoryPropertyFlagBits flag =
-						static_cast<VkMemoryPropertyFlagBits>(memType.propertyFlags & (1U << shift));
-					if (flag)
-					{
-						printf("         | %s\n", string_VkMemoryPropertyFlagBits(flag));
-					}
-				}
-			}
-			printf("\n");
-
-			printf("    Memory Heaps (count = %u)\n", info.memory.memoryHeapCount);
-			for (uint32_t ndx = 0; ndx < info.memory.memoryHeapCount; ndx++)
-			{
-				const VkMemoryHeap& heap = info.memory.memoryHeaps[ndx];
-				const float         sizeInGiB = (float)heap.size / (1 << 30);
-
-				printf("     %u: size = %lu (%2.2f GiB) flags = 0x%x\n", ndx, heap.size, sizeInGiB, heap.flags);
-
-				for (uint32_t shift = 0; shift < 32; shift++)
-				{
-					VkMemoryHeapFlagBits flag = static_cast<VkMemoryHeapFlagBits>(heap.flags & (1U << shift));
-					if (flag)
-					{
-						printf("         | %s\n", string_VkMemoryHeapFlagBits(flag));
-					}
-				}
-			}
-		}
-	}
 }
 
 void StartLesson0001()
 {
-	if (volkInitialize() != VK_SUCCESS)
+	try
 	{
-		//error("Failed to initialize volk.");
-		return;
-	}
+		VkResult result = volkInitialize();
+		CheckResult(result, "Failed to initialize volk.");
 
-	std::vector<VkLayerProperties> availableLayers = QueryInstanceLayers();
-	puts("Instance Layers:");
-	for (size_t i = 0; i < availableLayers.size(); i++)
+		std::vector<VkLayerProperties> availableLayers = QueryInstanceLayers();
+		puts("Instance Layers:");
+		for (size_t i = 0; i < availableLayers.size(); i++)
+		{
+			puts(("\t" + std::string(availableLayers[i].layerName)).c_str());
+			puts(("\t\t" + std::string(availableLayers[i].description)).c_str());
+		}
+
+		std::vector<VkExtensionProperties> availableInstanceExts = QueryInstanceExtensions();
+		puts("Instance Extensions:");
+		for (size_t i = 0; i < availableInstanceExts.size(); i++)
+			puts(("\t" + std::string(availableInstanceExts[i].extensionName)).c_str());
+
+		Instance instance = CreateInstance();
+		std::vector<PhysicalDeviceInfo> phyDevices = QueryPhysicalDevices(instance.instance);
+
+		printf("Physical Devices (count = %ld)\n", phyDevices.size());
+		for (size_t idx = 0; idx < phyDevices.size(); idx++)
+		{
+			const PhysicalDeviceInfo& info = phyDevices[idx];
+			const VkPhysicalDeviceProperties& props = info.properties;
+
+			printf("  %ld: deviceName = %s vendorID = 0x%x deviceID = 0x%x\n", idx, props.deviceName, props.vendorID, props.deviceID);
+			printf("     deviceType = %s\n", string_VkPhysicalDeviceType(props.deviceType));
+		}
+
+		vkDestroyDebugUtilsMessengerEXT(instance.instance, instance.debugMessenger, nullptr);
+		vkDestroyInstance(instance.instance, nullptr);
+		volkFinalize();
+	}
+	catch (const std::exception& msg)
 	{
-		puts(("\t" + std::string(availableLayers[i].layerName)).c_str());
-		puts(("\t\t" + std::string(availableLayers[i].description)).c_str());
+		puts(msg.what());
 	}
-
-	std::vector<VkExtensionProperties> availableInstanceExts = QueryInstanceExtensions();
-	puts("Instance Extensions:");
-	for (size_t i = 0; i < availableInstanceExts.size(); i++)
-		puts(("\t" + std::string(availableInstanceExts[i].extensionName)).c_str());
-
-	VkInstance instance = CreateInstance();
-	std::vector<PhysicalDeviceInfo> phyDevices = QueryPhysicalDevices(instance);
-
-	// просто вывести список видеокарт
-	//DumpPhysicalDeviceInfos("Physical Devices", phyDevices);
-
-	vkDestroyInstance(instance, nullptr);
-	volkFinalize();
+	catch (...)
+	{
+		puts("Unknown error");
+	}
 }

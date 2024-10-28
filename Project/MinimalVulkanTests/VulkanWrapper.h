@@ -175,29 +175,25 @@ void SetupPNextChain(T& structure, const std::vector<VkBaseOutStructure*>& struc
 	structure.pNext = structs.at(0);
 }
 
-template <typename T, typename F, typename... Ts> 
-VkResult GetVector(std::vector<T>& out, F&& f, Ts&&... ts)
+template<typename PROPS, typename FUNC, typename... ARGS>
+std::pair<VkResult, std::vector<PROPS>> QueryWithMethod(FUNC&& queryWith, ARGS&&... args)
 {
-	uint32_t count = 0;
-	VkResult err;
-	do {
-		err = f(ts..., &count, nullptr);
-		if (err != VK_SUCCESS) return err;
-		out.resize(count);
-		err = f(ts..., &count, out.data());
-		out.resize(count);
-	} while (err == VK_INCOMPLETE);
-	return err;
+	uint32_t count{ 0 };
+	VkResult vkResult{ VK_SUCCESS };
+	if (VK_SUCCESS != (vkResult = queryWith(args..., &count, nullptr))) return { vkResult, {} };
+	std::vector<PROPS> resultVec(count);
+	if (VK_SUCCESS != (vkResult = queryWith(args..., &count, resultVec.data()))) return { vkResult, {} };
+	return { vkResult, resultVec };
 }
 
-template <typename T, typename F, typename... Ts>
-std::vector<T> GetVectorNoError(F&& f, Ts&&... ts)
+template<typename PROPS, typename FUNC, typename... ARGS>
+std::vector<PROPS> QueryWithMethodNoError(FUNC&& queryWith, ARGS&&... args)
 {
-	uint32_t count = 0;
-	std::vector<T> results;
-	f(ts..., &count, nullptr);
+	uint32_t count{ 0 };
+	std::vector<PROPS> results;
+	queryWith(args..., &count, nullptr);
 	results.resize(count);
-	f(ts..., &count, results.data());
+	queryWith(args..., &count, results.data());
 	return results;
 }
 

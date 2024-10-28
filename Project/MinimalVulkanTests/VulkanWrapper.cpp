@@ -572,17 +572,16 @@ bool Instance::IsValid() const
 
 std::vector<PhysicalDevicePtr> Instance::GetPhysicalDevices()
 {
-	std::vector<VkPhysicalDevice> vkPhysicalDevices;
-	auto vkresult = GetVector<VkPhysicalDevice>(vkPhysicalDevices, vkEnumeratePhysicalDevices, m_instance);
-	if (vkresult != VK_SUCCESS || vkPhysicalDevices.size() == 0)
+	std::pair<VkResult,std::vector<VkPhysicalDevice>> vkPhysicalDevices = QueryWithMethod<VkPhysicalDevice>(vkEnumeratePhysicalDevices, m_instance);
+	if (vkPhysicalDevices.first != VK_SUCCESS || vkPhysicalDevices.second.size() == 0)
 	{
 		error("Couldn't find a physical device that supports Vulkan.");
 		return {};
 	}
 
-	std::vector<PhysicalDevicePtr> physicalDevices(vkPhysicalDevices.size());
-	for (size_t i = 0; i < vkPhysicalDevices.size(); i++)
-		physicalDevices[i] = std::make_shared<PhysicalDevice>(shared_from_this(), vkPhysicalDevices[i]);
+	std::vector<PhysicalDevicePtr> physicalDevices(vkPhysicalDevices.second.size());
+	for (size_t i = 0; i < vkPhysicalDevices.second.size(); i++)
+		physicalDevices[i] = std::make_shared<PhysicalDevice>(shared_from_this(), vkPhysicalDevices.second[i]);
 
 	return physicalDevices;
 }
@@ -676,20 +675,19 @@ PhysicalDevice::PhysicalDevice(InstancePtr instance, VkPhysicalDevice vkPhysical
 	vkGetPhysicalDeviceProperties(m_device, &m_properties);
 	vkGetPhysicalDeviceMemoryProperties(m_device, &m_memoryProperties);
 
-	m_queueFamilies = GetVectorNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
+	m_queueFamilies = QueryWithMethodNoError<VkQueueFamilyProperties>(vkGetPhysicalDeviceQueueFamilyProperties, m_device);
 
 	// TODO: а может не нужно их хранить?
-	std::vector<VkExtensionProperties> deviceExtensions;
-	auto result = GetVector<VkExtensionProperties>(deviceExtensions, vkEnumerateDeviceExtensionProperties, m_device, nullptr);
-	if (result != VK_SUCCESS)
+	std::pair<VkResult, std::vector<VkExtensionProperties>> deviceExtensions = QueryWithMethod<VkExtensionProperties>(vkEnumerateDeviceExtensionProperties, m_device, nullptr);
+	if (deviceExtensions.first != VK_SUCCESS)
 	{
 		error("vkEnumerateDeviceExtensionProperties");
 		return;
 	}
-	m_availableExtensions.resize(deviceExtensions.size());
-	for (size_t i = 0; i < deviceExtensions.size(); i++)
+	m_availableExtensions.resize(deviceExtensions.second.size());
+	for (size_t i = 0; i < deviceExtensions.second.size(); i++)
 	{
-		m_availableExtensions[i] = deviceExtensions[i].extensionName;
+		m_availableExtensions[i] = deviceExtensions.second[i].extensionName;
 	}
 }
 
@@ -709,18 +707,16 @@ PhysicalDeviceType PhysicalDevice::GetDeviceType() const
 
 std::vector<VkSurfaceFormatKHR> PhysicalDevice::GetSupportSurfaceFormat(SurfacePtr surface) const
 {
-	std::vector<VkSurfaceFormatKHR> formats;
-	VkResult result = GetVector<VkSurfaceFormatKHR>(formats, vkGetPhysicalDeviceSurfaceFormatsKHR, m_device, *surface);
-	resultCheck(result, "PhysicalDevice::GetSupportSurfaceFormat");
-	return formats;
+	std::pair<VkResult, std::vector<VkSurfaceFormatKHR>> formats = QueryWithMethod<VkSurfaceFormatKHR>(vkGetPhysicalDeviceSurfaceFormatsKHR, m_device, *surface);
+	resultCheck(formats.first, "PhysicalDevice::GetSupportSurfaceFormat");
+	return formats.second;
 }
 
 std::vector<VkPresentModeKHR> PhysicalDevice::GetSupportPresentMode(SurfacePtr surface) const
 {
-	std::vector<VkPresentModeKHR> presentModes;
-	VkResult result = GetVector<VkPresentModeKHR>(presentModes, vkGetPhysicalDeviceSurfacePresentModesKHR, m_device, *surface);
-	resultCheck(result, "PhysicalDevice::GetSupportPresentMode");
-	return presentModes;
+	std::pair<VkResult, std::vector<VkPresentModeKHR>> presentModes = QueryWithMethod<VkPresentModeKHR>(vkGetPhysicalDeviceSurfacePresentModesKHR, m_device, *surface);
+	resultCheck(presentModes.first, "PhysicalDevice::GetSupportPresentMode");
+	return presentModes.second;
 }
 
 const std::vector<std::string>& PhysicalDevice::GetDeviceExtensions() const

@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="VulkanInstance.cpp">
+      <Filter>Framework\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanPhysicalDevice.cpp">
+      <Filter>Framework\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="volk.cpp">
+      <Filter>Framework\3rdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanCore.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanSurface.cpp">
+      <Filter>Framework\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanLogicalDevice.cpp">
+      <Filter>Framework\Context</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="VulkanCore.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanInstance.h">
+      <Filter>Framework\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanPhysicalDevice.h">
+      <Filter>Framework\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanSurface.h">
+      <Filter>Framework\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanLogicalDevice.h">
+      <Filter>Framework\Context</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Framework">
+      <UniqueIdentifier>{be5fa912-7a9f-4139-a28d-1893105b6305}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Context">
+      <UniqueIdentifier>{817fb23b-8f8e-486f-a944-b7e5f7a55fd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\Resources">
+      <UniqueIdentifier>{0e0fb43d-2436-4ea2-99e0-563e150e5c20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Framework\3rdparty">
+      <UniqueIdentifier>{279f31dd-653d-44b4-b50a-e8fcc7cad0a6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

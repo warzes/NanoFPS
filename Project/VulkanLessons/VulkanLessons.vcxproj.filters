@@ -10,6 +10,12 @@
     <Filter Include="Lessons\0001">
       <UniqueIdentifier>{f6ae63a4-ab4c-4876-82c9-b7ccd9082e7c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Lessons\Framework">
+      <UniqueIdentifier>{7c80e984-3613-4c7c-b116-3252517e4063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lessons\0002">
+      <UniqueIdentifier>{b4aad5d8-76fa-4483-be31-d4332c2da298}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="0001.cpp">
@@ -18,5 +24,26 @@
     <ClCompile Include="volk.cpp">
       <Filter>3rdparty</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="0002.cpp">
+      <Filter>Lessons\0002</Filter>
+    </ClCompile>
+    <ClCompile Include="02_VulkanInstance.cpp">
+      <Filter>Lessons\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="03_VulkanPhysicalDevice.cpp">
+      <Filter>Lessons\Framework</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="01_VulkanCore.h">
+      <Filter>Lessons\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="02_VulkanInstance.h">
+      <Filter>Lessons\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="03_VulkanPhysicalDevice.h">
+      <Filter>Lessons\Framework</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
