@@ -5,6 +5,11 @@
 
 #include <array>
 
+2d
+glfw
+custom math
+krishna - palacio
+
 //https://github.com/elecro/vkdemos
 //https://jhenriques.net/development.html
 //https://www.youtube.com/watch?v=0-DTfARZ5ow&list=PLFAIgTeqcARkeHm-RimFyKET6IZPxlBSt&index=3
