@@ -1669,8 +1669,6 @@ namespace scene {
 #undef LoadImage
 #endif
 
-#define KHR_MATERIALS_UNLIT_EXTENSION_NAME "KHR_materials_unlit"
-
 namespace scene {
 
 #define GLTF_LOD_CLAMP_NONE 1000.0f
@@ -1902,17 +1900,13 @@ namespace scene {
 	}
 
 	// Get an accessor's starting address
-	static const void* GetStartAddress(
-		const cgltf_data* pGltfData,
-		const cgltf_accessor* pGltfAccessor)
+	static const void* GetStartAddress(const cgltf_accessor* pGltfAccessor)
 	{
 		//
 		// NOTE: Don't assert in this function since any of the fields can be NULL for different reasons.
 		//
 
-		if (IsNull(pGltfData) || IsNull(pGltfAccessor)) {
-			return nullptr;
-		}
+		if (IsNull(pGltfAccessor)) return nullptr;
 
 		// Get buffer view's start address
 		const char* pBufferViewDataStart = static_cast<const char*>(GetStartAddress(pGltfAccessor->buffer_view));
@@ -2990,15 +2984,7 @@ namespace scene {
 				const cgltf_primitive* pGltfPrimitive = &pGltfMesh->primitives[primIdx];
 				BatchInfo& batch = batchInfos[primIdx];
 
-				// Our resulting geometry must have index data for draw efficiency.
-				// This means that if the index format is undefined we need to generate topology indices for it.
-				bool genTopologyIndices = false;
-				if (batch.indexFormat == vkr::Format::Undefined) {
-					genTopologyIndices = true;
-					batch.indexFormat = (batch.vertexCount < 65536) ? vkr::Format::R16_UINT : vkr::Format::R32_UINT;
-				}
-
-				// Create genTopologyIndices so we can repack gemetry data into position planar + packed vertex attributes.
+				// Create targetGeometry so we can repack gemetry data into position planar + packed vertex attributes.
 				vkr::Geometry   targetGeometry = {};
 				const bool hasAttributes = (loadParams.requiredVertexAttributes.mask != 0);
 
@@ -3025,7 +3011,7 @@ namespace scene {
 					{
 						// Get start of index data
 						auto pGltfAccessor = pGltfPrimitive->indices;
-						auto pGltfIndices = GetStartAddress(mGltfData, pGltfAccessor);
+						auto pGltfIndices = GetStartAddress(pGltfAccessor);
 						ASSERT_MSG(!IsNull(pGltfIndices), "GLTF: indices data start is NULL");
 
 						// UINT32
@@ -3097,11 +3083,11 @@ namespace scene {
 					}
 
 					// Data starts
-					const float3* pGltflPositions = static_cast<const float3*>(GetStartAddress(mGltfData, gltflAccessors.pPositions));
-					const float3* pGltflNormals = static_cast<const float3*>(GetStartAddress(mGltfData, gltflAccessors.pNormals));
-					const float4* pGltflTangents = static_cast<const float4*>(GetStartAddress(mGltfData, gltflAccessors.pTangents));
-					const float3* pGltflColors = static_cast<const float3*>(GetStartAddress(mGltfData, gltflAccessors.pColors));
-					const float2* pGltflTexCoords = static_cast<const float2*>(GetStartAddress(mGltfData, gltflAccessors.pTexCoords));
+					const float3* pGltflPositions = static_cast<const float3*>(GetStartAddress(gltflAccessors.pPositions));
+					const float3* pGltflNormals = static_cast<const float3*>(GetStartAddress(gltflAccessors.pNormals));
+					const float4* pGltflTangents = static_cast<const float4*>(GetStartAddress(gltflAccessors.pTangents));
+					const float3* pGltflColors = static_cast<const float3*>(GetStartAddress(gltflAccessors.pColors));
+					const float2* pGltflTexCoords = static_cast<const float2*>(GetStartAddress(gltflAccessors.pTexCoords));
 
 					// Process vertex data
 					for (cgltf_size i = 0; i < gltflAccessors.pPositions->count; ++i) {
@@ -3133,12 +3119,6 @@ namespace scene {
 
 						// Append vertex data
 						targetGeometry.AppendVertexData(vertexData);
-
-						// Generate topolgoy indices if necessary
-						if (genTopologyIndices) {
-							uint32_t index = (targetGeometry.GetVertexCount() - 1);
-							targetGeometry.AppendIndex(index);
-						}
 
 						if (!hasBoundingBox) {
 							if (i > 0) {
